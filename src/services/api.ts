@@ -7,7 +7,12 @@ import type {
     User,
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+let API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+
+// Ensure API_BASE is an absolute URL if it doesn't start with /
+if (API_BASE !== '/api' && !API_BASE.startsWith('http')) {
+    API_BASE = `https://${API_BASE}`;
+}
 
 // Create axios instance with default config
 const api = axios.create({
@@ -62,7 +67,7 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const response = await axios.post('/api/auth/refresh-token', {}, { withCredentials: true });
+                const response = await axios.post(`${API_BASE}/auth/refresh-token`, {}, { withCredentials: true });
                 const { accessToken } = response.data;
 
                 localStorage.setItem('accessToken', accessToken);
