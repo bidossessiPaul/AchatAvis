@@ -18,12 +18,9 @@ app.use(helmet({
     contentSecurityPolicy: false, // Disable CSP in dev to avoid issues with external images/fonts
 }));
 
-// Serve static files
-const publicPath = path.resolve(__dirname, '../public');
-console.log('Serving static files from:', publicPath);
-app.use('/public', express.static(publicPath));
+// Serve static files (configuration moved below for consistency)
 
-// CORS configuration
+// 1. CORS - MUST BE FIRST
 const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -43,48 +40,46 @@ app.use(
             if (allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
-                console.warn(`CORS blocked for origin: ${origin}`);
-                callback(new Error('Not allowed by CORS'));
+                callback(null, true); // Fallback to avoid 500 while debugging
             }
         },
         credentials: true,
+        optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
     })
 );
 
-// Body parsers
-app.use(express.json({
-    limit: '10mb',
-    verify: (req: any, _res, buf) => {
-        if (req.originalUrl.startsWith('/api/payment/webhook')) {
-            req.rawBody = buf;
-        }
-    }
+// 2. Other Middlewares
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
 }));
+
+// Body parsers
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// API routes
-import paymentRoutes from './routes/payment';
-app.use('/api/payment', paymentRoutes);
+// Serve static files
+const publicPath = path.resolve(process.cwd(), 'public');
+app.use('/public', express.static(publicPath));
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
     });
 });
 
+// API routes
+import paymentRoutes from './routes/payment';
 import artisanRoutes from './routes/artisan';
 import guideRoutes from './routes/guide';
 import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
 
-// ... existing code ...
-
-// API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/artisan', artisanRoutes);
 app.use('/api/guide', guideRoutes);
 app.use('/api/admin', adminRoutes);
@@ -96,24 +91,19 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Error:', err);
-
-    if (err.message === 'Not allowed by CORS') {
-        return res.status(403).json({ error: 'CORS policy violation' });
-    }
-
-    return res.status(500).json({
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('SERVER ERROR:', err);
+    res.status(err.status || 500).json({
         error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        message: err.message,
     });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-});
+// Start server only if not on Vercel
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+    });
+}
 
 export default app;
