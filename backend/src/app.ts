@@ -35,9 +35,15 @@ app.use(
             // Allow requests with no origin (mobile apps, Postman, etc.)
             if (!origin) return callback(null, true);
 
+            // If ALLOWED_ORIGINS is *, allow everything
+            if (process.env.ALLOWED_ORIGINS === '*') {
+                return callback(null, true);
+            }
+
             if (allowedOrigins.includes(origin)) {
                 callback(null, true);
             } else {
+                console.warn(`CORS blocked for origin: ${origin}`);
                 callback(new Error('Not allowed by CORS'));
             }
         },
