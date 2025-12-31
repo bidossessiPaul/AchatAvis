@@ -1,0 +1,139 @@
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+}
+
+.auth-content {
+    width: 100%;
+    max-width: 480px;
+}
+
+.auth-logo {
+    text-align: center;
+    margin-bottom: var(--space-8);
+}
+
+.auth-brand {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-50);
+    margin-bottom: var(--space-2);
+}
+
+.auth-tagline {
+    font-size: var(--text-base);
+    color: var(--gray-400);
+    margin: 0;
+}
+
+.auth-card {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.auth-title {
+    text-align: center;
+    margin-bottom: var(--space-6);
+    color: var(--gray-50);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.auth-error {
+    padding: var(--space-4);
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    border-radius: var(--radius-md);
+    color: var(--error);
+    font-size: var(--text-sm);
+    text-align: center;
+}
+
+.auth-success {
+    padding: var(--space-4);
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-md);
+    color: var(--success);
+    font-size: var(--text-sm);
+    text-align: center;
+}
+
+.auth-links {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-4);
+}
+
+.auth-link {
+    font-size: var(--text-sm);
+    color: var(--primary-brand);
+    text-decoration: none;
+}
+
+.auth-link:hover {
+    text-decoration: underline;
+}
+
+.auth-divider {
+    position: relative;
+    text-align: center;
+    margin: var(--space-6) 0;
+}
+
+.auth-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background-color: var(--gray-800);
+}
+
+.auth-divider span {
+    position: relative;
+    display: inline-block;
+    padding: 0 var(--space-4);
+    background-color: var(--gray-900);
+    color: var(--gray-500);
+    font-size: var(--text-sm);
+    font-weight: var(--font-medium);
+}
+
+.auth-register {
+    text-align: center;
+}
+
+.auth-register p {
+    color: var(--gray-400);
+    margin-bottom: var(--space-4);
+}
+
+.auth-register-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.auth-register-buttons a {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .auth-container {
+        padding: var(--space-4);
+    }
+
+    .auth-brand {
+        font-size: var(--text-3xl);
+    }
+}

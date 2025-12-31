@@ -1,0 +1,6 @@
+✓ Connected to MySQL database
+[
+  { id: 'discovery', name: 'Découverte' },
+  { id: 'expert', name: 'Expert' },
+  { id: 'growth', name: 'Croissance' }
+]

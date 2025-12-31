@@ -1,0 +1,286 @@
+import axios from 'axios';
+import type {
+    LoginCredentials,
+    ArtisanRegistration,
+    GuideRegistration,
+    AuthResponse,
+    User,
+} from '../types';
+
+const API_BASE = '/api';
+
+// Create axios instance with default config
+const api = axios.create({
+    baseURL: API_BASE,
+    withCredentials: true, // For cookies
+});
+
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
+// Handle 401/403 errors globally
+api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then((token) => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        return api(originalRequest);
+                    })
+                    .catch((err) => {
+                        return Promise.reject(err);
+                    });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const response = await axios.post('/api/auth/refresh-token', {}, { withCredentials: true });
+                const { accessToken } = response.data;
+
+                localStorage.setItem('accessToken', accessToken);
+                api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+                processQueue(null, accessToken);
+                return api(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                localStorage.removeItem('accessToken');
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login';
+                }
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// Auth API
+export const authApi = {
+    // Register artisan
+    registerArtisan: async (data: ArtisanRegistration): Promise<AuthResponse> => {
+        const response = await api.post('/auth/register/artisan', data);
+        return response.data;
+    },
+
+    // Register guide
+    registerGuide: async (data: GuideRegistration): Promise<AuthResponse> => {
+        const response = await api.post('/auth/register/guide', data);
+        return response.data;
+    },
+
+    // Login
+    login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+        const response = await api.post('/auth/login', credentials);
+        if (response.data.accessToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+        }
+        return response.data;
+    },
+
+    // Logout
+    logout: async (): Promise<void> => {
+        await api.post('/auth/logout');
+        localStorage.removeItem('accessToken');
+    },
+
+    // Get current user
+    getMe: async (): Promise<{ user: User }> => {
+        const response = await api.get('/auth/me');
+        return response.data;
+    },
+
+    // Change password
+    changePassword: async (data: { currentPassword: string, newPassword: string }): Promise<void> => {
+        await api.put('/auth/change-password', data);
+    },
+
+    // Update profile
+    updateProfile: async (data: { fullName?: string, avatarUrl?: string }): Promise<{ user: User }> => {
+        const response = await api.put('/auth/profile', data);
+        return response.data;
+    },
+
+    // Upload avatar
+    uploadAvatar: async (file: File): Promise<{ avatarUrl: string }> => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const response = await api.post('/auth/profile/avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
+
+    // Delete account
+    deleteAccount: async (): Promise<void> => {
+        await api.delete('/auth/delete-account');
+        localStorage.removeItem('accessToken');
+    },
+
+    // 2FA Methods
+    generate2FA: async (): Promise<{ secret: string, qrCode: string }> => {
+        const response = await api.post('/auth/2fa/generate');
+        return response.data;
+    },
+
+    enable2FA: async (data: { secret: string, token: string }): Promise<void> => {
+        await api.post('/auth/2fa/enable', data);
+    },
+
+    disable2FA: async (): Promise<void> => {
+        await api.post('/auth/2fa/disable');
+    },
+
+    verify2FA: async (data: { token: string, mfaToken: string }): Promise<AuthResponse> => {
+        const response = await api.post('/auth/2fa/verify', data);
+        if (response.data.accessToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+        }
+        return response.data;
+    },
+};
+
+// Payout API
+export const payoutApi = {
+    // Guide: Get earnings stats
+    getEarnings: async (): Promise<{ totalEarned: number, totalPaid: number, totalPending: number, balance: number }> => {
+        const response = await api.get('/payouts/guide/earnings');
+        return response.data;
+    },
+
+    // Guide: Get payout history
+    getPayoutHistory: async (): Promise<any[]> => {
+        const response = await api.get('/payouts/guide/history');
+        return response.data;
+    },
+
+    // Guide: Request payout
+    requestPayout: async (): Promise<{ id: string, amount: number }> => {
+        const response = await api.post('/payouts/guide/request');
+        return response.data;
+    },
+
+    // Admin: Get all payout requests
+    getAllRequests: async (): Promise<any[]> => {
+        const response = await api.get('/payouts/admin/requests');
+        return response.data;
+    },
+
+    // Admin: Update payout status
+    updateStatus: async (payoutId: string, data: { status: string, adminNote?: string }): Promise<void> => {
+        await api.patch(`/payouts/admin/requests/${payoutId}`, data);
+    },
+};
+
+// Admin API
+export const adminApi = {
+    // Stats
+    getStats: async (): Promise<any> => {
+        const response = await api.get('/admin/stats');
+        return response.data;
+    },
+
+    // User management
+    getArtisans: async (): Promise<any[]> => {
+        const response = await api.get('/admin/artisans');
+        return response.data;
+    },
+
+    getArtisanDetail: async (id: string): Promise<any> => {
+        const response = await api.get(`/admin/artisans/${id}`);
+        return response.data;
+    },
+
+    getGuides: async (): Promise<any[]> => {
+        const response = await api.get('/admin/guides');
+        return response.data;
+    },
+
+    getGuideDetail: async (id: string): Promise<any> => {
+        const response = await api.get(`/admin/guides/${id}`);
+        return response.data;
+    },
+
+    updateUserStatus: async (userId: string, status: string): Promise<void> => {
+        await api.patch(`/admin/users/${userId}/status`, { status });
+    },
+
+    deleteUser: async (userId: string): Promise<void> => {
+        await api.delete(`/admin/users/${userId}`);
+    },
+
+    // Review Submissions
+    getAllSubmissions: async (): Promise<any[]> => {
+        const response = await api.get('/admin/submissions');
+        return response.data;
+    },
+
+    updateSubmissionStatus: async (submissionId: string, data: { status: string, rejectionReason?: string }): Promise<void> => {
+        await api.patch(`/admin/submissions/${submissionId}/status`, data);
+    },
+
+    // Subscriptions
+    getSubscriptions: async (): Promise<any[]> => {
+        const response = await api.get('/admin/subscriptions');
+        return response.data;
+    },
+
+    getSubscriptionStats: async (): Promise<any> => {
+        const response = await api.get('/admin/subscriptions/stats');
+        return response.data;
+    },
+
+    // Packs
+    getPacks: async (): Promise<any[]> => {
+        const response = await api.get('/admin/packs');
+        return response.data;
+    },
+
+    createPack: async (data: any): Promise<void> => {
+        await api.post('/admin/packs', data);
+    },
+
+    updatePack: async (id: string, data: any): Promise<void> => {
+        await api.put(`/admin/packs/${id}`, data);
+    },
+
+    deletePack: async (id: string): Promise<void> => {
+        await api.delete(`/admin/packs/${id}`);
+    },
+};
+
+export default api;

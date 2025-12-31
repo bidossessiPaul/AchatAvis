@@ -1,0 +1,99 @@
+.earnings-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    animation: fadeIn 0.4s ease-out;
+}
+
+.earnings-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-6);
+}
+
+.stat-card.balance {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+}
+
+.stat-card.balance .stat-label {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.stat-card.balance .stat-value {
+    color: white;
+}
+
+.payout-info-banner {
+    background-color: #fefce8;
+    border: 1px solid #fef08a;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: #854d0e;
+    font-size: var(--text-sm);
+}
+
+.payout-info-banner svg {
+    flex-shrink: 0;
+    color: #eab308;
+}
+
+.withdraw-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-8);
+    background: #f8fafc;
+    border-radius: var(--radius-xl);
+    border: 1px dashed var(--gray-200);
+}
+
+.withdraw-btn {
+    background: var(--primary-brand);
+    color: white;
+    border: none;
+    padding: var(--space-4) var(--space-12);
+    border-radius: var(--radius-full);
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 15px -3px rgba(255, 59, 106, 0.3);
+}
+
+.withdraw-btn:hover:not(:disabled) {
+    background: var(--primary-brand-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(255, 59, 106, 0.4);
+}
+
+.withdraw-btn:disabled {
+    background: var(--gray-300);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.withdraw-amount-tip {
+    font-size: var(--text-xs);
+    color: var(--gray-500);
+    font-weight: var(--font-medium);
+}
+
+.status-badge.paid {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.status-badge.in_revision {
+    background-color: #eff6ff;
+    color: #2563eb;
+}
+
+.status-badge.refused {
+    background-color: #fef2f2;
+    color: #dc2626;
+}

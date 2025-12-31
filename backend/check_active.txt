@@ -1,0 +1,10 @@
+✓ Connected to MySQL database
+[ { count: 6 } ]
+[
+  { missions_quota: 0, missions_used: 0 },
+  { missions_quota: 0, missions_used: 0 },
+  { missions_quota: 0, missions_used: 0 },
+  { missions_quota: 0, missions_used: 0 },
+  { missions_quota: 0, missions_used: 0 },
+  { missions_quota: 0, missions_used: 0 }
+]

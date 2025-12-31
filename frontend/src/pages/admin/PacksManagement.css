@@ -1,0 +1,172 @@
+@import './AdminCommon.css';
+
+.packs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.pack-card {
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pack-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.pack-card.popular {
+    border: 2px solid var(--primary-brand);
+}
+
+.popular-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--primary-brand);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 10;
+}
+
+.pack-card-header {
+    padding: 32px 24px 24px;
+    text-align: center;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(248, 250, 252, 1));
+}
+
+.pack-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+}
+
+.pack-id {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+}
+
+.pack-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--gray-900);
+    margin-bottom: 12px;
+}
+
+.pack-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+}
+
+.pack-price .amount {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--gray-900);
+}
+
+.pack-price .period {
+    font-size: 14px;
+    color: var(--gray-500);
+}
+
+.pack-details {
+    padding: 24px;
+    flex-grow: 1;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px;
+    background: var(--gray-50);
+    border-radius: 12px;
+    color: var(--gray-900);
+    font-weight: 700;
+}
+
+.features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--gray-600);
+    font-size: 14px;
+}
+
+.feature-item svg {
+    color: #10b981;
+    margin-top: 2px;
+}
+
+.pack-actions {
+    padding: 24px;
+    border-top: 1px solid var(--gray-100);
+    display: flex;
+    gap: 12px;
+}
+
+.pack-btn-edit {
+    flex-grow: 1;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--gray-900);
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.pack-btn-edit:hover {
+    background: black;
+}
+
+.pack-btn-delete {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 2px solid var(--gray-200);
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.pack-btn-delete:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+/* Modal Styles moved to PackModal.css */

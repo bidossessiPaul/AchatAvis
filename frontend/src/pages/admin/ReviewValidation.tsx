@@ -1,0 +1,298 @@
+import React, { useState, useEffect } from 'react';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { adminApi } from '../../services/api';
+import {
+    Search,
+    Filter,
+    CheckCircle2,
+    XCircle,
+    ExternalLink,
+    Clock,
+    User,
+    RotateCcw
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import './ReviewValidation.css';
+import './AdminLists.css';
+
+interface Submission {
+    id: string;
+    guide_id: string;
+    artisan_id: string;
+    order_id: string;
+    proposal_id: string;
+    review_url: string;
+    google_email: string;
+    status: 'pending' | 'validated' | 'rejected';
+    rejection_reason?: string;
+    earnings: number;
+    submitted_at: string;
+    validated_at?: string;
+    guide_name: string;
+    guide_avatar?: string;
+    artisan_name: string;
+    proposal_content: string;
+}
+
+export const ReviewValidation: React.FC = () => {
+    const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [showOnlyOld, setShowOnlyOld] = useState(false);
+
+    // Modal state
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
+    useEffect(() => {
+        loadSubmissions();
+    }, []);
+
+    const loadSubmissions = async () => {
+        setIsLoading(true);
+        try {
+            const data = await adminApi.getAllSubmissions();
+            setSubmissions(data);
+        } catch (error) {
+            toast.error('Erreur lors du chargement des avis');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUpdateStatus = async (submissionId: string, status: 'validated' | 'rejected' | 'pending', reason?: string) => {
+        setIsActionLoading(true);
+        try {
+            await adminApi.updateSubmissionStatus(submissionId, { status, rejectionReason: reason });
+            toast.success(status === 'validated' ? 'Avis validé !' : 'Avis rejeté.');
+            setShowRejectModal(false);
+            setRejectionReason('');
+            setSelectedSubmissionId(null);
+            loadSubmissions();
+        } catch (error) {
+            toast.error('Erreur lors de la mise à jour');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const isOldReview = (dateString: string) => {
+        const submittedDate = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - submittedDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays > 7;
+    };
+
+    const filteredSubmissions = submissions.filter(s => {
+        const matchesSearch =
+            s.guide_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.artisan_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.google_email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+        const matchesAge = !showOnlyOld || isOldReview(s.submitted_at);
+
+        return matchesSearch && matchesStatus && matchesAge;
+    });
+
+    const getStatusBadgeClass = (status: string) => {
+        switch (status) {
+            case 'validated': return 'active';
+            case 'rejected': return 'suspended'; // Red styling
+            case 'pending': return 'warning'; // Or customized pending
+            default: return 'inactive';
+        }
+    };
+
+    return (
+        <DashboardLayout title="Validation Avis">
+            <div className="admin-dashboard revamped">
+                <div className="admin-main-card">
+                    <div className="admin-card-header">
+                        <h2 className="card-title">Validation des Avis</h2>
+                        <div className="admin-controls">
+                            <div className="search-box">
+                                <Search size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Guide, artisan, email..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="filter-select-wrapper">
+                                <Filter size={16} />
+                                <select
+                                    className="admin-select"
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                >
+                                    <option value="all">Tous</option>
+                                    <option value="pending">En attente</option>
+                                    <option value="validated">Validés</option>
+                                    <option value="rejected">Rejetés</option>
+                                </select>
+                            </div>
+
+                            <button
+                                className={`age-filter-btn ${showOnlyOld ? 'active' : ''}`}
+                                onClick={() => setShowOnlyOld(!showOnlyOld)}
+                                title="Afficher uniquement les avis de plus de 7 jours"
+                            >
+                                <Clock size={16} />
+                                <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="admin-table-container">
+                        {isLoading ? (
+                            <div className="admin-loading">
+                                <LoadingSpinner size="lg" text="Chargement des avis..." />
+                            </div>
+                        ) : (
+                            <table className="admin-modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Guide</th>
+                                        <th>Artisan</th>
+                                        <th>Date & Email</th>
+                                        <th>Preuve</th>
+                                        <th>Statut</th>
+                                        <th className="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
+                                        <tr key={submission.id}>
+                                            <td className="font-medium">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                                    {submission.guide_avatar ? (
+                                                        <img src={submission.guide_avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
+                                                            <User size={16} />
+                                                        </div>
+                                                    )}
+                                                    {submission.guide_name}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="text-gray-900 font-medium">{submission.artisan_name}</div>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '13px', color: 'var(--gray-700)' }}>
+                                                        {new Date(submission.submitted_at).toLocaleDateString()}
+                                                    </span>
+                                                    <span style={{ fontSize: '11px', color: 'var(--gray-500)' }}>
+                                                        {submission.google_email}
+                                                    </span>
+                                                    {isOldReview(submission.submitted_at) && submission.status === 'pending' && (
+                                                        <span style={{ fontSize: '10px', color: '#e11d48', fontWeight: 600 }}>En retard</span>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <a href={submission.review_url} target="_blank" rel="noopener noreferrer" className="review-link-simple">
+                                                    Voir <ExternalLink size={12} />
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <span className={`admin-badge ${getStatusBadgeClass(submission.status)}`}>
+                                                    {submission.status === 'pending' ? 'En attente' :
+                                                        submission.status === 'validated' ? 'Validé' : 'Rejeté'}
+                                                </span>
+                                            </td>
+                                            <td className="actions-cell">
+                                                <div className="action-buttons">
+                                                    {submission.status === 'pending' && (
+                                                        <>
+                                                            <button
+                                                                className="action-btn active-btn"
+                                                                title="Valider"
+                                                                onClick={() => handleUpdateStatus(submission.id, 'validated')}
+                                                                disabled={isActionLoading}
+                                                            >
+                                                                <CheckCircle2 size={18} />
+                                                            </button>
+                                                            <button
+                                                                className="action-btn block-btn"
+                                                                title="Rejeter"
+                                                                onClick={() => {
+                                                                    setSelectedSubmissionId(submission.id);
+                                                                    setShowRejectModal(true);
+                                                                }}
+                                                                disabled={isActionLoading}
+                                                            >
+                                                                <XCircle size={18} />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {submission.status !== 'pending' && (
+                                                        <button
+                                                            className="action-btn"
+                                                            title="Remettre en attente"
+                                                            onClick={() => handleUpdateStatus(submission.id, 'pending')}
+                                                            disabled={isActionLoading}
+                                                        >
+                                                            <RotateCcw size={18} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={6} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
+                                                Aucun avis trouvé.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
+                {/* Rejection Modal */}
+                {showRejectModal && (
+                    <div className="rejection-modal-overlay">
+                        <div className="rejection-modal">
+                            <div className="modal-header">
+                                <h3>Motif du rejet</h3>
+                                <button className="close-modal-btn" onClick={() => setShowRejectModal(false)}>
+                                    <XCircle size={20} />
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                <label>Expliquez au guide pourquoi son avis a été rejeté :</label>
+                                <textarea
+                                    placeholder="Ex: L'avis n'apparaît pas publiquement, mauvais compte Google utilisé..."
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                ></textarea>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="cancel-btn" onClick={() => setShowRejectModal(false)}>Annuler</button>
+                                <button
+                                    className="confirm-btn"
+                                    disabled={!rejectionReason.trim() || isActionLoading}
+                                    onClick={() => handleUpdateStatus(selectedSubmissionId!, 'rejected', rejectionReason)}
+                                >
+                                    Confirmer le rejet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </DashboardLayout>
+    );
+};

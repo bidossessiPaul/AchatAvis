@@ -1,0 +1,373 @@
+import React, { useState } from 'react';
+import { useAuthStore } from '../context/authStore';
+import { authApi } from '../services/api';
+import { Button } from '../components/common/Button';
+import { Input } from '../components/common/Input';
+import { Card } from '../components/common/Card';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { Camera, Mail, Shield, Save, User as UserIcon } from 'lucide-react';
+import toast from 'react-hot-toast';
+import './Profile.css';
+
+export const Profile: React.FC = () => {
+    const { user, setUser } = useAuthStore();
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+    const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+    const [is2FALoading, setIs2FALoading] = useState(false);
+    const [show2FASetup, setShow2FASetup] = useState(false);
+    const [twoFactorToken, setTwoFactorToken] = useState('');
+    const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+    const [formData, setFormData] = useState({
+        fullName: user?.full_name || '',
+    });
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+    });
+
+    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+    };
+
+    const handleProfileSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            const response = await authApi.updateProfile(formData);
+            if (response.user) {
+                setUser({ ...user, ...response.user } as any);
+                toast.success('Profil mis à jour avec succès');
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Erreur lors de la mise à jour du profil');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Simple validation
+        if (file.size > 5 * 1024 * 1024) {
+            return toast.error('Le fichier est trop volumineux (max 5Mo)');
+        }
+
+        setIsAvatarLoading(true);
+        const loadingToast = toast.loading('Téléchargement de l\'avatar...');
+
+        try {
+            const { avatarUrl } = await authApi.uploadAvatar(file);
+            if (user) {
+                setUser({ ...user, avatar_url: avatarUrl });
+            }
+            toast.success('Avatar mis à jour !', { id: loadingToast });
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image', { id: loadingToast });
+        } finally {
+            setIsAvatarLoading(false);
+        }
+    };
+
+    const handlePasswordSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            return toast.error('Les mots de passe ne correspondent pas');
+        }
+
+        setIsPasswordLoading(true);
+        try {
+            await authApi.changePassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword,
+            });
+            toast.success('Mot de passe modifié avec succès');
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+            });
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Erreur lors du changement de mot de passe');
+        } finally {
+            setIsPasswordLoading(false);
+        }
+    };
+
+    const handleGenerate2FA = async () => {
+        setIs2FALoading(true);
+        try {
+            const { secret, qrCode } = await authApi.generate2FA( /* currentPassword optional? */);
+            setTwoFactorSecret(secret);
+            setQrCodeUrl(qrCode);
+            setShow2FASetup(true);
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Erreur lors de la génération du 2FA');
+        } finally {
+            setIs2FALoading(false);
+        }
+    };
+
+    const handleEnable2FA = async () => {
+        if (!twoFactorSecret || !twoFactorToken) return;
+        setIs2FALoading(true);
+        try {
+            await authApi.enable2FA({ secret: twoFactorSecret, token: twoFactorToken });
+            if (user) setUser({ ...user, two_factor_enabled: true });
+            setShow2FASetup(false);
+            setTwoFactorSecret(null);
+            setQrCodeUrl(null);
+            setTwoFactorToken('');
+            toast.success('Double authentification activée !');
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Code invalide');
+        } finally {
+            setIs2FALoading(false);
+        }
+    };
+
+    const handleDisable2FA = async () => {
+        if (!window.confirm('Voulez-vous vraiment désactiver la double authentification ?')) return;
+        setIs2FALoading(true);
+        try {
+            await authApi.disable2FA();
+            if (user) setUser({ ...user, two_factor_enabled: false });
+            toast.success('Double authentification désactivée');
+        } catch (error: any) {
+            toast.error(error.response?.data?.error || 'Erreur lors de la désactivation');
+        } finally {
+            setIs2FALoading(false);
+        }
+    };
+
+    return (
+        <DashboardLayout title="Mon Profil">
+            <div className="profile-container">
+                <div className="profile-grid">
+                    {/* Public Profile Card */}
+                    <div className="profile-main">
+                        <Card className="profile-card hero-card">
+                            <div className="profile-header">
+                                <div className="avatar-wrapper">
+                                    {user?.avatar_url ? (
+                                        <img src={user.avatar_url} alt={user.full_name} className="profile-avatar" />
+                                    ) : (
+                                        <div className="profile-avatar-placeholder">
+                                            <UserIcon size={48} />
+                                        </div>
+                                    )}
+                                    {isAvatarLoading && (
+                                        <div className="avatar-loading-overlay">
+                                            <div className="spinner"></div>
+                                        </div>
+                                    )}
+                                    <button
+                                        className="avatar-edit-btn"
+                                        onClick={handleAvatarClick}
+                                        disabled={isAvatarLoading}
+                                        title="Changer de photo"
+                                    >
+                                        <Camera size={18} />
+                                    </button>
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileChange}
+                                        accept="image/jpeg,image/png,image/webp"
+                                        style={{ display: 'none' }}
+                                    />
+                                </div>
+                                <div className="profile-info-header">
+                                    <h2 className="profile-name">{user?.full_name}</h2>
+                                    <div className="profile-role-badge">
+                                        {user?.role.toUpperCase()}
+                                    </div>
+                                    <p className="profile-email">
+                                        <Mail size={14} /> {user?.email}
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="profile-card">
+                            <h3 className="card-title">Informations Personnelles</h3>
+                            <form onSubmit={handleProfileSubmit} className="profile-form">
+                                <Input
+                                    label="Nom Complet"
+                                    name="fullName"
+                                    value={formData.fullName}
+                                    onChange={handleProfileChange}
+                                    placeholder="Votre nom complet"
+                                    required
+                                />
+                                <div className="form-actions">
+                                    <Button
+                                        type="submit"
+                                        variant="primary"
+                                        isLoading={isLoading}
+                                    >
+                                        <Save size={18} style={{ marginRight: '8px' }} />
+                                        Enregistrer les modifications
+                                    </Button>
+                                </div>
+                            </form>
+                        </Card>
+
+                        {/* 2FA Section */}
+                        <Card className="profile-card">
+                            <h3 className="card-title">
+                                <Shield size={20} style={{ marginRight: '8px', verticalAlign: 'middle', color: user?.two_factor_enabled ? '#10b981' : '#6b7280' }} />
+                                Double Authentification (2FA)
+                            </h3>
+                            <div className="two-factor-content">
+                                {user?.two_factor_enabled ? (
+                                    <div className="two-factor-active">
+                                        <div className="status-badge-container">
+                                            <span className="status-badge active" style={{ backgroundColor: '#ecfdf5', color: '#10b981', padding: '0.5rem 1rem', borderRadius: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                                                <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
+                                                Activée
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: '1rem 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                                            Votre compte est protégé par une double authentification. Un code vous sera demandé lors de chaque connexion.
+                                        </p>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={handleDisable2FA}
+                                            isLoading={is2FALoading}
+                                            fullWidth
+                                        >
+                                            Désactiver le 2FA
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="two-factor-inactive">
+                                        {!show2FASetup ? (
+                                            <>
+                                                <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                    Renforcez la sécurité de votre compte en activant la double authentification par application (Google Authenticator, Authy...).
+                                                </p>
+                                                <Button
+                                                    variant="primary"
+                                                    onClick={handleGenerate2FA}
+                                                    isLoading={is2FALoading}
+                                                    fullWidth
+                                                >
+                                                    Activer le 2FA
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <div className="two-factor-setup" style={{ textAlign: 'center' }}>
+                                                <p style={{ marginBottom: '1rem', fontWeight: 600 }}>Scannez ce QR Code avec votre application 2FA :</p>
+                                                {qrCodeUrl && (
+                                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', display: 'inline-block', border: '1px solid #f3f4f6', marginBottom: '1.5rem' }}>
+                                                        <img src={qrCodeUrl} alt="2FA QR Code" style={{ width: '200px', height: '200px' }} />
+                                                    </div>
+                                                )}
+                                                <div style={{ marginBottom: '1.5rem' }}>
+                                                    <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Ou entrez ce code manuellement :</p>
+                                                    <code style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: 700, letterSpacing: '1px' }}>
+                                                        {twoFactorSecret}
+                                                    </code>
+                                                </div>
+                                                <Input
+                                                    label="Entrez le code de vérification"
+                                                    value={twoFactorToken}
+                                                    onChange={(e) => setTwoFactorToken(e.target.value)}
+                                                    placeholder="000000"
+                                                    style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '4px' }}
+                                                />
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                    <Button variant="secondary" onClick={() => setShow2FASetup(false)}>Annuler</Button>
+                                                    <Button variant="primary" onClick={handleEnable2FA} isLoading={is2FALoading}>Vérifier</Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Sidebar / Security Info */}
+                    <div className="profile-sidebar">
+                        <Card className="profile-card">
+                            <h3 className="card-title">
+                                <Shield size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                                Sécurité
+                            </h3>
+                            <form onSubmit={handlePasswordSubmit} className="password-form">
+                                <Input
+                                    type="password"
+                                    label="Mot de passe actuel"
+                                    name="currentPassword"
+                                    value={passwordData.currentPassword}
+                                    onChange={handlePasswordChange}
+                                    required
+                                />
+                                <Input
+                                    type="password"
+                                    label="Nouveau mot de passe"
+                                    name="newPassword"
+                                    value={passwordData.newPassword}
+                                    onChange={handlePasswordChange}
+                                    required
+                                />
+                                <Input
+                                    type="password"
+                                    label="Confirmer le nouveau mot de passe"
+                                    name="confirmPassword"
+                                    value={passwordData.confirmPassword}
+                                    onChange={handlePasswordChange}
+                                    required
+                                />
+                                <Button
+                                    type="submit"
+                                    variant="secondary"
+                                    fullWidth
+                                    isLoading={isPasswordLoading}
+                                >
+                                    Changer le mot de passe
+                                </Button>
+                            </form>
+                        </Card>
+
+                        <Card className="profile-card info-box">
+                            <h4>Statut du compte</h4>
+                            <div className="status-item">
+                                <span className="label">Rôle:</span>
+                                <span className="value">{user?.role}</span>
+                            </div>
+                            <div className="status-item">
+                                <span className="label">Statut:</span>
+                                <span className="value status-badge active">{user?.status}</span>
+                            </div>
+                            <div className="status-item">
+                                <span className="label">Inscrit le:</span>
+                                <span className="value">
+                                    {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                                </span>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+};

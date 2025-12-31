@@ -1,0 +1,124 @@
+.premium-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+}
+
+.premium-loader {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sizes */
+.premium-loader-container.sm .premium-loader {
+    width: 24px;
+    height: 24px;
+}
+
+.premium-loader-container.md .premium-loader {
+    width: 48px;
+    height: 48px;
+}
+
+.premium-loader-container.lg .premium-loader {
+    width: 80px;
+    height: 80px;
+}
+
+.premium-loader-container.xl .premium-loader {
+    width: 120px;
+    height: 120px;
+}
+
+.premium-loader-container.sm {
+    gap: var(--space-2);
+}
+
+.premium-loader-container.sm .loader-text {
+    font-size: var(--text-xs);
+}
+
+.loader-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    animation: loader-spin 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.loader-ring:nth-child(1) {
+    border-top-color: var(--primary-brand);
+    animation-delay: -0.45s;
+}
+
+.loader-ring:nth-child(2) {
+    border-top-color: #f43f5e;
+    /* slightly different red */
+    animation-delay: -0.3s;
+    opacity: 0.7;
+}
+
+.loader-ring:nth-child(3) {
+    border-top-color: #fda4af;
+    /* light pink */
+    animation-delay: -0.15s;
+    opacity: 0.4;
+}
+
+.loader-dot {
+    position: absolute;
+    width: 20%;
+    height: 20%;
+    background: var(--primary-brand);
+    border-radius: 50%;
+    box-shadow: 0 0 15px var(--primary-brand);
+    animation: loader-pulse 1.5s ease-in-out infinite;
+}
+
+.loader-text {
+    font-weight: 600;
+    color: var(--gray-600);
+    letter-spacing: -0.01em;
+    animation: pulse-text 2s ease-in-out infinite;
+}
+
+@keyframes loader-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes loader-pulse {
+
+    0%,
+    100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-text {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}

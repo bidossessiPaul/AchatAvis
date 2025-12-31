@@ -1,0 +1,374 @@
+.submissions-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Info Banner */
+.submissions-info-banner {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: #1e40af;
+    font-size: var(--text-sm);
+    line-height: 1.5;
+}
+
+.submissions-info-banner svg {
+    flex-shrink: 0;
+    color: #3b82f6;
+}
+
+.submissions-info-banner p {
+    margin: 0;
+}
+
+/* Stats Cards */
+.submissions-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+}
+
+.stat-card {
+    background: white;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    transition: transform var(--transition-base);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-icon-wrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-card.earnings .stat-icon-wrapper {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.stat-card.count .stat-icon-wrapper {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info);
+}
+
+.stat-card.pending-stats .stat-icon-wrapper {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning);
+}
+
+.stat-label {
+    font-size: var(--text-sm);
+    color: var(--gray-500);
+    font-weight: var(--font-medium);
+    margin: 0;
+}
+
+.stat-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    margin: var(--space-1) 0 0 0;
+}
+
+/* Main Table Card */
+.submissions-main-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--gray-100);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: var(--space-8);
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--space-6);
+}
+
+.submissions-filters {
+    display: flex;
+    background-color: var(--gray-100);
+    padding: var(--space-1);
+    border-radius: var(--radius-lg);
+    gap: var(--space-1);
+}
+
+.filter-btn {
+    border: none;
+    background: transparent;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    color: var(--gray-900);
+}
+
+.filter-btn.active {
+    background-color: white;
+    color: var(--primary-brand);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: var(--text-sm);
+    color: var(--gray-500);
+    margin: var(--space-2) 0 0 0;
+}
+
+/* Modern Table Styles */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.modern-table th {
+    background-color: var(--gray-50);
+    padding: var(--space-4) var(--space-8);
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modern-table td {
+    padding: var(--space-6) var(--space-8);
+    border-bottom: 1px solid var(--gray-100);
+    font-size: var(--text-sm);
+}
+
+.modern-table tr:hover td {
+    background-color: var(--gray-50);
+}
+
+.company-name {
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    display: block;
+}
+
+.info-with-icon {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--gray-500);
+}
+
+/* Status Badges */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+}
+
+.status-badge.validated {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-dark);
+}
+
+.status-badge.pending {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-dark);
+}
+
+.status-badge.rejected {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--error-dark);
+}
+
+.earnings-amount {
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+}
+
+.earnings-amount.success {
+    color: var(--success-dark);
+}
+
+.action-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    color: var(--primary-brand);
+    background-color: rgba(255, 59, 106, 0.05);
+    transition: all var(--transition-base);
+}
+
+.action-link:hover {
+    background-color: var(--primary-brand);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Loading, Error, Empty States */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-16);
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--primary-brand);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.error-state,
+.empty-state {
+    padding: var(--space-16) var(--space-8);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.error-state {
+    color: var(--error);
+}
+
+.empty-icon {
+    color: var(--gray-300);
+}
+
+.empty-text {
+    font-weight: var(--font-semibold);
+    color: var(--gray-500);
+}
+
+.retry-btn,
+.browse-btn {
+    margin-top: var(--space-4);
+    background-color: var(--primary-brand);
+    color: white;
+    border: none;
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.retry-btn:hover,
+.browse-btn:hover {
+    background-color: var(--primary-brand-hover);
+    transform: translateY(-1px);
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Table (Mobile Cards) */
+@media (max-width: 768px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: var(--space-6);
+    }
+
+    .submissions-filters {
+        width: 100%;
+    }
+
+    .filter-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    .modern-table thead {
+        display: none;
+    }
+
+    .modern-table,
+    .modern-table tbody,
+    .modern-table tr,
+    .modern-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .modern-table tr {
+        padding: var(--space-6);
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .modern-table td {
+        padding: var(--space-2) 0;
+        border: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+    }
+
+    .modern-table td::before {
+        content: attr(data-label);
+        font-weight: var(--font-bold);
+        text-transform: uppercase;
+        font-size: var(--text-xs);
+        color: var(--gray-400);
+    }
+}

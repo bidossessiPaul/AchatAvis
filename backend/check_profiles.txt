@@ -1,0 +1,23 @@
+✓ Connected to MySQL database
+[
+  {
+    user_id: '77811037-3371-492e-b921-3ff3c9d9d660',
+    subscription_status: 'inactive',
+    subscription_tier: null
+  },
+  {
+    user_id: 'cfb7f521-d2b9-4597-ae83-97cef6fc4d65',
+    subscription_status: 'inactive',
+    subscription_tier: null
+  },
+  {
+    user_id: 'a874aee9-1d01-424f-91b8-74a2c73476ba',
+    subscription_status: 'active',
+    subscription_tier: 'expert'
+  },
+  {
+    user_id: '4f5485de-2992-4c8e-9cf5-e24fffd02c80',
+    subscription_status: 'active',
+    subscription_tier: 'expert'
+  }
+]

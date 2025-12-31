@@ -1,0 +1,21 @@
+✓ Connected to MySQL database
+[
+  {
+    "full_name": "Alex Elisé MONTCHO",
+    "email": "login@lannkin.com",
+    "company_name": "Turebeau ménage",
+    "pack": "Abonnement expert",
+    "status": "completed",
+    "amount": "35.00",
+    "created_at": "2025-12-31T10:19:55.000Z"
+  },
+  {
+    "full_name": null,
+    "email": "servmaxsell@gmail.com",
+    "company_name": "Crédo Finanzas",
+    "pack": "Abonnement expert",
+    "status": "completed",
+    "amount": "35.00",
+    "created_at": "2025-12-31T10:16:57.000Z"
+  }
+]

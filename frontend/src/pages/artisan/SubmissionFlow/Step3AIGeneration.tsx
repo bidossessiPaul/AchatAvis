@@ -1,0 +1,155 @@
+import React, { useState } from 'react';
+import { ReviewOrder, ReviewProposal } from '../../../types';
+import { artisanService } from '../../../services/artisanService';
+import { Trash2, Edit2, Check, RefreshCw, Sparkles } from 'lucide-react';
+
+interface Step3Props {
+    order: ReviewOrder;
+    proposals: ReviewProposal[];
+    onNext: () => void;
+    onBack: () => void;
+    setProposals: React.Dispatch<React.SetStateAction<ReviewProposal[]>>;
+    onError?: (error: string | null) => void;
+}
+
+export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNext, onBack, setProposals, onError }) => {
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState("");
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        if (onError) onError(null);
+        try {
+            // Save to backend - triggered with no proposals to use OpenAI on backend
+            const savedProposals = await artisanService.generateProposals(order.id);
+            setProposals(savedProposals);
+        } catch (error: any) {
+            console.error("Failed to generate", error);
+            if (onError) {
+                onError("Erreur lors de la génération des avis. Veuillez réessayer.");
+            }
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            await artisanService.deleteProposal(id);
+            setProposals(prev => prev.filter(p => p.id !== id));
+        } catch (error) {
+            console.error("Delete failed", error);
+        }
+    };
+
+    const handleEdit = (p: ReviewProposal) => {
+        setEditingId(p.id);
+        setEditValue(p.content);
+    };
+
+    const handleSaveEdit = async (id: string) => {
+        try {
+            await artisanService.updateProposal(id, { content: editValue });
+            setProposals(prev => prev.map(p => p.id === id ? { ...p, content: editValue } : p));
+            setEditingId(null);
+        } catch (error) {
+            console.error("Edit failed", error);
+        }
+    };
+
+    return (
+        <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 className="submission-card-title" style={{ margin: 0 }}>Génération des avis</h2>
+                {proposals.length === 0 && !isGenerating && (
+                    <button onClick={handleGenerate} className="btn-next" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Sparkles size={18} />
+                        Lancer la génération
+                    </button>
+                )}
+            </div>
+
+            {isGenerating ? (
+                <div style={{ textAlign: 'center', padding: '3rem' }}>
+                    <RefreshCw className="animate-spin" size={48} style={{ color: '#ff3b6a', marginBottom: '1rem' }} />
+                    <p style={{ fontWeight: 600, color: '#000' }}>L'IA analyse vos informations et rédige vos avis...</p>
+                </div>
+            ) : proposals.length > 0 ? (
+                <div className="proposals-list">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#4b5563', fontWeight: 500 }}>
+                            {proposals.length} avis générés sur {order.quantity} demandés
+                        </span>
+                        <button onClick={handleGenerate} style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                            <RefreshCw size={14} />
+                            Régénérer tout
+                        </button>
+                    </div>
+
+                    <div className="proposals-table-wrapper" style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
+                            <thead style={{ backgroundColor: '#f9fafb' }}>
+                                <tr>
+                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Auteur</th>
+                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Contenu</th>
+                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {proposals.map((p) => (
+                                    <tr key={p.id}>
+                                        <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top', width: '20%' }}>
+                                            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#000' }}>{p.author_name}</span>
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', fontSize: '0.9375rem', color: '#1a1a1a', lineHeight: 1.6 }}>
+                                            {editingId === p.id ? (
+                                                <textarea
+                                                    className="form-textarea"
+                                                    value={editValue}
+                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                    style={{ minHeight: '100px', marginBottom: 0, color: '#000' }}
+                                                />
+                                            ) : (
+                                                <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
+                                            )}
+                                        </td>
+                                        <td style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', textAlign: 'right', verticalAlign: 'top', width: '15%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                {editingId === p.id ? (
+                                                    <button onClick={() => handleSaveEdit(p.id)} style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer' }}><Check size={18} /></button>
+                                                ) : (
+                                                    <button onClick={() => handleEdit(p)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                                                )}
+                                                <button onClick={() => handleDelete(p.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ) : (
+                <div style={{ textAlign: 'center', padding: '3rem', border: '2px dashed #e5e7eb', borderRadius: '1rem' }}>
+                    <p style={{ color: '#6b7280' }}>Aucun avis généré pour le moment.</p>
+                </div>
+            )}
+
+            <div className="submission-actions">
+                <button type="button" onClick={onBack} className="btn-back">
+                    Retour
+                </button>
+                <button
+                    type="button"
+                    onClick={onNext}
+                    className="btn-next"
+                    disabled={proposals.length === 0}
+                    style={proposals.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
+                    Suivant
+                </button>
+            </div>
+        </div>
+    );
+};

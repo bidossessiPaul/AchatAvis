@@ -1,0 +1,59 @@
+
+> achatavis-backend@1.0.0 dev
+> tsx watch src/app.ts
+
+Serving static files from: /Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/public
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5001
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at app.listen (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/application.js:635:24)
+    at payoutRoutes (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:107:5)
+    at Object.<anonymous> (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:113:16)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object.transformer (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+
+Node.js v24.11.1
+10:42:25 AM [tsx] change in ./src/services/adminService.ts Rerunning...
+cServing static files from: /Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/public
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5001
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at app.listen (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/application.js:635:24)
+    at payoutRoutes (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:107:5)
+    at Object.<anonymous> (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:113:16)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object.transformer (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+
+Node.js v24.11.1

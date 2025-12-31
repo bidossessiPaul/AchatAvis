@@ -1,0 +1,336 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { guideService } from '../../services/guideService';
+import toast from 'react-hot-toast';
+import { ReviewOrder, ReviewProposal, ReviewSubmission } from '../../types';
+import {
+    MapPin,
+    ExternalLink,
+    Copy,
+    CheckCircle2,
+    AlertCircle,
+    ChevronLeft,
+    Clock,
+    Star,
+    Send
+} from 'lucide-react';
+import './MissionDetail.css';
+
+export const MissionDetail: React.FC = () => {
+    const { orderId } = useParams<{ orderId: string }>();
+    const navigate = useNavigate();
+    const [mission, setMission] = useState<ReviewOrder & {
+        proposals: ReviewProposal[],
+        submissions: ReviewSubmission[],
+        artisan_company: string,
+        city?: string
+    } | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [submittingId, setSubmittingId] = useState<string | null>(null);
+    const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+    const [googleEmails, setGoogleEmails] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (orderId) {
+            loadMissionDetails(orderId);
+        }
+    }, [orderId]);
+
+    const loadMissionDetails = async (id: string) => {
+        setIsLoading(true);
+        try {
+            const data = await guideService.getMissionDetails(id);
+            setMission(data);
+        } catch (err: any) {
+            console.error("Failed to load mission details", err);
+            setError("Impossible de charger les détails de la mission.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        // Simple visual feedback could be added here
+    };
+
+    const handleSubmitProof = async (proposalId: string) => {
+        const url = proofUrls[proposalId];
+        const email = googleEmails[proposalId];
+
+        if (!url || !url.startsWith('http')) {
+            toast.error("Veuillez entrer un lien valide (commençant par http ou https).");
+            return;
+        }
+
+        // Optional: Keep a warning for production-like links but don't block
+        if (!url.includes('google.com') && !url.includes('goo.gl')) {
+            console.warn("L'URL ne semble pas être un lien Google Maps, mais soumission autorisée pour test.");
+        }
+
+        if (!email || !email.includes('@')) {
+            toast.error("Veuillez entrer un email Google valide.");
+            return;
+        }
+
+        setSubmittingId(proposalId);
+        try {
+            await guideService.submitProof({
+                orderId: mission!.id,
+                proposalId,
+                reviewUrl: url,
+                googleEmail: email,
+                artisanId: mission!.artisan_id
+            });
+            toast.success("Preuve soumise avec succès ! Elle sera validée par un administrateur.");
+            // Refresh to update progress and move to published section
+            loadMissionDetails(orderId!);
+            // Clear inputs
+            setProofUrls(prev => {
+                const next = { ...prev };
+                delete next[proposalId];
+                return next;
+            });
+            setGoogleEmails(prev => {
+                const next = { ...prev };
+                delete next[proposalId];
+                return next;
+            });
+        } catch (err: any) {
+            console.error("Failed to submit proof", err);
+            const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soumission de la preuve.";
+            toast.error(errorMessage);
+        } finally {
+            setSubmittingId(null);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <DashboardLayout title="Chargement...">
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-yellow-500" />
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    if (error || !mission) {
+        return (
+            <DashboardLayout title="Erreur">
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                    <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
+                    <p>{error || "Mission non trouvée"}</p>
+                    <button onClick={() => navigate('/guide')} className="btn-back" style={{ marginTop: '1rem' }}>
+                        Retour aux missions
+                    </button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    // Filter proposals into pending and published
+    const publishedProposalIds = mission.submissions.map(s => s.proposal_id);
+    const pendingProposals = mission.proposals.filter(p => !publishedProposalIds.includes(p.id));
+    const publishedProposals = mission.proposals.filter(p => publishedProposalIds.includes(p.id))
+        .map(p => ({
+            ...p,
+            submission: mission.submissions.find(s => s.proposal_id === p.id)
+        }));
+
+
+    return (
+        <DashboardLayout title="Détails de la Mission">
+            <div className="mission-detail-container">
+                <button onClick={() => navigate('/guide')} className="mission-back-button">
+                    <ChevronLeft size={20} /> Retour aux missions
+                </button>
+
+                <div className="mission-grid">
+                    {/* Main Content - Pending Reviews (Col 8) */}
+                    <div className="mission-content-area">
+                        <div className="mission-main-card">
+                            <div className="mission-main-header">
+                                <div>
+                                    <h2 className="mission-company-name">
+                                        {mission.artisan_company}
+                                    </h2>
+                                    <p className="mission-location">
+                                        <MapPin size={18} /> {mission.city || 'Ville non spécifiée'}
+                                    </p>
+                                </div>
+                                <div className="mission-badge">
+                                    {mission.submissions.length} / {mission.quantity} avis soumis
+                                </div>
+                            </div>
+
+                            {mission.google_business_url && (
+                                <a
+                                    href={mission.google_business_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="maps-link-btn"
+                                    style={{ marginBottom: 'var(--space-8)' }}
+                                >
+                                    Voir sur Google Maps <ExternalLink size={16} />
+                                </a>
+                            )}
+
+                            {/* Pending Reviews Section */}
+                            <section>
+                                <h3 className="section-header" style={{ marginTop: 0 }}>
+                                    <Clock size={24} color="var(--warning)" /> Avis en attente ({pendingProposals.length})
+                                </h3>
+
+                                {pendingProposals.length > 0 ? (
+                                    <div className="reviews-stack">
+                                        {pendingProposals.map((proposal) => (
+                                            <div key={proposal.id} className="review-card">
+                                                <div className="review-card-header">
+                                                    <span className="review-card-label">Texte à copier</span>
+                                                    <div className="stars-row">
+                                                        {[...Array(proposal.rating)].map((_, i) => (
+                                                            <Star key={i} size={18} fill="currentColor" />
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <p className="review-content">
+                                                    {proposal.content}
+                                                </p>
+
+                                                <div className="review-actions">
+                                                    <button
+                                                        onClick={() => handleCopy(proposal.content)}
+                                                        className="copy-btn"
+                                                    >
+                                                        <Copy size={18} /> Copier le texte
+                                                    </button>
+
+                                                    <div className="submission-form">
+                                                        <div className="field-group">
+                                                            <label className="field-label">Email Google used</label>
+                                                            <input
+                                                                type="email"
+                                                                placeholder="votre.email@gmail.com"
+                                                                className="text-input"
+                                                                value={googleEmails[proposal.id] || ''}
+                                                                onChange={(e) => setGoogleEmails(prev => ({ ...prev, [proposal.id]: e.target.value }))}
+                                                            />
+                                                        </div>
+                                                        <div className="field-group">
+                                                            <label className="field-label">Lien de l'avis posté</label>
+                                                            <div className="proof-input-row">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="https://maps.app.goo.gl/..."
+                                                                    className="text-input"
+                                                                    value={proofUrls[proposal.id] || ''}
+                                                                    onChange={(e) => setProofUrls(prev => ({ ...prev, [proposal.id]: e.target.value }))}
+                                                                />
+                                                                <button
+                                                                    onClick={() => handleSubmitProof(proposal.id)}
+                                                                    disabled={submittingId === proposal.id}
+                                                                    className="submit-btn"
+                                                                >
+                                                                    {submittingId === proposal.id ? '...' : <><Send size={18} /> Soumettre</>}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : mission.proposals.length > 0 ? (
+                                    <div className="empty-state success">
+                                        <p className="empty-state-text">Tous les avis disponibles ont été postés ! 🎉</p>
+                                    </div>
+                                ) : (
+                                    <div className="empty-state">
+                                        <p className="empty-state-text">Les textes d'avis sont en cours de préparation... ⏳</p>
+                                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--gray-400)', marginTop: 'var(--space-2)' }}>
+                                            Dès que l'artisan aura validé les textes, ils apparaîtront ici.
+                                        </p>
+                                    </div>
+                                )}
+                            </section>
+                        </div>
+                    </div>
+
+                    {/* Sidebar - Instructions & Published (Col 4) */}
+                    <aside className="mission-sidebar">
+                        <div className="info-card">
+                            <h3 className="info-card-title">Instructions</h3>
+
+                            <div className="instruction-item">
+                                <div className="instruction-icon-wrapper gray">
+                                    <Clock size={20} />
+                                </div>
+                                <div>
+                                    <p className="instruction-label">Rythme conseillé</p>
+                                    <p className="instruction-value">
+                                        {mission.publication_pace || '1 avis par jour'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="instruction-item">
+                                <div className="instruction-icon-wrapper success">
+                                    <CheckCircle2 size={20} />
+                                </div>
+                                <div>
+                                    <p className="instruction-label">Rémunération</p>
+                                    <p className="instruction-value price">2.00 €</p>
+                                    <p className="instruction-value" style={{ fontSize: 'var(--text-xs)' }}>par avis validé</p>
+                                </div>
+                            </div>
+
+                            <div className="instruction-warning-box">
+                                <p className="instruction-warning-text">
+                                    <strong>Rythme :</strong> Ne publiez qu'un seul avis à la fois en respectant le temps d'attente conseillé.
+                                </p>
+                                <p className="instruction-warning-text" style={{ marginTop: 'var(--space-2)' }}>
+                                    <strong>Compte Google :</strong> Vous ne pouvez pas poster plusieurs avis avec le même email sur la même fiche.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Published Reviews Section - Moved to sidebar */}
+                        {publishedProposals.length > 0 && (
+                            <div className="mission-published-card sidebar-card" style={{ marginTop: 'var(--space-4)' }}>
+                                <h3 className="section-header" style={{ marginTop: 0, fontSize: 'var(--text-lg)' }}>
+                                    <CheckCircle2 size={20} color="var(--success)" /> Avis déjà publiés ({publishedProposals.length})
+                                </h3>
+
+                                <div className="reviews-stack published-stack">
+                                    {publishedProposals.map((item) => (
+                                        <div key={item.id} className="published-item sidebar-item">
+                                            <div className="published-info">
+                                                <p className="published-text" style={{ fontSize: 'var(--text-xs)' }}>
+                                                    {item.content}
+                                                </p>
+                                                <div className="published-meta">
+                                                    <a href={item.submission?.review_url} target="_blank" rel="noopener noreferrer" className="proof-link">
+                                                        Preuve <ExternalLink size={10} />
+                                                    </a>
+                                                    {item.submission?.google_email && (
+                                                        <span className="account-info">
+                                                            {item.submission.google_email}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            </div>
+        </DashboardLayout>
+    );
+};
