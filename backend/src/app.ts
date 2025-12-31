@@ -5,20 +5,17 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import authRoutes from './routes/auth';
+import paymentRoutes from './routes/payment';
+import artisanRoutes from './routes/artisan';
+import guideRoutes from './routes/guide';
+import adminRoutes from './routes/admin';
+import payoutRoutes from './routes/payouts';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Security middleware
-app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false, // Disable CSP in dev to avoid issues with external images/fonts
-}));
-
-// Serve static files (configuration moved below for consistency)
 
 // 1. CORS - Reflect origin for maximum compatibility with Vercel and multiple environments
 app.use(cors({
@@ -60,12 +57,6 @@ app.get('/', (_req, res) => {
 });
 
 // API routes
-import paymentRoutes from './routes/payment';
-import artisanRoutes from './routes/artisan';
-import guideRoutes from './routes/guide';
-import adminRoutes from './routes/admin';
-import payoutRoutes from './routes/payouts';
-
 app.use('/api/auth', authRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/artisan', artisanRoutes);
