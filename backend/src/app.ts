@@ -55,6 +55,10 @@ app.get('/health', (_req: Request, res: Response) => {
     });
 });
 
+app.get('/', (_req, res) => {
+    res.send('AchatAvis API is running');
+});
+
 // API routes
 import paymentRoutes from './routes/payment';
 import artisanRoutes from './routes/artisan';
