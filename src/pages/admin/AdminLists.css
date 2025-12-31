@@ -1,0 +1,184 @@
+/* AdminLists.css - Styles for Artisan and Guide list pages */
+@import './AdminCommon.css';
+
+.admin-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.card-title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--gray-900);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.admin-controls {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-box svg {
+    position: absolute;
+    left: var(--space-3);
+    color: var(--gray-400);
+    pointer-events: none;
+}
+
+.search-box input {
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-10);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm);
+    width: 320px;
+    transition: all var(--transition-base);
+    background: white;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary-brand);
+    box-shadow: 0 0 0 3px rgba(255, 59, 106, 0.1);
+    width: 360px;
+}
+
+.admin-main-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-100);
+    overflow: hidden;
+    padding: var(--space-6);
+}
+
+/* Modern Table Styles */
+.admin-table-container {
+    overflow-x: auto;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.admin-modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-modern-table thead {
+    background-color: var(--gray-50);
+}
+
+.admin-modern-table th {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.admin-modern-table tbody tr {
+    transition: background-color var(--transition-base);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.admin-modern-table tbody tr:hover {
+    background-color: var(--gray-50);
+}
+
+.admin-modern-table td {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-sm);
+    color: var(--gray-700);
+}
+
+.actions-cell {
+    text-align: right;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.action-btn:hover {
+    background: var(--gray-100);
+    color: var(--gray-900);
+}
+
+.action-btn.block-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+.action-btn.active-btn:hover {
+    background: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+.action-btn.warn-btn:hover {
+    background: #fffbeb;
+    color: #d97706;
+    border-color: #fde68a;
+}
+
+.action-btn.delete-btn:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+@media (max-width: 768px) {
+    .admin-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-controls {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .search-box,
+    .search-box input,
+    .search-box input:focus {
+        width: 100%;
+    }
+
+    .card-title {
+        font-size: var(--text-xl);
+    }
+}

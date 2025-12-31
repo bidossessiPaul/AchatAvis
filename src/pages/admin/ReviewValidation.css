@@ -1,0 +1,186 @@
+/* ReviewValidation.css - Clean & Simple design */
+@import './AdminLists.css';
+
+/* Filter specifics */
+.age-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    height: 42px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+    background: white;
+    color: var(--gray-600);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.age-filter-btn:hover {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+}
+
+.age-filter-btn.active {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #e11d48;
+}
+
+/* Link specific */
+.review-link-simple {
+    color: var(--primary-brand);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: color 0.2s;
+}
+
+.review-link-simple:hover {
+    color: #b91c1c;
+    /* darker red */
+    text-decoration: underline;
+}
+
+/* Modal Styling - Kept as it is specific */
+.rejection-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.rejection-modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.rejection-modal .modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.rejection-modal .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.rejection-modal .close-modal-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--gray-500);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.rejection-modal .close-modal-btn:hover {
+    background-color: var(--gray-100);
+}
+
+.rejection-modal .modal-body {
+    padding: 20px;
+}
+
+.rejection-modal .modal-body label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.rejection-modal .modal-body textarea {
+    width: 100%;
+    height: 120px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    resize: none;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.rejection-modal .modal-body textarea:focus {
+    outline: none;
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.rejection-modal .modal-footer {
+    padding: 20px;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background-color: #f8fafc;
+}
+
+.rejection-modal .cancel-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--gray-700);
+}
+
+.rejection-modal .cancel-btn:hover {
+    background: var(--gray-50);
+}
+
+.rejection-modal .confirm-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rejection-modal .confirm-btn:hover {
+    background: #dc2626;
+}
+
+.rejection-modal .confirm-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
