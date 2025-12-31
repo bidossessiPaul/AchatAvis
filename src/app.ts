@@ -17,12 +17,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 1. CORS - Reflect origin for maximum compatibility with Vercel and multiple environments
-app.use(cors({
-    origin: true,
-    credentials: true,
-    optionsSuccessStatus: 200
-}));
+// 1. Manual CORS - Direct header control for Vercel stability
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    // Reflect origin if it exists, otherwise allow all for debug
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    // Handle Preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
+});
 
 // 2. Security & Parsers
 app.use(helmet({
@@ -30,19 +39,12 @@ app.use(helmet({
     contentSecurityPolicy: false,
 }));
 
-app.use(express.json({
-    limit: '10mb',
-    verify: (req: any, _res, buf) => {
-        if (req.originalUrl && req.originalUrl.includes('webhook')) {
-            req.rawBody = buf;
-        }
-    }
-}));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Serve static files
-app.use('/public', express.static(path.join(__dirname, '../public')));
+// Serve static files - use process.cwd() for Vercel
+app.use('/public', express.static(path.join(process.cwd(), 'public')));
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
