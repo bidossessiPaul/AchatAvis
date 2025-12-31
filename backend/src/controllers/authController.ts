@@ -19,7 +19,7 @@ export const registerArtisan = async (req: Request, res: Response) => {
 
         const result = await authService.registerArtisan(validatedData);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Artisan account created successfully. Awaiting admin approval.',
             user: result.user,
             // In production, send this token via email instead
@@ -51,7 +51,7 @@ export const registerGuide = async (req: Request, res: Response) => {
 
         const result = await authService.registerGuide(validatedData);
 
-        res.status(201).json({
+        return res.status(201).json({
             message: 'Guide account created successfully',
             user: result.user,
             verificationToken: result.verificationToken,
@@ -102,7 +102,7 @@ export const login = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        res.json({
+        return res.json({
             message: 'Login successful',
             user: result.user,
             accessToken: result.accessToken,
@@ -153,7 +153,7 @@ export const enable2FA = async (req: Request, res: Response) => {
         await authService.enable2FA(req.user.userId, secret, token);
         return res.json({ message: '2FA activé avec succès' });
     } catch (error: any) {
-        res.status(400).json({ error: error.message });
+        return res.status(400).json({ error: error.message });
     }
 };
 
@@ -168,7 +168,7 @@ export const disable2FA = async (req: Request, res: Response) => {
         await authService.disable2FA(req.user.userId);
         return res.json({ message: '2FA désactivé avec succès' });
     } catch (error: any) {
-        res.status(500).json({ error: 'Erreur lors de la désactivation du 2FA' });
+        return res.status(500).json({ error: 'Erreur lors de la désactivation du 2FA' });
     }
 };
 
@@ -199,13 +199,13 @@ export const verify2FA = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
-        res.json({
+        return res.json({
             message: 'Vérification 2FA réussie',
             user: result.user,
             accessToken: result.accessToken,
         });
     } catch (error: any) {
-        res.status(401).json({ error: error.message || 'Échec de la vérification 2FA' });
+        return res.status(401).json({ error: error.message || 'Échec de la vérification 2FA' });
     }
 };
 
@@ -392,6 +392,6 @@ export const refreshToken = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Refresh token error:', error);
-        res.status(401).json({ error: error.message });
+        return res.status(401).json({ error: error.message });
     }
 };

@@ -165,7 +165,7 @@ export const artisanController = {
         }
     },
 
-    async getSubscriptionPacks(req: Request, res: Response) {
+    async getSubscriptionPacks(_req: Request, res: Response) {
         try {
             const packs = await artisanService.getSubscriptionPacks();
             return res.json(packs);
