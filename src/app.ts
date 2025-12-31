@@ -20,48 +20,32 @@ app.use(helmet({
 
 // Serve static files (configuration moved below for consistency)
 
-// 1. CORS - MUST BE FIRST
-const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [
-    'http://localhost:5173',
-    'http://localhost:3000',
-];
+// 1. CORS - Reflect origin for maximum compatibility with Vercel and multiple environments
+app.use(cors({
+    origin: true,
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
 
-app.use(
-    cors({
-        origin: (origin, callback) => {
-            // Allow requests with no origin (mobile apps, Postman, etc.)
-            if (!origin) return callback(null, true);
-
-            // If ALLOWED_ORIGINS is *, allow everything
-            if (process.env.ALLOWED_ORIGINS === '*') {
-                return callback(null, true);
-            }
-
-            if (allowedOrigins.includes(origin)) {
-                callback(null, true);
-            } else {
-                callback(null, true); // Fallback to avoid 500 while debugging
-            }
-        },
-        credentials: true,
-        optionsSuccessStatus: 200 // Some legacy browsers (IE11, various SmartTVs) choke on 204
-    })
-);
-
-// 2. Other Middlewares
+// 2. Security & Parsers
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     contentSecurityPolicy: false,
 }));
 
-// Body parsers
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({
+    limit: '10mb',
+    verify: (req: any, _res, buf) => {
+        if (req.originalUrl && req.originalUrl.includes('webhook')) {
+            req.rawBody = buf;
+        }
+    }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Serve static files
-const publicPath = path.resolve(process.cwd(), 'public');
-app.use('/public', express.static(publicPath));
+app.use('/public', express.static(path.join(__dirname, '../public')));
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
@@ -91,9 +75,17 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     console.error('SERVER ERROR:', err);
-    res.status(err.status || 500).json({
+
+    // Ensure CORS headers are present even on errors
+    const origin = req.headers.origin;
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+
+    return res.status(err.status || 500).json({
         error: 'Internal server error',
         message: err.message,
     });
