@@ -79,6 +79,7 @@ export interface ReviewOrder {
     specific_instructions?: string;
     google_business_url?: string;
     publication_pace?: string;
+    payment_id?: string;
     metadata?: any;
     created_at: Date;
     completed_at?: Date;

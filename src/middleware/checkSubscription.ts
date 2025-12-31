@@ -40,6 +40,6 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
 
     } catch (error) {
         console.error('❌ Erreur vérification:', error);
-        res.status(500).json({ error: 'Erreur serveur' });
+        return res.status(500).json({ error: 'Erreur serveur' });
     }
 };

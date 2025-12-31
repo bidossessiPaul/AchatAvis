@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Configure storage
 const storage = multer.diskStorage({
-    destination: (_req, file, cb) => {
+    destination: (_req, _file, cb) => {
         cb(null, path.join(__dirname, '../../public/uploads/avatars'));
     },
     filename: (_req, file, cb) => {
