@@ -8,12 +8,10 @@ import {
     TrendingUp,
     Users,
     AlertCircle,
-    Calendar,
     CheckCircle2,
     Zap,
     PieChart as PieChartIcon,
     BarChart3,
-    ArrowUpRight,
     ExternalLink
 } from 'lucide-react';
 import {
