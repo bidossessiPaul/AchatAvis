@@ -18,16 +18,6 @@ const poolConfig = {
 
 export const pool = mysql.createPool(poolConfig);
 
-// Test drawing a connection
-pool.getConnection()
-    .then(connection => {
-        console.log('✓ Connected to MySQL database');
-        connection.release();
-    })
-    .catch(err => {
-        console.error('❌ Failed to connect to MySQL database:', err.message);
-    });
-
 /**
  * Execute a query with parameters
  */
