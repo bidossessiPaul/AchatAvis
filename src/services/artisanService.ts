@@ -258,11 +258,11 @@ export const artisanService = {
         );
         console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
 
-        // Filter in JS to see everything in logs but return correct subset
+        // A pack is available if it's a completed subscription and has NOT been used for a mission yet
         return (results as any[]).filter(p =>
             p.type === "subscription" &&
             p.status === "completed" &&
-            p.missions_used < p.missions_quota
+            p.missions_used === 0
         );
     }
 };
