@@ -30,15 +30,15 @@ export const SubmissionFlow: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
-    const { user, checkAuth } = useAuthStore();
+    const { user, silentRefresh } = useAuthStore();
     const [isRefreshingAuth, setIsRefreshingAuth] = useState(true);
 
     useEffect(() => {
         const init = async () => {
             setIsRefreshingAuth(true);
             try {
-                // 1. Refresh auth to get latest missions_allowed/used
-                await checkAuth();
+                // Use silentRefresh instead of checkAuth to avoid global isLoading (which unmounts this component via ProtectedRoute)
+                await silentRefresh();
 
                 // 2. Double check specifically for available packs (unused)
                 const packs = await artisanService.getAvailablePacks();
@@ -50,7 +50,7 @@ export const SubmissionFlow: React.FC = () => {
             }
         };
         init();
-    }, [checkAuth]);
+    }, [silentRefresh]);
 
     useEffect(() => {
         if (!isRefreshingAuth && orderId) {
