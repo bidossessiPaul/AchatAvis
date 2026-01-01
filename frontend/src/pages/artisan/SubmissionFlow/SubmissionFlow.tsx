@@ -29,13 +29,27 @@ export const SubmissionFlow: React.FC = () => {
     const [proposals, setProposals] = useState<ReviewProposal[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { user } = useAuthStore();
+    const { user, checkAuth } = useAuthStore();
+    const [isRefreshingAuth, setIsRefreshingAuth] = useState(true);
 
     useEffect(() => {
-        if (orderId) {
+        const init = async () => {
+            setIsRefreshingAuth(true);
+            try {
+                // Ensure we have the latest profile data (missions_allowed, etc)
+                await checkAuth();
+            } finally {
+                setIsRefreshingAuth(false);
+            }
+        };
+        init();
+    }, []);
+
+    useEffect(() => {
+        if (!isRefreshingAuth && orderId) {
             loadOrder(orderId);
         }
-    }, [orderId]);
+    }, [orderId, isRefreshingAuth]);
 
     const loadOrder = async (id: string) => {
         setIsLoading(true);
@@ -121,7 +135,7 @@ export const SubmissionFlow: React.FC = () => {
     return (
         <DashboardLayout title="Soumettre une fiche">
             <PremiumBlurOverlay
-                isActive={(user?.missions_allowed || 0) > (user?.missions_used || 0)}
+                isActive={!isRefreshingAuth && (user?.missions_allowed || 0) > (user?.missions_used || 0)}
                 title={(user?.missions_allowed || 0) === 0 ? "Activez votre compte" : "Limite de missions atteinte"}
                 description={(user?.missions_allowed || 0) === 0
                     ? "Vous devez avoir un pack actif pour créer une nouvelle mission d'avis."
