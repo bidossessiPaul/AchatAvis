@@ -29,26 +29,28 @@ export const SubmissionFlow: React.FC = () => {
     const [proposals, setProposals] = useState<ReviewProposal[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
     const { user, checkAuth } = useAuthStore();
     const [isRefreshingAuth, setIsRefreshingAuth] = useState(true);
 
     useEffect(() => {
         const init = async () => {
-            // Check if missions info is missing or zero but we suspect user has a pack
-            // We only refresh if needed to avoid infinite loops
-            if (user && (user.missions_allowed === undefined || user.missions_allowed === 0)) {
-                setIsRefreshingAuth(true);
-                try {
-                    await checkAuth();
-                } finally {
-                    setIsRefreshingAuth(false);
-                }
-            } else {
+            setIsRefreshingAuth(true);
+            try {
+                // 1. Refresh auth to get latest missions_allowed/used
+                await checkAuth();
+
+                // 2. Double check specifically for available packs (unused)
+                const packs = await artisanService.getAvailablePacks();
+                setHasActivePacks(packs.length > 0);
+            } catch (err) {
+                console.error("Auth/Packs refresh failed", err);
+            } finally {
                 setIsRefreshingAuth(false);
             }
         };
         init();
-    }, [checkAuth, user]); // Include checkAuth but it should be stable from Zustand
+    }, [checkAuth]);
 
     useEffect(() => {
         if (!isRefreshingAuth && orderId) {
@@ -140,11 +142,11 @@ export const SubmissionFlow: React.FC = () => {
     return (
         <DashboardLayout title="Soumettre une fiche">
             <PremiumBlurOverlay
-                isActive={!isRefreshingAuth && (user?.missions_allowed || 0) > (user?.missions_used || 0)}
-                title={(user?.missions_allowed || 0) === 0 ? "Activez votre compte" : "Limite de missions atteinte"}
-                description={(user?.missions_allowed || 0) === 0
-                    ? "Vous devez avoir un pack actif pour créer une nouvelle mission d'avis."
-                    : "Vous avez utilisé toutes les missions de votre pack actuel. Veuillez reprendre un pack pour créer une nouvelle mission d'avis."}
+                isActive={!isRefreshingAuth && hasActivePacks}
+                title={!hasActivePacks ? "Aucun pack disponible" : "Compte Inactif"}
+                description={!hasActivePacks
+                    ? "Vous avez déjà utilisé tous vos packs actifs. Veuillez en reprendre un nouveau pour créer une mission."
+                    : "Activez votre compte avec un pack pour accéder à cette fonctionnalité."}
             >
                 <div className="submission-flow-container">
                     <div className="submission-header">
