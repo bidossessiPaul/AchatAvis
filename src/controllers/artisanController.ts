@@ -85,8 +85,11 @@ export const artisanController = {
 
             const generated = await openAiService.generateReviews(generationParams);
 
-            console.log(`💾 Sauvegarde de ${generated.length} propositions...`);
-            const created = await artisanService.createProposals(id, generated);
+            // On s'assure de ne pas dépasser la quantité demandée
+            const finalProposals = generated.slice(0, order.quantity);
+
+            console.log(`💾 Sauvegarde de ${finalProposals.length} propositions...`);
+            const created = await artisanService.createProposals(id, finalProposals);
 
             console.log("✅ Generation terminée avec succès !");
             return res.json(created);
