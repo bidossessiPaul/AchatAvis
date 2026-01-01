@@ -81,7 +81,8 @@ export const SubmissionFlow: React.FC = () => {
             setCurrentStep(prev => prev + 1);
         } catch (error: any) {
             console.error("Navigation error", error);
-            setError(error.message || "Une erreur est survenue lors de la progression.");
+            const message = error.response?.data?.message || error.message || "Une erreur est survenue lors de la progression.";
+            setError(message);
         } finally {
             setIsLoading(false);
         }

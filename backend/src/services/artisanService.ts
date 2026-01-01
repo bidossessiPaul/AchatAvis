@@ -12,7 +12,12 @@ export const artisanService = {
         if (!profile) throw new Error("Profile not found");
 
         const { payment_id } = data;
-        if (!payment_id) throw new Error("Veuillez sélectionner un pack pour cette mission.");
+        console.log(`🛠️ CREATE DRAFT: user=${artisanId}, payment_id=${payment_id}, data=`, JSON.stringify(data));
+
+        if (!payment_id) {
+            console.warn("❌ Missing payment_id");
+            throw new Error("Veuillez sélectionner un pack pour cette mission.");
+        }
 
         const packs: any = await query(
             'SELECT missions_quota, missions_used FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
@@ -247,9 +252,17 @@ export const artisanService = {
      * Get available mission packs (payments with remaining quota)
      */
     async getAvailablePacks(artisanId: string) {
-        return query(
-            'SELECT id, description, missions_quota, missions_used, created_at FROM payments WHERE user_id = ? AND type = "subscription" AND status = "completed" AND missions_used < missions_quota ORDER BY created_at ASC',
+        const results = await query(
+            'SELECT id, description, missions_quota, missions_used, created_at, type, status FROM payments WHERE user_id = ? ORDER BY created_at ASC',
             [artisanId]
+        );
+        console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
+
+        // Filter in JS to see everything in logs but return correct subset
+        return (results as any[]).filter(p =>
+            p.type === "subscription" &&
+            p.status === "completed" &&
+            p.missions_used < p.missions_quota
         );
     }
 };
