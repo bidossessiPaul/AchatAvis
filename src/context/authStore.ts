@@ -17,6 +17,7 @@ interface AuthState {
     verify2FA: (token: string) => Promise<void>;
     logout: () => Promise<void>;
     checkAuth: () => Promise<void>;
+    silentRefresh: () => Promise<void>;
     clearError: () => void;
 }
 
@@ -127,6 +128,22 @@ export const useAuthStore = create<AuthState>()(
                         isAuthenticated: false,
                         isLoading: false,
                     });
+                }
+            },
+
+            silentRefresh: async () => {
+                const token = localStorage.getItem('accessToken');
+                if (!token) return;
+
+                try {
+                    const response = await authApi.getMe();
+                    set({
+                        user: response.user,
+                        isAuthenticated: true,
+                    });
+                } catch (error) {
+                    // Silent refresh failed, don't clear anything yet to avoid flash
+                    // The next regular checkAuth or API call will handle it
                 }
             },
 
