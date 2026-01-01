@@ -7,11 +7,33 @@ import type {
     User,
 } from '../types';
 
-let API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+// Get base URL from environment
+const getBaseURL = (): string => {
+    const envBaseURL = import.meta.env.VITE_API_BASE_URL || '/api';
 
-// Ensure API_BASE is an absolute URL if it doesn't start with /
-if (API_BASE !== '/api' && !API_BASE.startsWith('http')) {
-    API_BASE = `https://${API_BASE}`;
+    // Remove any whitespace/invisible characters
+    const cleanURL = envBaseURL.trim();
+
+    // If it's a relative path, use it directly (likely development or local proxy)
+    if (cleanURL === '/api') {
+        return '/api';
+    }
+
+    // Ensure it starts with http:// or https:// if it looks like a domain
+    if (!cleanURL.startsWith('http://') && !cleanURL.startsWith('https://')) {
+        console.warn(`⚠️ Adding https:// to ${cleanURL}`);
+        return `https://${cleanURL}`;
+    }
+
+    // Remove trailing slash
+    return cleanURL.replace(/\/$/, '');
+};
+
+const API_BASE = getBaseURL();
+
+// Log in development
+if (import.meta.env.DEV) {
+    console.log('🔗 API Base URL:', API_BASE);
 }
 
 // Create axios instance with default config
@@ -20,13 +42,20 @@ const api = axios.create({
     withCredentials: true, // For cookies
 });
 
-// Add auth token to requests
+// Add request interceptor for debugging and auth
 api.interceptors.request.use((config) => {
+    if (import.meta.env.DEV) {
+        console.log('📤 Request:', config.method?.toUpperCase(), config.url);
+    }
+
     const token = localStorage.getItem('accessToken');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
+}, (error) => {
+    console.error('❌ Request error:', error);
+    return Promise.reject(error);
 });
 
 let isRefreshing = false;
@@ -45,8 +74,22 @@ const processQueue = (error: any, token: string | null = null) => {
 
 // Handle 401/403 errors globally
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (import.meta.env.DEV) {
+            console.log('📥 Response:', response.status, response.config.url);
+        }
+        return response;
+    },
     async (error) => {
+        if (import.meta.env.DEV) {
+            console.error('❌ API Error:', {
+                url: error.config?.url,
+                method: error.config?.method,
+                status: error.response?.status,
+                data: error.response?.data,
+            });
+        }
+
         const originalRequest = error.config;
 
         if (error.response && error.response.status === 401 && !originalRequest._retry) {
