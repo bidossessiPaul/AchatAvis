@@ -133,7 +133,13 @@ export const MissionDetail: React.FC = () => {
 
     // Filter proposals into pending and published
     const publishedProposalIds = mission.submissions.map(s => s.proposal_id);
-    const pendingProposals = mission.proposals.filter(p => !publishedProposalIds.includes(p.id));
+    const totalRemaining = Math.max(0, mission.quantity - mission.submissions.length);
+
+    // Filter and cap the pending proposals to match the mission quantity
+    const pendingProposals = mission.proposals
+        .filter(p => !publishedProposalIds.includes(p.id))
+        .slice(0, totalRemaining);
+
     const publishedProposals = mission.proposals.filter(p => publishedProposalIds.includes(p.id))
         .map(p => ({
             ...p,
