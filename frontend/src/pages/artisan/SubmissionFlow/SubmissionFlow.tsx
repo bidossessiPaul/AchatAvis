@@ -34,16 +34,21 @@ export const SubmissionFlow: React.FC = () => {
 
     useEffect(() => {
         const init = async () => {
-            setIsRefreshingAuth(true);
-            try {
-                // Ensure we have the latest profile data (missions_allowed, etc)
-                await checkAuth();
-            } finally {
+            // Check if missions info is missing or zero but we suspect user has a pack
+            // We only refresh if needed to avoid infinite loops
+            if (user && (user.missions_allowed === undefined || user.missions_allowed === 0)) {
+                setIsRefreshingAuth(true);
+                try {
+                    await checkAuth();
+                } finally {
+                    setIsRefreshingAuth(false);
+                }
+            } else {
                 setIsRefreshingAuth(false);
             }
         };
         init();
-    }, []);
+    }, [checkAuth, user]); // Include checkAuth but it should be stable from Zustand
 
     useEffect(() => {
         if (!isRefreshingAuth && orderId) {

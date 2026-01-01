@@ -44,7 +44,7 @@ export function ProtectedArtisanRoute({ children }: { children: React.ReactNode 
         };
 
         check();
-    }, [navigate]);
+    }, []); // Only check once on mount
 
     if (isChecking) {
         return (
