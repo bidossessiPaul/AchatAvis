@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
@@ -30,7 +29,7 @@ app.use((req, res, next) => {
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
-    next();
+    return next();
 });
 
 // 2. Security & Parsers

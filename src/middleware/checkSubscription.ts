@@ -35,8 +35,7 @@ export const requireActiveSubscription = async (req: Request, res: Response, nex
             return res.status(403).json({ needsSubscription: true });
         }
 
-        console.log('✅ Abonnement valide');
-        next();
+        return next();
 
     } catch (error) {
         console.error('❌ Erreur vérification:', error);
