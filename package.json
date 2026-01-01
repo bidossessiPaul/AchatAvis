@@ -6,7 +6,7 @@
         "backend"
     ],
     "scripts": {
-        "build": "(cd frontend 2>/dev/null || exec true) && npm install && npm run build",
+        "build": "cd frontend && npm install && npm run build -- --outDir ../dist",
         "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
     }
 }
