@@ -45,13 +45,21 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                 setHistory(urls);
                 setAvailablePacks(packs);
 
-                // If there's an active pack and none selected, select the first one
-                if (packs.length > 0 && !formData.payment_id) {
-                    setFormData(prev => ({
-                        ...prev,
-                        payment_id: packs[0].id,
-                        quantity: packs[0].missions_quota
-                    }));
+                // Auto-select the first pack if nothing is selected yet
+                if (packs.length > 0) {
+                    setFormData(prev => {
+                        // Priority: 1. initialData, 2. First pack from list
+                        const currentPaymentId = initialData?.payment_id || prev.payment_id;
+
+                        if (!currentPaymentId) {
+                            return {
+                                ...prev,
+                                payment_id: packs[0].id,
+                                quantity: packs[0].missions_quota - packs[0].missions_used
+                            };
+                        }
+                        return prev;
+                    });
                 }
             } catch (error) {
                 console.error("Failed to fetch Google URL history or packs", error);
