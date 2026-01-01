@@ -30,7 +30,7 @@ export const SubmissionFlow: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
-    const { user, silentRefresh } = useAuthStore();
+    const { silentRefresh } = useAuthStore();
     const [isRefreshingAuth, setIsRefreshingAuth] = useState(true);
 
     useEffect(() => {
@@ -138,11 +138,10 @@ export const SubmissionFlow: React.FC = () => {
                 return null;
         }
     };
-
     return (
         <DashboardLayout title="Soumettre une fiche">
             <PremiumBlurOverlay
-                isActive={!isRefreshingAuth && hasActivePacks}
+                isActive={isRefreshingAuth || isLoading || hasActivePacks || !!order?.payment_id}
                 title={!hasActivePacks ? "Aucun pack disponible" : "Compte Inactif"}
                 description={!hasActivePacks
                     ? "Vous avez déjà utilisé tous vos packs actifs. Veuillez en reprendre un nouveau pour créer une mission."
