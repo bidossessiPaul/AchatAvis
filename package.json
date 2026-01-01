@@ -1,12 +1,12 @@
 {
     "name": "achatavis-monorepo",
-    "version": "1.0.1",
+    "private": true,
     "workspaces": [
         "frontend",
         "backend"
     ],
     "scripts": {
-        "build": "cd frontend && npm install && npm run build",
+        "build": "(cd frontend 2>/dev/null || exec true) && npm install && npm run build",
         "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
     }
 }
