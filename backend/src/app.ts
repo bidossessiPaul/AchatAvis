@@ -42,7 +42,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Serve static files - use process.cwd() for Vercel
+// Serve static files - fallback to backend/public if running from root
+app.use('/public', express.static(path.join(process.cwd(), 'backend', 'public')));
 app.use('/public', express.static(path.join(process.cwd(), 'public')));
 
 // Health check endpoint
