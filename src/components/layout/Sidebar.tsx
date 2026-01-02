@@ -74,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Missions', path: '/admin/missions', icon: <Briefcase size={20} />, permissions: ['can_manage_missions', 'can_validate_missions'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Équipe', path: '/admin/team', icon: <Shield size={20} />, permissions: ['super_admin'] },
-                    { label: 'Logs & Système', path: '/admin/logs', icon: <Shield size={20} />, permissions: ['can_view_stats'] },
+                    // { label: 'Logs & Système', path: '/admin/logs', icon: <Shield size={20} />, permissions: ['can_view_stats'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 
