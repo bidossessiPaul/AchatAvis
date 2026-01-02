@@ -12,7 +12,7 @@ import {
     Zap,
     PieChart as PieChartIcon,
     BarChart3,
-    ExternalLink,
+    // ExternalLink,
     Clock,
     ArrowUpRight,
     FolderOpen

@@ -15,8 +15,8 @@ interface PermissionGuardProps {
  */
 export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     children,
-    requiredPermission,
-    fallbackPath = '/admin'
+    requiredPermission
+    // fallbackPath = '/admin'
 }) => {
     const { user } = useAuthStore();
     const { hasPermission, isSuperAdmin } = usePermissions();
