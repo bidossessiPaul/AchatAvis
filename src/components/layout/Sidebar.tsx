@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
                 ];
-            case 'admin':
+            case 'admin': {
                 const allAdminItems: NavItem[] = [
                     { label: 'Vue d\'ensemble', path: '/admin', icon: <LayoutDashboard size={20} />, permissions: ['can_view_stats'] },
                     { label: 'Artisans', path: '/admin/artisans', icon: <Users size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
@@ -89,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     // Check if user has AT LEAST ONE of the required permissions
                     return item.permissions.some(perm => hasPermission(perm));
                 });
+            }
             default:
                 return [];
         }

@@ -157,8 +157,8 @@ export const PacksManagement: React.FC = () => {
                 ) : (
                     <div className="packs-grid">
                         {packs.map(pack => (
-                            <div key={pack.id} className={`pack-card glass ${!!pack.is_popular ? 'popular' : ''}`}>
-                                {!!pack.is_popular && <div className="popular-badge">Populaire</div>}
+                            <div key={pack.id} className={`pack-card glass ${pack.is_popular ? 'popular' : ''}`}>
+                                {pack.is_popular && <div className="popular-badge">Populaire</div>}
                                 <div className="pack-card-header" style={{ borderTop: `4px solid ${pack.color}` }}>
                                     <div className="pack-icon" style={{ background: `${pack.color}20`, color: pack.color }}>
                                         <Package size={24} />
