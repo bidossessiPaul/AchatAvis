@@ -1,12 +1,29 @@
 import express from 'express';
 import * as adminController from '../controllers/adminController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize, checkPermission } from '../middleware/auth';
+
+import { LogService } from '../services/logService';
 
 const router = express.Router();
 
-// All admin routes are protected
-router.use(authenticate);
-router.use(authorize('admin'));
+// Middleware to ensure admin access
+router.use(authenticate, authorize('admin'));
+
+// Audit Logs
+router.get('/logs', checkPermission(['can_view_stats']), async (req, res) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = 50;
+        const offset = (page - 1) * limit;
+
+        const result = await LogService.getLogs(limit, offset);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching logs' });
+    }
+});
+
+// Dashboard Stats
 router.get('/stats', adminController.getGlobalStats);
 
 router.get('/artisans', adminController.getArtisans);

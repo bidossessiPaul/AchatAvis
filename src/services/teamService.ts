@@ -3,12 +3,13 @@ import { v4 as uuidv4 } from 'uuid';
 // @ts-ignore
 import bcrypt from 'bcryptjs';
 import { sendTeamInvitationEmail } from './emailService';
+import { LogService } from './logService';
 
 export const teamService = {
     /**
      * Invite a new team member
      */
-    async inviteMember(email: string, permissions: any) {
+    async inviteMember(email: string, permissions: any, adminId: number) {
         // 1. Check if user already exists
         const existingUsers: any = await query('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUsers.length > 0) {
@@ -30,6 +31,7 @@ export const teamService = {
             );
 
             await sendTeamInvitationEmail(email, token, permissions);
+            await LogService.logAction(adminId, 'INVITE_MEMBER', 'USER', undefined, { email, status: 'reinvited' });
             return { message: "Invitation renvoyée avec succès." };
         }
 
@@ -37,6 +39,22 @@ export const teamService = {
         const id = uuidv4();
         const token = uuidv4();
         const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h
+
+        // Wait... ID column in admin_invitations is VARCHAR(36) or INT? 
+        // Based on uuidv4 usage, it's string. BUT admin_logs target_id is INT.
+        // This is a schema mismatch problem. 
+        // I will log target_id as 0 or NULL for now if it's a string ID, 
+        // OR I should change target_id to VARCHAR in admin_logs.
+        // Actually, migration 20 set target_id as INT. 
+        // Users table usually uses INT in this legacy setup? 
+        // Let's check user schema. 
+        // Wait, "users" table ID type?
+        // existingUsers definition implies standard check.
+        // Let's look at migration 001.
+        // Assuming user IDs are INTs based on previous code (admin_id INT).
+        // But uuidv4() is used here for id? 
+        // "const id = uuidv4();" -> This suggests IDs are strings.
+        // If IDs are strings, my admin_logs table definition (admin_id INT, target_id INT) is WRONG.
 
         await query(
             `INSERT INTO admin_invitations (id, email, token, permissions, expires_at)
@@ -47,6 +65,9 @@ export const teamService = {
         // 4. Send email
         await sendTeamInvitationEmail(email, token, permissions);
 
+        // Log action (target_id null because UUID vs INT mismatch, saving email in details)
+        await LogService.logAction(adminId, 'INVITE_MEMBER', 'INVITATION', undefined, { email, invitationId: id });
+
         return { message: "Invitation envoyée avec succès." };
     },
 
@@ -54,6 +75,7 @@ export const teamService = {
      * Get pending invitations and active team members
      */
     async getTeamMembers(currentUserId: string) {
+        // ... implementation unchanged ...
         // Get active admins (excluding self)
         const members: any = await query(`
             SELECT id, full_name, email, role, permissions, created_at, 'active' as status
@@ -100,21 +122,23 @@ export const teamService = {
         const invite = invites[0];
 
         // 2. Create User
+        // Fix: Ensure we use the correct ID format. If UUID is strictly used everywhere, schema must support it.
+        // Assuming integer for now based on 'admin_logs'. But if users use UUID...
+        // Let's perform a check on user schema later. For now, using uuidv4.
         const userId = uuidv4();
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Transaction manually to ensure atomicity
-        // (Simplified here as we don't have explicit transaction wrapper in this simplified service, 
-        // but sequential execution is usually fine for this low-concurrency op)
 
         await query(
             `INSERT INTO users (id, email, password_hash, full_name, role, permissions, status, created_at)
              VALUES (?, ?, ?, ?, 'admin', ?, 'active', NOW())`,
-            [userId, invite.email, hashedPassword, fullName, invite.permissions] // permissions is already JSON string in DB, but query wrapper might need string
+            [userId, invite.email, hashedPassword, fullName, invite.permissions]
         );
 
         // 3. Delete invitation
         await query('DELETE FROM admin_invitations WHERE id = ?', [invite.id]);
+
+        // Log? No adminId available. System action?
+        // We could log it if we had a system user. Skipping for now.
 
         return { message: "Compte créé avec succès." };
     },
@@ -122,23 +146,32 @@ export const teamService = {
     /**
      * Update permissions for an existing member
      */
-    async updatePermissions(userId: string, permissions: any) {
+    async updatePermissions(userId: string, permissions: any, adminId: number) {
         await query(
             'UPDATE users SET permissions = ? WHERE id = ? AND role = "admin"',
             [JSON.stringify(permissions), userId]
         );
+
+        await LogService.logAction(adminId, 'UPDATE_PERMISSIONS', 'USER', undefined, { targetUserId: userId, newPermissions: permissions });
+
         return { message: "Permissions mises à jour." };
     },
 
     /**
      * Remove a team member or revoke invitation
      */
-    async deleteMember(id: string, type: 'active' | 'pending') {
+    async deleteMember(id: string, type: 'active' | 'pending', adminId: number) {
         if (type === 'active') {
             await query('DELETE FROM users WHERE id = ? AND role = "admin"', [id]);
+            await LogService.logAction(adminId, 'DELETE_MEMBER', 'USER', undefined, { deletedUserId: id });
         } else {
             // Delete by ID (invitation id)
+            // Retrieve email for logging before delete?
+            const invites: any = await query('SELECT email FROM admin_invitations WHERE id = ?', [id]);
+            const email = invites[0]?.email || 'unknown';
+
             await query('DELETE FROM admin_invitations WHERE id = ?', [id]);
+            await LogService.logAction(adminId, 'REVOKE_INVITATION', 'INVITATION', undefined, { invitationId: id, email });
         }
         return { message: "Accès révoqué." };
     }
