@@ -1,4 +1,4 @@
-import pool from '../app';
+import pool from '../config/database';
 import { AdminLog } from '../models/types';
 import { RowDataPacket } from 'mysql2';
 
