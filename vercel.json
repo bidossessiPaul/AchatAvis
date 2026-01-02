@@ -1,16 +1,13 @@
 {
     "version": 2,
-    "routes": [
+    "rewrites": [
         {
-            "handle": "filesystem"
+            "source": "/api/(.*)",
+            "destination": "/api/index.ts"
         },
         {
-            "src": "/api/(.*)",
-            "dest": "/api/index.ts"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/index.html"
+            "source": "/((?!api/|assets/|favicon.ico).*)",
+            "destination": "/"
         }
     ]
 }
