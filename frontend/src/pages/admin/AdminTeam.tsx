@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { teamApi } from '../../services/api';
 import { InviteMemberModal } from './components/InviteMemberModal';
-import { useAuthStore } from '../../context/authStore';
-import { usePermissions } from '../../hooks/usePermissions';
+// import { useAuthStore } from '../../context/authStore';
+// import { usePermissions } from '../../hooks/usePermissions';
 import {
     Users,
     Plus,
@@ -21,8 +21,8 @@ export const AdminTeam = () => {
     const [loading, setLoading] = useState(true);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [memberToEdit, setMemberToEdit] = useState<any>(null);
-    const { user } = useAuthStore();
-    const { isSuperAdmin } = usePermissions();
+    // const { user } = useAuthStore();
+    // const { isSuperAdmin } = usePermissions();
 
     const fetchMembers = async () => {
         try {
@@ -81,6 +81,7 @@ export const AdminTeam = () => {
         }
     };
 
+    /*
     const countPermissions = (perms: any) => {
         if (!perms) return "Accès total";
         // Handle if perms comes as string
@@ -94,6 +95,7 @@ export const AdminTeam = () => {
         const count = Object.values(perms).filter(Boolean).length;
         return `${count} accès autorisés`;
     };
+    */
 
     const handleCloseModal = () => {
         setIsInviteModalOpen(false);
