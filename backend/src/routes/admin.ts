@@ -20,6 +20,14 @@ router.patch('/submissions/:submissionId/status', adminController.updateSubmissi
 router.patch('/users/:userId/status', adminController.updateUserStatus);
 router.delete('/users/:userId', adminController.deleteUser);
 
+// Mission management
+router.get('/missions', adminController.getMissions);
+router.get('/missions/pending', adminController.getPendingMissions);
+router.get('/missions/:orderId', adminController.getAdminMissionDetail);
+router.post('/missions/:orderId/approve', adminController.approveMission);
+router.put('/missions/:orderId', adminController.updateMission);
+router.delete('/missions/:orderId', adminController.deleteMission);
+
 // Pack management
 router.get('/packs', adminController.getPacks);
 router.post('/packs', adminController.createPack);

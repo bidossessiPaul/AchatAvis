@@ -6,6 +6,8 @@ import {
     loginSchema,
     changePasswordSchema,
     profileUpdateSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
 } from '../middleware/validator';
 import { ZodError } from 'zod';
 
@@ -393,5 +395,44 @@ export const refreshToken = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Refresh token error:', error);
         return res.status(401).json({ error: error.message });
+    }
+};
+
+/**
+ * Forgot password
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (req: Request, res: Response) => {
+    try {
+        const validatedData = forgotPasswordSchema.parse(req.body);
+        await authService.forgotPassword(validatedData.email);
+
+        return res.json({
+            message: 'Si cet email correspond à un compte, un lien de réinitialisation a été envoyé.'
+        });
+    } catch (error: any) {
+        if (error instanceof ZodError) {
+            return res.status(400).json({ error: 'Email invalide', details: error.errors });
+        }
+        console.error('Forgot password error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Reset password
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const validatedData = resetPasswordSchema.parse(req.body);
+        await authService.resetPassword(validatedData.token, validatedData.newPassword);
+
+        return res.json({ message: 'Votre mot de passe a été réinitialisé avec succès.' });
+    } catch (error: any) {
+        if (error instanceof ZodError) {
+            return res.status(400).json({ error: 'Données invalides', details: error.errors });
+        }
+        return res.status(400).json({ error: error.message || 'Erreur lors de la réinitialisation' });
     }
 };

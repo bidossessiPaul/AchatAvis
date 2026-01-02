@@ -35,9 +35,24 @@ interface Submission {
     proposal_content: string;
 }
 
+interface PendingMission {
+    id: string;
+    artisan_id: string;
+    artisan_name: string;
+    company_name: string;
+    quantity: number;
+    price: number;
+    status: string;
+    created_at: string;
+    sector: string;
+    desired_tone: string;
+}
+
 export const ReviewValidation: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
+    const [pendingMissions, setPendingMissions] = useState<PendingMission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'submissions' | 'missions'>('submissions');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showOnlyOld, setShowOnlyOld] = useState(false);
@@ -49,16 +64,20 @@ export const ReviewValidation: React.FC = () => {
     const [isActionLoading, setIsActionLoading] = useState(false);
 
     useEffect(() => {
-        loadSubmissions();
+        fetchData();
     }, []);
 
-    const loadSubmissions = async () => {
+    const fetchData = async () => {
         setIsLoading(true);
         try {
-            const data = await adminApi.getAllSubmissions();
-            setSubmissions(data);
+            const [subs, missions] = await Promise.all([
+                adminApi.getAllSubmissions(),
+                adminApi.getPendingMissions()
+            ]);
+            setSubmissions(subs);
+            setPendingMissions(missions);
         } catch (error) {
-            toast.error('Erreur lors du chargement des avis');
+            toast.error('Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
         }
@@ -72,9 +91,22 @@ export const ReviewValidation: React.FC = () => {
             setShowRejectModal(false);
             setRejectionReason('');
             setSelectedSubmissionId(null);
-            loadSubmissions();
+            fetchData();
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const handleApproveMission = async (orderId: string) => {
+        setIsActionLoading(true);
+        try {
+            await adminApi.approveMission(orderId);
+            toast.success('Mission publiée !');
+            fetchData();
+        } catch (error) {
+            toast.error('Erreur lors de la publication');
         } finally {
             setIsActionLoading(false);
         }
@@ -114,49 +146,92 @@ export const ReviewValidation: React.FC = () => {
             <div className="admin-dashboard revamped">
                 <div className="admin-main-card">
                     <div className="admin-card-header">
-                        <h2 className="card-title">Validation des Avis</h2>
-                        <div className="admin-controls">
-                            <div className="search-box">
-                                <Search size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Guide, artisan, email..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="filter-select-wrapper">
-                                <Filter size={16} />
-                                <select
-                                    className="admin-select"
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                >
-                                    <option value="all">Tous</option>
-                                    <option value="pending">En attente</option>
-                                    <option value="validated">Validés</option>
-                                    <option value="rejected">Rejetés</option>
-                                </select>
-                            </div>
-
+                        <div className="tabs-container" style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--gray-200)' }}>
                             <button
-                                className={`age-filter-btn ${showOnlyOld ? 'active' : ''}`}
-                                onClick={() => setShowOnlyOld(!showOnlyOld)}
-                                title="Afficher uniquement les avis de plus de 7 jours"
+                                className={`tab-btn ${activeTab === 'submissions' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('submissions')}
+                                style={{
+                                    padding: '0.75rem 0',
+                                    fontWeight: 700,
+                                    fontSize: '0.9375rem',
+                                    color: activeTab === 'submissions' ? '#ff3b6a' : 'var(--gray-500)',
+                                    borderBottom: activeTab === 'submissions' ? '2px solid #ff3b6a' : 'none',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
                             >
-                                <Clock size={16} />
-                                <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
+                                Avis à valider ({submissions.filter(s => s.status === 'pending').length})
                             </button>
+                            <button
+                                className={`tab-btn ${activeTab === 'missions' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('missions')}
+                                style={{
+                                    padding: '0.75rem 0',
+                                    fontWeight: 700,
+                                    fontSize: '0.9375rem',
+                                    color: activeTab === 'missions' ? '#ff3b6a' : 'var(--gray-500)',
+                                    borderBottom: activeTab === 'missions' ? '2px solid #ff3b6a' : 'none',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Missions à publier ({pendingMissions.length})
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <h2 className="card-title">
+                                {activeTab === 'submissions' ? 'Validation des Avis' : 'Approbation des Missions'}
+                            </h2>
+                            <div className="admin-controls">
+                                <div className="search-box">
+                                    <Search size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Guide, artisan, email..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
+
+                                {activeTab === 'submissions' && (
+                                    <>
+                                        <div className="filter-select-wrapper">
+                                            <Filter size={16} />
+                                            <select
+                                                className="admin-select"
+                                                value={statusFilter}
+                                                onChange={(e) => setStatusFilter(e.target.value)}
+                                            >
+                                                <option value="all">Tous</option>
+                                                <option value="pending">En attente</option>
+                                                <option value="validated">Validés</option>
+                                                <option value="rejected">Rejetés</option>
+                                            </select>
+                                        </div>
+
+                                        <button
+                                            className={`age-filter-btn ${showOnlyOld ? 'active' : ''}`}
+                                            onClick={() => setShowOnlyOld(!showOnlyOld)}
+                                            title="Afficher uniquement les avis de plus de 7 jours"
+                                        >
+                                            <Clock size={16} />
+                                            <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     <div className="admin-table-container">
                         {isLoading ? (
                             <div className="admin-loading">
-                                <LoadingSpinner size="lg" text="Chargement des avis..." />
+                                <LoadingSpinner size="lg" text="Chargement..." />
                             </div>
-                        ) : (
+                        ) : activeTab === 'submissions' ? (
                             <table className="admin-modern-table">
                                 <thead>
                                     <tr>
@@ -252,6 +327,50 @@ export const ReviewValidation: React.FC = () => {
                                         <tr>
                                             <td colSpan={6} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
                                                 Aucun avis trouvé.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <table className="admin-modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Artisan</th>
+                                        <th>Société</th>
+                                        <th>Détails</th>
+                                        <th>Statut</th>
+                                        <th className="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pendingMissions.length > 0 ? pendingMissions.map((mission) => (
+                                        <tr key={mission.id}>
+                                            <td className="font-medium">{mission.artisan_name}</td>
+                                            <td>{mission.company_name}</td>
+                                            <td>
+                                                <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
+                                                    <strong>{mission.quantity} avis</strong> • {mission.sector}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className="admin-badge warning">À valider</span>
+                                            </td>
+                                            <td className="actions-cell">
+                                                <button
+                                                    className="btn-next"
+                                                    style={{ padding: '6px 12px', fontSize: '12px', width: 'auto' }}
+                                                    onClick={() => handleApproveMission(mission.id)}
+                                                    disabled={isActionLoading}
+                                                >
+                                                    <CheckCircle2 size={16} /> Publier
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
+                                                Aucune mission en attente de publication.
                                             </td>
                                         </tr>
                                     )}

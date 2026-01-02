@@ -9,6 +9,7 @@ import artisanRoutes from './routes/artisan';
 import guideRoutes from './routes/guide';
 import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
+import teamRoutes from './routes/team';
 
 // Load environment variables
 dotenv.config();
@@ -64,6 +65,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/artisan', artisanRoutes);
 app.use('/api/guide', guideRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/team', teamRoutes);
 app.use('/api/payouts', payoutRoutes);
 
 // 404 handler

@@ -12,7 +12,10 @@ import {
     Zap,
     PieChart as PieChartIcon,
     BarChart3,
-    ExternalLink
+    ExternalLink,
+    Clock,
+    ArrowUpRight,
+    FolderOpen
 } from 'lucide-react';
 import {
     XAxis,
@@ -46,6 +49,8 @@ interface Subscription {
     pack_color: string;
     total_quota: number;
     total_used: number;
+    is_pack_used: number;
+    order_id?: string | null;
 }
 
 interface Stats {
@@ -297,7 +302,8 @@ export const SubscriptionsList: React.FC = () => {
                                         <tr>
                                             <th>Utilisateur / Société</th>
                                             <th>Pack</th>
-                                            <th>Usage Missions</th>
+                                            <th>État Pack</th>
+                                            <th>Usage Avis</th>
                                             <th>Prix</th>
                                             <th>Statut</th>
                                             <th>Date Achat</th>
@@ -325,6 +331,21 @@ export const SubscriptionsList: React.FC = () => {
                                                 <td>
                                                     <span className={`pack-badge ${(sub.pack_name || '').includes('Découverte') ? 'discovery' : (sub.pack_name || '').includes('Croissance') ? 'growth' : 'expert'}`}>
                                                         {sub.pack_name || 'Inconnu'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`sub-status ${sub.is_pack_used > 0 ? 'active' : 'pending'}`} style={{ background: sub.is_pack_used > 0 ? '#DCFCE7' : '#F1F5F9', color: sub.is_pack_used > 0 ? '#166534' : '#64748B' }}>
+                                                        {sub.is_pack_used > 0 ? (
+                                                            <>
+                                                                <CheckCircle2 size={12} style={{ marginRight: '4px' }} />
+                                                                Utilisé
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Clock size={12} style={{ marginRight: '4px' }} />
+                                                                Disponible
+                                                            </>
+                                                        )}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -360,12 +381,33 @@ export const SubscriptionsList: React.FC = () => {
                                                 </td>
                                                 <td className="actions-cell">
                                                     <div className="action-buttons-group">
-                                                        <button className="premium-icon-btn" title="Voir profil">
-                                                            <ExternalLink size={14} />
+                                                        <button
+                                                            className="premium-icon-btn"
+                                                            title="Voir profil artisan"
+                                                            onClick={() => window.location.href = `/admin/artisans/${sub.user_id}`}
+                                                        >
+                                                            <ArrowUpRight size={16} />
                                                         </button>
-                                                        <button className="premium-icon-btn" title="Détails Stripe">
-                                                            <CreditCard size={14} />
-                                                        </button>
+
+                                                        {sub.is_pack_used > 0 && sub.order_id ? (
+                                                            <button
+                                                                className="premium-icon-btn"
+                                                                title="Voir la mission liée"
+                                                                style={{ color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.3)', background: 'rgba(59, 130, 246, 0.05)' }}
+                                                                onClick={() => window.location.href = `/admin/missions/${sub.order_id}`}
+                                                            >
+                                                                <FolderOpen size={16} />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                className="premium-icon-btn disabled"
+                                                                title="Aucune mission liée"
+                                                                style={{ opacity: 0.5, cursor: 'not-allowed', background: '#f8fafc' }}
+                                                                disabled
+                                                            >
+                                                                <FolderOpen size={16} className="text-gray-400" />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

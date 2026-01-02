@@ -46,8 +46,20 @@ export const useAuthStore = create<AuthState>()(
                         });
                         return response;
                     }
+
+                    const userData = response.user as User;
+                    // Defensive parsing for permissions
+                    if (userData && userData.permissions && typeof userData.permissions === 'string') {
+                        try {
+                            userData.permissions = JSON.parse(userData.permissions);
+                        } catch (e) {
+                            console.error('Failed to parse permissions in store:', e);
+                            userData.permissions = {};
+                        }
+                    }
+
                     set({
-                        user: response.user as User,
+                        user: userData,
                         isAuthenticated: true,
                         isLoading: false,
                         error: null,
@@ -115,8 +127,16 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true });
                 try {
                     const response = await authApi.getMe();
+                    const userData = response.user;
+                    if (userData && userData.permissions && typeof userData.permissions === 'string') {
+                        try {
+                            userData.permissions = JSON.parse(userData.permissions);
+                        } catch (e) {
+                            userData.permissions = {};
+                        }
+                    }
                     set({
-                        user: response.user,
+                        user: userData,
                         isAuthenticated: true,
                         isLoading: false,
                     });
@@ -137,8 +157,16 @@ export const useAuthStore = create<AuthState>()(
 
                 try {
                     const response = await authApi.getMe();
+                    const userData = response.user;
+                    if (userData && userData.permissions && typeof userData.permissions === 'string') {
+                        try {
+                            userData.permissions = JSON.parse(userData.permissions);
+                        } catch (e) {
+                            userData.permissions = {};
+                        }
+                    }
                     set({
-                        user: response.user,
+                        user: userData,
                         isAuthenticated: true,
                     });
                 } catch (error) {

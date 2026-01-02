@@ -6,6 +6,7 @@ import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { PremiumBlurOverlay } from '../../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../../context/authStore';
+import toast from 'react-hot-toast';
 import './SubmissionFlow.css';
 
 // Steps components (we will create them next)
@@ -64,6 +65,13 @@ export const SubmissionFlow: React.FC = () => {
             const data = await artisanService.getOrder(id);
             setOrder(data);
             setProposals(data.proposals);
+
+            // Security: If mission is already published or beyond, redirect out
+            if (['in_progress', 'completed', 'cancelled'].includes(data.status)) {
+                toast.error("Cette mission est déjà publiée et ne peut plus être modifiée.");
+                navigate('/artisan');
+                return;
+            }
             // Deduce current step based on data completeness
             // If we are coming from the detail page, we stay at step 1 to allow full review
             if (data.status === 'draft') {

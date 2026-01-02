@@ -14,6 +14,8 @@ import {
     disable2FA,
     verify2FA,
     refreshToken,
+    forgotPassword,
+    resetPassword,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 import { uploadAvatar as uploadMiddleware } from '../middleware/upload';
@@ -40,9 +42,8 @@ router.post('/2fa/generate', authenticate, generate2FA);
 router.post('/2fa/enable', authenticate, enable2FA);
 router.post('/2fa/disable', authenticate, disable2FA);
 
-// TODO: Implement these endpoints
-// router.post('/forgot-password', forgotPassword);
-// router.post('/reset-password/:token', resetPassword);
-// router.post('/verify-email/:token', verifyEmail);
+// Forgot password routes
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 export default router;

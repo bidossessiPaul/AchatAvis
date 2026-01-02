@@ -263,3 +263,9 @@
         padding: var(--space-4);
     }
 }
+
+.admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+}

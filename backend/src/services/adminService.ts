@@ -1,4 +1,5 @@
 import { query, pool } from '../config/database';
+import { sendUserStatusUpdateEmail, sendMissionDecisionEmail, sendSubmissionDecisionEmail } from './emailService';
 
 /**
  * Get all artisans with their profiles
@@ -34,10 +35,22 @@ export const getGuides = async () => {
  * Update user status (active, pending, suspended, rejected)
  */
 export const updateUserStatus = async (userId: string, status: string) => {
-    return await query(
+    const result = await query(
         `UPDATE users SET status = ? WHERE id = ?`,
         [status, userId]
     );
+
+    // Send notification email
+    try {
+        const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+        if (user && user.length > 0) {
+            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, status);
+        }
+    } catch (error) {
+        console.error('Error sending user status update email:', error);
+    }
+
+    return result;
 };
 
 /**
@@ -121,13 +134,20 @@ export const getGlobalStats = async () => {
     // Total Revenue & Revenue Trend (last 6 months)
     const revenueStats: any = await query(`
         SELECT 
-            SUM(price) as total_revenue,
+            SUM(amount) as total_revenue,
             DATE_FORMAT(created_at, '%Y-%m') as month
-        FROM reviews_orders
-        WHERE status IN ('completed', 'paid', 'in_progress')
+        FROM payments
+        WHERE status = 'completed'
         GROUP BY month
         ORDER BY month DESC
         LIMIT 6
+    `);
+
+    // Total All Time Revenue (sum of all completed payments)
+    const totalAllTimeRevenue: any = await query(`
+        SELECT SUM(amount) as total
+        FROM payments
+        WHERE status = 'completed'
     `);
 
     // User growth (last 6 months)
@@ -156,12 +176,13 @@ export const getGlobalStats = async () => {
             (SELECT COUNT(*) FROM users WHERE role = 'guide') as total_guides,
             (SELECT COUNT(*) FROM reviews_orders) as total_orders,
             (SELECT COUNT(*) FROM review_proposals WHERE status = 'draft') as pending_proposals,
-            (SELECT COUNT(*) FROM users WHERE status = 'pending') as pending_users,
+            (SELECT COUNT(*) FROM reviews_orders WHERE status = 'submitted') as pending_missions,
             (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as pending_payouts
     `);
 
     return {
         revenue: revenueStats,
+        totalAllTimeRevenue: totalAllTimeRevenue[0]?.total || 0,
         growth: userGrowth,
         pending: pendingActions[0],
         totals: totalCounts[0]
@@ -238,25 +259,55 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             submissionId
         });
 
-        // 2. If validated, increment artisan review counts
+        // 2. If validated, increment artisan review counts AND order review count
         if (status === 'validated') {
             const [rows]: any = await connection.query(
-                'SELECT artisan_id FROM reviews_submissions WHERE id = :submissionId',
+                `SELECT s.artisan_id, p.order_id 
+                 FROM reviews_submissions s
+                 JOIN review_proposals p ON s.proposal_id = p.id
+                 WHERE s.id = :submissionId`,
                 { submissionId }
             );
 
             if (rows && rows.length > 0) {
-                const artisanId = rows[0].artisan_id;
+                const { artisan_id, order_id } = rows[0];
+
+                // Update Global Profile Stats
                 await connection.query(`
                     UPDATE artisans_profiles 
                     SET current_month_reviews = COALESCE(current_month_reviews, 0) + 1,
                         total_reviews_received = COALESCE(total_reviews_received, 0) + 1
-                    WHERE user_id = :artisanId
-                `, { artisanId });
+                    WHERE user_id = :artisan_id
+                `, { artisan_id });
+
+                // Update Specific Order Stats (Usage per Pack)
+                if (order_id) {
+                    await connection.query(`
+                        UPDATE reviews_orders
+                        SET reviews_received = COALESCE(reviews_received, 0) + 1
+                        WHERE id = :order_id
+                    `, { order_id });
+                }
             }
         }
 
         await connection.commit();
+
+        // 3. Send notification to guide
+        try {
+            const [rows]: any = await connection.query(`
+                SELECT u.full_name, u.email 
+                FROM reviews_submissions s
+                JOIN users u ON s.guide_id = u.id
+                WHERE s.id = :submissionId
+            `, { submissionId });
+
+            if (rows && rows.length > 0) {
+                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
+            }
+        } catch (error) {
+            console.error('Error sending submission decision email:', error);
+        }
     } catch (error) {
         console.error('Error in updateSubmissionStatus:', error);
         await connection.rollback();
@@ -285,7 +336,15 @@ export const getAllSubscriptions = async () => {
             CAST(p.amount * 100 AS UNSIGNED) as price_cents,
             COALESCE(sp.color, 'standard') as pack_color,
             p.missions_quota as total_quota,
-            p.missions_used as total_used
+            p.missions_used as is_pack_used,
+            (
+                SELECT COALESCE(SUM(ro.reviews_received), 0)
+                FROM reviews_orders ro
+                WHERE ro.payment_id = p.id
+            ) as total_used,
+            (
+                SELECT id FROM reviews_orders WHERE payment_id = p.id LIMIT 1
+            ) as order_id
         FROM payments p
         JOIN users u ON p.user_id = u.id
         JOIN artisans_profiles ap ON ap.user_id = u.id
@@ -420,4 +479,143 @@ export const updatePack = async (id: string, pack: any) => {
  */
 export const deletePack = async (id: string) => {
     return await query(`DELETE FROM subscription_packs WHERE id = ?`, [id]);
+};
+
+/**
+ * Get missions pending admin approval (status = 'submitted')
+ */
+export const getPendingMissions = async () => {
+    return await query(`
+        SELECT o.*, u.full_name as artisan_name, ap.company_name
+        FROM reviews_orders o
+        JOIN users u ON o.artisan_id = u.id
+        JOIN artisans_profiles ap ON u.id = ap.user_id
+        WHERE o.status = 'submitted'
+        ORDER BY o.created_at DESC
+    `);
+};
+
+/**
+ * Approve a mission and make it available for guides
+ */
+export const approveMission = async (orderId: string) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Update order status and publication date
+        await connection.query(
+            `UPDATE reviews_orders SET status = 'in_progress', published_at = NOW() WHERE id = ?`,
+            [orderId]
+        );
+
+        // 2. Approve all draft proposals for this order
+        await connection.query(
+            `UPDATE review_proposals SET status = 'approved' WHERE order_id = ? AND status = 'draft'`,
+            [orderId]
+        );
+
+        await connection.commit();
+
+        // 3. Send notification to artisan
+        try {
+            const [rows]: any = await connection.query(`
+                SELECT u.full_name, u.email 
+                FROM reviews_orders o
+                JOIN users u ON o.artisan_id = u.id
+                WHERE o.id = ?
+            `, [orderId]);
+
+            if (rows && rows.length > 0) {
+                await sendMissionDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress');
+            }
+        } catch (error) {
+            console.error('Error sending mission decision email:', error);
+        }
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+/**
+ * Get all missions with artisan and company details
+ */
+export const getAllMissions = async () => {
+    return await query(`
+        SELECT o.*, u.full_name as artisan_name, ap.company_name as original_company_name
+        FROM reviews_orders o
+        JOIN users u ON o.artisan_id = u.id
+        JOIN artisans_profiles ap ON u.id = ap.user_id
+        ORDER BY o.created_at DESC
+    `);
+};
+
+/**
+ * Get full mission details for admin editing
+ */
+export const getAdminMissionDetail = async (orderId: string) => {
+    const orders: any = await query(`
+        SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
+               COALESCE(sp.name, pay.description) as pack_name, 
+               pay.missions_quota, pay.missions_used as pack_missions_used
+        FROM reviews_orders o
+        JOIN users u ON o.artisan_id = u.id
+        JOIN artisans_profiles ap ON u.id = ap.user_id
+        LEFT JOIN payments pay ON o.payment_id = pay.id
+        LEFT JOIN subscription_packs sp ON pay.description LIKE CONCAT('%', sp.id, '%')
+        WHERE o.id = ?
+    `, [orderId]);
+
+    if (!orders || orders.length === 0) return null;
+
+    const proposals = await query(`
+        SELECT * FROM review_proposals WHERE order_id = ? ORDER BY created_at ASC
+    `, [orderId]);
+
+    return {
+        ...orders[0],
+        proposals
+    };
+};
+
+/**
+ * Update any mission field (Admin CRUD)
+ */
+export const updateMission = async (orderId: string, data: any) => {
+    const fields = Object.keys(data);
+    const values = Object.values(data);
+
+    if (fields.length === 0) return;
+
+    const setClause = fields.map(field => `${field} = ?`).join(', ');
+    return await query(
+        `UPDATE reviews_orders SET ${setClause} WHERE id = ?`,
+        [...values, orderId]
+    );
+};
+
+/**
+ * Delete a mission (Admin CRUD)
+ */
+export const deleteMission = async (orderId: string) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // Submissions and proposals might have FK with ON DELETE CASCADE, 
+        // but let's be safe if they don't or if there's other cleanup.
+        // Usually, reviews_submissions should be deleted or handled.
+
+        await connection.query(`DELETE FROM review_proposals WHERE order_id = ?`, [orderId]);
+        await connection.query(`DELETE FROM reviews_orders WHERE id = ?`, [orderId]);
+
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 };

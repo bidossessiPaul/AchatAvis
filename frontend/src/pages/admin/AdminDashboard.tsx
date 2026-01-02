@@ -5,7 +5,6 @@ import {
     Users,
     TrendingUp,
     ShoppingBag,
-    AlertCircle,
     CheckCircle2,
     Clock,
     ArrowUpRight,
@@ -26,6 +25,7 @@ import './AdminDashboard.css';
 
 interface DashboardStats {
     revenue: any[];
+    totalAllTimeRevenue?: number;
     growth: any[];
     pending: {
         pending_reviews: number;
@@ -73,29 +73,7 @@ export const AdminDashboard: React.FC = () => {
         <DashboardLayout title="Vue d'ensemble">
             <div className="admin-dashboard revamped">
                 {/* Notification Banner for Pending Items */}
-                {(stats.pending.pending_reviews > 0 || stats.pending.pending_users > 0 || stats.pending.pending_payouts > 0) && (
-                    <div className="admin-notification-bar">
-                        <AlertCircle size={20} />
-                        <div className="notif-content">
-                            <span>
-                                {(() => {
-                                    const parts = [];
-                                    if (stats.pending.pending_reviews > 0) parts.push(<span key="reviews"><strong>{stats.pending.pending_reviews}</strong> avis en attente</span>);
-                                    if (stats.pending.pending_users > 0) parts.push(<span key="users"><strong>{stats.pending.pending_users}</strong> comptes à vérifier</span>);
-                                    if (stats.pending.pending_payouts > 0) parts.push(<span key="payouts"><strong>{stats.pending.pending_payouts}</strong> paiements en attente</span>);
-
-                                    return parts.map((part, i) => (
-                                        <React.Fragment key={part.key || i}>
-                                            {part}
-                                            {i < parts.length - 1 && ', '}
-                                        </React.Fragment>
-                                    ));
-                                })()}
-                            </span>
-                            <button className="notif-action-btn" onClick={() => window.location.href = '/admin/payments'}>Gérer les paiements</button>
-                        </div>
-                    </div>
-                )}
+                {/* Custom Alert REMOVED as per user request */}
 
                 {/* Main Stats Cards */}
                 <div className="admin-stats-overview">
@@ -105,9 +83,9 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="stat-info">
                             <span className="stat-label">Chiffre d'Affaires</span>
-                            <span className="stat-value">{stats.revenue[0]?.total_revenue || 0}€</span>
+                            <span className="stat-value">{stats.totalAllTimeRevenue || 0}€</span>
                             <span className="stat-trend positive">
-                                <ArrowUpRight size={14} /> +12% ce mois
+                                <ArrowUpRight size={14} /> Global
                             </span>
                         </div>
                     </div>

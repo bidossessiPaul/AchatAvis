@@ -84,3 +84,29 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
         return next();
     }
 };
+/**
+ * Middleware to check specific permission for team members
+ */
+export const checkPermission = (permissionKey: string) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // 1. Super Admin (no permissions object or empty) has access to everything
+        const userPermissions = req.user.permissions;
+        if (!userPermissions || Object.keys(userPermissions).length === 0) {
+            return next();
+        }
+
+        // 2. Check specific permission
+        if (userPermissions[permissionKey] === true) {
+            return next();
+        }
+
+        return res.status(403).json({
+            error: 'Insufficient permissions',
+            requiredPermission: permissionKey
+        });
+    };
+};

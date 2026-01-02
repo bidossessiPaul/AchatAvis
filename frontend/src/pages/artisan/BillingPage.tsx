@@ -56,10 +56,16 @@ export const BillingPage: React.FC = () => {
         }
     };
 
-    const missionTotal = user?.missions_allowed || 0;
-    const missionUsed = user?.missions_used || 0;
-    const missionRemaining = Math.max(0, missionTotal - missionUsed);
-    const progressPercentage = missionTotal > 0 ? (missionUsed / missionTotal) * 100 : 0;
+    // Calculate stats purely from history
+    const boughtPacks = history.filter(p => p.status === 'completed').length;
+    const usedPacks = history.filter(p => p.status === 'completed' && p.missions_used > 0).length;
+    const remainingPacks = Math.max(0, boughtPacks - usedPacks);
+    const progressPercentage = boughtPacks > 0 ? (usedPacks / boughtPacks) * 100 : 0;
+
+    // Calculate total reviews (sum of quotas from all packs)
+    const totalReviews = history
+        .filter(p => p.status === 'completed')
+        .reduce((acc, curr) => acc + (curr.missions_quota || 0), 0);
 
     if (isFetching) {
         return (
@@ -74,7 +80,7 @@ export const BillingPage: React.FC = () => {
     return (
         <DashboardLayout title="Ma Facturation">
             <div className="billing-page-container">
-                {/* 1. Mission Inventory Section - Premium Card */}
+                {/* 1. Mission Inventory Section (Restored & Calculated from History) */}
                 <div className="inventory-section">
                     <div className="billing-glass-card inventory-card">
                         <div className="card-header">
@@ -94,15 +100,15 @@ export const BillingPage: React.FC = () => {
                         <div className="inventory-stats-grid">
                             <div className="stat-item">
                                 <span className="stat-label">Total acheté</span>
-                                <span className="stat-value">{missionTotal}</span>
+                                <span className="stat-value">{boughtPacks}</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Utilisées</span>
-                                <span className="stat-value">{missionUsed}</span>
+                                <span className="stat-value">{usedPacks}</span>
                             </div>
                             <div className="stat-item highlight">
                                 <span className="stat-label">Restantes</span>
-                                <span className="stat-value">{missionRemaining}</span>
+                                <span className="stat-value">{remainingPacks}</span>
                             </div>
                         </div>
 
@@ -135,8 +141,8 @@ export const BillingPage: React.FC = () => {
                         <div className="info-row">
                             <Target size={16} />
                             <div>
-                                <span className="info-label">Quota Mensuel Avis</span>
-                                <span className="info-value">{user?.current_month_reviews || 0} / {user?.monthly_reviews_quota || 0}</span>
+                                <span className="info-label">Quota d'Avis</span>
+                                <span className="info-value">{totalReviews} Avis cumulés</span>
                             </div>
                         </div>
                         <button className="receipt-button">
@@ -164,7 +170,7 @@ export const BillingPage: React.FC = () => {
                                         <span className="amount">{plan.price_cents / 100}€</span>
                                         <span className="period">/pack</span>
                                     </div>
-                                    <p className="plan-quota-text">+{plan.quantity} missions à votre stock</p>
+                                    <p className="plan-quota-text">+{plan.quantity} avis à votre stock</p>
                                 </div>
                                 <button
                                     onClick={() => handleUpgrade(plan.id)}
@@ -178,7 +184,7 @@ export const BillingPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 3. Payment History Section */}
+                {/* 2. Payment History Section */}
                 <div className="history-section">
                     <div className="section-header">
                         <History />
@@ -197,34 +203,55 @@ export const BillingPage: React.FC = () => {
                                             <th>Date</th>
                                             <th>Description</th>
                                             <th>Montant</th>
-                                            <th>Statut</th>
+                                            <th>Paiement</th>
+                                            <th>État du Pack</th>
                                             <th />
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {history.map((payment) => (
-                                            <tr key={payment.id}>
-                                                <td>
-                                                    <span className="date-cell">
-                                                        {new Date(payment.created_at).toLocaleDateString('fr-FR')}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <span className="desc-cell">{payment.description || 'Pack Booster'}</span>
-                                                </td>
-                                                <td>
-                                                    <span className="amount-cell">{payment.amount}€</span>
-                                                </td>
-                                                <td>
-                                                    <span className={`status-pill ${payment.status}`}>
-                                                        {payment.status === 'completed' ? 'Validé' : payment.status}
-                                                    </span>
-                                                </td>
-                                                <td className="actions-cell">
-                                                    <ChevronRight size={16} />
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {history.map((payment) => {
+                                            const isUsed = payment.missions_used > 0;
+                                            const isPaid = payment.status === 'completed';
+
+                                            return (
+                                                <tr key={payment.id}>
+                                                    <td>
+                                                        <span className="date-cell">
+                                                            {new Date(payment.created_at).toLocaleDateString('fr-FR')}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="desc-cell">{payment.description || 'Pack Booster'}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span className="amount-cell">{payment.amount}€</span>
+                                                    </td>
+                                                    <td>
+                                                        <span className={`status-pill ${payment.status}`}>
+                                                            {isPaid ? 'Validé' : payment.status}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {isPaid ? (
+                                                            isUsed ? (
+                                                                <span className="status-pill used" style={{ background: '#f3f4f6', color: '#6b7280' }}>
+                                                                    Utilisé
+                                                                </span>
+                                                            ) : (
+                                                                <span className="status-pill available" style={{ background: '#ecfdf5', color: '#10b981' }}>
+                                                                    Disponible
+                                                                </span>
+                                                            )
+                                                        ) : (
+                                                            <span className="status-pill pending">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="actions-cell">
+                                                        <ChevronRight size={16} />
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
