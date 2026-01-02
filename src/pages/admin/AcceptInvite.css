@@ -1,0 +1,180 @@
+/* AcceptInvite.css - Styles for the Admin Invitation Acceptance Page */
+
+.accept-invite-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: #f9fafb;
+    /* gray-50 */
+    padding: 3rem 1rem;
+}
+
+.invite-container {
+    margin: 0 auto;
+    width: 100%;
+    max-width: 28rem;
+    /* max-w-md */
+    animation: slideUp 0.5s ease-out;
+}
+
+.invite-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.brand-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    /* gray-900 */
+    margin-bottom: 1.5rem;
+}
+
+.brand-highlight {
+    color: #ff3b6a;
+}
+
+.team-badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    background-color: #dbeafe;
+    /* blue-100 */
+    color: #1d4ed8;
+    /* blue-700 */
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid #bfdbfe;
+    /* blue-200 */
+    margin-left: 8px;
+}
+
+.page-title {
+    font-size: 1.875rem;
+    /* 3xl */
+    font-weight: 800;
+    color: #111827;
+    /* gray-900 */
+    margin: 0;
+}
+
+.page-subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    /* sm */
+    color: #4b5563;
+    /* gray-600 */
+}
+
+/* Card Styles */
+.invite-card {
+    background: white;
+    padding: 2rem 2.5rem;
+    border-radius: 1rem;
+    /* 2xl */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    /* shadow-xl */
+    border: 1px solid #f3f4f6;
+    /* gray-100 */
+}
+
+.invite-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-field label {
+    display: block;
+    font-size: 0.875rem;
+    /* sm */
+    font-weight: 500;
+    color: #374151;
+    /* gray-700 */
+    margin-bottom: 0.5rem;
+}
+
+.input-container {
+    position: relative;
+}
+
+.field-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    /* gray-400 */
+    pointer-events: none;
+}
+
+.invite-input {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    /* pl-10 */
+    border-radius: 0.75rem;
+    /* xl */
+    border: 1px solid #d1d5db;
+    /* gray-300 */
+    font-size: 0.875rem;
+    /* sm */
+    transition: all 0.2s;
+    outline: none;
+}
+
+.invite-input:focus {
+    border-color: #ff3b6a;
+    box-shadow: 0 0 0 2px rgba(255, 59, 106, 0.2);
+}
+
+/* Button */
+.btn-activate {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    /* xl */
+    font-size: 0.875rem;
+    /* sm */
+    font-weight: 500;
+    color: white;
+    background-color: #2563eb;
+    /* blue-600 */
+    cursor: pointer;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+    transition: all 0.2s;
+}
+
+.btn-activate:hover {
+    background-color: #1d4ed8;
+    /* blue-700 */
+    transform: scale(1.02);
+}
+
+.btn-activate:disabled {
+    opacity: 0.7;
+    cursor: wait;
+    transform: none;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

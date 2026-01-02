@@ -4,6 +4,8 @@ import { Toaster } from 'react-hot-toast';
 import { Login } from './pages/auth/Login';
 import { RegisterArtisan } from './pages/auth/RegisterArtisan';
 import { RegisterGuide } from './pages/auth/RegisterGuide';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
 import { ProtectedRoute, PublicRoute } from './components/layout/RouteWrappers';
 import './styles/global.css';
 
@@ -12,6 +14,7 @@ import './styles/global.css';
 import { PlanSelection } from './pages/artisan/PlanSelection';
 import PaymentSuccess from './pages/artisan/PaymentSuccess';
 import { ProtectedArtisanRoute } from './components/auth/ProtectedArtisanRoute';
+import { PermissionGuard } from './components/auth/PermissionGuard';
 import { ArtisanOverview } from './pages/artisan/ArtisanOverview';
 import { SubmissionFlow } from './pages/artisan/SubmissionFlow/SubmissionFlow';
 import { OrderDetail } from './pages/artisan/OrderDetail';
@@ -29,8 +32,12 @@ import { PaymentsList } from './pages/admin/PaymentsList';
 import { ArtisanDetail } from './pages/admin/ArtisanDetail';
 import { GuideDetail } from './pages/admin/GuideDetail';
 import { ReviewValidation } from './pages/admin/ReviewValidation';
+import { AdminMissions } from './pages/admin/AdminMissions';
+import { AdminMissionDetail } from './pages/admin/AdminMissionDetail';
 import { SubscriptionsList } from './pages/admin/SubscriptionsList';
 import { PacksManagement } from './pages/admin/PacksManagement';
+import { AdminTeam } from './pages/admin/AdminTeam';
+import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 import { Profile } from './pages/Profile';
 import { useAuthStore } from './context/authStore';
 
@@ -61,6 +68,21 @@ function App() {
                 <Route path="/register/guide" element={
                     <PublicRoute>
                         <RegisterGuide />
+                    </PublicRoute>
+                } />
+                <Route path="/forgot-password" element={
+                    <PublicRoute>
+                        <ForgotPassword />
+                    </PublicRoute>
+                } />
+                <Route path="/reset-password" element={
+                    <PublicRoute>
+                        <ResetPassword />
+                    </PublicRoute>
+                } />
+                <Route path="/admin/accept-invite" element={
+                    <PublicRoute>
+                        <AcceptAdminInvite />
                     </PublicRoute>
                 } />
 
@@ -183,47 +205,86 @@ function App() {
                 {/* Admin Routes */}
                 <Route path="/admin" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminDashboard />
+                        <PermissionGuard requiredPermission="can_view_stats">
+                            <AdminDashboard />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/artisans" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <ArtisansList />
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <ArtisansList />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/artisans/:id" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <ArtisanDetail />
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <ArtisanDetail />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/guides" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <GuidesList />
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <GuidesList />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/guides/:id" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <GuideDetail />
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <GuideDetail />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/subscriptions" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <SubscriptionsList />
+                        <PermissionGuard requiredPermission="can_view_payments">
+                            <SubscriptionsList />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/payments" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PaymentsList />
+                        <PermissionGuard requiredPermission="can_view_payments">
+                            <PaymentsList />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/packs" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PacksManagement />
+                        <PermissionGuard requiredPermission="can_view_payments">
+                            <PacksManagement />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/team" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission="super_admin">
+                            <AdminTeam />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/reviews" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <ReviewValidation />
+                        <PermissionGuard requiredPermission={['can_manage_reviews', 'can_validate_reviews']}>
+                            <ReviewValidation />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/missions" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_missions', 'can_validate_missions']}>
+                            <AdminMissions />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/missions/:orderId" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_missions', 'can_validate_missions']}>
+                            <AdminMissionDetail />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
 

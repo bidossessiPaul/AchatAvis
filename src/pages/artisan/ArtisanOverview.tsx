@@ -68,7 +68,7 @@ export const ArtisanOverview: React.FC = () => {
 
     const stats = {
         total: orders.length,
-        submitted: orders.filter(o => o.status === 'submitted' || o.status === 'pending').length,
+        submitted: orders.filter(o => ['submitted', 'pending', 'in_progress'].includes(o.status)).length,
         completed: orders.filter(o => o.status === 'completed').length,
         drafts: orders.filter(o => o.status === 'draft').length
     };
@@ -246,19 +246,19 @@ export const ArtisanOverview: React.FC = () => {
                                                 borderRadius: '9999px',
                                                 fontSize: '0.75rem',
                                                 fontWeight: 600,
-                                                backgroundColor: order.status === 'completed' ? '#ecfdf5' : order.status === 'draft' ? '#f3f4f6' : '#fff7ed',
-                                                color: order.status === 'completed' ? '#047857' : order.status === 'draft' ? '#4b5563' : '#c2410c'
+                                                backgroundColor: order.status === 'completed' ? '#ecfdf5' : order.status === 'draft' ? '#f3f4f6' : order.status === 'submitted' ? '#eff6ff' : '#fff7ed',
+                                                color: order.status === 'completed' ? '#047857' : order.status === 'draft' ? '#4b5563' : order.status === 'submitted' ? '#2563eb' : '#c2410c'
                                             }}>
-                                                {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'Soumis' : order.status}
+                                                {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'En révision' : order.status === 'in_progress' ? 'En cours' : order.status}
                                             </span>
                                         </td>
                                         <td style={{ padding: '1rem' }}>{order.reviews_received} / {order.quantity}</td>
                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
                                             <button
-                                                onClick={() => navigate(order.status === 'draft' ? `/artisan/submit/${order.id}` : `/artisan/orders/${order.id}`)}
+                                                onClick={() => navigate((order.status === 'draft' || order.status === 'submitted') ? `/artisan/submit/${order.id}` : `/artisan/orders/${order.id}`)}
                                                 style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', fontWeight: 600 }}
                                             >
-                                                {order.status === 'draft' ? 'Continuer' : <ArrowRight size={18} />}
+                                                {(order.status === 'draft' || order.status === 'submitted') ? 'Modifier' : <ArrowRight size={18} />}
                                             </button>
                                         </td>
                                     </tr>

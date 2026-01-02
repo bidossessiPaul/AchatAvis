@@ -19,6 +19,7 @@ export interface User {
     two_factor_enabled: boolean;
     missions_allowed?: number;
     missions_used?: number;
+    permissions?: Record<string, boolean>; // For admin team members
 }
 
 export interface ArtisanProfile {

@@ -92,7 +92,11 @@ api.interceptors.response.use(
 
         const originalRequest = error.config;
 
-        if (error.response && error.response.status === 401 && !originalRequest._retry) {
+        // Skip token refresh for auth endpoints where 401 is expected (login, register, etc.)
+        const skipRefreshPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/team/accept-invite'];
+        const shouldSkipRefresh = skipRefreshPaths.some(path => originalRequest?.url?.includes(path));
+
+        if (error.response && error.response.status === 401 && !originalRequest._retry && !shouldSkipRefresh) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -220,6 +224,17 @@ export const authApi = {
         }
         return response.data;
     },
+
+    // Forgot password
+    forgotPassword: async (email: string): Promise<{ message: string }> => {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    resetPassword: async (data: { token: string | null, newPassword: string }): Promise<{ message: string }> => {
+        const response = await api.post('/auth/reset-password', data);
+        return response.data;
+    },
 };
 
 // Payout API
@@ -301,6 +316,34 @@ export const adminApi = {
         await api.patch(`/admin/submissions/${submissionId}/status`, data);
     },
 
+    // Mission Approval
+    getPendingMissions: async (): Promise<any[]> => {
+        const response = await api.get('/admin/missions/pending');
+        return response.data;
+    },
+
+    approveMission: async (orderId: string): Promise<void> => {
+        await api.post(`/admin/missions/${orderId}/approve`);
+    },
+
+    getMissions: async (): Promise<any[]> => {
+        const response = await api.get('/admin/missions');
+        return response.data;
+    },
+
+    getAdminMissionDetail: async (orderId: string): Promise<any> => {
+        const response = await api.get(`/admin/missions/${orderId}`);
+        return response.data;
+    },
+
+    updateMission: async (orderId: string, data: any): Promise<void> => {
+        await api.put(`/admin/missions/${orderId}`, data);
+    },
+
+    deleteMission: async (orderId: string): Promise<void> => {
+        await api.delete(`/admin/missions/${orderId}`);
+    },
+
     // Subscriptions
     getSubscriptions: async (): Promise<any[]> => {
         const response = await api.get('/admin/subscriptions');
@@ -328,6 +371,34 @@ export const adminApi = {
 
     deletePack: async (id: string): Promise<void> => {
         await api.delete(`/admin/packs/${id}`);
+    },
+};
+
+// Team API
+export const teamApi = {
+    inviteMember: async (email: string, permissions: any): Promise<{ message: string }> => {
+        const response = await api.post('/team/invite', { email, permissions });
+        return response.data;
+    },
+
+    getTeamMembers: async (): Promise<any[]> => {
+        const response = await api.get('/team');
+        return response.data;
+    },
+
+    acceptInvite: async (data: { token: string, password: string, fullName: string }): Promise<{ message: string }> => {
+        const response = await api.post('/team/accept-invite', data);
+        return response.data;
+    },
+
+    updatePermissions: async (userId: string, permissions: any): Promise<{ message: string }> => {
+        const response = await api.put(`/team/${userId}/permissions`, { permissions });
+        return response.data;
+    },
+
+    deleteMember: async (id: string, type: 'active' | 'pending'): Promise<{ message: string }> => {
+        const response = await api.delete(`/team/${id}?type=${type}`);
+        return response.data;
     },
 };
 
