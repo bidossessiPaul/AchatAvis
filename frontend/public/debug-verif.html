@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Verification</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .success {
+            color: green;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .info {
+            margin-top: 1rem;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="success">✅ Deployment is serving static files correctly!</div>
+    <div class="info">If you see this page, the Vercel static file serving is working.</div>
+    <div class="info">Timestamp: <span id="time"></span></div>
+    <script>document.getElementById('time').textContent = new Date().toISOString();</script>
+</body>
+
+</html>
