@@ -272,13 +272,17 @@ export const payoutApi = {
 // Admin API
 export const adminApi = {
     // Stats
-    getStats: async (): Promise<any> => {
+    getGlobalStats: async () => {
         const response = await api.get('/admin/stats');
         return response.data;
     },
 
-    // User management
-    getArtisans: async (): Promise<any[]> => {
+    async getLogs(page = 1) {
+        const response = await api.get(`/admin/logs?page=${page}`);
+        return response.data;
+    },
+
+    async getArtisans() {
         const response = await api.get('/admin/artisans');
         return response.data;
     },

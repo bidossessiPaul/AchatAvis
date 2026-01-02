@@ -36,6 +36,7 @@ import { AdminMissions } from './pages/admin/AdminMissions';
 import { AdminMissionDetail } from './pages/admin/AdminMissionDetail';
 import { SubscriptionsList } from './pages/admin/SubscriptionsList';
 import { PacksManagement } from './pages/admin/PacksManagement';
+import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 import { Profile } from './pages/Profile';
@@ -287,6 +288,13 @@ function App() {
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
+                {/* <Route path="/admin/logs" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission="can_view_stats">
+                            <AdminLogs />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } /> */}
 
                 {/* Common Profile Route */}
                 <Route path="/profile" element={

@@ -17,6 +17,19 @@ export interface User {
     permissions?: any; // JSON field for admin team members
 }
 
+export interface AdminLog {
+    id: number;
+    admin_id: number;
+    action: string;
+    target_type: string;
+    target_id?: number;
+    details?: any;
+    ip_address?: string;
+    created_at: Date;
+    admin_name?: string; // Joined field
+    admin_email?: string; // Joined field
+}
+
 export interface ArtisanProfile {
     id: string;
     user_id: string;

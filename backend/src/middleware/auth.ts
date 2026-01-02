@@ -87,7 +87,7 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
 /**
  * Middleware to check specific permission for team members
  */
-export const checkPermission = (permissionKey: string) => {
+export const checkPermission = (requiredPermission: string | string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
@@ -99,14 +99,22 @@ export const checkPermission = (permissionKey: string) => {
             return next();
         }
 
-        // 2. Check specific permission
-        if (userPermissions[permissionKey] === true) {
+        // 2. Check permission(s)
+        let hasAccess = false;
+        if (Array.isArray(requiredPermission)) {
+            // OR logic: true if user has ANY of the required permissions
+            hasAccess = requiredPermission.some(perm => userPermissions[perm] === true);
+        } else {
+            hasAccess = userPermissions[requiredPermission] === true;
+        }
+
+        if (hasAccess) {
             return next();
         }
 
         return res.status(403).json({
             error: 'Insufficient permissions',
-            requiredPermission: permissionKey
+            requiredPermission
         });
     };
 };

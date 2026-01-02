@@ -4,11 +4,13 @@ import { teamService } from '../services/teamService';
 export const teamController = {
     inviteMember: async (req: Request, res: Response) => {
         try {
+            // @ts-ignore
+            const adminId = req.user.userId;
             const { email, permissions } = req.body;
             if (!email) {
                 return res.status(400).json({ error: "Email requis" });
             }
-            const result = await teamService.inviteMember(email, permissions || {});
+            const result = await teamService.inviteMember(email, permissions || {}, adminId);
             return res.json(result);
         } catch (error: any) {
             console.error('Invite Member Error:', error);
@@ -42,9 +44,11 @@ export const teamController = {
 
     updatePermissions: async (req: Request, res: Response) => {
         try {
+            // @ts-ignore
+            const adminId = req.user.userId;
             const { userId } = req.params;
             const { permissions } = req.body;
-            const result = await teamService.updatePermissions(userId, permissions);
+            const result = await teamService.updatePermissions(userId, permissions, adminId);
             return res.json(result);
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
@@ -53,12 +57,14 @@ export const teamController = {
 
     deleteMember: async (req: Request, res: Response) => {
         try {
+            // @ts-ignore
+            const adminId = req.user.userId;
             const { id } = req.params;
             const { type } = req.query; // 'active' or 'pending'
             if (!type || (type !== 'active' && type !== 'pending')) {
                 return res.status(400).json({ error: "Type invalide" });
             }
-            const result = await teamService.deleteMember(id, type as 'active' | 'pending');
+            const result = await teamService.deleteMember(id, type as 'active' | 'pending', adminId);
             return res.json(result);
         } catch (error: any) {
             return res.status(500).json({ error: error.message });
