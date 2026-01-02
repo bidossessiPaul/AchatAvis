@@ -1,14 +1,12 @@
 {
     "version": 2,
-    "cleanUrls": true,
-    "trailingSlash": false,
     "rewrites": [
         {
             "source": "/api/(.*)",
             "destination": "/api/index.ts"
         },
         {
-            "source": "/(.*)",
+            "source": "/((?!api/|assets/|favicon.ico).*)",
             "destination": "/index.html"
         }
     ]
