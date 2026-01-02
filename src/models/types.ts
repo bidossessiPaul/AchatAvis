@@ -14,6 +14,7 @@ export interface User {
     account_locked_until?: Date;
     two_factor_secret?: string;
     two_factor_enabled: boolean;
+    permissions?: any; // JSON field for admin team members
 }
 
 export interface ArtisanProfile {

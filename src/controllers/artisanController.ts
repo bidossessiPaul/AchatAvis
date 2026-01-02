@@ -55,7 +55,12 @@ export const artisanController = {
 
             if (proposals && Array.isArray(proposals) && proposals.length > 0) {
                 console.log("📝 Utilisation de propositions manuelles");
-                const created = await artisanService.createProposals(id, proposals);
+                const order = await artisanService.getOrderById(id);
+                if (!order) {
+                    return res.status(404).json({ error: 'Order not found' });
+                }
+                const finalProposals = proposals.slice(0, order.quantity);
+                const created = await artisanService.createProposals(id, finalProposals);
                 return res.json(created);
             }
 

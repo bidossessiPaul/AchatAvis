@@ -6,6 +6,8 @@ import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/validator';
 import { User, UserResponse } from '../models/types';
+import crypto from 'crypto';
+import { sendResetPasswordEmail, sendWelcomeEmail } from './emailService';
 
 /**
  * Register a new artisan
@@ -58,6 +60,9 @@ export const registerArtisan = async (data: ArtisanRegistrationInput) => {
 
         // Generate email verification token
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
+
+        // Send welcome email
+        await sendWelcomeEmail(user.email, user.full_name, 'artisan');
 
         return {
             user,
@@ -121,6 +126,9 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
         const user = rows[0];
 
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
+
+        // Send welcome email
+        await sendWelcomeEmail(user.email, user.full_name, 'guide');
 
         return {
             user,
@@ -200,6 +208,7 @@ export const login = async (email: string, password: string) => {
         email: user.email,
         role: user.role,
         status: user.status,
+        permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : undefined,
     };
 
     // Check if 2FA is enabled
@@ -225,6 +234,16 @@ export const login = async (email: string, password: string) => {
 
     // Return user without password hash
     const { password_hash, failed_login_attempts, account_locked_until, two_factor_secret, ...userResponse } = user;
+
+    // Ensure permissions is an object
+    if (userResponse.permissions && typeof userResponse.permissions === 'string') {
+        try {
+            userResponse.permissions = JSON.parse(userResponse.permissions);
+        } catch (e) {
+            console.error('Failed to parse permissions:', e);
+            userResponse.permissions = {};
+        }
+    }
 
     return {
         user: userResponse as UserResponse & { subscription_status?: string, subscription_end_date?: string },
@@ -306,6 +325,7 @@ export const verify2FA = async (userId: string, token: string) => {
         email: user.email,
         role: user.role,
         status: user.status,
+        permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : undefined,
     };
 
     const accessToken = generateAccessToken(tokenPayload);
@@ -326,7 +346,7 @@ export const verify2FA = async (userId: string, token: string) => {
  */
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
-        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login,
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
          FROM users u
@@ -335,7 +355,17 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
         [userId]
     );
 
-    return rows[0] || null;
+    const user = rows[0];
+    if (user && user.permissions && typeof user.permissions === 'string') {
+        try {
+            user.permissions = JSON.parse(user.permissions);
+        } catch (e) {
+            console.error('Failed to parse permissions:', e);
+            user.permissions = {};
+        }
+    }
+
+    return user || null;
 };
 
 /**
@@ -422,6 +452,7 @@ export const refreshToken = async (token: string) => {
             email: user.email,
             role: user.role,
             status: user.status,
+            permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : undefined,
         };
 
         const accessToken = generateAccessToken(tokenPayload);
@@ -435,4 +466,53 @@ export const refreshToken = async (token: string) => {
     } catch (error) {
         throw new Error('Invalid refresh token');
     }
+};
+
+/**
+ * Forgot password - Generate token and send email
+ */
+export const forgotPassword = async (email: string) => {
+    // Check if user exists
+    const rows: any = await query('SELECT id FROM users WHERE email = ?', [email]);
+    if (rows.length === 0) {
+        // Don't reveal if user exists or not for security, but we need to stop here
+        return;
+    }
+
+    const userId = rows[0].id;
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 3600000); // 1 hour from now
+
+    // Save token to DB
+    await query(
+        'UPDATE users SET reset_password_token = ?, reset_password_expires = ? WHERE id = ?',
+        [token, expires, userId]
+    );
+
+    // Send email
+    await sendResetPasswordEmail(email, token);
+};
+
+/**
+ * Reset password - Verify token and update password
+ */
+export const resetPassword = async (token: string, newPassword: string) => {
+    // Find user with valid token
+    const rows: any = await query(
+        'SELECT id FROM users WHERE reset_password_token = ? AND reset_password_expires > CURRENT_TIMESTAMP',
+        [token]
+    );
+
+    if (rows.length === 0) {
+        throw new Error('Le lien de réinitialisation est invalide ou a expiré');
+    }
+
+    const userId = rows[0].id;
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update password and clear token
+    await query(
+        'UPDATE users SET password_hash = ?, reset_password_token = NULL, reset_password_expires = NULL WHERE id = ?',
+        [hashedPassword, userId]
+    );
 };

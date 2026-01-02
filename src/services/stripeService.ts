@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { query } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
+import { sendPackActivationEmail } from './emailService';
 
 dotenv.config();
 
@@ -89,9 +90,9 @@ export const stripeService = {
                              subscription_start_date = ?,
                              subscription_end_date = ?,
                              last_payment_date = ?,
-                             missions_allowed = missions_allowed + ?
+                             missions_allowed = missions_allowed + 1
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, parseInt(session.metadata?.quantity || '0'), userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, userId]
                     );
 
                     await query(
@@ -115,6 +116,16 @@ export const stripeService = {
                         `Abonnement ${planId}`,
                         quantity
                     ]);
+
+                    // Send activation email
+                    try {
+                        const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+                        if (user && user.length > 0) {
+                            await sendPackActivationEmail(user[0].email, user[0].full_name, planId, quantity);
+                        }
+                    } catch (emailError) {
+                        console.error('Failed to send pack activation email:', emailError);
+                    }
 
                     console.log(`Activated subscription for user ${userId} with ${quantity} missions`);
                 }

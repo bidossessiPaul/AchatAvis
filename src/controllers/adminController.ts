@@ -222,3 +222,94 @@ export const deletePack = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+/**
+ * Get missions pending approval
+ * GET /api/admin/missions/pending
+ */
+export const getPendingMissions = async (_req: Request, res: Response) => {
+    try {
+        const missions = await adminService.getPendingMissions();
+        res.json(missions);
+    } catch (error) {
+        console.error('Get pending missions error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Approve a mission
+ * POST /api/admin/missions/:orderId/approve
+ */
+export const approveMission = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    try {
+        await adminService.approveMission(orderId);
+        res.json({ message: 'Mission approved successfully' });
+    } catch (error) {
+        console.error('Approve mission error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+/**
+ * Get all missions
+ * GET /api/admin/missions
+ */
+export const getMissions = async (_req: Request, res: Response) => {
+    try {
+        const missions = await adminService.getAllMissions();
+        return res.json(missions);
+    } catch (error) {
+        console.error('Get missions error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Get single mission detail for admin
+ * GET /api/admin/missions/:orderId
+ */
+export const getAdminMissionDetail = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    try {
+        const mission = await adminService.getAdminMissionDetail(orderId);
+        if (!mission) {
+            return res.status(404).json({ error: 'Mission not found' });
+        }
+        return res.json(mission);
+    } catch (error) {
+        console.error('Get mission detail error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Update mission (Admin CRUD)
+ * PUT /api/admin/missions/:orderId
+ */
+export const updateMission = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    const updateData = req.body;
+    try {
+        await adminService.updateMission(orderId, updateData);
+        return res.json({ message: 'Mission updated successfully' });
+    } catch (error) {
+        console.error('Update mission error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Delete mission (Admin CRUD)
+ * DELETE /api/admin/missions/:orderId
+ */
+export const deleteMission = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    try {
+        await adminService.deleteMission(orderId);
+        return res.json({ message: 'Mission deleted successfully' });
+    } catch (error) {
+        console.error('Delete mission error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};

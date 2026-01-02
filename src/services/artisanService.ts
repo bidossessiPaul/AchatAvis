@@ -43,7 +43,7 @@ export const artisanService = {
             [orderId, artisanId, quantity, price, company_name, company_context, google_business_url, staff_names, specific_instructions, payment_id]
         );
 
-        // Update missions_used in payments table
+        // Update missions_used in payments table (Mark pack as used)
         await query(
             'UPDATE payments SET missions_used = missions_used + 1 WHERE id = ?',
             [payment_id]
@@ -72,14 +72,11 @@ export const artisanService = {
             }
         }
 
-        // If the order is being submitted, automatically approve all its proposals and set published_at
-        if (data.status === 'submitted') {
-            fields.push('published_at = NOW()');
-            await query(
-                `UPDATE review_proposals SET status = 'approved' WHERE order_id = ? AND status = 'draft'`,
-                [orderId]
-            );
-        }
+        // Note: Automatic published_at and proposal approval removed.
+        // This is now handled by Admin approval.
+
+        // Quantity change doesn't affect pack usage status, as a pack is marked used upon order creation.
+        // No need to adjust missions_used here based on quantity changes.
 
         if (fields.length === 0) return this.getOrderById(orderId);
 

@@ -14,7 +14,7 @@ export const guideService = {
             SELECT o.*, 
                    (o.quantity - o.reviews_received) as remaining_slots
             FROM reviews_orders o
-            WHERE o.status IN ('submitted', 'pending', 'in_progress')
+            WHERE o.status IN ('in_progress')
             AND o.reviews_received < o.quantity
             -- We show orders even if guide has already participated, 
             -- but only if they haven't filled ALL slots themselves (unlikely but possible)

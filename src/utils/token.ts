@@ -6,6 +6,7 @@ export interface TokenPayload {
     email: string;
     role: 'artisan' | 'guide' | 'admin';
     status: 'pending' | 'active' | 'suspended' | 'rejected';
+    permissions?: any;
 }
 
 /**
