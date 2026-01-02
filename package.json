@@ -1,5 +1,5 @@
 {
-    "name": "achatavis-monorepo",
+    "name": "achatavis-monorepo-v2",
     "private": true,
     "workspaces": [
         "frontend",
