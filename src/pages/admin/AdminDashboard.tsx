@@ -71,32 +71,36 @@ export const AdminDashboard: React.FC = () => {
     if (!stats) return null;
 
     return (
-        <DashboardLayout
-            title="Vue d'ensemble"
-            action={
-                <button
-                    onClick={loadStats}
-                    disabled={isLoading}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        background: 'var(--primary-brand)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                    }}
-                >
-                    <RefreshCw size={16} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
-                    Actualiser
-                </button>
-            }
-        >
+        <DashboardLayout title="Vue d'ensemble">
             <div className="admin-dashboard revamped">
+                {/* Refresh Button */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                    <button
+                        onClick={loadStats}
+                        disabled={isLoading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            background: 'var(--primary-brand)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: isLoading ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            opacity: isLoading ? 0.7 : 1
+                        }}
+                    >
+                        <RefreshCw size={16} style={{
+                            animation: isLoading ? 'spin 1s linear infinite' : 'none',
+                            transformOrigin: 'center'
+                        }} />
+                        {isLoading ? 'Actualisation...' : 'Actualiser'}
+                    </button>
+                </div>
+
                 {/* Notification Banner for Pending Items */}
                 {/* Custom Alert REMOVED as per user request */}
 
