@@ -1,6 +1,5 @@
 import { query } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
-// @ts-ignore
 import bcrypt from 'bcryptjs';
 import { sendTeamInvitationEmail } from './emailService';
 import { LogService } from './logService';
