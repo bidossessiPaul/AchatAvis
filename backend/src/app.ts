@@ -10,6 +10,7 @@ import guideRoutes from './routes/guide';
 import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
 import teamRoutes from './routes/team';
+import debugRoutes from './routes/debug';
 
 // Load environment variables
 dotenv.config();
@@ -59,6 +60,9 @@ app.get('/health', (_req: Request, res: Response) => {
 app.get('/', (_req, res) => {
     res.send('AchatAvis API is running');
 });
+
+// Debug routes (BEFORE other routes)
+app.use('/api/debug', debugRoutes);
 
 // API routes
 app.use('/api/auth', authRoutes);
