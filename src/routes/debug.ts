@@ -87,7 +87,7 @@ router.options('/test-preflight', (req: Request, res: Response) => {
  * DEBUG 5: Variables d'environnement (sans secrets)
  * URL: /api/debug/env
  */
-router.get('/env', (req: Request, res: Response) => {
+router.get('/env', (_req: Request, res: Response) => {
     res.json({
         timestamp: new Date().toISOString(),
         message: 'Environment Variables (sanitized)',
