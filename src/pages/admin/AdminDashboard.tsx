@@ -159,12 +159,12 @@ export const AdminDashboard: React.FC = () => {
                         <div className="chart-header">
                             <div className="header-titles">
                                 <h3>Évolution des Revenus</h3>
-                                <span className="chart-subtitle">Performance mensuelle</span>
+                                <span className="chart-subtitle">30 derniers jours</span>
                             </div>
                         </div>
                         <div className="chart-container">
                             <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={[...stats.revenue].reverse()}>
+                                <AreaChart data={stats.revenue}>
                                     <defs>
                                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
@@ -172,7 +172,7 @@ export const AdminDashboard: React.FC = () => {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                                    <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                                     <Tooltip />
                                     <Area type="monotone" dataKey="total_revenue" stroke="#3b82f6" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
