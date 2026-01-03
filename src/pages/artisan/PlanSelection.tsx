@@ -46,7 +46,7 @@ export const PlanSelection: React.FC = () => {
         <div className="plan-selection-container">
             <div className="plan-header">
                 <h1 className="plan-title">
-                    Activez votre compte Artisan
+                    Module MAX - Agent Boost Avis
                 </h1>
                 <p className="plan-subtitle">
                     Choisissez le plan qui correspond à vos besoins pour commencer à récolter des avis.
