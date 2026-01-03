@@ -131,16 +131,17 @@ export const getGuideDetail = async (userId: string) => {
  * Get global statistics for the admin dashboard
  */
 export const getGlobalStats = async () => {
-    // Total Revenue & Revenue Trend (last 6 months)
+    // Total Revenue & Revenue Trend (last 30 days)
     const revenueStats: any = await query(`
         SELECT 
             SUM(amount) as total_revenue,
-            DATE_FORMAT(created_at, '%Y-%m') as month
+            DATE_FORMAT(created_at, '%Y-%m-%d') as day,
+            DATE_FORMAT(created_at, '%d/%m') as label
         FROM payments
         WHERE status = 'completed'
-        GROUP BY month
-        ORDER BY month DESC
-        LIMIT 6
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY day, label
+        ORDER BY day ASC
     `);
 
     // Total All Time Revenue (sum of all completed payments)
