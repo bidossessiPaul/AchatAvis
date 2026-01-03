@@ -17,11 +17,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 1. Manual CORS - Direct header control for Vercel stability
-app.use((req, res, next) => {
+// 1. CORS Middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+    const allowedOrigins = [
+        'https://achatavis.netlify.app',
+        'https://achat-avis-site.vercel.app',
+        'http://localhost:5173',
+        process.env.FRONTEND_URL
+    ].filter(Boolean);
+
     const origin = req.headers.origin;
-    // Reflect origin if it exists, otherwise allow all for debug
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+
+    if (origin && allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
