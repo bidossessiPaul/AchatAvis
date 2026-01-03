@@ -9,11 +9,16 @@ const poolConfig = {
     user: process.env.MYSQL_USER || 'u262725529_achatavis',
     password: process.env.MYSQL_PASSWORD || 'Achatavis@0815',
     database: process.env.MYSQL_DATABASE || 'u262725529_achatavis',
+    port: Number(process.env.MYSQL_PORT) || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
     // Enable named placeholders for easier query writing
-    namedPlaceholders: true
+    namedPlaceholders: true,
+    // Required for Vercel -> External DB (Hostinger, etc.) communication
+    ssl: {
+        rejectUnauthorized: false
+    }
 };
 
 export const pool = mysql.createPool(poolConfig);
