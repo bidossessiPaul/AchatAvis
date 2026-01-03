@@ -8,7 +8,8 @@ import {
     CheckCircle2,
     Clock,
     ArrowUpRight,
-    DollarSign
+    DollarSign,
+    RefreshCw
 } from 'lucide-react';
 import {
     AreaChart,
@@ -70,7 +71,31 @@ export const AdminDashboard: React.FC = () => {
     if (!stats) return null;
 
     return (
-        <DashboardLayout title="Vue d'ensemble">
+        <DashboardLayout
+            title="Vue d'ensemble"
+            action={
+                <button
+                    onClick={loadStats}
+                    disabled={isLoading}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 16px',
+                        background: 'var(--primary-brand)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                    }}
+                >
+                    <RefreshCw size={16} style={{ animation: isLoading ? 'spin 1s linear infinite' : 'none' }} />
+                    Actualiser
+                </button>
+            }
+        >
             <div className="admin-dashboard revamped">
                 {/* Notification Banner for Pending Items */}
                 {/* Custom Alert REMOVED as per user request */}
