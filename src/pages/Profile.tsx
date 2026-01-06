@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../context/authStore';
 import { authApi } from '../services/api';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Card } from '../components/common/Card';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
-import { Camera, Mail, Shield, Save, User as UserIcon } from 'lucide-react';
+import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
+import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
+import { useAntiDetectionStore } from '../context/antiDetectionStore';
 import './Profile.css';
 
 export const Profile: React.FC = () => {
@@ -22,6 +26,18 @@ export const Profile: React.FC = () => {
     const [formData, setFormData] = useState({
         fullName: user?.full_name || '',
     });
+    const [activeTab, setActiveTab] = useState<'info' | 'gmail'>('info');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const { fetchGmailAccounts } = useAntiDetectionStore();
+    const location = useLocation();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab === 'gmail') {
+            setActiveTab('gmail');
+        }
+    }, [location]);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -205,104 +221,130 @@ export const Profile: React.FC = () => {
                             </div>
                         </Card>
 
-                        <Card className="profile-card">
-                            <h3 className="card-title">Informations Personnelles</h3>
-                            <form onSubmit={handleProfileSubmit} className="profile-form">
-                                <Input
-                                    label="Nom Complet"
-                                    name="fullName"
-                                    value={formData.fullName}
-                                    onChange={handleProfileChange}
-                                    placeholder="Votre nom complet"
-                                    required
-                                />
-                                <div className="form-actions">
-                                    <Button
-                                        type="submit"
-                                        variant="primary"
-                                        isLoading={isLoading}
-                                    >
-                                        <Save size={18} style={{ marginRight: '8px' }} />
-                                        Enregistrer les modifications
-                                    </Button>
-                                </div>
-                            </form>
-                        </Card>
+                        {/* Tab Navigation */}
+                        {user?.role === 'guide' && (
+                            <div className="profile-tabs">
+                                <button
+                                    onClick={() => setActiveTab('info')}
+                                    className={`profile-tab-btn ${activeTab === 'info' ? 'active' : ''}`}
+                                >
+                                    <Settings size={18} /> Informations & Sécurité
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('gmail')}
+                                    className={`profile-tab-btn ${activeTab === 'gmail' ? 'active' : ''}`}
+                                >
+                                    <Globe size={18} /> Gestion des Gmails
+                                </button>
+                            </div>
+                        )}
 
-                        {/* 2FA Section */}
-                        <Card className="profile-card">
-                            <h3 className="card-title">
-                                <Shield size={20} style={{ marginRight: '8px', verticalAlign: 'middle', color: user?.two_factor_enabled ? '#10b981' : '#6b7280' }} />
-                                Double Authentification (2FA)
-                            </h3>
-                            <div className="two-factor-content">
-                                {user?.two_factor_enabled ? (
-                                    <div className="two-factor-active">
-                                        <div className="status-badge-container">
-                                            <span className="status-badge active" style={{ backgroundColor: '#ecfdf5', color: '#10b981', padding: '0.5rem 1rem', borderRadius: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-                                                <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
-                                                Activée
-                                            </span>
+                        {activeTab === 'info' ? (
+                            <>
+                                <Card className="profile-card">
+                                    <h3 className="card-title">Informations Personnelles</h3>
+                                    <form onSubmit={handleProfileSubmit} className="profile-form">
+                                        <Input
+                                            label="Nom Complet"
+                                            name="fullName"
+                                            value={formData.fullName}
+                                            onChange={handleProfileChange}
+                                            placeholder="Votre nom complet"
+                                            required
+                                        />
+                                        <div className="form-actions">
+                                            <Button
+                                                type="submit"
+                                                variant="primary"
+                                                isLoading={isLoading}
+                                            >
+                                                <Save size={18} style={{ marginRight: '8px' }} />
+                                                Enregistrer les modifications
+                                            </Button>
                                         </div>
-                                        <p style={{ margin: '1rem 0', color: '#6b7280', fontSize: '0.9rem' }}>
-                                            Votre compte est protégé par une double authentification. Un code vous sera demandé lors de chaque connexion.
-                                        </p>
-                                        <Button
-                                            variant="secondary"
-                                            onClick={handleDisable2FA}
-                                            isLoading={is2FALoading}
-                                            fullWidth
-                                        >
-                                            Désactiver le 2FA
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="two-factor-inactive">
-                                        {!show2FASetup ? (
-                                            <>
-                                                <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
-                                                    Renforcez la sécurité de votre compte en activant la double authentification par application (Google Authenticator, Authy...).
+                                    </form>
+                                </Card>
+
+                                {/* 2FA Section (Moved inside tab) */}
+                                <Card className="profile-card">
+                                    <h3 className="card-title">
+                                        <Shield size={20} style={{ marginRight: '8px', verticalAlign: 'middle', color: user?.two_factor_enabled ? '#10b981' : '#6b7280' }} />
+                                        Double Authentification (2FA)
+                                    </h3>
+                                    <div className="two-factor-content">
+                                        {user?.two_factor_enabled ? (
+                                            <div className="two-factor-active">
+                                                <div className="status-badge-container">
+                                                    <span className="status-badge active" style={{ backgroundColor: '#ecfdf5', color: '#10b981', padding: '0.5rem 1rem', borderRadius: '2rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+                                                        <div style={{ width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }}></div>
+                                                        Activée
+                                                    </span>
+                                                </div>
+                                                <p style={{ margin: '1rem 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                    Votre compte est protégé par une double authentification. Un code vous sera demandé lors de chaque connexion.
                                                 </p>
                                                 <Button
-                                                    variant="primary"
-                                                    onClick={handleGenerate2FA}
+                                                    variant="secondary"
+                                                    onClick={handleDisable2FA}
                                                     isLoading={is2FALoading}
                                                     fullWidth
                                                 >
-                                                    Activer le 2FA
+                                                    Désactiver le 2FA
                                                 </Button>
-                                            </>
+                                            </div>
                                         ) : (
-                                            <div className="two-factor-setup" style={{ textAlign: 'center' }}>
-                                                <p style={{ marginBottom: '1rem', fontWeight: 600 }}>Scannez ce QR Code avec votre application 2FA :</p>
-                                                {qrCodeUrl && (
-                                                    <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', display: 'inline-block', border: '1px solid #f3f4f6', marginBottom: '1.5rem' }}>
-                                                        <img src={qrCodeUrl} alt="2FA QR Code" style={{ width: '200px', height: '200px' }} />
+                                            <div className="two-factor-inactive">
+                                                {!show2FASetup ? (
+                                                    <>
+                                                        <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
+                                                            Renforcez la sécurité de votre compte en activant la double authentification par application (Google Authenticator, Authy...).
+                                                        </p>
+                                                        <Button
+                                                            variant="primary"
+                                                            onClick={handleGenerate2FA}
+                                                            isLoading={is2FALoading}
+                                                            fullWidth
+                                                        >
+                                                            Activer le 2FA
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <div className="two-factor-setup" style={{ textAlign: 'center' }}>
+                                                        <p style={{ marginBottom: '1rem', fontWeight: 600 }}>Scannez ce QR Code avec votre application 2FA :</p>
+                                                        {qrCodeUrl && (
+                                                            <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', display: 'inline-block', border: '1px solid #f3f4f6', marginBottom: '1.5rem' }}>
+                                                                <img src={qrCodeUrl} alt="2FA QR Code" style={{ width: '200px', height: '200px' }} />
+                                                            </div>
+                                                        )}
+                                                        <div style={{ marginBottom: '1.5rem' }}>
+                                                            <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Ou entrez ce code manuellement :</p>
+                                                            <code style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: 700, letterSpacing: '1px' }}>
+                                                                {twoFactorSecret}
+                                                            </code>
+                                                        </div>
+                                                        <Input
+                                                            label="Entrez le code de vérification"
+                                                            value={twoFactorToken}
+                                                            onChange={(e) => setTwoFactorToken(e.target.value)}
+                                                            placeholder="000000"
+                                                            style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '4px' }}
+                                                        />
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                            <Button variant="secondary" onClick={() => setShow2FASetup(false)}>Annuler</Button>
+                                                            <Button variant="primary" onClick={handleEnable2FA} isLoading={is2FALoading}>Vérifier</Button>
+                                                        </div>
                                                     </div>
                                                 )}
-                                                <div style={{ marginBottom: '1.5rem' }}>
-                                                    <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Ou entrez ce code manuellement :</p>
-                                                    <code style={{ background: '#f3f4f6', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontSize: '1rem', fontWeight: 700, letterSpacing: '1px' }}>
-                                                        {twoFactorSecret}
-                                                    </code>
-                                                </div>
-                                                <Input
-                                                    label="Entrez le code de vérification"
-                                                    value={twoFactorToken}
-                                                    onChange={(e) => setTwoFactorToken(e.target.value)}
-                                                    placeholder="000000"
-                                                    style={{ textAlign: 'center', fontSize: '1.25rem', letterSpacing: '4px' }}
-                                                />
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-                                                    <Button variant="secondary" onClick={() => setShow2FASetup(false)}>Annuler</Button>
-                                                    <Button variant="primary" onClick={handleEnable2FA} isLoading={is2FALoading}>Vérifier</Button>
-                                                </div>
                                             </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        </Card>
+                                </Card>
+                            </>
+                        ) : (
+                            <Card className="profile-card">
+                                <GmailAccountList onAddClick={() => setIsAddModalOpen(true)} />
+                            </Card>
+                        )}
                     </div>
 
                     {/* Sidebar / Security Info */}
@@ -368,6 +410,11 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <AddGmailModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onSuccess={() => user && fetchGmailAccounts(user.id)}
+            />
         </DashboardLayout>
     );
 };

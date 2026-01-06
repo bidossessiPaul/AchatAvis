@@ -14,7 +14,14 @@ export const guideService = {
         return response.data;
     },
 
-    async submitProof(data: { orderId: string, proposalId: string, reviewUrl: string, googleEmail: string, artisanId: string }): Promise<any> {
+    async submitProof(data: {
+        orderId: string,
+        proposalId: string,
+        reviewUrl: string,
+        googleEmail: string,
+        artisanId: string,
+        gmailAccountId?: number
+    }): Promise<any> {
         const response = await api.post('/guide/submissions', data);
         return response.data;
     },

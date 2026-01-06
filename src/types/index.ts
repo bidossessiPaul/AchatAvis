@@ -125,6 +125,13 @@ export interface ReviewOrder {
     metadata?: any;
     created_at: string;
     completed_at?: string;
+    // Anti-Detection
+    sector_slug?: string;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
+    reviews_per_day?: number;
+    rhythme_mode?: 'discret' | 'modere' | 'rapide';
+    estimated_duration_days?: number;
+    client_cities?: string[] | string;
 }
 
 export interface ReviewProposal {
