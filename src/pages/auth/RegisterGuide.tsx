@@ -5,6 +5,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import type { GuideRegistration } from '../../types';
+import { RegionBadge } from '../../components/common/RegionBadge';
 import './Auth.css';
 
 export const RegisterGuide: React.FC = () => {
@@ -41,6 +42,10 @@ export const RegisterGuide: React.FC = () => {
             setSuccess(true);
             setTimeout(() => navigate('/login'), 2000);
         } catch (err: any) {
+            if (err.response?.data?.code === 'ACCOUNT_SUSPENDED' || err.response?.data?.code === 'COUNTRY_SUSPENDED') {
+                navigate('/suspended', { state: { country: err.response?.data?.country } });
+                return;
+            }
             if (err.response?.data?.details) {
                 // Backend Zod errors
                 const newErrors: Record<string, string> = {};
@@ -168,6 +173,7 @@ export const RegisterGuide: React.FC = () => {
                             </div>
                         </>
                     )}
+                    <RegionBadge />
                 </Card>
             </div>
         </div>

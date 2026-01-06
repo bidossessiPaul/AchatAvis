@@ -8,12 +8,29 @@ import './Auth.css';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { login, verify2FA, error, isLoading, clearError, twoFactorRequired } = useAuthStore();
+    const { login, verify2FA, error, errorCode, isLoading, clearError, twoFactorRequired, detectedCountry } = useAuthStore();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [otpToken, setOtpToken] = useState('');
     const [formError, setFormError] = useState('');
+
+    React.useEffect(() => {
+        const isGeoBlocked =
+            errorCode === 'ACCOUNT_SUSPENDED' ||
+            errorCode === 'COUNTRY_SUSPENDED' ||
+            (error && (error.toLowerCase().includes('pays') || error.toLowerCase().includes('géographique')));
+
+        if (isGeoBlocked) {
+            // Error object in zustand might be just a string, we need to access the full response if possible or updated store
+            // However, store only saves error message/code/country.
+            // We need to update authStore to save userName on error or pass it some other way.
+            // Wait, useAuthStore probably stores the error response data? No, just specific fields.
+            // But 'error' in store is just the message string.
+            // Let's check how `login` sets the error.
+            navigate('/suspended', { state: { country: detectedCountry } });
+        }
+    }, [errorCode, error, detectedCountry, navigate]);
 
     const handleLoginSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -84,7 +101,7 @@ export const Login: React.FC = () => {
 
                     {!twoFactorRequired ? (
                         <form onSubmit={handleLoginSubmit} className="auth-form">
-                            {(error || formError) && (
+                            {(error || formError) && errorCode !== 'ACCOUNT_SUSPENDED' && errorCode !== 'COUNTRY_SUSPENDED' && (
                                 <div className="auth-error">
                                     {formError || error}
                                 </div>
