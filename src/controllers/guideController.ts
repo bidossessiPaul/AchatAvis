@@ -39,7 +39,7 @@ export const guideController = {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-            const { orderId, proposalId, reviewUrl, googleEmail, artisanId } = req.body;
+            const { orderId, proposalId, reviewUrl, googleEmail, artisanId, gmailAccountId } = req.body;
 
             if (!orderId || !proposalId || !reviewUrl || !googleEmail || !artisanId) {
                 return res.status(400).json({ error: 'Tous les champs sont requis, y compris l\'email Google' });
@@ -50,7 +50,8 @@ export const guideController = {
                 proposalId,
                 reviewUrl,
                 googleEmail,
-                artisanId
+                artisanId,
+                gmailAccountId
             });
 
             return res.json(result);

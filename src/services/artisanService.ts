@@ -62,13 +62,23 @@ export const artisanService = {
         const updateableFields = [
             'company_name', 'company_context', 'sector', 'zones',
             'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
-            'staff_names', 'specific_instructions'
+            'staff_names', 'specific_instructions',
+            // Anti-Detection Fields
+            'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
+            'estimated_duration_days', 'client_cities'
         ];
 
         for (const field of updateableFields) {
             if (data[field as keyof ReviewOrder] !== undefined) {
                 fields.push(`${field} = ?`);
-                values.push(data[field as keyof ReviewOrder]);
+
+                // Handle JSON fields
+                let value = data[field as keyof ReviewOrder];
+                if (field === 'client_cities' && typeof value === 'object') {
+                    value = JSON.stringify(value);
+                }
+
+                values.push(value);
             }
         }
 
@@ -255,11 +265,11 @@ export const artisanService = {
         );
         console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
 
-        // A pack is available if it's a completed subscription and has NOT been used for a mission yet
+        // A pack is available if it's a completed subscription and has NOT exceeded its quota
         return (results as any[]).filter(p =>
             p.type === "subscription" &&
             p.status === "completed" &&
-            p.missions_used === 0
+            p.missions_used < p.missions_quota
         );
     }
 };

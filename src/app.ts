@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin';
 import payoutRoutes from './routes/payouts';
 import teamRoutes from './routes/team';
 import debugRoutes from './routes/debug';
+import antiDetectionRoutes from './routes/antiDetectionRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -72,6 +73,7 @@ app.use('/api/guide', guideRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/payouts', payoutRoutes);
+app.use('/api/anti-detection', antiDetectionRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
