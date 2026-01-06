@@ -61,6 +61,17 @@ export const deleteUser = async (userId: string) => {
 };
 
 /**
+ * Get all users simple list for dropdowns
+ */
+export const getAllUsers = async () => {
+    return await query(`
+        SELECT id, email, full_name, role, avatar_url, status
+        FROM users
+        ORDER BY full_name ASC
+    `);
+};
+
+/**
  * Get detailed artisan info including orders
  */
 export const getArtisanDetail = async (userId: string) => {
@@ -297,7 +308,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
         // 3. Send notification to guide
         try {
             const [rows]: any = await connection.query(`
-                SELECT u.full_name, u.email 
+                SELECT s.guide_id, u.full_name, u.email 
                 FROM reviews_submissions s
                 JOIN users u ON s.guide_id = u.id
                 WHERE s.id = :submissionId
@@ -305,6 +316,12 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
 
             if (rows && rows.length > 0) {
                 await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
+
+                // NOUVEAU : Vérifier rejets répététés si statut = rejected
+                if (status === 'rejected') {
+                    const { suspensionTriggers } = await import('./suspensionTriggers');
+                    await suspensionTriggers.checkRepeatedRejections(rows[0].guide_id, submissionId);
+                }
             }
         } catch (error) {
             console.error('Error sending submission decision email:', error);

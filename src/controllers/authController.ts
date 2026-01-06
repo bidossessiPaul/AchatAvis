@@ -10,6 +10,24 @@ import {
     resetPasswordSchema,
 } from '../middleware/validator';
 import { ZodError } from 'zod';
+import { suspensionService } from '../services/suspensionService';
+
+/**
+ * Detect region (Public)
+ * GET /api/auth/detect-region
+ */
+export const detectRegion = async (req: Request, res: Response) => {
+    try {
+        const detectedIp = req.ip || '';
+        const country = await suspensionService.detectCountryFromIP(detectedIp);
+        return res.json({
+            country,
+            ip: detectedIp
+        });
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to detect region' });
+    }
+};
 
 /**
  * Register artisan
@@ -18,6 +36,23 @@ import { ZodError } from 'zod';
 export const registerArtisan = async (req: Request, res: Response) => {
     try {
         const validatedData = artisanRegistrationSchema.parse(req.body);
+
+        // Country Blocking Check
+        const isSystemActive = await suspensionService.isSystemEnabled();
+        const detectedIp = req.ip || '';
+        const country = await suspensionService.detectCountryFromIP(detectedIp);
+        const isBlocked = isSystemActive && country ? await suspensionService.isCountryBlocked(country) : false;
+
+        console.log(`🛡️ REGISTRATION ATTEMPT (Artisan): SystemActive=${isSystemActive}, IP=${detectedIp}, Country=${country}, Blocked=${isBlocked}`);
+
+        if (isBlocked) {
+            console.warn(`🚫 Tentative d'inscription bloquée depuis ${country} (IP: ${detectedIp})`);
+            return res.status(403).json({
+                error: "Votre compte a été suspendu en raison de votre zone géographique.",
+                code: 'ACCOUNT_SUSPENDED',
+                country
+            });
+        }
 
         const result = await authService.registerArtisan(validatedData);
 
@@ -51,6 +86,23 @@ export const registerGuide = async (req: Request, res: Response) => {
     try {
         const validatedData = guideRegistrationSchema.parse(req.body);
 
+        // Country Blocking Check
+        const isSystemActive = await suspensionService.isSystemEnabled();
+        const detectedIp = req.ip || '';
+        const country = await suspensionService.detectCountryFromIP(detectedIp);
+        const isBlocked = isSystemActive && country ? await suspensionService.isCountryBlocked(country) : false;
+
+        console.log(`🛡️ REGISTRATION ATTEMPT (Guide): SystemActive=${isSystemActive}, IP=${detectedIp}, Country=${country}, Blocked=${isBlocked}`);
+
+        if (isBlocked) {
+            console.warn(`🚫 Tentative d'inscription bloquée depuis ${country} (IP: ${detectedIp})`);
+            return res.status(403).json({
+                error: "Votre compte a été suspendu en raison de votre zone géographique.",
+                code: 'ACCOUNT_SUSPENDED',
+                country
+            });
+        }
+
         const result = await authService.registerGuide(validatedData);
 
         return res.status(201).json({
@@ -83,10 +135,60 @@ export const login = async (req: Request, res: Response) => {
     try {
         const validatedData = loginSchema.parse(req.body);
 
+        // Country Blocking Check
+        const isSystemActive = await suspensionService.isSystemEnabled();
+        const detectedIp = req.ip || '';
+        const country = await suspensionService.detectCountryFromIP(detectedIp);
+        const isBlocked = isSystemActive && country ? await suspensionService.isCountryBlocked(country) : false;
+
+        console.log(`🛡️ LOGIN DECISION:
+            - User: ${validatedData.email}
+            - IP: ${detectedIp}
+            - Country: ${country}
+            - System Active: ${isSystemActive}
+            - Is Country Blocked: ${isBlocked}
+        `);
+
+        if (isBlocked) {
+            console.warn(`🚫 Tentative de connexion bloquée depuis ${country} (IP: ${detectedIp})`);
+
+            // Tentative de suspendre l'utilisateur s'il existe
+            let userName = '';
+            try {
+                const { query } = await import('../config/database');
+                const users: any = await query('SELECT id, full_name FROM users WHERE email = ?', [validatedData.email]);
+                if (users && users.length > 0) {
+                    userName = users[0].full_name;
+                    if (country) {
+                        await suspensionService.suspendForGeoblocking(users[0].id, country);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to auto-suspend user during login:', err);
+            }
+
+            return res.status(403).json({
+                error: "Votre compte a été suspendu en raison de votre zone géographique.",
+                code: 'ACCOUNT_SUSPENDED',
+                country,
+                user_name: userName // Send user name to frontend
+            });
+        }
+
         const result: any = await authService.login(
             validatedData.email,
             validatedData.password
         );
+
+        // Update User Tracking Info
+        try {
+            const { query } = await import('../config/database');
+            await query('UPDATE users SET last_detected_country = ?, last_ip = ? WHERE email = ?', [
+                country, detectedIp, validatedData.email
+            ]);
+        } catch (err) {
+            console.error('Failed to update user tracking info:', err);
+        }
 
         if (result.twoFactorRequired) {
             return res.json({

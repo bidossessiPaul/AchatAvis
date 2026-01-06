@@ -38,25 +38,24 @@ export const antiDetectionController = {
     async getComplianceScore(req: Request, res: Response) {
         try {
             const { userId } = req.params;
-            const scoreData: any = await query(`
-                SELECT * FROM guide_compliance_scores WHERE user_id = ?
+
+            // Check if exists, if not initialize
+            const existing: any = await query(`
+                SELECT id FROM guide_compliance_scores WHERE user_id = ?
             `, [userId]);
 
-            if (!scoreData || scoreData.length === 0) {
-                // Initialize if not exists
+            if (!existing || existing.length === 0) {
                 await query('INSERT IGNORE INTO guide_compliance_scores (user_id) VALUES (?)', [userId]);
-                const newScore = await query('SELECT * FROM guide_compliance_scores WHERE user_id = ?', [userId]);
-                return res.json({ success: true, data: (newScore as any)[0] });
             }
 
-            const data = scoreData[0];
+            const data = await antiDetectionService.getExtendedComplianceData(userId);
 
             // Add visual meta
             let scoreColor = 'green';
-            let scoreLabel = 'Excellent';
-            if (data.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique'; }
-            else if (data.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer'; }
-            else if (data.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bien'; }
+            let scoreLabel = 'Excellent ⭐';
+            if (data.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique 🚨'; }
+            else if (data.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer ⚠️'; }
+            else if (data.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bon 👍'; }
 
             return res.json({
                 success: true,

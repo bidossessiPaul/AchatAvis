@@ -36,6 +36,7 @@ router.get('/submissions', adminController.getAllSubmissions);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.patch('/users/:userId/status', adminController.updateUserStatus);
 router.delete('/users/:userId', adminController.deleteUser);
+router.get('/users', adminController.getUsers);
 
 // Mission management
 router.get('/missions', adminController.getMissions);

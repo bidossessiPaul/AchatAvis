@@ -489,3 +489,117 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
         throw error;
     }
 };
+/**
+ * Send email when a user is suspended with progressive level info
+ */
+export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string) => {
+    const dashboardUrl = `${emailConfig.frontendUrl}/suspension-status`;
+    const packColor = level.badge_color === 'yellow' ? '#facc15' : level.badge_color === 'orange' ? '#fb923c' : '#ef4444';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `${level.icon_emoji} Suspension de votre compte - Niveau ${level.level_number} - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+                    .header { background-color: ${packColor}; color: white; padding: 24px; border-radius: 12px 12px 0 0; text-align: center; margin: -40px -40px 32px -40px; }
+                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
+                    .logo span { color: #ff3b6a; }
+                    .title { font-size: 22px; font-weight: 700; margin: 0; }
+                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; }
+                    .reason-box { background-color: #f9fafb; padding: 20px; border-radius: 12px; border-left: 4px solid ${packColor}; margin: 24px 0; }
+                    .button-container { text-align: center; margin: 32px 0; }
+                    .button { background-color: #111827; color: #white !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header">
+                            <h2 class="title">${level.icon_emoji} Compte Suspendu - Niveau ${level.level_number}</h2>
+                            <p style="margin: 8px 0 0 0; opacity: 0.9;">${level.level_name}</p>
+                        </div>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            Votre compte AchatAvis a été temporairement suspendu suite à la détection d'un comportement non conforme.
+                        </p>
+                        
+                        <div class="reason-box">
+                            <p style="margin: 0; font-weight: 700; color: #111827;">Raison de la suspension :</p>
+                            <p style="margin: 8px 0 0 0; color: #4b5563;">${reasonDetails}</p>
+                        </div>
+
+                        <p class="text">
+                            <strong>Durée :</strong> ${level.duration_days} jour(s)<br>
+                            <strong>Conséquences :</strong> Pendant cette période, vous ne pouvez pas prendre de nouvelles missions. Vos gains peuvent également être gelés selon la gravité.
+                        </p>
+                        
+                        <div class="button-container">
+                            <a href="${dashboardUrl}" class="button" style="color: white;">Voir les détails et le compte à rebours</a>
+                        </div>
+
+                        <p class="text" style="font-size: 14px;">
+                            💡 Pour éviter de nouvelles sanctions, nous vous recommandons de relire attentivement notre <strong>Guide Anti-Détection</strong>.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending suspension email:`, error);
+    }
+};
+
+/**
+ * Send email when a suspension is lifted
+ */
+export const sendSuspensionLiftedEmail = async (email: string, fullName: string, reason: string) => {
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `✅ Votre compte a été réactivé - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+                    .title { font-size: 22px; font-weight: 700; color: #111827; }
+                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <h2 class="title">Compte Réactivé !</h2>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            Bonne nouvelle ! Votre compte AchatAvis a été réactivé. Vous pouvez de nouveau prendre des missions et cumuler des gains.<br><br>
+                            <strong>Note :</strong> ${reason}
+                        </p>
+                        <p class="text">Nous comptons sur vous pour respecter scrupuleusement les consignes de sécurité à l'avenir.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending suspension lifted email:`, error);
+    }
+};

@@ -12,6 +12,8 @@ import payoutRoutes from './routes/payouts';
 import teamRoutes from './routes/team';
 import debugRoutes from './routes/debug';
 import antiDetectionRoutes from './routes/antiDetectionRoutes';
+import suspensionRoutes from './routes/suspensionRoutes';
+// Refreshing routes...
 
 // Load environment variables
 dotenv.config();
@@ -74,6 +76,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/anti-detection', antiDetectionRoutes);
+app.use('/api/suspensions', suspensionRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {
@@ -99,8 +102,9 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 
 // Start server only if not on Vercel
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-    app.listen(PORT, () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`🚀 Server running on port ${PORT}`);
+        console.log(`📡 Network access on http://192.168.1.207:${PORT}`);
     });
 }
 
