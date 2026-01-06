@@ -169,6 +169,11 @@ export const login = async (email: string, password: string) => {
         throw new Error('Invalid email or password');
     }
 
+    // Check if account is suspended
+    if (user.status === 'suspended') {
+        throw new Error('Votre compte est suspendu. Veuillez contacter l\'administrateur.');
+    }
+
     // Check if account is locked
     if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
         const minutesLeft = Math.ceil(

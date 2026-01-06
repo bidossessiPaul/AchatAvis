@@ -69,10 +69,11 @@ export const stripeService = {
         console.log(`Processing webhook event: ${event.type}`);
 
         switch (event.type) {
-            case 'checkout.session.completed':
+            case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
                 if (session.metadata?.userId) {
                     const { userId, planId } = session.metadata;
+                    const quantity = parseInt(session.metadata?.quantity || '0');
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
 
@@ -90,9 +91,9 @@ export const stripeService = {
                              subscription_start_date = ?,
                              subscription_end_date = ?,
                              last_payment_date = ?,
-                             missions_allowed = missions_allowed + 1
+                             missions_allowed = missions_allowed + ?
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, quantity, userId]
                     );
 
                     await query(
@@ -102,8 +103,10 @@ export const stripeService = {
 
                     // LOG PAYMENT AND QUOTA
                     const paymentId = uuidv4();
-                    const quantity = parseInt(session.metadata?.quantity || '0');
                     const amount = (session.amount_total || 0) / 100;
+
+                    const packsData: any = await query('SELECT name FROM subscription_packs WHERE id = ?', [planId]);
+                    const packName = packsData.length > 0 ? packsData[0].name : planId;
 
                     await query(`
                         INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, processed_at)
@@ -113,7 +116,7 @@ export const stripeService = {
                         userId,
                         amount,
                         session.payment_intent as string || session.id,
-                        `Abonnement ${planId}`,
+                        `Abonnement ${packName}`,
                         quantity
                     ]);
 
@@ -130,8 +133,9 @@ export const stripeService = {
                     console.log(`Activated subscription for user ${userId} with ${quantity} missions`);
                 }
                 break;
+            }
 
-            case 'invoice.payment_succeeded':
+            case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as any;
                 if (invoice.subscription) {
                     const subscriptionId = invoice.subscription as string;
@@ -149,8 +153,9 @@ export const stripeService = {
                     console.log(`Extended subscription ${subscriptionId} to ${currentPeriodEnd}`);
                 }
                 break;
+            }
 
-            case 'customer.subscription.deleted':
+            case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
                 await query(
                     `UPDATE artisans_profiles
@@ -160,6 +165,7 @@ export const stripeService = {
                 );
                 console.log(`Cancelled subscription ${subscription.id}`);
                 break;
+            }
 
             default:
                 console.log(`Unhandled event type ${event.type}`);

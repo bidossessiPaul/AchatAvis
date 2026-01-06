@@ -11,15 +11,19 @@ export const guideService = {
      * 3. The guide hasn't already submitted a review for this order
      */
     async getAvailableMissions(guideId: string) {
+        // ✅ NOUVEAU : Vérifier si suspendu ou banni
+        const user: any = await query('SELECT status, is_banned FROM users WHERE id = ?', [guideId]);
+        if (user && user.length > 0) {
+            if (user[0].is_banned) throw new Error('Votre compte est banni définitivement.');
+            if (user[0].status === 'suspended') throw new Error('Votre compte est temporairement suspendu.');
+        }
+
         return query(`
             SELECT o.*, 
                    (o.quantity - o.reviews_received) as remaining_slots
             FROM reviews_orders o
             WHERE o.status IN ('in_progress')
             AND o.reviews_received < o.quantity
-            -- We show orders even if guide has already participated, 
-            -- but only if they haven't filled ALL slots themselves (unlikely but possible)
-            -- and if there are still slots available globally.
             ORDER BY o.created_at DESC
         `, [guideId]);
     },
@@ -137,6 +141,14 @@ export const guideService = {
         // 5. Mettre à jour les logs d'activité anti-détection
         if (data.gmailAccountId && currentSectorSlug) {
             await antiDetectionService.updateGmailActivity(data.gmailAccountId, currentSectorSlug);
+        }
+
+        // 6. NOUVEAU : Déclencheurs automatiques de suspension
+        const { suspensionTriggers } = await import('./suspensionTriggers');
+        await suspensionTriggers.checkSpamSubmissions(guideId, submissionId);
+        await suspensionTriggers.checkIdenticalReviews(guideId, data.reviewUrl, submissionId);
+        if (data.gmailAccountId && currentSectorSlug) {
+            await suspensionTriggers.checkSectorCooldown(guideId, data.gmailAccountId, currentSectorSlug, submissionId);
         }
 
         return { id: submissionId, success: true };

@@ -63,6 +63,20 @@ export const deleteUser = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get all users (simplified)
+ * GET /api/admin/users
+ */
+export const getUsers = async (_req: Request, res: Response) => {
+    try {
+        const users = await adminService.getAllUsers();
+        res.json(users);
+    } catch (error) {
+        console.error('Get all users error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
  * Get detailed artisan info
  * GET /api/admin/artisans/:userId
  */

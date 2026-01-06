@@ -19,6 +19,7 @@ import {
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
 import { MissionCompatibilityModal } from '../../components/AntiDetection/MissionCompatibilityModal';
+import { ProofSubmissionChecklist } from '../../components/AntiDetection/ProofSubmissionChecklist';
 import './MissionDetail.css';
 
 export const MissionDetail: React.FC = () => {
@@ -40,7 +41,9 @@ export const MissionDetail: React.FC = () => {
     const [isCompModalOpen, setIsCompModalOpen] = useState(false);
 
     const { user } = useAuthStore();
-    const { gmailAccounts, fetchGmailAccounts, checkMissionCompatibility } = useAntiDetectionStore();
+    const { gmailAccounts, complianceData, fetchGmailAccounts, fetchComplianceData, checkMissionCompatibility } = useAntiDetectionStore();
+    const [isChecklistOpen, setIsChecklistOpen] = useState(false);
+    const [pendingProposalId, setPendingProposalId] = useState<string | null>(null);
 
     useEffect(() => {
         if (orderId) {
@@ -48,8 +51,9 @@ export const MissionDetail: React.FC = () => {
         }
         if (user) {
             fetchGmailAccounts(user.id);
+            fetchComplianceData(user.id);
         }
-    }, [orderId, user, fetchGmailAccounts]);
+    }, [orderId, user, fetchGmailAccounts, fetchComplianceData]);
 
     const loadMissionDetails = async (id: string) => {
         setIsLoading(true);
@@ -102,17 +106,26 @@ export const MissionDetail: React.FC = () => {
             return;
         }
 
-        // Optional: Keep a warning for production-like links but don't block
-        if (!url.includes('google.com') && !url.includes('goo.gl')) {
-            console.warn("L'URL ne semble pas être un lien Google Maps, mais soumission autorisée pour test.");
-        }
-
         if (!email || !email.includes('@')) {
             toast.error("Veuillez entrer un email Google valide.");
             return;
         }
 
+        // Open checklist before final submission
+        setPendingProposalId(proposalId);
+        setIsChecklistOpen(true);
+    };
+
+    const confirmSubmission = async () => {
+        if (!pendingProposalId) return;
+
+        const proposalId = pendingProposalId;
+        const url = proofUrls[proposalId];
+        const email = googleEmails[proposalId] || googleEmails['current'];
+
+        setIsChecklistOpen(false);
         setSubmittingId(proposalId);
+
         try {
             await guideService.submitProof({
                 orderId: mission!.id,
@@ -123,9 +136,7 @@ export const MissionDetail: React.FC = () => {
                 gmailAccountId: selectedGmailId || undefined
             });
             toast.success("Preuve soumise avec succès ! Elle sera validée par un administrateur.");
-            // Refresh to update progress and move to published section
             loadMissionDetails(orderId!);
-            // Clear inputs
             setProofUrls(prev => {
                 const next = { ...prev };
                 delete next[proposalId];
@@ -136,6 +147,7 @@ export const MissionDetail: React.FC = () => {
                 delete next[proposalId];
                 return next;
             });
+            setPendingProposalId(null);
         } catch (err: any) {
             console.error("Failed to submit proof", err);
             const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soumission de la preuve.";
@@ -426,6 +438,16 @@ export const MissionDetail: React.FC = () => {
                 isOpen={isCompModalOpen}
                 onClose={() => setIsCompModalOpen(false)}
                 result={compatibilityResult}
+            />
+
+            <ProofSubmissionChecklist
+                isOpen={isChecklistOpen}
+                onClose={() => setIsChecklistOpen(false)}
+                onConfirm={confirmSubmission}
+                sectorName={mission.sector || 'Général'}
+                isHardSector={mission.sector_difficulty === 'hard'}
+                gmailAccount={gmailAccounts.find(a => a.id === selectedGmailId)}
+                complianceScore={complianceData?.compliance_score || 0}
             />
         </DashboardLayout>
     );

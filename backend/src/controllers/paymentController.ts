@@ -114,7 +114,7 @@ export const paymentController = {
             await connection.execute(`
                 INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, processed_at)
                 VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, NOW())
-            `, [paymentId, userId, price, `Abonnement ${planId}`, quota]);
+            `, [paymentId, userId, price, `Abonnement ${plan.name}`, quota]);
 
             console.log('✅ Paiement enregistré');
 
@@ -170,6 +170,7 @@ export const paymentController = {
             if (session.payment_status === 'paid') {
                 const userId = session.metadata?.userId;
                 const planId = session.metadata?.planId;
+                const quantity = parseInt(session.metadata?.quantity || '0');
 
                 if (userId) {
                     const subscriptionId = session.subscription as string;
@@ -188,9 +189,10 @@ export const paymentController = {
                              subscription_product_id = ?,
                              subscription_start_date = ?,
                              subscription_end_date = ?,
-                             last_payment_date = ?
+                             last_payment_date = ?,
+                             missions_allowed = missions_allowed + ?
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, quantity, userId]
                     );
 
                     // Also update user status
@@ -198,6 +200,22 @@ export const paymentController = {
                         `UPDATE users SET status = 'active' WHERE id = ?`,
                         [userId]
                     );
+
+                    // LOG PAYMENT AND QUOTA (Consistent with stripeService)
+                    const paymentId = uuidv4();
+                    const amount = (session.amount_total || 0) / 100;
+
+                    await query(`
+                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, processed_at)
+                        VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, NOW())
+                    `, [
+                        paymentId,
+                        userId,
+                        amount,
+                        session.payment_intent as string || session.id,
+                        `Abonnement ${planId}`,
+                        quantity
+                    ]);
 
                     // Generate a NEW token with the updated 'active' status
                     // to avoid stale token issues on the frontend

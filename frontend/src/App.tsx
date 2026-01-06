@@ -24,6 +24,8 @@ import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
 import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
 import { QuizCertificationPage } from './pages/guide/QuizCertificationPage';
+import { SuspensionStatusPage } from './pages/guide/SuspensionStatusPage';
+import { SuspensionBanner } from './components/SuspensionBanner';
 import { OrdersList } from './pages/artisan/OrdersList';
 import { ReceivedReviews } from './pages/artisan/ReceivedReviews';
 import { BillingPage } from './pages/artisan/BillingPage';
@@ -41,7 +43,9 @@ import { PacksManagement } from './pages/admin/PacksManagement';
 // import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
+import { SuspensionAdminPage } from './pages/admin/SuspensionAdminPage';
 import { Profile } from './pages/Profile';
+import SuspendedPage from './pages/SuspendedPage';
 import { useAuthStore } from './context/authStore';
 
 function App() {
@@ -53,6 +57,7 @@ function App() {
 
     return (
         <BrowserRouter>
+            <SuspensionBanner />
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
                 {/* Public Routes */}
@@ -88,6 +93,7 @@ function App() {
                         <AcceptAdminInvite />
                     </PublicRoute>
                 } />
+                <Route path="/suspended" element={<SuspendedPage />} />
 
                 {/* Protected Routes */}
 
@@ -214,6 +220,11 @@ function App() {
                         <QuizCertificationPage />
                     </ProtectedRoute>
                 } />
+                <Route path="/guide/status" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <SuspensionStatusPage />
+                    </ProtectedRoute>
+                } />
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={
@@ -312,6 +323,14 @@ function App() {
                 <Route path="/profile" element={
                     <ProtectedRoute allowedRoles={['admin', 'artisan', 'guide']}>
                         <Profile />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/admin/suspensions" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission="super_admin">
+                            <SuspensionAdminPage />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
 
