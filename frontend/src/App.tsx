@@ -22,6 +22,8 @@ import { GuideDashboard } from './pages/guide/GuideDashboard';
 import { MissionDetail } from './pages/guide/MissionDetail';
 import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
+import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
+import { QuizCertificationPage } from './pages/guide/QuizCertificationPage';
 import { OrdersList } from './pages/artisan/OrdersList';
 import { ReceivedReviews } from './pages/artisan/ReceivedReviews';
 import { BillingPage } from './pages/artisan/BillingPage';
@@ -200,6 +202,16 @@ function App() {
                 <Route path="/guide/earnings" element={
                     <ProtectedRoute allowedRoles={['guide']}>
                         <MyEarnings />
+                    </ProtectedRoute>
+                } />
+                <Route path="/guide/anti-detection" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <AntiDetectionRulesPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/guide/quiz" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <QuizCertificationPage />
                     </ProtectedRoute>
                 } />
 

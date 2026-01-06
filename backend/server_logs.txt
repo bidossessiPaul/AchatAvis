@@ -1,59 +1,32 @@
 
+> dev:backend
+> cd backend && npm run dev
+
+
 > achatavis-backend@1.0.0 dev
 > tsx watch src/app.ts
 
-Serving static files from: /Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/public
-node:events:486
-      throw er; // Unhandled 'error' event
-      ^
-
-Error: listen EADDRINUSE: address already in use :::5001
-    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
-    at listenInCluster (node:net:1997:12)
-    at Server.listen (node:net:2102:7)
-    at app.listen (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/application.js:635:24)
-    at payoutRoutes (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:107:5)
-    at Object.<anonymous> (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:113:16)
-    at Module._compile (node:internal/modules/cjs/loader:1761:14)
-    at Object.transformer (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
-    at Module.load (node:internal/modules/cjs/loader:1481:32)
-    at Module._load (node:internal/modules/cjs/loader:1300:12)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1976:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
-  code: 'EADDRINUSE',
-  errno: -48,
-  syscall: 'listen',
-  address: '::',
-  port: 5001
+🚀 Server running on port 5001
+Login error: Error: Unknown column 'ap.subscription_start_date' in 'SELECT'
+    at PromisePool.execute (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/mysql2/lib/promise/pool.js:54:22)
+    at query (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/config/database.ts:30:34)
+    at Object.login (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/services/authService.ts:155:29)
+    at login (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/controllers/authController.ts:86:47)
+    at Layer.handle [as handle_request] (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/layer.js:95:5)
+    at next (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/layer.js:95:5)
+    at /Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/index.js:284:15
+    at router.process_params (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/router/index.js:346:12) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: 'SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, \n' +
+    '                u.two_factor_enabled, u.two_factor_secret,\n' +
+    '                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,\n' +
+    "                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used\n" +
+    '         FROM users u\n' +
+    "         LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'\n" +
+    '         WHERE u.email = ?',
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'ap.subscription_start_date' in 'SELECT'"
 }
-
-Node.js v24.11.1
-10:42:25 AM [tsx] change in ./src/services/adminService.ts Rerunning...
-cServing static files from: /Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/public
-node:events:486
-      throw er; // Unhandled 'error' event
-      ^
-
-Error: listen EADDRINUSE: address already in use :::5001
-    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
-    at listenInCluster (node:net:1997:12)
-    at Server.listen (node:net:2102:7)
-    at app.listen (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/express/lib/application.js:635:24)
-    at payoutRoutes (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:107:5)
-    at Object.<anonymous> (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/src/app.ts:113:16)
-    at Module._compile (node:internal/modules/cjs/loader:1761:14)
-    at Object.transformer (/Users/fvfl73g71wfv/Documents/dashbaord achatAvis/backend/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
-    at Module.load (node:internal/modules/cjs/loader:1481:32)
-    at Module._load (node:internal/modules/cjs/loader:1300:12)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1976:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
-  code: 'EADDRINUSE',
-  errno: -48,
-  syscall: 'listen',
-  address: '::',
-  port: 5001
-}
-
-Node.js v24.11.1

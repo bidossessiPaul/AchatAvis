@@ -1,5 +1,6 @@
 import { query } from '../config/database';
 import crypto from 'crypto';
+import { antiDetectionService } from './antiDetectionService';
 
 export const guideService = {
     /**
@@ -71,8 +72,32 @@ export const guideService = {
         `, [guideId]);
     },
 
-    async submitReviewProof(guideId: string, data: { orderId: string, proposalId: string, reviewUrl: string, googleEmail: string, artisanId: string }) {
-        // 0. Check if this guide already submitted for THIS proposal
+    async submitReviewProof(guideId: string, data: {
+        orderId: string,
+        proposalId: string,
+        reviewUrl: string,
+        googleEmail: string,
+        artisanId: string,
+        gmailAccountId?: number
+    }) {
+        // 0. VÉRIFICATION ANTI-DÉTECTION (si gmailAccountId est fourni)
+        let currentSectorSlug = '';
+        if (data.gmailAccountId) {
+            const compatibility = await antiDetectionService.canTakeMission(guideId, data.orderId, data.gmailAccountId);
+            if (!compatibility.can_take) {
+                throw new Error(`Anti-Détection: ${compatibility.message}`);
+            }
+
+            // Récupérer le slug du secteur pour plus tard
+            const campaign: any = await query(`
+                SELECT sd.sector_slug FROM reviews_orders o
+                LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+                WHERE o.id = ?
+            `, [data.orderId]);
+            currentSectorSlug = campaign?.[0]?.sector_slug || '';
+        }
+
+        // 1. Check if this guide already submitted for THIS proposal
         const existingProp: any = await query(`
             SELECT id FROM reviews_submissions 
             WHERE guide_id = ? AND proposal_id = ?
@@ -82,7 +107,7 @@ export const guideService = {
             throw new Error('Vous avez déjà soumis une preuve pour cet avis.');
         }
 
-        // 1. Check if this Google email was already used for this Artisan (business)
+        // 2. Check if this Google email was already used for this Artisan (business)
         const existingEmail: any = await query(`
             SELECT id FROM reviews_submissions
             WHERE artisan_id = ? AND google_email = ?
@@ -94,20 +119,25 @@ export const guideService = {
 
         const submissionId = crypto.randomUUID();
 
-        // 2. Create submission record
+        // 3. Create submission record
         await query(`
             INSERT INTO reviews_submissions 
-            (id, guide_id, artisan_id, order_id, proposal_id, review_url, google_email, status, earnings, submitted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 2.00, NOW())
-        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail]);
+            (id, guide_id, artisan_id, order_id, proposal_id, review_url, google_email, gmail_account_id, status, earnings, submitted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 2.00, NOW())
+        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null]);
 
-        // 3. Increment reviews_received in order and update status
+        // 4. Increment reviews_received in order and update status
         await query(`
             UPDATE reviews_orders 
             SET reviews_received = reviews_received + 1,
                 status = IF(reviews_received + 1 >= quantity, 'completed', 'in_progress')
             WHERE id = ?
         `, [data.orderId]);
+
+        // 5. Mettre à jour les logs d'activité anti-détection
+        if (data.gmailAccountId && currentSectorSlug) {
+            await antiDetectionService.updateGmailActivity(data.gmailAccountId, currentSectorSlug);
+        }
 
         return { id: submissionId, success: true };
     },

@@ -6,9 +6,9 @@ dotenv.config();
 // MySQL connection pool configuration
 const poolConfig = {
     host: process.env.MYSQL_HOST || 'localhost',
-    user: process.env.MYSQL_USER || 'u262725529_achatavis',
-    password: process.env.MYSQL_PASSWORD || 'Achatavis@0815',
-    database: process.env.MYSQL_DATABASE || 'u262725529_achatavis',
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE,
     port: Number(process.env.MYSQL_PORT) || 3306,
     waitForConnections: true,
     connectionLimit: 10,

@@ -276,3 +276,108 @@
         transform: translateY(0);
     }
 }
+
+/* Profile Tabs Styling */
+.profile-tabs {
+    display: flex;
+    gap: 2rem;
+    border-bottom: 2px solid #f1f5f9;
+    margin-bottom: 2rem;
+}
+
+.profile-tab-btn {
+    padding: 1rem 0.25rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: #64748b;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    position: relative;
+    bottom: -2px;
+}
+
+.profile-tab-btn:hover {
+    color: var(--primary-brand);
+}
+
+.profile-tab-btn.active {
+    color: var(--primary-brand);
+    border-bottom-color: var(--primary-brand);
+    font-weight: 700;
+}
+
+/* UI Fix for Light Modals (e.g. Add Gmail) */
+.light-theme-form .input-label {
+    color: #475569 !important;
+    /* Slate foncé pour visibilité */
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+.light-theme-form .input {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    /* Navy pour le texte */
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-theme-form .input:focus {
+    border-color: var(--primary-brand) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(255, 59, 106, 0.1) !important;
+}
+
+.light-theme-form .input::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* Info Bubble System */
+.info-bubble-trigger {
+    position: relative;
+}
+
+.info-bubble-content {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: 280px;
+    background: #0f172a;
+    color: #f1f5f9;
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-bubble-trigger:hover .info-bubble-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.info-bubble-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}

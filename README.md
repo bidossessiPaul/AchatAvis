@@ -6,7 +6,7 @@ Plateforme SaaS de gestion d'avis Google pour artisans français.
 
 - **Frontend**: React 18 + TypeScript + Vite
 - **Backend**: Node.js + Express + TypeScript
-- **Database**: PostgreSQL 14+
+- **Database**: MySQL 8+
 - **Auth**: JWT + bcrypt (12 rounds)
 - **Security**: Helmet.js, CORS, rate limiting
 - **State Management**: Zustand
@@ -17,7 +17,7 @@ Plateforme SaaS de gestion d'avis Google pour artisans français.
 ### Prérequis
 
 - Node.js 18+ ([télécharger](https://nodejs.org/))
-- PostgreSQL 14+ ([télécharger](https://www.postgresql.org/download/))
+- MySQL 8+ ([télécharger](https://www.mysql.com/downloads/))
 - npm ou yarn
 
 ### 1. Cloner le projet
@@ -27,19 +27,19 @@ git clone <votre-repo>
 cd "dashbaord achatAvis"
 ```
 
-### 2. Configurer PostgreSQL
+### 2. Configurer MySQL
 
 Créer la base de données :
 
 ```bash
-# Se connecter à PostgreSQL
-psql -U postgres
+# Se connecter à MySQL
+mysql -u root -p
 
 # Créer la base de données
 CREATE DATABASE achatavis;
 
-# Quitter psql
-\q
+# Quitter
+exit
 ```
 
 ### 3. Backend
@@ -173,27 +173,26 @@ Voir `.env.example` à la racine du projet.
 
 ```env
 # Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=achatavis
-DB_USER=postgres
-DB_PASSWORD=votre_mot_de_passe
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_DATABASE=achatavis
+MYSQL_USER=votre_utilisateur
+MYSQL_PASSWORD=votre_mot_de_passe
 
 # JWT
 JWT_SECRET=votre-secret-jwt-super-securise
 JWT_REFRESH_SECRET=votre-secret-refresh-super-securise
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 
 # Server
 PORT=5000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
 
-# Email (à configurer plus tard)
-EMAIL_PROVIDER=sendgrid
-EMAIL_API_KEY=your-api-key
-
-# Stripe (à configurer plus tard)
-STRIPE_SECRET_KEY=sk_test_...
+# Email (Gmail App Password)
+EMAIL_USER=votre-email@gmail.com
+EMAIL_PASS=votre-mdp-application
 ```
 
 ## 📚 Structure du Projet

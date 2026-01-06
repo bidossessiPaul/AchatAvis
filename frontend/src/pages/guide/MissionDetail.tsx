@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
 import toast from 'react-hot-toast';
@@ -13,8 +13,12 @@ import {
     ChevronLeft,
     Clock,
     Star,
-    Send
+    Send,
+    Shield
 } from 'lucide-react';
+import { useAntiDetectionStore } from '../../context/antiDetectionStore';
+import { useAuthStore } from '../../context/authStore';
+import { MissionCompatibilityModal } from '../../components/AntiDetection/MissionCompatibilityModal';
 import './MissionDetail.css';
 
 export const MissionDetail: React.FC = () => {
@@ -31,12 +35,21 @@ export const MissionDetail: React.FC = () => {
     const [submittingId, setSubmittingId] = useState<string | null>(null);
     const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
     const [googleEmails, setGoogleEmails] = useState<Record<string, string>>({});
+    const [selectedGmailId, setSelectedGmailId] = useState<number | null>(null);
+    const [compatibilityResult, setCompatibilityResult] = useState<any>(null);
+    const [isCompModalOpen, setIsCompModalOpen] = useState(false);
+
+    const { user } = useAuthStore();
+    const { gmailAccounts, fetchGmailAccounts, checkMissionCompatibility } = useAntiDetectionStore();
 
     useEffect(() => {
         if (orderId) {
             loadMissionDetails(orderId);
         }
-    }, [orderId]);
+        if (user) {
+            fetchGmailAccounts(user.id);
+        }
+    }, [orderId, user, fetchGmailAccounts]);
 
     const loadMissionDetails = async (id: string) => {
         setIsLoading(true);
@@ -56,9 +69,33 @@ export const MissionDetail: React.FC = () => {
         // Simple visual feedback could be added here
     };
 
+    const handleCheckCompatibility = async (gmailId: number) => {
+        if (!orderId) return;
+        try {
+            const result = await checkMissionCompatibility(orderId, gmailId);
+            setCompatibilityResult(result);
+            setIsCompModalOpen(true);
+            if (result.can_take) {
+                setSelectedGmailId(gmailId);
+                const account = gmailAccounts.find(a => a.id === gmailId);
+                if (account) {
+                    // Pre-fill email
+                    setGoogleEmails(prev => ({ ...prev, current: account.email }));
+                }
+            }
+        } catch (error) {
+            toast.error("Erreur lors de la vérification de compatibilité");
+        }
+    };
+
     const handleSubmitProof = async (proposalId: string) => {
         const url = proofUrls[proposalId];
-        const email = googleEmails[proposalId];
+        const email = googleEmails[proposalId] || googleEmails['current'];
+
+        if (!selectedGmailId && !compatibilityResult?.can_take) {
+            toast.error("Veuillez d'abord vérifier la compatibilité de votre compte Gmail.");
+            return;
+        }
 
         if (!url || !url.startsWith('http')) {
             toast.error("Veuillez entrer un lien valide (commençant par http ou https).");
@@ -82,7 +119,8 @@ export const MissionDetail: React.FC = () => {
                 proposalId,
                 reviewUrl: url,
                 googleEmail: email,
-                artisanId: mission!.artisan_id
+                artisanId: mission!.artisan_id,
+                gmailAccountId: selectedGmailId || undefined
             });
             toast.success("Preuve soumise avec succès ! Elle sera validée par un administrateur.");
             // Refresh to update progress and move to published section
@@ -298,9 +336,55 @@ export const MissionDetail: React.FC = () => {
                                 <p className="instruction-warning-text">
                                     <strong>Rythme :</strong> Ne publiez qu'un seul avis à la fois en respectant le temps d'attente conseillé.
                                 </p>
-                                <p className="instruction-warning-text" style={{ marginTop: 'var(--space-2)' }}>
-                                    <strong>Compte Google :</strong> Vous ne pouvez pas poster plusieurs avis avec le même email sur la même fiche.
-                                </p>
+                            </div>
+
+                            {/* Gmail Account Selector */}
+                            <div style={{ marginTop: 'var(--space-4)', padding: '1.25rem', background: '#f0f9ff', borderRadius: '1rem', border: '1px solid #e0f2fe' }}>
+                                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0369a1', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Shield size={18} /> COMPTE GMAIL
+                                </h4>
+
+                                {gmailAccounts.length > 0 ? (
+                                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                                        {gmailAccounts.map(account => (
+                                            <button
+                                                key={account.id}
+                                                onClick={() => handleCheckCompatibility(account.id)}
+                                                style={{
+                                                    padding: '0.75rem',
+                                                    borderRadius: '0.75rem',
+                                                    border: `2px solid ${selectedGmailId === account.id ? '#0ea5e9' : '#f3f4f6'}`,
+                                                    background: 'white',
+                                                    textAlign: 'left',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>{account.email}</span>
+                                                {selectedGmailId === account.id && <CheckCircle2 size={16} color="#0ea5e9" />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Aucun compte Gmail enregistré.</p>
+                                        <Link
+                                            to="/profile?tab=gmail"
+                                            style={{
+                                                display: 'inline-block',
+                                                marginTop: '0.5rem',
+                                                fontSize: '0.75rem',
+                                                color: '#0ea5e9',
+                                                fontWeight: 600,
+                                                textDecoration: 'none'
+                                            }}
+                                        >
+                                            + Ajouter un compte
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -337,6 +421,12 @@ export const MissionDetail: React.FC = () => {
                     </aside>
                 </div>
             </div>
+
+            <MissionCompatibilityModal
+                isOpen={isCompModalOpen}
+                onClose={() => setIsCompModalOpen(false)}
+                result={compatibilityResult}
+            />
         </DashboardLayout>
     );
 };

@@ -36,6 +36,8 @@ export interface ArtisanProfile {
     company_name: string;
     siret: string;
     trade: 'plombier' | 'electricien' | 'chauffagiste' | 'couvreur' | 'vitrier' | 'paysagiste' | 'menage' | 'demenageur';
+    sector_id?: number;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
     phone: string;
     address: string;
     city: string;
@@ -47,6 +49,12 @@ export interface ArtisanProfile {
     subscription_tier?: string;
     subscription_status?: 'active' | 'inactive' | 'trialing';
     subscription_end_date?: Date;
+    subscription_start_date?: Date;
+    last_payment_date?: Date;
+    missions_allowed: number;
+    stripe_customer_id?: string;
+    stripe_subscription_id?: string;
+    subscription_product_id?: string;
     created_at: Date;
 }
 
@@ -81,6 +89,8 @@ export interface ReviewOrder {
     quantity: number;
     price: number;
     status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
+    sector_id?: number;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
     reviews_received: number;
     company_name?: string;
     company_context?: string;
@@ -118,6 +128,10 @@ export interface ReviewSubmission {
     proposal_id?: string;
     review_url: string;
     status: 'pending' | 'validated' | 'rejected';
+    gmail_account_id?: number;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
+    submission_warnings?: any;
+    auto_validation_score?: number;
     rejection_reason?: string;
     earnings: number;
     submitted_at: Date;
@@ -173,4 +187,70 @@ export interface SubscriptionPack {
     color: 'standard' | 'premium';
     is_popular: boolean;
     created_at: Date;
+}
+
+export interface AntiDetectionRule {
+    id: number;
+    rule_key: string;
+    rule_name: string;
+    description_short?: string;
+    description_long?: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    icon_emoji?: string;
+    order_index: number;
+    is_active: boolean;
+    impact_stats?: any;
+    examples_do?: string[];
+    examples_dont?: string[];
+    tips?: string[];
+}
+
+export interface SectorDifficulty {
+    id: number;
+    sector_name: string;
+    sector_slug: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    google_strictness_level: number;
+    max_reviews_per_month_per_email?: number;
+    min_days_between_reviews: number;
+    warning_message?: string;
+    tips?: string[];
+    icon_emoji?: string;
+    validation_rate_avg: number;
+    required_gmail_level: 'nouveau' | 'bronze' | 'silver' | 'gold';
+    is_active: boolean;
+}
+
+export interface GuideGmailAccount {
+    id: number;
+    user_id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    trust_score: number;
+    account_level: 'nouveau' | 'bronze' | 'silver' | 'gold';
+    account_age_days: number;
+    has_profile_picture: boolean;
+    total_reviews_posted: number;
+    successful_reviews: number;
+    rejected_reviews: number;
+    success_rate: number;
+    last_review_posted_at?: Date;
+    sector_activity_log?: any;
+    allowed_sectors?: string[];
+}
+
+export interface GuideComplianceScore {
+    id: number;
+    user_id: string;
+    compliance_score: number;
+    rules_followed_count: number;
+    rules_violated_count: number;
+    last_violation_date?: Date;
+    violations_log?: any;
+    warnings_count: number;
+    recommendations?: string[];
+    certification_passed: boolean;
+    certification_passed_at?: Date;
+    certification_score?: number;
 }

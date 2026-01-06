@@ -14,8 +14,10 @@ import {
     Users,
     FileCheck,
     Briefcase,
-    Shield,
-    LogOut
+    ShieldCheck,
+    LogOut,
+    Mail,
+    Shield
 } from 'lucide-react';
 import './Layout.css';
 
@@ -61,7 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Missions', path: '/guide', icon: <MapPin size={20} /> },
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
+                    { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
+                    { label: 'Mes Gmails', path: '/profile?tab=gmail', icon: <Mail size={20} /> },
                 ];
             case 'admin': {
                 const allAdminItems: NavItem[] = [

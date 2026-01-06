@@ -94,5 +94,48 @@ export const openAiService = {
             console.error("❌ Erreur OpenAI Service:", error.message);
             throw error;
         }
+    },
+
+    async generateNearbyCities(baseCity: string, count: number) {
+        const prompt = `
+            Basé sur la ville de "${baseCity}" en France.
+            Génère une liste de ${count} villes, communes ou quartiers proches (banlieue ou périphérie directe) qui seraient logiques pour la clientèle d'un artisan local basé à ${baseCity}.
+            
+            Règles :
+            1. Réalisme géographique : Uniquement des villes réellement proches (max 20-30km).
+            2. Diversité : Mélange des communes résidentielles et des zones d'activité si pertinent.
+            3. Format : Retourne UNIQUEMENT un objet JSON avec une clé "cities" contenant un tableau de chaînes de caractères.
+            4. Pas de ville inventée.
+            5. Si c'est une très grande ville (Paris, Lyon, Marseille), propose des arrondissements ou des villes de la petite couronne.
+            
+            Exemple de sortie attendue :
+            {
+                "cities": ["Mérignac", "Pessac", "Le Bouscat", "Talence", "Bègles"]
+            }
+        `;
+
+        try {
+            console.log("🤖 Appel OpenAI pour generation de villes pour:", baseCity);
+            const response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo-0125",
+                messages: [
+                    { role: "system", content: "Tu es un expert en géographie française et zones de chalandise artisanale. Réponds uniquement en JSON." },
+                    { role: "user", content: prompt }
+                ],
+                response_format: { type: "json_object" },
+                temperature: 0.7,
+            });
+
+            const content = response.choices[0].message.content;
+            if (!content) throw new Error("Aucun contenu renvoyé par OpenAI");
+
+            const parsed = JSON.parse(content);
+            if (Array.isArray(parsed.cities)) return parsed.cities;
+
+            return [];
+        } catch (error: any) {
+            console.error("❌ Erreur OpenAI City Gen:", error.message);
+            throw error;
+        }
     }
 };

@@ -3,6 +3,7 @@ import { stripeService } from '../services/stripeService';
 import { query, pool } from '../config/database';
 import { generateAccessToken } from '../utils/token';
 import { v4 as uuidv4 } from 'uuid';
+import { sendPackActivationEmail } from '../services/emailService';
 
 export const paymentController = {
     async createCheckoutSession(req: Request, res: Response): Promise<any> {
@@ -36,20 +37,23 @@ export const paymentController = {
         console.log('User ID:', userId);
         console.log('Plan ID:', planId);
 
-        const PLANS: any = {
-            discovery: { quota: 5, price: 10 },
-            growth: { quota: 10, price: 18 },
-            expert: { quota: 20, price: 35 }
-        };
-
-        const plan = PLANS[planId];
-        if (!plan) {
-            return res.status(400).json({ error: 'Plan invalide' });
-        }
-
         const connection = await pool.getConnection();
         try {
             await connection.beginTransaction();
+
+            const [packs]: any = await connection.execute(
+                'SELECT * FROM subscription_packs WHERE id = ?',
+                [planId]
+            );
+
+            if (packs.length === 0) {
+                await connection.rollback();
+                connection.release();
+                return res.status(400).json({ error: 'Plan invalide' });
+            }
+            const plan = packs[0];
+            const quota = plan.quantity;
+            const price = plan.price_cents / 100; // Convert cents to euros
 
             // IDEMPOTENCY CHECK: Prevent duplicate payments within last 5 minutes
             const [recentPayments]: any = await connection.execute(
@@ -59,7 +63,7 @@ export const paymentController = {
                  AND amount = ? 
                  AND created_at > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
                  LIMIT 1`,
-                [userId, plan.price]
+                [userId, price]
             );
 
             if (recentPayments.length > 0) {
@@ -99,7 +103,7 @@ export const paymentController = {
                     subscription_start_date = NOW(),
                     subscription_end_date = DATE_ADD(NOW(), INTERVAL 30 DAY)
                 WHERE user_id = ?
-            `, [planId, plan.quota, plan.quota, userId]);
+            `, [planId, quota, quota, userId]);
 
             // Activer user
             await connection.execute('UPDATE users SET status = ? WHERE id = ?', ['active', userId]);
@@ -110,12 +114,26 @@ export const paymentController = {
             await connection.execute(`
                 INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, processed_at)
                 VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, NOW())
-            `, [paymentId, userId, plan.price, `Abonnement ${planId}`, plan.quota]);
+            `, [paymentId, userId, price, `Abonnement ${planId}`, quota]);
 
             console.log('✅ Paiement enregistré');
 
             await connection.commit();
             console.log('✅ TRANSACTION VALIDÉE');
+
+            // 4. Send confirmation email
+            try {
+                const [userRows]: any = await connection.execute(
+                    'SELECT full_name, email FROM users WHERE id = ?',
+                    [userId]
+                );
+                if (userRows.length > 0) {
+                    const userObj = userRows[0];
+                    await sendPackActivationEmail(userObj.email, userObj.full_name, plan.name, quota);
+                }
+            } catch (emailError) {
+                console.error('⚠️ Erreur envoi email activation:', emailError);
+            }
 
             // Refresh token logic if needed? For now just success result
             res.json({

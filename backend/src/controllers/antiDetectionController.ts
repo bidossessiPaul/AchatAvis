@@ -1,0 +1,268 @@
+import { Request, Response } from 'express';
+import { antiDetectionService } from '../services/antiDetectionService';
+import { query } from '../config/database';
+
+export const antiDetectionController = {
+    async getAllRules(_req: Request, res: Response) {
+        try {
+            const rules = await query(`
+                SELECT * FROM anti_detection_rules 
+                WHERE is_active = TRUE 
+                ORDER BY order_index ASC
+            `);
+            return res.json({ success: true, data: { rules, total_rules: (rules as any).length } });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async getAllSectors(_req: Request, res: Response) {
+        try {
+            const sectors: any = await query(`
+                SELECT * FROM sector_difficulty 
+                WHERE is_active = TRUE
+            `);
+
+            const grouped = {
+                easy: sectors.filter((s: any) => s.difficulty === 'easy'),
+                medium: sectors.filter((s: any) => s.difficulty === 'medium'),
+                hard: sectors.filter((s: any) => s.difficulty === 'hard')
+            };
+
+            return res.json({ success: true, data: grouped });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async getComplianceScore(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+            const scoreData: any = await query(`
+                SELECT * FROM guide_compliance_scores WHERE user_id = ?
+            `, [userId]);
+
+            if (!scoreData || scoreData.length === 0) {
+                // Initialize if not exists
+                await query('INSERT IGNORE INTO guide_compliance_scores (user_id) VALUES (?)', [userId]);
+                const newScore = await query('SELECT * FROM guide_compliance_scores WHERE user_id = ?', [userId]);
+                return res.json({ success: true, data: (newScore as any)[0] });
+            }
+
+            const data = scoreData[0];
+
+            // Add visual meta
+            let scoreColor = 'green';
+            let scoreLabel = 'Excellent';
+            if (data.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique'; }
+            else if (data.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer'; }
+            else if (data.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bien'; }
+
+            return res.json({
+                success: true,
+                data: {
+                    ...data,
+                    score_color: scoreColor,
+                    score_label: scoreLabel
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async checkMissionCompatibility(req: Request, res: Response) {
+        try {
+            const { user_id, campaign_id, gmail_account_id } = req.body;
+            if (!user_id || !campaign_id || !gmail_account_id) {
+                return res.status(400).json({ success: false, error: 'Missing parameters' });
+            }
+
+            const result = await antiDetectionService.canTakeMission(user_id, campaign_id, gmail_account_id);
+            return res.json({ success: true, data: result });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async getUserGmailAccounts(req: Request, res: Response) {
+        try {
+            const { userId } = req.params;
+            const accounts = await query(`
+                SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
+            `, [userId]);
+            return res.json({ success: true, data: accounts });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async submitQuiz(req: Request, res: Response) {
+        try {
+            const { user_id, score } = req.body; // In a real app we'd verify the answers
+            const passed = score >= 80;
+
+            if (passed) {
+                await query(`
+                    UPDATE guide_compliance_scores 
+                    SET certification_passed = TRUE, 
+                        certification_passed_at = NOW(),
+                        certification_score = ?,
+                        compliance_score = LEAST(100, compliance_score + 10)
+                    WHERE user_id = ?
+                `, [score, user_id]);
+            }
+
+            return res.json({
+                success: true,
+                data: {
+                    passed,
+                    score,
+                    rewards: passed ? {
+                        badge_earned: "Guide Certifié Anti-Détection",
+                        compliance_bonus: 10,
+                        unlocked_features: ["Secteurs difficiles", "Missions premium"]
+                    } : null
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async verifyGmailAccountPreview(req: Request, res: Response) {
+        try {
+            const { email, mapsProfileUrl } = req.body;
+            if (!email) return res.status(400).json({ success: false, error: 'Email requis' });
+
+            const { googleScraperService } = require('../services/googleScraperService');
+
+            let data: any = {};
+            if (mapsProfileUrl) {
+                // Validation regex pour s'assurer que c'est un lien Google Maps Contrib
+                const mapsRegex = /^https?:\/\/(www\.)?google\.(com|fr|be|ch)\/maps\/contrib\/[a-zA-Z0-9_-]+\/?.*$/;
+                if (!mapsRegex.test(mapsProfileUrl)) {
+                    return res.status(400).json({ success: false, error: 'Format de lien Google Maps invalide' });
+                }
+                data = await googleScraperService.fetchMapsProfileData(mapsProfileUrl, email);
+            } else {
+                const avatar = await googleScraperService.fetchProfilePictureByEmail(email);
+                data = { avatarUrl: avatar, localGuideLevel: 1, reviewCount: 0 };
+            }
+
+            // Calculer le trust score pour l'aperçu
+            let trustScore = 15;
+            if (data.localGuideLevel > 1) trustScore += (data.localGuideLevel * 5);
+            if (data.reviewCount > 10) trustScore += 10;
+            if (data.avatarUrl) trustScore += 5;
+
+            let trustLevel = 'Nouveau';
+            if (trustScore >= 85) trustLevel = 'Gold';
+            else if (trustScore >= 60) trustLevel = 'Silver';
+            else if (trustScore >= 31) trustLevel = 'Bronze';
+
+            return res.json({
+                success: true,
+                data: {
+                    ...data,
+                    trustScore,
+                    trustLevel
+                }
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async addGmailAccount(req: Request, res: Response) {
+        try {
+            const { user_id, email, maps_profile_url, local_guide_level, total_reviews_google, avatar_url } = req.body;
+
+            if (!user_id || !email) {
+                return res.status(400).json({ success: false, error: 'Données manquantes' });
+            }
+
+            // Calcul du trust score initial basé sur les données vérifiées
+            let trustScore = 15; // Base pour un compte déclaré
+            if (local_guide_level > 1) trustScore += (local_guide_level * 5);
+            if (total_reviews_google > 10) trustScore += 10;
+            if (avatar_url) trustScore += 5;
+
+            // Détermination du niveau
+            let level = 'nouveau';
+            if (trustScore >= 85) level = 'gold';
+            else if (trustScore >= 60) level = 'silver';
+            else if (trustScore >= 31) level = 'bronze';
+
+            await query(`
+                INSERT INTO guide_gmail_accounts 
+                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, avatar_url, has_profile_picture, is_verified, verification_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
+                ON DUPLICATE KEY UPDATE
+                maps_profile_url = VALUES(maps_profile_url),
+                local_guide_level = VALUES(local_guide_level),
+                total_reviews_google = VALUES(total_reviews_google),
+                trust_score = VALUES(trust_score),
+                account_level = VALUES(account_level),
+                avatar_url = VALUES(avatar_url),
+                has_profile_picture = VALUES(has_profile_picture),
+                is_verified = TRUE,
+                verification_date = NOW()
+            `, [
+                user_id, email, maps_profile_url, local_guide_level || 1,
+                total_reviews_google || 0, trustScore, level,
+                avatar_url || null, avatar_url ? true : false
+            ]);
+
+            return res.json({ success: true, message: 'Compte ajouté et vérifié avec succès' });
+        } catch (error: any) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ success: false, error: 'Ce lien Google Maps est déjà utilisé par un autre compte.' });
+            }
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async deleteGmailAccount(req: Request, res: Response) {
+        try {
+            const { accountId } = req.params;
+            const { userId } = req.body; // Security check
+
+            await query(`
+                DELETE FROM guide_gmail_accounts 
+                WHERE id = ? AND user_id = ?
+            `, [accountId, userId]);
+
+            return res.json({ success: true, message: 'Compte supprimé' });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async generateCities(req: Request, res: Response) {
+        try {
+            const { base_city, count } = req.body;
+            console.log('🌍 Generating cities for:', base_city);
+
+            if (!base_city) {
+                return res.status(400).json({ success: false, error: 'Ville requise' });
+            }
+
+            // Import dynamically since openAiService might not be imported at top
+            const { openAiService } = require('../services/openAiService');
+
+            const cities = await openAiService.generateNearbyCities(base_city, count || 5);
+
+            // Toujours inclure la ville de base si elle n'est pas dans la liste
+            // Mais de manière intelligente (la mettre en premier)
+            const uniqueCities = Array.from(new Set([base_city, ...cities]));
+
+            return res.json({ success: true, cities: uniqueCities });
+        } catch (error: any) {
+            console.error('City generation error:', error);
+            // Fallback à un tableau vide ou erreur explicite
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+};
+
