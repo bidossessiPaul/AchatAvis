@@ -20,7 +20,7 @@ import {
     Tooltip,
     ResponsiveContainer
 } from 'recharts';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDashboard.css';
 
@@ -54,7 +54,7 @@ export const AdminDashboard: React.FC = () => {
             const data = await adminService.getGlobalStats();
             setStats(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des statistiques');
+            showError('Erreur', 'Erreur lors du chargement des statistiques');
         } finally {
             setIsLoading(false);
         }

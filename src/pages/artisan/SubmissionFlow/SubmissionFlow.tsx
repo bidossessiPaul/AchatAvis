@@ -6,7 +6,7 @@ import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { PremiumBlurOverlay } from '../../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../../context/authStore';
-import toast from 'react-hot-toast';
+import { showError } from '../../../utils/Swal';
 import './SubmissionFlow.css';
 
 // Steps components (we will create them next)
@@ -68,7 +68,7 @@ export const SubmissionFlow: React.FC = () => {
 
             // Security: If mission is already published or beyond, redirect out
             if (['in_progress', 'completed', 'cancelled'].includes(data.status)) {
-                toast.error("Cette mission est déjà publiée et ne peut plus être modifiée.");
+                showError('Action impossible', "Cette mission est déjà publiée et ne peut plus être modifiée.");
                 navigate('/artisan');
                 return;
             }

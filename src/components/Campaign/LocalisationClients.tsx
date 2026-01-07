@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import api from '../../services/api';
 import { MapPin, RefreshCw, X } from 'lucide-react';
 import { Button } from '../common/Button';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../../utils/Swal';
 
 interface LocalisationProps {
     establishmentCity: string;
@@ -20,7 +20,7 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
 
     const generateCities = async () => {
         if (!establishmentCity) {
-            toast.error("Veuillez d'abord renseigner la ville de l'établissement.");
+            showError('Erreur', "Veuillez d'abord renseigner la ville de l'établissement.");
             return;
         }
 
@@ -35,10 +35,10 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
             if (response.data.success) {
                 setCities(response.data.cities);
                 onCitiesGenerated(response.data.cities);
-                toast.success(`${response.data.cities.length} zones trouvées via IA`);
+                showSuccess('Succès', `${response.data.cities.length} zones trouvées via IA`);
             }
         } catch (error) {
-            toast.error("Erreur lors de la génération des villes.");
+            showError('Erreur', "Erreur lors de la génération des villes.");
             console.error(error);
         } finally {
             setLoading(false);

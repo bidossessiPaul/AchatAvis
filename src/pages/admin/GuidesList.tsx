@@ -10,7 +10,7 @@ import {
     Award,
     Eye
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -24,6 +24,7 @@ interface Guide {
     local_guide_level: number;
     total_reviews_count: number;
     city: string;
+    warning_count: number;
 }
 
 export const GuidesList: React.FC = () => {
@@ -41,31 +42,62 @@ export const GuidesList: React.FC = () => {
             const data = await adminService.getGuides();
             setGuides(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des guides');
+            showError('Erreur', 'Erreur lors du chargement des guides');
         } finally {
             if (!silent) setIsLoading(false);
         }
     };
 
     const handleStatusUpdate = async (userId: string, newStatus: string) => {
-        if (!confirm(`Changer le statut en ${newStatus} ?`)) return;
+        const result = await showConfirm('Confirmation', `Changer le statut en ${newStatus} ?`);
+        if (!result.isConfirmed) return;
         try {
             await adminService.updateUserStatus(userId, newStatus);
-            toast.success('Statut mis à jour');
+            showSuccess('Succès', 'Statut mis à jour');
             loadGuides(true);
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', 'Erreur lors de la mise à jour');
         }
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Supprimer définitivement ce compte ? Cette action est irréversible.')) return;
+        const result = await showConfirm('Supprimer ce compte ?', 'Cette action est irréversible.');
+        if (!result.isConfirmed) return;
         try {
             await adminService.deleteUser(userId);
-            toast.success('Compte supprimé');
+            showSuccess('Succès', 'Compte supprimé');
             loadGuides(true);
         } catch (error) {
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Erreur lors de la suppression');
+        }
+    };
+
+    const handleIssueWarning = async (guide: Guide) => {
+        try {
+            const reasonsData = await adminService.getSuspensionReasons();
+            const reasons = reasonsData.warnings;
+
+            const result = await showPremiumWarningModal(
+                'Avertissement',
+                `Envoyer un avertissement à ${guide.google_email}. Sélectionnez le motif :`,
+                reasons
+            );
+
+            if (!result.isConfirmed || !result.value) return;
+
+            let finalReason = result.value;
+
+            if (finalReason === 'OTHER') {
+                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
+                if (!manualInput.isConfirmed || !manualInput.value) return;
+                finalReason = manualInput.value;
+            }
+
+            const response = await adminService.issueWarning(guide.id, finalReason);
+            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
+            loadGuides(true);
+        } catch (error) {
+            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
         }
     };
 
@@ -107,6 +139,7 @@ export const GuidesList: React.FC = () => {
                                         <th>Ville</th>
                                         <th>Niveau</th>
                                         <th>Avis</th>
+                                        <th>Avertissements</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -135,6 +168,15 @@ export const GuidesList: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td>{guide.total_reviews_count}</td>
+                                            <td>
+                                                {guide.warning_count > 0 ? (
+                                                    <span className="admin-badge warning" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#fdba74' }}>
+                                                        {guide.warning_count}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">-</span>
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className={`admin-badge ${guide.status || 'inactive'}`}>
                                                     {guide.status}
@@ -169,7 +211,7 @@ export const GuidesList: React.FC = () => {
                                                         )}
                                                     </>
                                                     <button
-                                                        onClick={() => toast('Avertissement envoyé (simulation)')}
+                                                        onClick={() => handleIssueWarning(guide)}
                                                         className="action-btn warn-btn"
                                                         title="Avertir"
                                                     >

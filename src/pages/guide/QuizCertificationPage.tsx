@@ -12,7 +12,7 @@ import {
     Award,
     Shield
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 
 const QUESTIONS = [
     {
@@ -166,7 +166,7 @@ export const QuizCertificationPage: React.FC = () => {
                 setIsFinished(true);
             }
         } catch (error) {
-            toast.error("Erreur lors de la soumission du protocole");
+            showError('Erreur', "Erreur lors de la soumission du protocole");
         } finally {
             setIsSubmitting(false);
         }

@@ -30,7 +30,7 @@ import {
     AreaChart,
     Area
 } from 'recharts';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './SubscriptionsList.css';
 
@@ -90,7 +90,7 @@ export const SubscriptionsList: React.FC = () => {
             setStats(statsData);
         } catch (error) {
             console.error('Error loading subscriptions:', error);
-            toast.error('Erreur lors du chargement des abonnements');
+            showError('Erreur', 'Erreur lors du chargement des abonnements');
         } finally {
             setIsLoading(false);
         }

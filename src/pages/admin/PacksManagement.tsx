@@ -10,7 +10,7 @@ import {
     Package,
     Star,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './PacksManagement.css';
 import './PackModal.css';
@@ -59,7 +59,7 @@ export const PacksManagement: React.FC = () => {
             setPacks(formattedData);
         } catch (error) {
             console.error('Error loading packs:', error);
-            toast.error('Erreur lors du chargement des packs');
+            showError('Erreur', 'Erreur lors du chargement des packs');
         } finally {
             setIsLoading(false);
         }
@@ -111,28 +111,29 @@ export const PacksManagement: React.FC = () => {
         try {
             if (editingPack) {
                 await adminApi.updatePack(editingPack.id, formData);
-                toast.success('Pack mis à jour');
+                showSuccess('Succès', 'Pack mis à jour');
             } else {
                 await adminApi.createPack(formData);
-                toast.success('Pack créé');
+                showSuccess('Succès', 'Pack créé');
             }
             handleCloseModal();
             loadPacks();
         } catch (error) {
             console.error('Error saving pack:', error);
-            toast.error('Erreur lors de l\'enregistrement');
+            showError('Erreur', "Erreur lors de l'enregistrement");
         }
     };
 
     const handleDeletePack = async (id: string) => {
-        if (!confirm('Voulez-vous vraiment supprimer ce pack ?')) return;
+        const result = await showConfirm('Confirmation', 'Voulez-vous vraiment supprimer ce pack ?');
+        if (!result.isConfirmed) return;
         try {
             await adminApi.deletePack(id);
-            toast.success('Pack supprimé');
+            showSuccess('Succès', 'Pack supprimé');
             loadPacks();
         } catch (error) {
             console.error('Error deleting pack:', error);
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Erreur lors de la suppression');
         }
     };
 

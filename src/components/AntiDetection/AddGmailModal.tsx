@@ -5,7 +5,7 @@ import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../../utils/Swal';
 
 interface AddGmailModalProps {
     isOpen: boolean;
@@ -66,13 +66,13 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
                 total_reviews_google: finalPreview?.reviewCount || 0,
                 avatar_url: finalPreview?.avatarUrl
             });
-            toast.success('Compte Gmail ajouté avec succès');
+            showSuccess('Succès', 'Compte Gmail ajouté avec succès');
             setFormData({ email: '', mapsProfileUrl: '' });
             setPreviewData(null);
             onSuccess();
             onClose();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de l’ajout du compte');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de l’ajout du compte');
         } finally {
             setIsSubmitting(false);
         }

@@ -7,7 +7,7 @@ import { Input } from '../components/common/Input';
 import { Card } from '../components/common/Card';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe, Loader } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../utils/Swal';
 import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
 import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
 import { useAntiDetectionStore } from '../context/antiDetectionStore';
@@ -104,10 +104,10 @@ export const Profile: React.FC = () => {
             const response = await authApi.updateProfile(formData);
             if (response.user) {
                 setUser({ ...user, ...response.user } as any);
-                toast.success('Profil mis à jour avec succès');
+                showSuccess('Profil mis à jour avec succès');
             }
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de la mise à jour du profil');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour du profil');
         } finally {
             setIsLoading(false);
         }
@@ -123,20 +123,19 @@ export const Profile: React.FC = () => {
 
         // Simple validation
         if (file.size > 5 * 1024 * 1024) {
-            return toast.error('Le fichier est trop volumineux (max 5Mo)');
+            return showError('Fichier trop volumineux', 'La taille maximale est de 5Mo');
         }
 
         setIsAvatarLoading(true);
-        const loadingToast = toast.loading('Téléchargement de l\'avatar...');
 
         try {
             const { avatarUrl } = await authApi.uploadAvatar(file);
             if (user) {
                 setUser({ ...user, avatar_url: avatarUrl });
             }
-            toast.success('Avatar mis à jour !', { id: loadingToast });
+            showSuccess('Succès', 'Avatar mis à jour !');
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image', { id: loadingToast });
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image');
         } finally {
             setIsAvatarLoading(false);
         }
@@ -145,7 +144,7 @@ export const Profile: React.FC = () => {
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            return toast.error('Les mots de passe ne correspondent pas');
+            return showError('Erreur', 'Les mots de passe ne correspondent pas');
         }
 
         setIsPasswordLoading(true);
@@ -154,14 +153,14 @@ export const Profile: React.FC = () => {
                 currentPassword: passwordData.currentPassword,
                 newPassword: passwordData.newPassword,
             });
-            toast.success('Mot de passe modifié avec succès');
+            showSuccess('Succès', 'Mot de passe modifié avec succès');
             setPasswordData({
                 currentPassword: '',
                 newPassword: '',
                 confirmPassword: '',
             });
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors du changement de mot de passe');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors du changement de mot de passe');
         } finally {
             setIsPasswordLoading(false);
         }
@@ -175,7 +174,7 @@ export const Profile: React.FC = () => {
             setQrCodeUrl(qrCode);
             setShow2FASetup(true);
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de la génération du 2FA');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la génération du 2FA');
         } finally {
             setIs2FALoading(false);
         }
@@ -191,23 +190,29 @@ export const Profile: React.FC = () => {
             setTwoFactorSecret(null);
             setQrCodeUrl(null);
             setTwoFactorToken('');
-            toast.success('Double authentification activée !');
+            showSuccess('Succès', 'Double authentification activée !');
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Code invalide');
+            showError('Erreur', error.response?.data?.error || 'Code invalide');
         } finally {
             setIs2FALoading(false);
         }
     };
 
     const handleDisable2FA = async () => {
-        if (!window.confirm('Voulez-vous vraiment désactiver la double authentification ?')) return;
+        const result = await showConfirm(
+            'Désactiver le 2FA ?',
+            'Voulez-vous vraiment désactiver la double authentification ?'
+        );
+
+        if (!result.isConfirmed) return;
+
         setIs2FALoading(true);
         try {
             await authApi.disable2FA();
             if (user) setUser({ ...user, two_factor_enabled: false });
-            toast.success('Double authentification désactivée');
+            showSuccess('Succès', 'Double authentification désactivée');
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de la désactivation');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la désactivation');
         } finally {
             setIs2FALoading(false);
         }

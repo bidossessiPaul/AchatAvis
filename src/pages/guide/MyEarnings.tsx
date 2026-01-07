@@ -12,7 +12,7 @@ import {
     RotateCw,
     AlertTriangle
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import './MyEarnings.css';
 import '../guide/Submissions.css'; // Reuse table and card styles
 
@@ -45,7 +45,7 @@ export const MyEarnings: React.FC = () => {
             setStats(statsData);
             setHistory(historyData);
         } catch (error) {
-            toast.error('Erreur lors du chargement de vos gains');
+            showError('Erreur', 'Erreur lors du chargement de vos gains');
         } finally {
             setIsLoading(false);
         }
@@ -53,21 +53,24 @@ export const MyEarnings: React.FC = () => {
 
     const handleWithdrawRequest = async () => {
         if (!stats || stats.balance < 20) {
-            toast.error('Montant minimum de 20€ requis pour un retrait');
+            showError('Montant insuffisant', 'Montant minimum de 20€ requis pour un retrait');
             return;
         }
 
-        if (!window.confirm(`Voulez-vous lancer une demande de retrait pour la totalité de votre solde (${stats.balance.toFixed(2)}€) ?`)) {
-            return;
-        }
+        const result = await showConfirm(
+            'Demande de retrait',
+            `Voulez-vous lancer une demande de retrait pour la totalité de votre solde (${stats.balance.toFixed(2)}€) ?`
+        );
+
+        if (!result.isConfirmed) return;
 
         setIsActionLoading(true);
         try {
             await payoutApi.requestPayout();
-            toast.success('Demande de retrait envoyée !');
+            showSuccess('Succès', 'Demande de retrait envoyée !');
             loadData(); // Refresh to see balance zero and new pending request
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Erreur lors de la demande');
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la demande');
         } finally {
             setIsActionLoading(false);
         }

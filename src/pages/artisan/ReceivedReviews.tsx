@@ -13,7 +13,7 @@ import {
     Clock,
     AlertCircle
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../context/authStore';
 import './ReceivedReviews.css';
@@ -49,7 +49,7 @@ export const ReceivedReviews: React.FC = () => {
             setSubmissions(data);
         } catch (error) {
             console.error('Error loading submissions:', error);
-            toast.error('Erreur lors du chargement des avis');
+            showError('Erreur', 'Erreur lors du chargement des avis');
         } finally {
             setIsLoading(false);
         }

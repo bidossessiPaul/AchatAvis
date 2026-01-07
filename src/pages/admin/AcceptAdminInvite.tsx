@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { teamApi } from '../../services/api';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../../utils/Swal';
 import { Check, Lock, User, ArrowRight } from 'lucide-react';
 import './AcceptInvite.css';
 
@@ -17,7 +17,7 @@ export const AcceptAdminInvite = () => {
 
     useEffect(() => {
         if (!token) {
-            toast.error("Lien d'invitation invalide");
+            showError('Erreur', "Lien d'invitation invalide");
             navigate('/login');
         }
     }, [token, navigate]);
@@ -26,12 +26,12 @@ export const AcceptAdminInvite = () => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            toast.error("Les mots de passe ne correspondent pas");
+            showError('Erreur', "Les mots de passe ne correspondent pas");
             return;
         }
 
         if (password.length < 8) {
-            toast.error("Le mot de passe doit faire au moins 8 caractères");
+            showError('Erreur', "Le mot de passe doit faire au moins 8 caractères");
             return;
         }
 
@@ -42,12 +42,12 @@ export const AcceptAdminInvite = () => {
                 password,
                 fullName
             });
-            toast.success("Compte créé ! Redirection vers la connexion...");
+            showSuccess('Succès', "Compte créé ! Redirection vers la connexion...");
             setTimeout(() => {
                 navigate('/login');
             }, 2000);
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Erreur lors de la création du compte");
+            showError('Erreur', error.response?.data?.error || "Erreur lors de la création du compte");
         } finally {
             setLoading(false);
         }

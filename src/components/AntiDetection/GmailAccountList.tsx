@@ -3,7 +3,7 @@ import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
 import { Trash2, Shield, ExternalLink, Mail, Award, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 
 export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => {
     const { user } = useAuthStore();
@@ -16,13 +16,21 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
     }, [user, fetchGmailAccounts]);
 
     const handleDelete = async (accountId: number) => {
-        if (!user || !window.confirm('Supprimer ce compte Gmail ?')) return;
+        if (!user) return;
+
+        const result = await showConfirm(
+            'Supprimer ce compte ?',
+            'Cette action est irréversible et supprimera également l\'historique associé.'
+        );
+
+        if (!result.isConfirmed) return;
+
         try {
             await deleteGmailAccount(accountId, user.id);
-            toast.success('Compte supprimé');
+            showSuccess('Compte supprimé');
             fetchGmailAccounts(user.id);
         } catch (error: any) {
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Impossible de supprimer le compte');
         }
     };
 

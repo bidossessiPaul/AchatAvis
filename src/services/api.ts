@@ -93,7 +93,14 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // Skip token refresh for auth endpoints where 401 is expected (login, register, etc.)
-        const skipRefreshPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password', '/team/accept-invite'];
+        const skipRefreshPaths = [
+            '/auth/login',
+            '/auth/register',
+            '/auth/forgot-password',
+            '/auth/reset-password',
+            '/team/accept-invite',
+            '/anti-detection/sectors'
+        ];
         const shouldSkipRefresh = skipRefreshPaths.some(path => originalRequest?.url?.includes(path));
 
         if (error.response && error.response.status === 401 && !originalRequest._retry && !shouldSkipRefresh) {
@@ -126,7 +133,12 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 localStorage.removeItem('accessToken');
-                if (!window.location.pathname.includes('/login')) {
+
+                // DO NOT REDIRECT TO LOGIN IF WE ARE ON A REGISTRATION PAGE
+                // This avoids the loop where visiting /register/artisan calls /sectors, 
+                // gets a 401 (if not handled), and redirects to /login.
+                const isRegisterPage = window.location.pathname.includes('/register/');
+                if (!window.location.pathname.includes('/login') && !isRegisterPage) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);
