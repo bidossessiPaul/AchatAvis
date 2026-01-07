@@ -25,6 +25,8 @@ router.get('/logs', checkPermission(['can_view_stats']), async (req, res) => {
 
 // Dashboard Stats
 router.get('/stats', adminController.getGlobalStats);
+router.get('/suspension-reasons', adminController.getSuspensionReasons);
+router.get('/reasons', adminController.getSuspensionReasons); // Alias for testing
 
 router.get('/artisans', adminController.getArtisans);
 router.get('/artisans/:userId', adminController.getArtisanDetail);
@@ -35,6 +37,7 @@ router.get('/subscriptions/stats', adminController.getSubscriptionStats);
 router.get('/submissions', adminController.getAllSubmissions);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.patch('/users/:userId/status', adminController.updateUserStatus);
+router.post('/users/:userId/warning', adminController.issueWarning);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 

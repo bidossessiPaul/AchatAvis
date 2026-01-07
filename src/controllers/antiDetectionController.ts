@@ -6,10 +6,10 @@ export const antiDetectionController = {
     async getAllRules(_req: Request, res: Response) {
         try {
             const rules = await query(`
-                SELECT * FROM anti_detection_rules 
+SELECT * FROM anti_detection_rules 
                 WHERE is_active = TRUE 
                 ORDER BY order_index ASC
-            `);
+    `);
             return res.json({ success: true, data: { rules, total_rules: (rules as any).length } });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: error.message });
@@ -19,9 +19,9 @@ export const antiDetectionController = {
     async getAllSectors(_req: Request, res: Response) {
         try {
             const sectors: any = await query(`
-                SELECT * FROM sector_difficulty 
+SELECT * FROM sector_difficulty 
                 WHERE is_active = TRUE
-            `);
+    `);
 
             const grouped = {
                 easy: sectors.filter((s: any) => s.difficulty === 'easy'),
@@ -42,7 +42,7 @@ export const antiDetectionController = {
             // Check if exists, if not initialize
             const existing: any = await query(`
                 SELECT id FROM guide_compliance_scores WHERE user_id = ?
-            `, [userId]);
+    `, [userId]);
 
             if (!existing || existing.length === 0) {
                 await query('INSERT IGNORE INTO guide_compliance_scores (user_id) VALUES (?)', [userId]);
@@ -89,9 +89,11 @@ export const antiDetectionController = {
     async getUserGmailAccounts(req: Request, res: Response) {
         try {
             const { userId } = req.params;
+
             const accounts = await query(`
-                SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
-            `, [userId]);
+SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
+    `, [userId]);
+
             return res.json({ success: true, data: accounts });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: error.message });
@@ -120,23 +122,23 @@ export const antiDetectionController = {
 
             // If admin, we don't filter by guide_id. If guide, we only allow seeing their own accounts.
             let sql = `
-                SELECT 
-                    s.id, 
-                    s.submitted_at, 
-                    s.status, 
-                    s.earnings,
-                    o.company_name as artisan_company,
-                    sd.sector_name,
-                    sd.icon_emoji as sector_icon
+SELECT
+s.id,
+    s.submitted_at,
+    s.status,
+    s.earnings,
+    o.company_name as artisan_company,
+    sd.sector_name,
+    sd.icon_emoji as sector_icon
                 FROM reviews_submissions s
                 JOIN reviews_orders o ON s.order_id = o.id
                 LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
                 WHERE s.gmail_account_id = ?
-            `;
+    `;
             const params: any[] = [accountId];
 
             if (role !== 'admin') {
-                sql += ` AND s.guide_id = ?`;
+                sql += ` AND s.guide_id = ? `;
                 params.push(user_id);
             }
 
@@ -161,12 +163,12 @@ export const antiDetectionController = {
             if (passed) {
                 await query(`
                     UPDATE guide_compliance_scores 
-                    SET certification_passed = TRUE, 
-                        certification_passed_at = NOW(),
-                        certification_score = ?,
-                        compliance_score = LEAST(100, compliance_score + 10)
+                    SET certification_passed = TRUE,
+    certification_passed_at = NOW(),
+    certification_score = ?,
+    compliance_score = LEAST(100, compliance_score + 10)
                     WHERE user_id = ?
-                `, [score, user_id]);
+    `, [score, user_id]);
             }
 
             return res.json({
@@ -235,7 +237,11 @@ export const antiDetectionController = {
             const { email, maps_profile_url, local_guide_level, total_reviews_google, avatar_url } = req.body;
             const user_id = req.user?.userId;
 
-            if (!user_id || !email) {
+            if (!user_id) {
+                return res.status(401).json({ success: false, error: 'Utilisateur non identifié.' });
+            }
+
+            if (!email) {
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
             }
 
@@ -252,9 +258,9 @@ export const antiDetectionController = {
             else if (trustScore >= 31) level = 'bronze';
 
             await query(`
-                INSERT INTO guide_gmail_accounts 
+                INSERT INTO guide_gmail_accounts
                 (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, avatar_url, has_profile_picture, is_verified, verification_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
                 ON DUPLICATE KEY UPDATE
                 maps_profile_url = VALUES(maps_profile_url),
                 local_guide_level = VALUES(local_guide_level),
@@ -271,7 +277,7 @@ export const antiDetectionController = {
                 avatar_url || null, avatar_url ? true : false
             ]);
 
-            return res.json({ success: true, message: 'Compte ajouté et vérifié avec succès' });
+            return res.json({ success: true, message: 'Compte Gmail ajouté avec succès' });
         } catch (error: any) {
             if (error.code === 'ER_DUP_ENTRY') {
                 return res.status(400).json({ success: false, error: 'Ce lien Google Maps est déjà utilisé par un autre compte.' });
@@ -290,7 +296,7 @@ export const antiDetectionController = {
             await query(`
                 DELETE FROM guide_gmail_accounts 
                 WHERE id = ? AND user_id = ?
-            `, [accountId, user_id]);
+    `, [accountId, user_id]);
 
             return res.json({ success: true, message: 'Compte supprimé' });
         } catch (error: any) {

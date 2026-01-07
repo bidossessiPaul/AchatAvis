@@ -59,6 +59,26 @@ export const artisanService = {
         const fields = [];
         const values = [];
 
+        // Check if status is transitioning to 'submitted'
+        let shouldSendNotifications = false;
+        let artisanInfo: any = null;
+
+        if (data.status === 'submitted') {
+            const currentOrder: any = await this.getOrderById(orderId);
+            if (currentOrder && currentOrder.status === 'draft') {
+                shouldSendNotifications = true;
+                // Fetch artisan details for email
+                const [rows]: any = await query(`
+                    SELECT u.email, u.full_name 
+                    FROM users u 
+                    WHERE u.id = ?
+                `, [currentOrder.artisan_id]);
+                if (rows && rows.length > 0) {
+                    artisanInfo = rows[0];
+                }
+            }
+        }
+
         const updateableFields = [
             'company_name', 'company_context', 'sector', 'zones',
             'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
@@ -82,21 +102,34 @@ export const artisanService = {
             }
         }
 
-        // Note: Automatic published_at and proposal approval removed.
-        // This is now handled by Admin approval.
+        if (fields.length > 0) {
+            values.push(orderId);
+            await query(
+                `UPDATE reviews_orders SET ${fields.join(', ')} WHERE id = ?`,
+                values as any
+            );
+        }
 
-        // Quantity change doesn't affect pack usage status, as a pack is marked used upon order creation.
-        // No need to adjust missions_used here based on quantity changes.
+        const updatedOrder = await this.getOrderById(orderId);
 
-        if (fields.length === 0) return this.getOrderById(orderId);
+        // Send notifications if transitioning to 'submitted'
+        if (shouldSendNotifications && artisanInfo && updatedOrder) {
+            const { sendMissionSubmittedArtisanEmail, sendMissionSubmittedAdminEmail } = await import('./emailService');
+            sendMissionSubmittedArtisanEmail(
+                artisanInfo.email,
+                artisanInfo.full_name,
+                updatedOrder.company_name,
+                orderId
+            ).catch(err => console.error('Failed to send mission submission email to artisan:', err));
 
-        values.push(orderId);
-        await query(
-            `UPDATE reviews_orders SET ${fields.join(', ')} WHERE id = ?`,
-            values as any
-        );
+            sendMissionSubmittedAdminEmail(
+                artisanInfo.full_name,
+                updatedOrder.company_name,
+                orderId
+            ).catch(err => console.error('Failed to send mission submission email to admin:', err));
+        }
 
-        return this.getOrderById(orderId);
+        return updatedOrder;
     },
 
     /**

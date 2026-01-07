@@ -2,45 +2,10 @@ import { Router } from 'express';
 import { suspensionService } from '../services/suspensionService';
 import { query } from '../config/database';
 import { authenticate, authorize } from '../middleware/auth';
+import { sendExemptionEmail } from '../services/emailService';
 const router = Router();
 
-console.log('--- Loading Suspension Routes ---');
-
-/**
- * GET /api/suspensions/check-my-ip-status
- * Get caller's IP and country info (Debug)
- */
-router.get('/check-my-ip-status', async (req: any, res) => {
-    try {
-        const ip = req.ip || '';
-        const country = await suspensionService.detectCountryFromIP(ip);
-        return res.json({
-            success: true,
-            data: {
-                ip,
-                country,
-                is_local: ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.')
-            }
-        });
-    } catch (error: any) {
-        console.error('Error in /check-my-ip-status:', error);
-        return res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-/**
- * GET /api/suspensions/config
- * Get global suspension configuration (Admin)
- */
-router.get('/config', authenticate, authorize('admin'), async (_req: any, res) => {
-    try {
-        const config = await suspensionService.getConfig();
-        return res.json({ success: true, data: config });
-    } catch (error: any) {
-        console.error('Error in /config:', error);
-        return res.status(500).json({ success: false, message: error.message });
-    }
-});
+// ... existing routes ...
 
 /**
  * PUT /api/suspensions/config
@@ -49,9 +14,14 @@ router.get('/config', authenticate, authorize('admin'), async (_req: any, res) =
 router.put('/config', authenticate, authorize('admin'), async (req: any, res) => {
     try {
         const { is_enabled, auto_suspend_enabled, manual_suspend_only, max_warnings_before_suspend, exempted_countries, exempted_user_ids, blocked_countries } = req.body;
-        console.log('Updating suspension config with:', { is_enabled, blocked_countries });
 
-        const result: any = await query(
+        // 1. Fetch current config to compare user IDs
+        const oldConfig = await suspensionService.getConfig();
+        const oldUserIds = oldConfig?.exempted_user_ids || [];
+        const newUserIds = exempted_user_ids || [];
+
+        // 2. Perform Update
+        await query(
             `UPDATE suspension_config SET 
         is_enabled = ?, 
         auto_suspend_enabled = ?, 
@@ -68,14 +38,30 @@ router.put('/config', authenticate, authorize('admin'), async (req: any, res) =>
                 manual_suspend_only ? 1 : 0,
                 max_warnings_before_suspend,
                 JSON.stringify(exempted_countries || []),
-                JSON.stringify(exempted_user_ids || []),
+                JSON.stringify(newUserIds),
                 JSON.stringify(blocked_countries || [])
             ]
         );
 
-        console.log('Update result:', result.affectedRows, 'rows affected');
+        // 3. Side Effect: Handle Emails for whitelisting changes
+        try {
+            // Users added to whitelist
+            const added = newUserIds.filter((id: string) => !oldUserIds.includes(id));
+            // Users removed from whitelist
+            const removed = oldUserIds.filter((id: string) => !newUserIds.includes(id));
 
-        return res.json({ success: true, message: 'Configuration mise à jour' });
+            for (const uid of [...added, ...removed]) {
+                const isAdding = added.includes(uid);
+                const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [uid]);
+                if (user && user.length > 0) {
+                    await sendExemptionEmail(user[0].email, user[0].full_name, isAdding);
+                }
+            }
+        } catch (emailErr) {
+            console.error('Non-blocking error sending exemption emails:', emailErr);
+        }
+
+        return res.json({ success: true, message: 'Configuration mise à jour et notifications envoyées' });
     } catch (error: any) {
         console.error('Error in PUT /config:', error);
         return res.status(500).json({ success: false, message: error.message });

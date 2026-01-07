@@ -117,6 +117,13 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
             [profileId, userId, data.googleEmail, 1, 0, data.phone, data.city]
         );
 
+        // Auto-provision registration email to guide_gmail_accounts (Requirement for Mission Detail pre-selection)
+        await connection.execute(
+            `INSERT INTO guide_gmail_accounts (user_id, email, trust_score, account_level, is_active)
+             VALUES (?, ?, 10, 'nouveau', TRUE)`,
+            [userId, data.email]
+        );
+
         await connection.commit();
 
         // Fetch created user

@@ -1,0 +1,70 @@
+2026-01-07T16:05:01.890Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:02.226Z - Query returned 1 accounts
+2026-01-07T16:05:02.228Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:24.375Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:24.695Z - Query returned 1 accounts
+2026-01-07T16:05:24.695Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:36.870Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:37.209Z - Query returned 1 accounts
+2026-01-07T16:05:37.210Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:49.845Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:50.185Z - Query returned 1 accounts
+2026-01-07T16:05:50.186Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:50.508Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:50.673Z - Query returned 1 accounts
+2026-01-07T16:05:50.673Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:57.186Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:57.524Z - Query returned 1 accounts
+2026-01-07T16:05:57.524Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:57.981Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:58.368Z - Query returned 1 accounts
+2026-01-07T16:05:58.369Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:05:59.141Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:05:59.300Z - Query returned 1 accounts
+2026-01-07T16:05:59.301Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:06:00.105Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:06:00.268Z - Query returned 1 accounts
+2026-01-07T16:06:00.269Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:06:00.606Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:06:00.772Z - Query returned 1 accounts
+2026-01-07T16:06:00.772Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:06:01.101Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:06:01.269Z - Query returned 1 accounts
+2026-01-07T16:06:01.269Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:06:01.603Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:06:01.769Z - Query returned 1 accounts
+2026-01-07T16:06:01.770Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:18:58.291Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:18:58.617Z - Query returned 1 accounts
+2026-01-07T16:18:58.618Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:18:58.940Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:18:59.110Z - Query returned 1 accounts
+2026-01-07T16:18:59.111Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:18:59.452Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:18:59.611Z - Query returned 1 accounts
+2026-01-07T16:18:59.611Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:18.275Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:18.604Z - Query returned 1 accounts
+2026-01-07T16:21:18.604Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:18.938Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:19.101Z - Query returned 1 accounts
+2026-01-07T16:21:19.102Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:19.431Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:19.593Z - Query returned 1 accounts
+2026-01-07T16:21:19.594Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:39.006Z - --- ADD GMAIL ACCOUNT ATTEMPT ---
+2026-01-07T16:21:39.007Z - Body: {"user_id":"ce2d9a1b-1e20-4623-a257-75116d9ef4e0","email":"bob@gmail.com","maps_profile_url":"","local_guide_level":1,"total_reviews_google":0,"avatar_url":"https://ui-avatars.com/api/?name=bob&background=0ea5e9&color=fff&size=128"} 
+2026-01-07T16:21:39.007Z - User from token: {"userId":"ce2d9a1b-1e20-4623-a257-75116d9ef4e0","email":"sylvanus@lannkin.com","role":"guide","status":"active","iat":1767802731,"exp":1767803631} 
+2026-01-07T16:21:39.321Z - Successfully added / updated Gmail for user: ce2d9a1b-1e20-4623-a257-75116d9ef4e0 
+2026-01-07T16:21:39.684Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:39.851Z - Query returned 2 accounts
+2026-01-07T16:21:39.851Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:53.337Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:53.524Z - Query returned 2 accounts
+2026-01-07T16:21:53.524Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:54.984Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:55.320Z - Query returned 2 accounts
+2026-01-07T16:21:55.321Z - First match email: sylvanus@lannkin.com 
+2026-01-07T16:21:55.656Z - Fetching Gmail accounts for user ID: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0](Original: [ce2d9a1b-1e20-4623-a257-75116d9ef4e0])
+2026-01-07T16:21:55.822Z - Query returned 2 accounts
+2026-01-07T16:21:55.823Z - First match email: sylvanus@lannkin.com 

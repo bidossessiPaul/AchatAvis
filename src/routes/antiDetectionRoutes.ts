@@ -6,7 +6,7 @@ const router = Router();
 
 // Public (authenticated) rules and sectors
 router.get('/rules', authenticate, antiDetectionController.getAllRules);
-router.get('/sectors', authenticate, antiDetectionController.getAllSectors);
+router.get('/sectors', antiDetectionController.getAllSectors);
 
 // User specific compliance and accounts
 router.get('/compliance-score/:userId', authenticate, antiDetectionController.getComplianceScore);
