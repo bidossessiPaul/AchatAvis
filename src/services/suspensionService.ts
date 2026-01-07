@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendSuspensionEmail, sendSuspensionLiftedEmail } from './emailService';
+import { sendSuspensionEmail, sendSuspensionLiftedEmail, sendAdminSuspensionNotice } from './emailService';
 // import { notificationService } from './notificationService'; // Planifié pour plus tard
 
 interface SuspensionConfig {
@@ -44,15 +44,15 @@ class SuspensionService {
    */
   async isUserExempted(userId: string): Promise<boolean> {
     const config = await this.getConfig();
-    if (!config) return false;
 
-    if (config.exempted_user_ids.includes(userId)) return true;
+    // Check if user is an admin - Admins can NEVER be suspended
+    const user: any = await query('SELECT role FROM users WHERE id = ?', [userId]);
+    if (user && user.length > 0 && user[0].role === 'admin') {
+      console.log(`🛡️ SUSPENSION EXEMPTION: User ${userId} is an ADMIN. Skipping suspension.`);
+      return true;
+    }
 
-    // Check user's country (this might need the user's profile info)
-    // const user: any = await query('SELECT status FROM users WHERE id = ?', [userId]);
-    // For now, country check is placeholder as we don't have country_code in users table yet in CI/BJ context
-    // but the requirement mentioned CI/BJ countries. 
-    // If we add country_code to users later, we can implement it here.
+    if (config && config.exempted_user_ids.includes(userId)) return true;
 
     return false;
   }
@@ -64,7 +64,7 @@ class SuspensionService {
     try {
       // Skip local IPs
       if (ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.')) {
-        return 'FR'; // Default to FR for local development
+        return null; // Don't default to FR locally, let it be unknown
       }
 
       const response = await fetch(`http://ip-api.com/json/${ip}`);
@@ -117,7 +117,11 @@ class SuspensionService {
   ): Promise<{ suspended: boolean; warning?: boolean; suspension_id?: number }> {
 
     try {
-      if (!(await this.isSystemEnabled())) return { suspended: false };
+      const systemEnabled = await this.isSystemEnabled();
+      if (!systemEnabled && reasonCategory !== 'manual_admin') {
+        console.log(`🚫 SUSPENSION SERVICE: System disabled, skipping ${reasonCategory} for user ${userId}`);
+        return { suspended: false };
+      }
       if (await this.isUserExempted(userId)) return { suspended: false };
 
       const activeSuspension = await this.getActiveSuspension(userId);
@@ -220,10 +224,11 @@ class SuspensionService {
       await connection.commit();
 
       // Send email notification
-      const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [userId]);
+      const user: any = await query('SELECT email, full_name, last_user_agent FROM users WHERE id = ?', [userId]);
       if (user && user.length > 0) {
         try {
-          await sendSuspensionEmail(user[0].email, user[0].full_name, level[0], details);
+          await sendSuspensionEmail(user[0].email, user[0].full_name, level[0], details, user[0].last_user_agent);
+          await sendAdminSuspensionNotice(user[0].email, user[0].full_name, level[0], details, user[0].last_user_agent);
         } catch (emailErr) {
           console.error("Non-blocking email failure:", emailErr);
         }

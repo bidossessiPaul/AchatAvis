@@ -8,6 +8,8 @@ import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
 import { sendResetPasswordEmail, sendWelcomeEmail } from './emailService';
+import { suspensionService } from './suspensionService';
+
 
 /**
  * Register a new artisan
@@ -154,7 +156,7 @@ export const login = async (email: string, password: string) => {
     // Get user with password hash
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
-                u.two_factor_enabled, u.two_factor_secret,
+                u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
          FROM users u
@@ -170,9 +172,32 @@ export const login = async (email: string, password: string) => {
     }
 
     // Check if account is suspended
-    if (user.status === 'suspended') {
-        throw new Error('Votre compte est suspendu. Veuillez contacter l\'administrateur.');
+    if (user.status === 'suspended' || user.status === 'rejected') {
+        const isSystemActive = await suspensionService.isSystemEnabled();
+
+        if (isSystemActive && user.role !== 'admin') {
+            // Get active suspension details
+            const suspensionQuery: any = await query(
+                `SELECT us.*, sl.level_name, sl.level_number, sl.badge_color, sl.icon_emoji
+                 FROM user_suspensions us
+                 JOIN suspension_levels sl ON us.suspension_level_id = sl.id
+                 WHERE us.user_id = ? AND us.is_active = true
+                 ORDER BY us.started_at DESC LIMIT 1`,
+                [user.id]
+            );
+
+            const suspension = suspensionQuery && suspensionQuery.length > 0 ? suspensionQuery[0] : null;
+
+            const error: any = new Error('Votre compte est suspendu. Veuillez contacter l\'administrateur.');
+            error.code = 'ACCOUNT_SUSPENDED';
+            error.suspension = suspension;
+            error.userName = user.full_name;
+            throw error;
+        } else if (!isSystemActive) {
+            console.log(`🔓 [Auth Service] Suspension system is DISABLED. Allowing login for suspended user: ${email}`);
+        }
     }
+
 
     // Check if account is locked
     if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
@@ -448,8 +473,14 @@ export const refreshToken = async (token: string) => {
 
         // Get user to ensure they still exist and are active
         const user = await getUserById(payload.userId);
-        if (!user || user.status !== 'active') {
-            throw new Error('User not found or inactive');
+        const isSystemActive = await suspensionService.isSystemEnabled();
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        if (isSystemActive && user.role !== 'admin' && user.status !== 'active') {
+            throw new Error(`User account is ${user.status}`);
         }
 
         const tokenPayload = {
