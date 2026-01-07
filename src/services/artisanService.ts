@@ -93,7 +93,7 @@ export const artisanService = {
         values.push(orderId);
         await query(
             `UPDATE reviews_orders SET ${fields.join(', ')} WHERE id = ?`,
-            values
+            values as any
         );
 
         return this.getOrderById(orderId);

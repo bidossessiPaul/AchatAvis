@@ -273,14 +273,6 @@ class AntiDetectionService {
     }
 
     /**
-<<<<<<< HEAD
-     * Recalculer le score de conformité global et récupérer les statistiques
-     */
-    async getExtendedComplianceData(userId: string): Promise<any> {
-        // 1. Récupérer le score actuel
-        const scoreResult: any = await query(`
-            SELECT * FROM guide_compliance_scores WHERE user_id = ?
-=======
      * Récupérer le récapitulatif d'activité pour un guide
      */
     async getGuideActivityRecap(userId: string) {
@@ -356,12 +348,12 @@ class AntiDetectionService {
     }
 
     /**
-     * Recalculer le score de conformité global
+     * Recalculer le score de conformité global et récupérer les statistiques étendues
      */
-    async calculateComplianceScore(userId: string): Promise<number> {
-        const result: any = await query(`
-            SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
->>>>>>> origin/main
+    async getExtendedComplianceData(userId: string): Promise<any> {
+        // 1. Récupérer le score actuel
+        const scoreResult: any = await query(`
+            SELECT * FROM guide_compliance_scores WHERE user_id = ?
         `, [userId]);
 
         let data = scoreResult?.[0] || { compliance_score: 100, rules_followed_count: 0, rules_violated_count: 0 };

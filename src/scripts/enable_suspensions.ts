@@ -1,5 +1,5 @@
 
-import { query, pool } from '../config/database';
+import { query } from '../config/database';
 
 async function run() {
     console.log('🚀 Enabling suspensions configuration...');
@@ -28,7 +28,7 @@ async function run() {
 
         if (!blocked.includes("FR")) {
             blocked.push("FR");
-            await query('UPDATE suspension_config SET blocked_countries = ?', [JSON.stringify(blocked)]);
+            await query('UPDATE suspension_config SET blocked_countries = ?', [JSON.stringify(blocked)] as any);
             console.log("✅ Blocked 'FR' (France) for local testing.");
         } else {
             console.log("ℹ️ 'FR' is already blocked.");

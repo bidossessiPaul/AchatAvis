@@ -131,7 +131,7 @@ router.post('/manual', authenticate, authorize('admin'), async (req: any, res) =
             user_id,
             suspension_level_id,
             'manual_admin',
-            reason_details,
+            reason_details || 'Suspension manuelle',
             undefined, // proofId
             admin_notes
         );
@@ -150,10 +150,13 @@ router.post('/manual', authenticate, authorize('admin'), async (req: any, res) =
 router.post('/:suspensionId/lift', authenticate, authorize('admin'), async (req: any, res) => {
     try {
         const { suspensionId } = req.params;
-        const { reason } = req.body;
+        if (!req.user?.userId) {
+            return res.status(401).json({ success: false, message: 'Administrateur non authentifié' });
+        }
         const adminId = req.user.userId;
+        const { reason } = req.body;
 
-        await suspensionService.liftSuspension(parseInt(suspensionId), adminId, reason);
+        await suspensionService.liftSuspension(parseInt(suspensionId), adminId, reason || "Levée manuelle");
         return res.json({ success: true, message: 'Suspension levée' });
     } catch (error: any) {
         console.error('Error in /lift:', error);
@@ -165,7 +168,7 @@ router.post('/:suspensionId/lift', authenticate, authorize('admin'), async (req:
  * GET /api/suspensions/active
  * Get all active suspensions with user details
  */
-router.get('/active', authenticate, authorize('admin'), async (req: any, res) => {
+router.get('/active', authenticate, authorize('admin'), async (_req: any, res) => {
     try {
         const results = await query(
             `SELECT us.*, u.email, u.full_name, u.role, u.last_detected_country 

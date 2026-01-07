@@ -1,5 +1,5 @@
 
-import { query, pool } from '../config/database';
+import { query } from '../config/database';
 
 async function run() {
     console.log('🚀 Seeding suspension levels...');

@@ -113,13 +113,8 @@ export const paymentController = {
             const paymentId = uuidv4();
             await connection.execute(`
                 INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, processed_at)
-<<<<<<< HEAD
                 VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, NOW())
             `, [paymentId, userId, price, `Abonnement ${plan.name}`, quota]);
-=======
-                VALUES (?, ?, 'subscription', ?, 'completed', ?, 1, NOW())
-            `, [paymentId, userId, price, `Abonnement ${planId}`]);
->>>>>>> origin/main
 
             console.log('✅ Paiement enregistré');
 

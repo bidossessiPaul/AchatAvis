@@ -31,21 +31,21 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
  * Verify access token
  */
 export const verifyAccessToken = (token: string): TokenPayload => {
-    return jwt.verify(token, jwtConfig.accessTokenSecret) as TokenPayload;
+    return jwt.verify(token, jwtConfig.accessTokenSecret as string) as TokenPayload;
 };
 
 /**
  * Verify refresh token
  */
 export const verifyRefreshToken = (token: string): TokenPayload => {
-    return jwt.verify(token, jwtConfig.refreshTokenSecret) as TokenPayload;
+    return jwt.verify(token, jwtConfig.refreshTokenSecret as string) as TokenPayload;
 };
 
 /**
  * Generate password reset token (1 hour expiry)
  */
 export const generatePasswordResetToken = (userId: string, email: string): string => {
-    return jwt.sign({ userId, email, type: 'password-reset' }, jwtConfig.accessTokenSecret, {
+    return jwt.sign({ userId, email, type: 'password-reset' }, jwtConfig.accessTokenSecret as string, {
         expiresIn: '1h',
     });
 };
@@ -54,7 +54,7 @@ export const generatePasswordResetToken = (userId: string, email: string): strin
  * Generate email verification token (24 hours expiry)
  */
 export const generateEmailVerificationToken = (userId: string, email: string): string => {
-    return jwt.sign({ userId, email, type: 'email-verification' }, jwtConfig.accessTokenSecret, {
+    return jwt.sign({ userId, email, type: 'email-verification' }, jwtConfig.accessTokenSecret as string, {
         expiresIn: '24h',
     });
 };
@@ -74,5 +74,5 @@ export const generateMFAToken = (payload: TokenPayload): string => {
 export const verifySpecialToken = (
     token: string
 ): { userId: string; email: string; type: string; role?: any; status?: any } => {
-    return jwt.verify(token, jwtConfig.accessTokenSecret) as any;
+    return jwt.verify(token, jwtConfig.accessTokenSecret as string) as any;
 };
