@@ -20,7 +20,20 @@ export interface User {
     missions_allowed?: number;
     missions_used?: number;
     permissions?: Record<string, boolean>; // For admin team members
+<<<<<<< HEAD
     last_detected_country?: string;
+=======
+    // Artisan Profile Fields
+    company_name?: string;
+    siret?: string;
+    trade?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    postal_code?: string;
+    google_business_url?: string;
+    google_email?: string;
+>>>>>>> origin/main
 }
 
 export interface ArtisanProfile {
@@ -28,7 +41,7 @@ export interface ArtisanProfile {
     user_id: string;
     company_name: string;
     siret: string;
-    trade: 'plombier' | 'electricien' | 'chauffagiste' | 'couvreur' | 'vitrier' | 'paysagiste' | 'menage' | 'demenageur';
+    trade: string;
     phone: string;
     address: string;
     city: string;
@@ -79,7 +92,7 @@ export interface ArtisanRegistration {
     password: string;
     companyName: string;
     siret: string;
-    trade: ArtisanProfile['trade'];
+    trade: string;
     phone: string;
     address: string;
     city: string;

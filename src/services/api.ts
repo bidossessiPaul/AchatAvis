@@ -194,7 +194,7 @@ export const authApi = {
     },
 
     // Update profile
-    updateProfile: async (data: { fullName?: string, avatarUrl?: string }): Promise<{ user: User }> => {
+    updateProfile: async (data: any): Promise<{ user: User }> => {
         const response = await api.put('/auth/profile', data);
         return response.data;
     },

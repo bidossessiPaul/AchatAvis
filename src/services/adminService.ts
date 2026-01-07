@@ -52,5 +52,13 @@ export const adminService = {
     deleteUser: async (userId: string) => {
         const response = await api.delete(`/admin/users/${userId}`);
         return response.data;
+    },
+
+    /**
+     * Get history for a specific Gmail account (Admin auditing)
+     */
+    getGmailAccountHistory: async (accountId: number) => {
+        const response = await api.get(`/anti-detection/gmail-history/${accountId}`);
+        return response.data.data;
     }
 };

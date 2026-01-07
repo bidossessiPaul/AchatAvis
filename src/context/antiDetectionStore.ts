@@ -49,14 +49,19 @@ interface AntiDetectionState {
     sectors: { easy: Sector[]; medium: Sector[]; hard: Sector[] };
     complianceData: ComplianceData | null;
     gmailAccounts: any[];
+    guideRecap: Record<string, any> | null;
+    gmailHistory: Record<number, any[]>;
     loading: boolean;
     error: string | null;
 
-    fetchRules: () => Promise<void>;
+    fetchAntiDetectionRules: () => Promise<void>;
     fetchSectors: () => Promise<void>;
     fetchComplianceData: (userId: string) => Promise<void>;
     fetchGmailAccounts: (userId: string) => Promise<void>;
+    fetchGuideRecap: () => Promise<void>;
+    fetchGmailHistory: (accountId: number) => Promise<void>;
     verifyGmailPreview: (email: string, mapsProfileUrl?: string) => Promise<any>;
+    updateGmailActivity: (accountId: number, sectorSlug: string) => Promise<void>;
     addGmailAccount: (data: any) => Promise<any>;
     deleteGmailAccount: (accountId: number, userId: string) => Promise<any>;
     checkMissionCompatibility: (campaignId: string, gmailId: number) => Promise<any>;
@@ -68,10 +73,23 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
     sectors: { easy: [], medium: [], hard: [] },
     complianceData: null,
     gmailAccounts: [],
+    guideRecap: null,
+    gmailHistory: {},
     loading: false,
     error: null,
 
-    fetchRules: async () => {
+    fetchGuideRecap: async () => {
+        set({ loading: true });
+        try {
+            const response = await api.get('/anti-detection/guide-recap');
+            set({ guideRecap: response.data.data, loading: false });
+        } catch (error: any) {
+            console.error('Failed to fetch guide recap:', error);
+            set({ loading: false });
+        }
+    },
+
+    fetchAntiDetectionRules: async () => {
         set({ loading: true });
         try {
             const response = await api.get('/anti-detection/rules');
@@ -108,6 +126,34 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
             set({ gmailAccounts: response.data.data, loading: false });
         } catch (error: any) {
             set({ error: error.message, loading: false });
+        }
+    },
+
+    fetchGmailHistory: async (accountId: number) => {
+        try {
+            const response = await api.get(`/anti-detection/gmail-history/${accountId}`);
+            set(state => ({
+                gmailHistory: {
+                    ...state.gmailHistory,
+                    [accountId]: response.data.data
+                }
+            }));
+        } catch (error: any) {
+            console.error('Failed to fetch gmail history:', error);
+        }
+    },
+
+    updateGmailActivity: async (accountId: number, sectorSlug: string) => {
+        try {
+            await api.post('/anti-detection/update-activity', {
+                gmail_account_id: accountId,
+                sector_slug: sectorSlug
+            });
+            // Refresh recap after activity update
+            const response = await api.get('/anti-detection/guide-recap');
+            set({ guideRecap: response.data.data });
+        } catch (error: any) {
+            console.error('Failed to update activity:', error);
         }
     },
 

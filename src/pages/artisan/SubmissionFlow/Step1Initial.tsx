@@ -15,22 +15,11 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
     const [availablePacks, setAvailablePacks] = useState<any[]>([]);
     const [isLoadingPacks, setIsLoadingPacks] = useState(true);
 
-
-    // Déterminer le nombre d'avis du pack actif de l'utilisateur
-    const userPackQuota = user?.monthly_reviews_quota || 5;
-    const userPackTier = user?.subscription_tier || 'discovery';
-
-    const packNames: Record<string, string> = {
-        'discovery': 'Pack Découverte',
-        'growth': 'Pack Croissance',
-        'expert': 'Pack Expert'
-    };
-
     const [formData, setFormData] = useState({
         company_name: initialData?.company_name || '',
         google_business_url: initialData?.google_business_url || '',
         company_context: initialData?.company_context || '',
-        quantity: userPackQuota,
+        quantity: user?.monthly_reviews_quota || 10,
         payment_id: initialData?.payment_id || ''
     });
 
@@ -38,27 +27,36 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
         const fetchData = async () => {
             setIsLoadingPacks(true);
             try {
+                // IMPORTANT: include the current payment_id to ensure it's visible even if quota is full
                 const [urls, packs] = await Promise.all([
                     artisanService.getGoogleUrlHistory(),
-                    artisanService.getAvailablePacks()
+                    artisanService.getAvailablePacks(initialData?.payment_id)
                 ]);
                 setHistory(urls);
                 setAvailablePacks(packs);
 
-                // Auto-select the first pack if nothing is selected yet
+                // Auto-sync pack data
                 if (packs.length > 0) {
                     setFormData(prev => {
-                        // Priority: 1. initialData, 2. First pack from list
                         const currentPaymentId = initialData?.payment_id || prev.payment_id;
 
-                        if (!currentPaymentId) {
-                            return {
-                                ...prev,
-                                payment_id: packs[0].id,
-                                quantity: packs[0].missions_quota - packs[0].missions_used
-                            };
+                        if (currentPaymentId) {
+                            const selectedPack = packs.find(p => p.id === currentPaymentId);
+                            if (selectedPack) {
+                                return {
+                                    ...prev,
+                                    payment_id: currentPaymentId,
+                                    quantity: selectedPack.review_quantity || 10
+                                };
+                            }
                         }
-                        return prev;
+
+                        // If no payment_id or not found, default to first pack
+                        return {
+                            ...prev,
+                            payment_id: packs[0].id,
+                            quantity: packs[0].review_quantity || 10
+                        };
                     });
                 }
             } catch (error) {
@@ -133,123 +131,69 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                 />
             </div>
 
-            <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Info size={18} style={{ color: '#ff3b6a' }} />
-                    Sélectionnez votre pack disponible
-                </label>
-
-                {isLoadingPacks ? (
-                    <div style={{ color: '#666', fontSize: '0.875rem' }}>Chargement de vos packs...</div>
-                ) : availablePacks.length === 0 ? (
-                    <div style={{
-                        padding: '1rem',
-                        backgroundColor: '#fff1f2',
-                        color: '#ff3b6a',
-                        borderRadius: '0.75rem',
-                        fontSize: '0.875rem',
-                        border: '1px solid #ff3b6a'
-                    }}>
-                        Vous n'avez aucun pack actif avec des missions restantes.
-                    </div>
-                ) : availablePacks.length > 1 ? (
-                    <select
-                        className="form-input"
-                        value={formData.payment_id}
-                        onChange={(e) => {
-                            const pack = availablePacks.find(p => p.id === e.target.value);
-                            setFormData({
-                                ...formData,
-                                payment_id: e.target.value,
-                                quantity: pack ? (pack.missions_quota - pack.missions_used) : userPackQuota
-                            });
-                        }}
-                        required
-                    >
-                        {availablePacks.map(pack => (
-                            <option key={pack.id} value={pack.id}>
-                                {pack.description} ({pack.missions_quota - pack.missions_used} avis restants - {new Date(pack.created_at).toLocaleDateString()})
-                            </option>
-                        ))}
-                    </select>
-                ) : null}
-
-                <div style={{
-                    marginTop: '1rem',
-                    padding: '1.5rem',
-                    background: '#ff3b6a',
-                    borderRadius: '1rem',
-                    border: 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    boxShadow: '0 10px 30px rgba(255, 59, 106, 0.25)'
-                }}>
-                    <div>
-                        <div style={{
-                            fontSize: '1.75rem',
-                            fontWeight: '800',
-                            color: '#fff'
-                        }}>
-                            {formData.quantity} avis
-                        </div>
-                        <div style={{
-                            fontSize: '0.875rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            marginTop: '0.25rem',
-                            fontWeight: '600'
-                        }}>
-                            {availablePacks.find(p => p.id === formData.payment_id)?.description || packNames[userPackTier] || 'Votre pack'}
-                        </div>
-                    </div>
-                    <div style={{
-                        backgroundColor: '#fff',
-                        color: '#ff3b6a',
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '0.75rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '800',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px'
-                    }}>
-                        Inclus
-                    </div>
-                </div>
-
-                {/* FUTURE FEATURE: Achat d'avis supplémentaires
-                <div style={{ marginTop: '1rem' }}>
-                    <label className="form-label">
-                        Avis supplémentaires (optionnel)
-                        <span style={{ color: '#9ca3af', fontWeight: 'normal', marginLeft: '0.5rem' }}>
-                            - 5€ par avis
-                        </span>
+            {isLoadingPacks ? (
+                <div style={{ color: '#666', fontSize: '0.875rem', marginBottom: '1.5rem' }}>Chargement de vos packs...</div>
+            ) : availablePacks.length > 0 && (
+                <div className="form-group" style={{ marginBottom: '2rem' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <Info size={18} style={{ color: '#ff3b6a' }} />
+                        Pack utilisé pour cette mission
                     </label>
-                    <input
-                        type="number"
-                        className="form-input"
-                        min="0"
-                        max="20"
-                        value={additionalReviews}
-                        onChange={(e) => setAdditionalReviews(parseInt(e.target.value) || 0)}
-                        placeholder="0"
-                    />
-                    {additionalReviews > 0 && (
+
+                    {/* Show SELECT only if multiple packs */}
+                    {availablePacks.length > 1 && (
+                        <select
+                            className="form-input"
+                            style={{ marginBottom: '1rem' }}
+                            value={formData.payment_id}
+                            onChange={(e) => {
+                                const pack = availablePacks.find(p => p.id === e.target.value);
+                                setFormData({
+                                    ...formData,
+                                    payment_id: e.target.value,
+                                    quantity: pack?.review_quantity || 10
+                                });
+                            }}
+                        >
+                            {availablePacks.map(pack => (
+                                <option key={pack.id} value={pack.id}>
+                                    {pack.pack_name || pack.description}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+
+                    {/* Compact RECAP Badge */}
+                    {formData.payment_id && (
                         <div style={{
-                            marginTop: '0.75rem',
-                            padding: '0.75rem',
-                            backgroundColor: '#fef3c7',
-                            border: '1px solid #fbbf24',
-                            borderRadius: '0.5rem',
-                            fontSize: '0.875rem'
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.875rem 1.25rem',
+                            background: '#fff',
+                            borderRadius: '1rem',
+                            border: '1px solid #ff3b6a',
+                            boxShadow: '0 4px 12px rgba(255, 59, 106, 0.1)',
+                            fontSize: '0.925rem'
                         }}>
-                            <strong>Coût supplémentaire:</strong> {additionalReviews * 5}€
-                            <br />
-                            <strong>Total d'avis:</strong> {userPackQuota + additionalReviews} avis
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <div style={{ fontWeight: '800', color: '#1e293b' }}>
+                                    {availablePacks.find(p => p.id === formData.payment_id)?.pack_name || 'Pack Selectionné'}
+                                </div>
+                                <div style={{ color: '#ff3b6a', fontWeight: 'bold', background: '#fff1f2', padding: '4px 12px', borderRadius: '2rem', fontSize: '0.8rem', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <span>{formData.quantity} Avis</span>
+                                    <span style={{ opacity: 0.3 }}>|</span>
+                                    <span>{availablePacks.find(p => p.id === formData.payment_id)?.amount} €</span>
+                                </div>
+                            </div>
+                            <div style={{ color: '#ff3b6a', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '6px', height: '6px', background: '#ff3b6a', borderRadius: '50%' }}></div>
+                                Mission active
+                            </div>
                         </div>
                     )}
                 </div>
-                */}
-            </div>
+            )}
 
             <div className="submission-actions">
                 <button type="submit" className="btn-next">

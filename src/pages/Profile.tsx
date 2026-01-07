@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../context/authStore';
-import { authApi } from '../services/api';
+import api, { authApi } from '../services/api';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Card } from '../components/common/Card';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
-import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe } from 'lucide-react';
+import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
 import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
 import { useAntiDetectionStore } from '../context/antiDetectionStore';
 import './Profile.css';
+
+interface Sector {
+    sector_slug: string;
+    sector_name: string;
+    difficulty: string;
+}
 
 export const Profile: React.FC = () => {
     const { user, setUser } = useAuthStore();
@@ -20,16 +26,51 @@ export const Profile: React.FC = () => {
     const [isPasswordLoading, setIsPasswordLoading] = useState(false);
     const [is2FALoading, setIs2FALoading] = useState(false);
     const [show2FASetup, setShow2FASetup] = useState(false);
+    const [sectors, setSectors] = useState<Sector[]>([]);
+    const [isLoadingSectors, setIsLoadingSectors] = useState(true);
     const [twoFactorToken, setTwoFactorToken] = useState('');
     const [twoFactorSecret, setTwoFactorSecret] = useState<string | null>(null);
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         fullName: user?.full_name || '',
+        companyName: user?.company_name || '',
+        siret: user?.siret || '',
+        trade: user?.trade || '',
+        phone: user?.phone || '',
+        address: user?.address || '',
+        city: user?.city || '',
+        postalCode: user?.postal_code || '',
+        googleBusinessUrl: user?.google_business_url || '',
+        googleEmail: user?.google_email || '',
     });
     const [activeTab, setActiveTab] = useState<'info' | 'gmail'>('info');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const { fetchGmailAccounts } = useAntiDetectionStore();
     const location = useLocation();
+
+    useEffect(() => {
+        const fetchSectors = async () => {
+            try {
+                const response = await api.get('/anti-detection/sectors');
+                const grouped = response.data.data;
+                const allSectors = [
+                    ...grouped.easy,
+                    ...grouped.medium,
+                    ...grouped.hard
+                ];
+                setSectors(allSectors);
+                // If trade is empty, set a default from the list if available
+                if (!user?.trade && allSectors.length > 0) {
+                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch sectors", error);
+            } finally {
+                setIsLoadingSectors(false);
+            }
+        };
+        fetchSectors();
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -47,7 +88,7 @@ export const Profile: React.FC = () => {
         confirmPassword: '',
     });
 
-    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -178,7 +219,7 @@ export const Profile: React.FC = () => {
                 <div className="profile-grid">
                     {/* Public Profile Card */}
                     <div className="profile-main">
-                        <Card className="profile-card hero-card">
+                        <Card className="profile-card hero-card" style={{ marginBottom: '1.5rem' }}>
                             <div className="profile-header">
                                 <div className="avatar-wrapper">
                                     {user?.avatar_url ? (
@@ -217,6 +258,11 @@ export const Profile: React.FC = () => {
                                     <p className="profile-email">
                                         <Mail size={14} /> {user?.email}
                                     </p>
+                                    {user?.role === 'artisan' && user?.company_name && (
+                                        <p style={{ margin: '0.25rem 0 0', color: 'var(--gray-500)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <Globe size={14} /> {user.company_name}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </Card>
@@ -244,14 +290,152 @@ export const Profile: React.FC = () => {
                                 <Card className="profile-card">
                                     <h3 className="card-title">Informations Personnelles</h3>
                                     <form onSubmit={handleProfileSubmit} className="profile-form">
-                                        <Input
-                                            label="Nom Complet"
-                                            name="fullName"
-                                            value={formData.fullName}
-                                            onChange={handleProfileChange}
-                                            placeholder="Votre nom complet"
-                                            required
-                                        />
+                                        <div style={{ display: 'grid', gridTemplateColumns: (user?.role === 'artisan' || user?.role === 'guide') ? '1fr 1fr' : '1fr', gap: '1rem' }}>
+                                            <Input
+                                                label="Nom Complet"
+                                                name="fullName"
+                                                value={formData.fullName}
+                                                onChange={handleProfileChange}
+                                                placeholder="Votre nom complet"
+                                                required
+                                            />
+                                            {(user?.role === 'artisan' || user?.role === 'guide') && (
+                                                <Input
+                                                    label="Téléphone"
+                                                    name="phone"
+                                                    value={formData.phone}
+                                                    onChange={handleProfileChange}
+                                                    placeholder="06 00 00 00 00"
+                                                    required
+                                                />
+                                            )}
+                                        </div>
+
+                                        {user?.role === 'guide' && (
+                                            <>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                    <Input
+                                                        label="Email Google (Local Guide)"
+                                                        name="googleEmail"
+                                                        value={formData.googleEmail}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="votre.compte@gmail.com"
+                                                        required
+                                                    />
+                                                    <Input
+                                                        label="Ville"
+                                                        name="city"
+                                                        value={formData.city}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="Paris"
+                                                        required
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {user?.role === 'artisan' && (
+                                            <>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                    <Input
+                                                        label="Nom de l'entreprise"
+                                                        name="companyName"
+                                                        value={formData.companyName}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="Ma Société"
+                                                        required
+                                                    />
+                                                    <Input
+                                                        label="SIRET"
+                                                        name="siret"
+                                                        value={formData.siret}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="14 chiffres"
+                                                    />
+                                                </div>
+
+                                                <div className="input-wrapper" style={{ marginTop: '1rem' }}>
+                                                    <label className="input-label">Corps de métier</label>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <select
+                                                            name="trade"
+                                                            className="input"
+                                                            value={formData.trade}
+                                                            onChange={handleProfileChange}
+                                                            disabled={isLoadingSectors}
+                                                            style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid var(--gray-200)', paddingRight: '2.5rem' }}
+                                                        >
+                                                            {isLoadingSectors ? (
+                                                                <option value="">Chargement des secteurs...</option>
+                                                            ) : (
+                                                                <>
+                                                                    <optgroup label="Secteurs Faciles">
+                                                                        {sectors.filter(s => s.difficulty === 'easy').map(s => (
+                                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                                        ))}
+                                                                    </optgroup>
+                                                                    <optgroup label="Secteurs Moyens">
+                                                                        {sectors.filter(s => s.difficulty === 'medium').map(s => (
+                                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                                        ))}
+                                                                    </optgroup>
+                                                                    <optgroup label="Secteurs Difficiles">
+                                                                        {sectors.filter(s => s.difficulty === 'hard').map(s => (
+                                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                                        ))}
+                                                                    </optgroup>
+                                                                </>
+                                                            )}
+                                                        </select>
+                                                        {isLoadingSectors && (
+                                                            <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                                                                <Loader size={16} className="animate-spin" style={{ color: '#94a3b8' }} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ marginTop: '1rem' }}>
+                                                    <Input
+                                                        label="Adresse"
+                                                        name="address"
+                                                        value={formData.address}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="123 rue de..."
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                    <Input
+                                                        label="Ville"
+                                                        name="city"
+                                                        value={formData.city}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="Paris"
+                                                        required
+                                                    />
+                                                    <Input
+                                                        label="Code Postal"
+                                                        name="postalCode"
+                                                        value={formData.postalCode}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="75000"
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div style={{ marginTop: '1rem' }}>
+                                                    <Input
+                                                        label="URL Google My Business"
+                                                        name="googleBusinessUrl"
+                                                        value={formData.googleBusinessUrl}
+                                                        onChange={handleProfileChange}
+                                                        placeholder="https://maps.google.com/..."
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                         <div className="form-actions">
                                             <Button
                                                 type="submit"
