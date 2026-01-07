@@ -156,12 +156,8 @@ export const login = async (email: string, password: string) => {
     // Get user with password hash
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
-<<<<<<< HEAD
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
-=======
-                u.two_factor_enabled, u.two_factor_secret,
                 ap.company_name, ap.siret, ap.trade, ap.google_business_url,
->>>>>>> origin/main
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,

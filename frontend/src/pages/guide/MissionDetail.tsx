@@ -55,18 +55,13 @@ export const MissionDetail: React.FC = () => {
             fetchGmailAccounts(user.id);
             fetchComplianceData(user.id);
         }
-<<<<<<< HEAD
-    }, [orderId, user, fetchGmailAccounts, fetchComplianceData]);
-=======
-
         // Cleanup: Release lock on unmount
         return () => {
             if (orderId) {
                 guideService.releaseLock(orderId).catch(console.error);
             }
         };
-    }, [orderId, user, fetchGmailAccounts]);
->>>>>>> origin/main
+    }, [orderId, user, fetchGmailAccounts, fetchComplianceData]);
 
     const loadMissionDetails = async (id: string) => {
         setIsLoading(true);

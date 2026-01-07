@@ -15,11 +15,8 @@ import {
 
 import { AntiDetectionIntro } from '../../components/AntiDetection/AntiDetectionIntro';
 import { SectorDifficultyList } from '../../components/AntiDetection/SectorDifficultyList';
-<<<<<<< HEAD
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
-=======
 import { SecurityRadar } from '../../components/AntiDetection/SecurityRadar';
->>>>>>> origin/main
 import {
     User,
     Navigation,
