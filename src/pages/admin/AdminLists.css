@@ -102,6 +102,86 @@
     background-color: var(--gray-50);
 }
 
+.admin-modern-table tbody tr.tr-status-submitted {
+    background-color: #fffbeb;
+}
+
+.admin-modern-table tbody tr.tr-status-submitted:hover {
+    background-color: #fef3c7;
+}
+
+.admin-modern-table tbody tr.tr-status-pending {
+    background-color: #f8fafc;
+}
+
+.admin-modern-table tbody tr.tr-status-pending:hover {
+    background-color: #f1f5f9;
+}
+
+.admin-modern-table tbody tr.tr-status-in_progress {
+    background-color: #f0fdf4;
+}
+
+.admin-modern-table tbody tr.tr-status-in_progress:hover {
+    background-color: #dcfce7;
+}
+
+.admin-modern-table tbody tr.tr-status-completed {
+    background-color: #eff6ff;
+}
+
+.admin-modern-table tbody tr.tr-status-completed:hover {
+    background-color: #dbeafe;
+}
+
+.admin-modern-table tbody tr.tr-status-cancelled {
+    background-color: #fef2f2;
+}
+
+.admin-modern-table tbody tr.tr-status-cancelled:hover {
+    background-color: #fee2e2;
+}
+
+.admin-modern-table tbody tr.tr-status-draft {
+    background: transparent;
+}
+
+.admin-modern-table tbody tr.tr-status-draft:hover {
+    background-color: #f9fafb;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--gray-100);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+    border-color: var(--gray-200);
+}
+
+.stat-card.filter-active {
+    box-shadow: 0 0 0 2px var(--primary-brand);
+    background: #fffcfd;
+}
+
+.stat-card.filter-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-brand);
+}
+
 .admin-modern-table td {
     padding: var(--space-4) var(--space-6);
     font-size: var(--text-sm);

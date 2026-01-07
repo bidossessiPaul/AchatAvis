@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../context/authStore';
 
 export const GuideDashboard: React.FC = () => {
     const [missions, setMissions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
+    const { user } = useAuthStore();
 
     useEffect(() => {
         loadMissions();
@@ -116,42 +118,120 @@ export const GuideDashboard: React.FC = () => {
                                     {mission.company_name}
                                 </h4>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                                    <MapPin size={16} />
-                                    <span>{mission.sector || 'Secteur non précisé'}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>{mission.sector_icon || <MapPin size={16} />}</span>
+                                        <span>{mission.sector || 'Secteur non précisé'}</span>
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        textTransform: 'uppercase',
+                                        padding: '0.25rem 0.6rem',
+                                        borderRadius: '0.5rem',
+                                        background: mission.difficulty === 'hard' ? '#fef2f2' : (mission.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
+                                        color: mission.difficulty === 'hard' ? '#ef4444' : (mission.difficulty === 'medium' ? '#f59e0b' : '#10b981'),
+                                        border: `1px solid ${mission.difficulty === 'hard' ? '#fee2e2' : (mission.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
+                                    }}>
+                                        {mission.difficulty === 'easy' ? 'Simple' : (mission.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                    </div>
                                 </div>
 
                                 <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '1rem', marginBottom: '1.5rem' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>Progression Totale</span>
+                                        <span style={{ color: '#10b981' }}>{mission.reviews_received || 0} / {mission.quantity}</span>
+                                    </div>
+                                    <div style={{ width: '100%', height: '6px', background: '#e5e7eb', borderRadius: '3px', marginBottom: '1rem', overflow: 'hidden' }}>
+                                        <div style={{
+                                            width: `${Math.min(100, ((mission.reviews_received || 0) / mission.quantity) * 100)}%`,
+                                            height: '100%',
+                                            background: '#10b981',
+                                            borderRadius: '3px'
+                                        }}></div>
+                                    </div>
+
                                     <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.5rem', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-                                        Progression de la mission
+                                        Objectif du jour
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#111827', fontWeight: 600 }}>
-                                        <Star size={18} color="#f59e0b" fill="#f59e0b" />
-                                        <span>{mission.reviews_received || 0} / {mission.quantity} avis postés</span>
+                                        <Clock size={16} color="#3b82f6" />
+                                        <span>{mission.daily_submissions_count || 0} / {mission.reviews_per_day} avis demandés</span>
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => navigate(`/guide/missions/${mission.id}`)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '1rem',
-                                        borderRadius: '1rem',
-                                        border: 'none',
-                                        background: '#ff3b6a',
-                                        color: 'white',
-                                        fontWeight: 700,
-                                        fontSize: '0.9375rem',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.5rem',
-                                        boxShadow: '0 4px 12px rgba(255, 59, 106, 0.2)'
-                                    }}
-                                >
-                                    Démarrer la mission <ArrowRight size={18} />
-                                </button>
+                                {(() => {
+                                    const isLocked = mission.locked_by && new Date(mission.locked_until) > new Date();
+                                    const lockedByMe = mission.locked_by === user?.id;
+                                    const isDailyQuotaFull = (mission.daily_submissions_count || 0) >= mission.reviews_per_day;
+
+                                    if (isLocked && !lockedByMe) {
+                                        return (
+                                            <div style={{
+                                                width: '100%',
+                                                padding: '1rem',
+                                                borderRadius: '1rem',
+                                                background: '#f3f4f6',
+                                                color: '#9ca3af',
+                                                fontWeight: 700,
+                                                fontSize: '0.9375rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                cursor: 'not-allowed'
+                                            }}>
+                                                <Shield size={18} /> Mission occupée
+                                            </div>
+                                        );
+                                    }
+
+                                    if (isDailyQuotaFull) {
+                                        return (
+                                            <div style={{
+                                                width: '100%',
+                                                padding: '1rem',
+                                                borderRadius: '1rem',
+                                                background: '#fff7ed',
+                                                color: '#c2410c',
+                                                fontWeight: 700,
+                                                fontSize: '0.9375rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                cursor: 'not-allowed',
+                                                border: '1px solid #ffedd5'
+                                            }}>
+                                                <Clock size={18} /> Quota du jour atteint
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <button
+                                            onClick={() => navigate(`/guide/missions/${mission.id}`)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '1rem',
+                                                borderRadius: '1rem',
+                                                border: 'none',
+                                                background: '#ff3b6a',
+                                                color: 'white',
+                                                fontWeight: 700,
+                                                fontSize: '0.9375rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '0.5rem',
+                                                boxShadow: '0 4px 12px rgba(255, 59, 106, 0.2)'
+                                            }}
+                                        >
+                                            {lockedByMe ? 'Reprendre la mission' : 'Démarrer la mission'} <ArrowRight size={18} />
+                                        </button>
+                                    );
+                                })()}
                             </div>
                         </div>
                     ))}
