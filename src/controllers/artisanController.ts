@@ -195,7 +195,8 @@ export const artisanController = {
     async getAvailablePacks(req: Request, res: Response) {
         try {
             const user = req.user;
-            const packs = await artisanService.getAvailablePacks(user!.userId);
+            const { includeId } = req.query;
+            const packs = await artisanService.getAvailablePacks(user!.userId, includeId as string);
             return res.json(packs);
         } catch (error: any) {
             return res.status(500).json({ error: 'Failed to fetch available packs', message: error.message });

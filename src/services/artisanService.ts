@@ -20,7 +20,7 @@ export const artisanService = {
         }
 
         const packs: any = await query(
-            'SELECT missions_quota, missions_used FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
+            'SELECT missions_quota, missions_used, amount FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
             [payment_id, artisanId]
         );
 
@@ -34,8 +34,8 @@ export const artisanService = {
         const orderId = uuidv4();
         const { quantity = 1, company_name = '', company_context = '', google_business_url = '', staff_names = '', specific_instructions = '' } = data;
 
-        // Calculate price based on quantity (simulation)
-        const price = quantity * 2; // 2€ per review for example
+        // Use the actual price paid for the pack (1 Pack = 1 Mission logic)
+        const price = parseFloat(pack.amount);
 
         await query(
             `INSERT INTO reviews_orders (id, artisan_id, quantity, price, status, company_name, company_context, google_business_url, staff_names, specific_instructions, payment_id)
@@ -103,9 +103,41 @@ export const artisanService = {
      * Get order by ID with proposals
      */
     async getOrderById(orderId: string) {
-        const orders: any = await query('SELECT * FROM reviews_orders WHERE id = ?', [orderId]);
+        const orders: any = await query(`
+        SELECT ro.*, p.description as payment_description, p.amount as payment_amount
+        FROM reviews_orders ro
+        LEFT JOIN payments p ON ro.payment_id = p.id
+        WHERE ro.id = ?
+    `, [orderId]);
         if (orders.length === 0) return null;
 
+        let order = orders[0];
+
+        // STRICT: Override quantity based on pack definition
+        // This fixes legacy data issues where 'Croissance' might have 20 reviews stored
+        if (order.payment_description) {
+            const desc = order.payment_description.toLowerCase();
+            // Pack Expert = 20
+            if (desc.includes('expert')) {
+                order.quantity = 20;
+                order.pack_name = 'Pack Expert';
+            }
+            // Pack Croissance = 10 (Correction for legacy data)
+            else if (desc.includes('croissance') || desc.includes('growth')) {
+                order.quantity = 10;
+                order.pack_name = 'Pack Croissance';
+            }
+            // Pack Découverte = 5
+            else if (desc.includes('découverte') || desc.includes('discovery')) {
+                order.quantity = 5;
+                order.pack_name = 'Pack Découverte';
+            }
+        }
+
+        // Use active pack price if available
+        if (order.payment_amount) {
+            order.price = parseFloat(order.payment_amount);
+        }
         const proposals: any = await query(`
             SELECT 
                 p.*,
@@ -120,7 +152,7 @@ export const artisanService = {
         `, [orderId]);
 
         return {
-            ...orders[0],
+            ...order,
             proposals
         };
     },
@@ -129,7 +161,50 @@ export const artisanService = {
      * Get all orders for an artisan
      */
     async getArtisanOrders(artisanId: string) {
-        return query('SELECT * FROM reviews_orders WHERE artisan_id = ? ORDER BY created_at DESC', [artisanId]);
+        const orders: any[] = await query(`
+            SELECT ro.*, p.description as payment_description, p.amount as payment_amount
+            FROM reviews_orders ro
+            LEFT JOIN payments p ON ro.payment_id = p.id
+            WHERE ro.artisan_id = ? 
+            ORDER BY ro.created_at DESC
+        `, [artisanId]);
+
+        // Enrich with pack name and fix quantity
+        const packs = await this.getSubscriptionPacks();
+
+        return orders.map(order => {
+            let packName = 'Pack Inconnu';
+            let realQuantity = order.quantity;
+
+            if (order.payment_description) {
+                const desc = order.payment_description.toLowerCase();
+                const matchedPack = packs.find((p: any) => desc.includes(p.id));
+
+                if (matchedPack) {
+                    packName = matchedPack.name;
+                    realQuantity = matchedPack.quantity; // Force quantity from pack definition
+                } else if (desc.includes('expert')) {
+                    packName = 'Pack Expert';
+                    realQuantity = 20;
+                }
+                else if (desc.includes('croissance') || desc.includes('growth')) {
+                    packName = 'Pack Croissance';
+                    realQuantity = 10;
+                }
+                else if (desc.includes('découverte') || desc.includes('discovery')) {
+                    packName = 'Pack Découverte';
+                    realQuantity = 5;
+                }
+                else packName = order.payment_description;
+            }
+
+            return {
+                ...order,
+                pack_name: packName,
+                quantity: realQuantity,
+                price: order.payment_amount ? parseFloat(order.payment_amount) : order.price
+            };
+        });
     },
 
     /**
@@ -258,18 +333,59 @@ export const artisanService = {
     /**
      * Get available mission packs (payments with remaining quota)
      */
-    async getAvailablePacks(artisanId: string) {
+    async getAvailablePacks(artisanId: string, includeId?: string) {
         const results = await query(
-            'SELECT id, description, missions_quota, missions_used, created_at, type, status FROM payments WHERE user_id = ? ORDER BY created_at ASC',
+            'SELECT id, description, missions_quota, missions_used, created_at, type, status, amount FROM payments WHERE user_id = ? ORDER BY created_at ASC',
             [artisanId]
         );
         console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
 
         // A pack is available if it's a completed subscription and has NOT exceeded its quota
-        return (results as any[]).filter(p =>
+        // OR if it's explicitly requested (for editing an existing mission)
+        const packs = (results as any[]).filter(p =>
             p.type === "subscription" &&
             p.status === "completed" &&
-            p.missions_used < p.missions_quota
+            (p.missions_used < p.missions_quota || p.id === includeId)
         );
+
+        // Fetch subscription definitions to map quantities
+        const definitions: any = await query('SELECT * FROM subscription_packs');
+
+        return packs.map(p => {
+            const desc = p.description ? p.description.toLowerCase() : '';
+
+            // 1. Try to find by direct ID match OR French keyword match
+            let def = definitions.find((d: any) => {
+                if (desc.includes(d.id.toLowerCase())) return true;
+                if (d.id === 'growth' && desc.includes('croissance')) return true;
+                if (d.id === 'discovery' && (desc.includes('decouverte') || desc.includes('découverte'))) return true;
+                return false;
+            });
+
+            // 2. Fallback to price matching
+            if (!def) {
+                def = definitions.find((d: any) => Math.abs((d.price_cents / 100) - parseFloat(p.amount)) < 0.1);
+            }
+
+            // 3. Ultimate logical fallback based on keywords if def still null
+            let finalName = p.description;
+            let finalQuantity = 10; // Default safety
+
+            if (def) {
+                finalName = `Pack ${def.name}`;
+                finalQuantity = def.quantity;
+            } else {
+                if (desc.includes('expert')) { finalName = 'Pack Expert'; finalQuantity = 20; }
+                else if (desc.includes('croissance') || desc.includes('growth')) { finalName = 'Pack Croissance'; finalQuantity = 10; }
+                else if (desc.includes('découverte') || desc.includes('discovery')) { finalName = 'Pack Découverte'; finalQuantity = 5; }
+            }
+
+            return {
+                ...p,
+                review_quantity: finalQuantity,
+                pack_name: finalName,
+                pack_features: def ? def.features : null
+            };
+        });
     }
 };

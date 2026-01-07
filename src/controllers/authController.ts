@@ -311,10 +311,7 @@ export const updateProfile = async (req: Request, res: Response) => {
 
         const validatedData = profileUpdateSchema.parse(req.body);
 
-        await authService.updateProfile(req.user.userId, {
-            fullName: validatedData.fullName,
-            avatarUrl: validatedData.avatarUrl,
-        });
+        await authService.updateProfile(req.user.userId, validatedData);
 
         const updatedUser = await authService.getUserById(req.user.userId);
 
@@ -414,8 +411,19 @@ export const forgotPassword = async (req: Request, res: Response) => {
         if (error instanceof ZodError) {
             return res.status(400).json({ error: 'Email invalide', details: error.errors });
         }
-        console.error('Forgot password error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+
+        console.error('Forgot password flow error:', {
+            message: error.message,
+            stack: error.stack,
+            email: req.body.email
+        });
+
+        // Return a more descriptive error in development, or keep it generic for security in prod
+        const isDev = process.env.NODE_ENV !== 'production';
+        return res.status(500).json({
+            error: 'Internal server error',
+            message: isDev ? error.message : undefined
+        });
     }
 };
 

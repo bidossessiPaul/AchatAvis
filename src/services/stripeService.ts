@@ -114,7 +114,7 @@ export const stripeService = {
                         amount,
                         session.payment_intent as string || session.id,
                         `Abonnement ${planId}`,
-                        quantity
+                        1 // missions_quota is always 1 (1 Pack = 1 Mission)
                     ]);
 
                     // Send activation email

@@ -148,6 +148,25 @@ class AntiDetectionService {
         if (sectorActivity.last_posted) {
             const lastPosted = new Date(sectorActivity.last_posted);
             const now = new Date();
+
+            // Check for monthly reset
+            if (lastPosted.getMonth() !== now.getMonth() || lastPosted.getFullYear() !== now.getFullYear()) {
+                sectorActivity.count_this_month = 0;
+            }
+
+            if (campaign.max_reviews_per_month_per_email && sectorActivity.count_this_month >= campaign.max_reviews_per_month_per_email) {
+                return {
+                    can_take: false,
+                    message: `Quota mensuel atteint (${sectorActivity.count_this_month}/${campaign.max_reviews_per_month_per_email}) pour le secteur ${sectorSlug} avec cet email.`,
+                    reason: 'SECTOR_QUOTA_EXCEEDED',
+                    details: {
+                        used: sectorActivity.count_this_month,
+                        max: campaign.max_reviews_per_month_per_email,
+                        next_month_reset: true
+                    }
+                };
+            }
+
             const diffDays = Math.ceil((now.getTime() - lastPosted.getTime()) / (1000 * 3600 * 24));
             const minDays = campaign.min_days_between_reviews || 3;
 
@@ -159,27 +178,36 @@ class AntiDetectionService {
                     reason: 'SECTOR_COOLDOWN',
                     details: {
                         next_available_date: nextDate.toLocaleDateString(),
-                        days_remaining: minDays - diffDays
+                        days_remaining: minDays - diffDays,
+                        used: sectorActivity.count_this_month,
+                        max: campaign.max_reviews_per_month_per_email
                     }
                 };
             }
         }
 
-        // d) Limite quotidienne globale (max 2 avis)
+        // d) Limite quotidienne globale (max 10 avis)
         const todaySubmissions: any = await query(`
             SELECT COUNT(*) as count FROM reviews_submissions 
             WHERE guide_id = ? AND DATE(submitted_at) = CURDATE()
         `, [userId]);
 
-        if (todaySubmissions[0].count >= 2) {
+        if (todaySubmissions[0].count >= 10) {
             return {
                 can_take: false,
-                message: 'Limite de 2 avis par jour atteinte. Revenez demain !',
+                message: 'Limite de 10 avis par jour atteinte. Revenez demain !',
                 reason: 'DAILY_LIMIT_REACHED'
             };
         }
 
-        return { can_take: true, message: 'Vous pouvez prendre cette mission' };
+        return {
+            can_take: true,
+            message: 'Vous pouvez prendre cette mission',
+            details: {
+                used: sectorActivity.count_this_month,
+                max: campaign.max_reviews_per_month_per_email || 5
+            }
+        };
     }
 
     /**
@@ -218,12 +246,19 @@ class AntiDetectionService {
             ? JSON.parse(accountResult[0].sector_activity_log)
             : accountResult[0].sector_activity_log || {};
 
-        const now = new Date().toISOString();
-        const sectorLog = log[sectorSlug] || { count_this_month: 0, count_total: 0 };
+        const now = new Date();
+        const sectorLog = log[sectorSlug] || { count_this_month: 0, count_total: 0, last_posted: null };
 
-        sectorLog.last_posted = now;
+        // Handle Monthly Reset
+        if (sectorLog.last_posted) {
+            const lastDate = new Date(sectorLog.last_posted);
+            if (lastDate.getMonth() !== now.getMonth() || lastDate.getFullYear() !== now.getFullYear()) {
+                sectorLog.count_this_month = 0;
+            }
+        }
+
+        sectorLog.last_posted = now.toISOString();
         sectorLog.count_total += 1;
-        // Logic for monthly reset could be added here or in a separate job
         sectorLog.count_this_month += 1;
 
         log[sectorSlug] = sectorLog;
@@ -238,11 +273,84 @@ class AntiDetectionService {
     }
 
     /**
+     * Récupérer le récapitulatif d'activité pour un guide
+     */
+    async getGuideActivityRecap(userId: string) {
+        // Fetch all Gmail accounts for this guide
+        const gmailAccounts: any = await query(`
+            SELECT id, email, account_level, sector_activity_log 
+            FROM guide_gmail_accounts 
+            WHERE user_id = ?
+        `, [userId]);
+
+        // Fetch all sectors
+        const sectors: any = await query(`
+            SELECT * FROM sector_difficulty WHERE is_active = TRUE
+        `, []);
+
+        const now = new Date();
+        const recap: any = {};
+
+        for (const sector of sectors) {
+            recap[sector.sector_slug] = {
+                sector_name: sector.sector_name,
+                icon: sector.icon_emoji,
+                difficulty: sector.difficulty,
+                max_per_month: sector.max_reviews_per_month_per_email,
+                cooldown_days: sector.min_days_between_reviews,
+                accounts: gmailAccounts.map((acc: any) => {
+                    let log = {};
+                    try {
+                        log = typeof acc.sector_activity_log === 'string'
+                            ? JSON.parse(acc.sector_activity_log)
+                            : acc.sector_activity_log || {};
+                    } catch (e) { }
+
+                    const activity = (log as any)[sector.sector_slug] || { count_this_month: 0, last_posted: null };
+
+                    // Monthly reset check for recap display
+                    if (activity.last_posted) {
+                        const lastDate = new Date(activity.last_posted);
+                        if (lastDate.getMonth() !== now.getMonth() || lastDate.getFullYear() !== now.getFullYear()) {
+                            activity.count_this_month = 0;
+                        }
+                    }
+
+                    // Cooldown check
+                    let status = 'ready';
+                    let next_available = null;
+                    if (activity.last_posted) {
+                        const lastDate = new Date(activity.last_posted);
+                        const diffDays = Math.ceil((now.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
+                        if (diffDays < sector.min_days_between_reviews) {
+                            status = 'cooldown';
+                            next_available = new Date(lastDate.getTime() + sector.min_days_between_reviews * 24 * 3600 * 1000).toISOString();
+                        }
+                    }
+
+                    if (activity.count_this_month >= sector.max_reviews_per_month_per_email) {
+                        status = 'limit_reached';
+                    }
+
+                    return {
+                        id: acc.id,
+                        email: acc.email,
+                        used_this_month: activity.count_this_month,
+                        last_posted: activity.last_posted,
+                        status,
+                        next_available
+                    };
+                })
+            };
+        }
+
+        return recap;
+    }
+
+    /**
      * Recalculer le score de conformité global
      */
     async calculateComplianceScore(userId: string): Promise<number> {
-        // Logic to recalculate based on last 30 days
-        // (Simplified for now, using the incremental logViolation logic)
         const result: any = await query(`
             SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
         `, [userId]);
