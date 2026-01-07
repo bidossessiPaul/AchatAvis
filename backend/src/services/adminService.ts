@@ -608,7 +608,8 @@ export const getAdminMissionDetail = async (orderId: string) => {
         SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
                COALESCE(sp.name, pay.description) as pack_name, 
                pay.missions_quota, pay.missions_used as pack_missions_used,
-               pay.amount as payment_amount
+               pay.amount as payment_amount,
+               o.payout_per_review
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
@@ -642,10 +643,24 @@ export const updateMission = async (orderId: string, data: any) => {
     if (fields.length === 0) return;
 
     const setClause = fields.map(field => `${field} = ?`).join(', ');
-    return await query(
+
+    // Perform the update on reviews_orders
+    const result = await query(
         `UPDATE reviews_orders SET ${setClause} WHERE id = ?`,
         [...values, orderId]
     );
+
+    // If payout_per_review was updated, cascade the change to PENDING submissions
+    if (data.payout_per_review !== undefined) {
+        await query(
+            `UPDATE reviews_submissions 
+             SET earnings = ? 
+             WHERE order_id = ? AND status = 'pending'`,
+            [data.payout_per_review, orderId]
+        );
+    }
+
+    return result;
 };
 
 /**

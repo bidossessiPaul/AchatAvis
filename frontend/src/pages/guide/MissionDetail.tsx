@@ -253,11 +253,19 @@ export const MissionDetail: React.FC = () => {
         .filter(p => !publishedProposalIds.includes(p.id))
         .slice(0, totalRemaining);
 
-    const publishedProposals = mission.proposals.filter(p => publishedProposalIds.includes(p.id))
-        .map(p => ({
-            ...p,
-            submission: mission.submissions.find(s => s.proposal_id === p.id)
-        }));
+    // Map over SUBMISSIONS to allow showing all reviews (even if multiple guides did the same one)
+    const publishedProposals = mission.submissions.map(submission => {
+        const proposal = mission.proposals.find(p => p.id === submission.proposal_id);
+        return {
+            ...proposal, // Spread existing proposal data
+            // Defaults for display
+            id: proposal?.id || submission.id,
+            content: proposal?.content || "Avis publié (contenu indisponible)",
+            rating: proposal?.rating || 5,
+            status: proposal?.status || 'approved',
+            submission: submission
+        };
+    });
 
 
     return (
@@ -440,7 +448,9 @@ export const MissionDetail: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="instruction-label">Rémunération</p>
-                                    <p className="instruction-value price">2.00 €</p>
+                                    <p className="instruction-value price">
+                                        {Number(mission.payout_per_review || 1.50).toFixed(2)} €
+                                    </p>
                                     <p className="instruction-value" style={{ fontSize: 'var(--text-xs)' }}>par avis validé</p>
                                 </div>
                             </div>
@@ -512,15 +522,32 @@ export const MissionDetail: React.FC = () => {
                                     {publishedProposals.map((item) => (
                                         <div key={item.id} className="published-item sidebar-item">
                                             <div className="published-info">
-                                                <p className="published-text" style={{ fontSize: 'var(--text-xs)' }}>
-                                                    {item.content}
-                                                </p>
-                                                <div className="published-meta">
-                                                    <a href={item.submission?.review_url} target="_blank" rel="noopener noreferrer" className="proof-link">
-                                                        Preuve <ExternalLink size={10} />
-                                                    </a>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
+                                                    <p className="published-text" style={{ fontSize: 'var(--text-xs)', margin: 0, flex: 1 }}>
+                                                        {item.content}
+                                                    </p>
+                                                    {item.submission?.guide_avatar && item.submission.guide_id !== user?.id && (
+                                                        <img
+                                                            src={item.submission.guide_avatar}
+                                                            alt={item.submission.guide_name}
+                                                            title={`Publié par ${item.submission.guide_name}`}
+                                                            style={{ width: '20px', height: '20px', borderRadius: '50%', marginLeft: '0.5rem', border: '1px solid #e5e7eb' }}
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="published-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <a href={item.submission?.review_url} target="_blank" rel="noopener noreferrer" className="proof-link">
+                                                            Preuve <ExternalLink size={10} />
+                                                        </a>
+                                                        {item.submission?.guide_id !== user?.id && (
+                                                            <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+                                                                par {item.submission?.guide_name?.split(' ')[0]}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     {item.submission?.google_email && (
-                                                        <span className="account-info">
+                                                        <span className="account-info" style={{ fontSize: '0.65rem' }}>
                                                             {item.submission.google_email}
                                                         </span>
                                                     )}
