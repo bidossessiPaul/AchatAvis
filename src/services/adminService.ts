@@ -95,6 +95,8 @@ export const getArtisanDetail = async (userId: string) => {
         WHERE u.id = ? AND u.role = 'artisan'
     `, [userId]);
 
+    if (!profile || profile.length === 0) return null;
+
     const orders = await query(`
         SELECT id, status, price as amount, quantity as credits_purchased, created_at, reviews_received as validated_reviews_count
         FROM reviews_orders
@@ -121,6 +123,8 @@ export const getGuideDetail = async (userId: string) => {
         JOIN guides_profiles gp ON u.id = gp.user_id
         WHERE u.id = ? AND u.role = 'guide'
     `, [userId]);
+
+    if (!profile || profile.length === 0) return null;
 
     const submissions = await query(`
         SELECT s.id, s.status, s.earnings, s.submitted_at as created_at, s.review_url as proof_url,
