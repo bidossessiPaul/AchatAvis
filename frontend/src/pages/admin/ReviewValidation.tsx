@@ -11,7 +11,7 @@ import {
     User,
     RotateCcw
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './ReviewValidation.css';
 import './AdminLists.css';
@@ -77,7 +77,7 @@ export const ReviewValidation: React.FC = () => {
             setSubmissions(subs);
             setPendingMissions(missions);
         } catch (error) {
-            toast.error('Erreur lors du chargement des données');
+            showError('Erreur', 'Erreur lors du chargement des données');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -87,13 +87,13 @@ export const ReviewValidation: React.FC = () => {
         setIsActionLoading(true);
         try {
             await adminApi.updateSubmissionStatus(submissionId, { status, rejectionReason: reason });
-            toast.success(status === 'validated' ? 'Avis validé !' : 'Avis rejeté.');
+            showSuccess(status === 'validated' ? 'Avis validé !' : 'Avis rejeté.');
             setShowRejectModal(false);
             setRejectionReason('');
             setSelectedSubmissionId(null);
             fetchData(true);
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', 'Erreur lors de la mise à jour');
         } finally {
             setIsActionLoading(false);
         }
@@ -103,10 +103,10 @@ export const ReviewValidation: React.FC = () => {
         setIsActionLoading(true);
         try {
             await adminApi.approveMission(orderId);
-            toast.success('Mission publiée !');
+            showSuccess('Succès', 'Mission publiée !');
             fetchData(true);
         } catch (error) {
-            toast.error('Erreur lors de la publication');
+            showError('Erreur', 'Erreur lors de la publication');
         } finally {
             setIsActionLoading(false);
         }

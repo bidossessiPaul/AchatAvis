@@ -48,9 +48,6 @@ export const RegisterArtisan: React.FC = () => {
                     ...grouped.hard
                 ];
                 setSectors(allSectors);
-                if (allSectors.length > 0) {
-                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
-                }
             } catch (error) {
                 console.error("Failed to fetch sectors", error);
             } finally {
@@ -195,24 +192,15 @@ export const RegisterArtisan: React.FC = () => {
                                             style={{ paddingRight: '2.5rem' }}
                                         >
                                             {isLoadingSectors ? (
-                                                <option value="">Chargement des secteurs...</option>
+                                                <option value="">Chargement des métiers...</option>
                                             ) : (
                                                 <>
-                                                    <optgroup label="Secteurs Faciles">
-                                                        {sectors.filter(s => s.difficulty === 'easy').map(s => (
-                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
-                                                        ))}
-                                                    </optgroup>
-                                                    <optgroup label="Secteurs Moyens">
-                                                        {sectors.filter(s => s.difficulty === 'medium').map(s => (
-                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
-                                                        ))}
-                                                    </optgroup>
-                                                    <optgroup label="Secteurs Difficiles">
-                                                        {sectors.filter(s => s.difficulty === 'hard').map(s => (
-                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
-                                                        ))}
-                                                    </optgroup>
+                                                    <option value="">Sélectionnez votre métier</option>
+                                                    {[...sectors].sort((a, b) => a.sector_name.localeCompare(b.sector_name)).map(s => (
+                                                        <option key={s.sector_slug} value={s.sector_slug}>
+                                                            {s.sector_name}
+                                                        </option>
+                                                    ))}
                                                 </>
                                             )}
                                         </select>

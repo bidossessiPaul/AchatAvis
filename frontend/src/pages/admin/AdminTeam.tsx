@@ -13,7 +13,7 @@ import {
     Trash2,
     Edit2
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import './AdminTeam.css';
 
 export const AdminTeam = () => {
@@ -30,7 +30,7 @@ export const AdminTeam = () => {
             setMembers(data);
         } catch (error) {
             console.error(error);
-            toast.error("Impossible de charger l'équipe");
+            showError('Erreur', "Impossible de charger l'équipe");
         } finally {
             setLoading(false);
         }
@@ -43,10 +43,10 @@ export const AdminTeam = () => {
     const handleInvite = async (email: string, permissions: any) => {
         try {
             await teamApi.inviteMember(email, permissions);
-            toast.success("Invitation envoyée !");
+            showSuccess('Succès', "Invitation envoyée !");
             fetchMembers();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Erreur lors de l'invitation");
+            showError('Erreur', error.response?.data?.error || "Erreur lors de l'invitation");
             throw error;
         }
     };
@@ -54,12 +54,12 @@ export const AdminTeam = () => {
     const handleUpdate = async (userId: string, permissions: any) => {
         try {
             await teamApi.updatePermissions(userId, permissions);
-            toast.success("Permissions mises à jour !");
+            showSuccess('Succès', "Permissions mises à jour !");
             fetchMembers();
             setMemberToEdit(null);
             setIsInviteModalOpen(false);
         } catch (error: any) {
-            toast.error(error.response?.data?.error || "Erreur lors de la mise à jour");
+            showError('Erreur', error.response?.data?.error || "Erreur lors de la mise à jour");
             throw error;
         }
     };
@@ -70,14 +70,19 @@ export const AdminTeam = () => {
     };
 
     const handleDelete = async (id: string, type: 'active' | 'pending') => {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer ce membre ?")) return;
+        const result = await showConfirm(
+            'Confirmation',
+            "Êtes-vous sûr de vouloir supprimer ce membre ?"
+        );
+
+        if (!result.isConfirmed) return;
 
         try {
             await teamApi.deleteMember(id, type);
-            toast.success("Membre supprimé");
+            showSuccess('Succès', "Membre supprimé");
             fetchMembers();
         } catch (error) {
-            toast.error("Erreur lors de la suppression");
+            showError('Erreur', "Erreur lors de la suppression");
         }
     };
 

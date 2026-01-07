@@ -47,6 +47,13 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const isSystemActive = await suspensionService.isSystemEnabled();
 
         if (isSystemActive && userRole !== 'admin') {
+            // WHITELIST CHECK: Exempted users bypass all suspension and geoblocking checks
+            if (await suspensionService.isUserExempted(payload.userId)) {
+                console.log(`🛡️ [Auth Middleware] User ${payload.email} is EXEMPTED. Mandatory access granted.`);
+                req.user = payload;
+                return next();
+            }
+
             // 1. HARD SUSPENSION CHECK
             if (userStatus === 'suspended' || userStatus === 'rejected') {
                 console.warn(`🛡️ [Auth Middleware] BLOCKED REQUEST: User ${payload.email} is ${userStatus}.`);

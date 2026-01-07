@@ -10,7 +10,7 @@ import {
     Eye,
     Briefcase
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -24,6 +24,7 @@ interface Artisan {
     trade: string;
     city: string;
     subscription_status: string;
+    warning_count: number;
 }
 
 export const ArtisansList: React.FC = () => {
@@ -41,31 +42,66 @@ export const ArtisansList: React.FC = () => {
             const data = await adminService.getArtisans();
             setArtisans(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des artisans');
+            showError('Erreur', 'Erreur lors du chargement des artisans');
         } finally {
             if (!silent) setIsLoading(false);
         }
     };
 
     const handleStatusUpdate = async (userId: string, newStatus: string) => {
-        if (!confirm(`Changer le statut en ${newStatus} ?`)) return;
+        const result = await showConfirm('Confirmation', `Changer le statut en ${newStatus} ?`);
+        if (!result.isConfirmed) return;
         try {
             await adminService.updateUserStatus(userId, newStatus);
-            toast.success('Statut mis à jour');
+            showSuccess('Succès', 'Statut mis à jour');
             loadArtisans(true);
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', 'Erreur lors de la mise à jour');
         }
     };
 
     const handleDelete = async (userId: string) => {
-        if (!confirm('Supprimer définitivement ce compte ? Cette action est irréversible.')) return;
+        const result = await showConfirm('Supprimer ce compte ?', 'Cette action est irréversible.');
+        if (!result.isConfirmed) return;
         try {
             await adminService.deleteUser(userId);
-            toast.success('Compte supprimé');
+            showSuccess('Succès', 'Compte supprimé');
             loadArtisans(true);
         } catch (error) {
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Erreur lors de la suppression');
+        }
+    };
+
+    const handleIssueWarning = async (artisan: Artisan) => {
+        try {
+            const reasonsData = await adminService.getSuspensionReasons();
+            const reasons = reasonsData.warnings;
+
+            const result = await showPremiumWarningModal(
+                'Avertissement',
+                `Envoyer un avertissement à ${artisan.company_name}. Sélectionnez le motif :`,
+                reasons
+            );
+
+            if (!result.isConfirmed || !result.value) return;
+
+            let finalReason = result.value;
+            console.log('🔍 Reason selected:', finalReason);
+
+            if (finalReason === 'OTHER') {
+                console.log('🔍 Opening manual input modal...');
+                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
+                if (!manualInput.isConfirmed || !manualInput.value) return;
+                finalReason = manualInput.value;
+                console.log('🔍 Manual reason entered:', finalReason);
+            }
+
+            const response = await adminService.issueWarning(artisan.id, finalReason);
+            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
+            loadArtisans(true);
+        } catch (error) {
+            console.error('❌ Error in handleIssueWarning:', error);
+            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
         }
     };
 
@@ -106,6 +142,7 @@ export const ArtisansList: React.FC = () => {
                                         <th>Email</th>
                                         <th>Métier</th>
                                         <th>Abonnement</th>
+                                        <th>Avertissements</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -132,6 +169,15 @@ export const ArtisansList: React.FC = () => {
                                                 <span className={`subscription-badge ${artisan.subscription_status || 'none'}`}>
                                                     {artisan.subscription_status || 'Aucun'}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                {artisan.warning_count > 0 ? (
+                                                    <span className="admin-badge warning" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#fdba74' }}>
+                                                        {artisan.warning_count}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">-</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span className={`admin-badge ${artisan.status || 'inactive'}`}>
@@ -167,7 +213,7 @@ export const ArtisansList: React.FC = () => {
                                                         )}
                                                     </>
                                                     <button
-                                                        onClick={() => toast('Avertissement envoyé (simulation)')}
+                                                        onClick={() => handleIssueWarning(artisan)}
                                                         className="action-btn warn-btn"
                                                         title="Avertir"
                                                     >

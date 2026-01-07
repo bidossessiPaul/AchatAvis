@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import toast from 'react-hot-toast';
+import { showSuccess, showError } from '../../utils/Swal';
 import { ReviewOrder, ReviewProposal, ReviewSubmission } from '../../types';
 import {
     MapPin,
@@ -63,6 +63,13 @@ export const MissionDetail: React.FC = () => {
         };
     }, [orderId, user, fetchGmailAccounts, fetchComplianceData]);
 
+    // Auto-select first Gmail account when loaded
+    useEffect(() => {
+        if (!selectedGmailId && gmailAccounts.length > 0) {
+            handleCheckCompatibility(gmailAccounts[0].id);
+        }
+    }, [gmailAccounts, selectedGmailId]);
+
     const loadMissionDetails = async (id: string) => {
         setIsLoading(true);
         setError(null);
@@ -112,7 +119,7 @@ export const MissionDetail: React.FC = () => {
                 }
             }
         } catch (error) {
-            toast.error("Erreur lors de la vérification de compatibilité");
+            showError('Erreur', "Erreur lors de la vérification de compatibilité");
         }
     };
 
@@ -121,17 +128,17 @@ export const MissionDetail: React.FC = () => {
         const email = googleEmails[proposalId] || googleEmails['current'];
 
         if (!selectedGmailId && !compatibilityResult?.can_take) {
-            toast.error("Veuillez d'abord vérifier la compatibilité de votre compte Gmail.");
+            showError('Attention', "Veuillez d'abord vérifier la compatibilité de votre compte Gmail.");
             return;
         }
 
         if (!url || !url.startsWith('http')) {
-            toast.error("Veuillez entrer un lien valide (commençant par http ou https).");
+            showError('Erreur', "Veuillez entrer un lien valide (commençant par http ou https).");
             return;
         }
 
         if (!email || !email.includes('@')) {
-            toast.error("Veuillez entrer un email Google valide.");
+            showError('Erreur', "Veuillez entrer un email Google valide.");
             return;
         }
 
@@ -159,7 +166,7 @@ export const MissionDetail: React.FC = () => {
                 artisanId: mission!.artisan_id,
                 gmailAccountId: selectedGmailId || undefined
             });
-            toast.success("Preuve soumise avec succès ! Elle sera validée par un administrateur.");
+            showSuccess('Succès', "Preuve soumise avec succès ! Elle sera validée par un administrateur.");
             loadMissionDetails(orderId!);
             setProofUrls(prev => {
                 const next = { ...prev };
@@ -175,7 +182,7 @@ export const MissionDetail: React.FC = () => {
         } catch (err: any) {
             console.error("Failed to submit proof", err);
             const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soumission de la preuve.";
-            toast.error(errorMessage);
+            showError('Erreur', errorMessage);
         } finally {
             setSubmittingId(null);
         }
@@ -353,7 +360,7 @@ export const MissionDetail: React.FC = () => {
                                                             <label className="field-label">Email Google utilisé</label>
                                                             <select
                                                                 className="text-input"
-                                                                value={googleEmails[proposal.id] || ''}
+                                                                value={googleEmails[proposal.id] || googleEmails['current'] || ''}
                                                                 onChange={(e) => {
                                                                     const email = e.target.value;
                                                                     setGoogleEmails(prev => ({ ...prev, [proposal.id]: email }));

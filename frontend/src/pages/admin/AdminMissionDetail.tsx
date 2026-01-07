@@ -11,7 +11,7 @@ import {
     Clock
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -56,7 +56,7 @@ export const AdminMissionDetail: React.FC = () => {
             setMission(data);
             setFormData(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement de la mission');
+            showError('Erreur', 'Erreur lors du chargement de la mission');
             navigate('/admin/missions');
         } finally {
             setIsLoading(false);
@@ -77,23 +77,25 @@ export const AdminMissionDetail: React.FC = () => {
             } = formData;
 
             await adminApi.updateMission(orderId, updateData);
-            toast.success('Mission mise à jour');
+            showSuccess('Succès', 'Mission mise à jour');
             loadMission(orderId);
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', 'Erreur lors de la mise à jour');
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!orderId || !window.confirm('Confirmer la suppression ?')) return;
+        if (!orderId) return;
+        const result = await showConfirm('Confirmation', 'Confirmer la suppression ?');
+        if (!result.isConfirmed) return;
         try {
             await adminApi.deleteMission(orderId);
-            toast.success('Mission supprimée');
+            showSuccess('Succès', 'Mission supprimée');
             navigate('/admin/missions');
         } catch (error) {
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Erreur lors de la suppression');
         }
     };
 
@@ -101,10 +103,10 @@ export const AdminMissionDetail: React.FC = () => {
         if (!orderId) return;
         try {
             await adminApi.approveMission(orderId);
-            toast.success('Mission publiée !');
+            showSuccess('Succès', 'Mission publiée !');
             loadMission(orderId);
         } catch (error) {
-            toast.error('Erreur lors de la publication');
+            showError('Erreur', 'Erreur lors de la publication');
         }
     };
 

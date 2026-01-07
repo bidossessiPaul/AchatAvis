@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendSuspensionEmail, sendSuspensionLiftedEmail, sendAdminSuspensionNotice } from './emailService';
+import { sendSuspensionEmail, sendSuspensionLiftedEmail, sendAdminSuspensionNotice, sendWarningEmail } from './emailService';
 // import { notificationService } from './notificationService'; // Planifié pour plus tard
 
 interface SuspensionConfig {
@@ -85,15 +85,28 @@ class SuspensionService {
    */
   async isCountryBlocked(countryCode: string): Promise<boolean> {
     const config = await this.getConfig();
-    if (!config || !config.blocked_countries) return false;
+    if (!config) return false;
 
-    return config.blocked_countries.includes(countryCode.toUpperCase());
+    const code = countryCode.toUpperCase();
+
+    // Whitelist check: If the country is explicitly exempted, it's NEVER blocked
+    if (config.exempted_countries && config.exempted_countries.map(c => c.toUpperCase()).includes(code)) {
+      return false;
+    }
+
+    if (!config.blocked_countries) return false;
+    return config.blocked_countries.map(c => c.toUpperCase()).includes(code);
   }
 
   /**
    * Force suspension for geoblocking violation
    */
   async suspendForGeoblocking(userId: string, country: string): Promise<void> {
+    if (await this.isUserExempted(userId)) {
+      console.log(`🛡️ SUSPENSION EXEMPTION: User ${userId} is exempted. Skipping geoblocking suspension.`);
+      return;
+    }
+
     const activeSuspension = await this.getActiveSuspension(userId);
     if (activeSuspension) return; // Already suspended
 
@@ -160,6 +173,52 @@ class SuspensionService {
 
     // Notification logic here
     console.log(`Warning issued for user ${userId}: ${message}`);
+  }
+
+  async issueManualWarning(userId: string, reason: string, customCount?: number): Promise<{ warningCount: number; suspended: boolean }> {
+    const config = await this.getConfig();
+    const maxWarnings = config?.max_warnings_before_suspend || 3;
+
+    // 1. Create the warning record
+    await query(
+      `INSERT INTO suspension_warnings (user_id, warning_type, warning_message, created_at) 
+       VALUES (?, 'manual_admin', ?, NOW())`,
+      [userId, reason]
+    );
+
+    // 2. Update user's warning_count
+    if (customCount !== undefined) {
+      await query('UPDATE users SET warning_count = ? WHERE id = ?', [customCount, userId]);
+    } else {
+      await query('UPDATE users SET warning_count = warning_count + 1 WHERE id = ?', [userId]);
+    }
+
+    // 3. Get updated count from users table
+    const userResult: any = await query('SELECT warning_count FROM users WHERE id = ?', [userId]);
+    const warningCount = userResult?.[0]?.warning_count || 0;
+
+    console.log(`⚠️  Warning issued: User now has ${warningCount} warnings, max is ${maxWarnings}`);
+
+    // 4. Send email
+    const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [userId]);
+    if (user && user.length > 0) {
+      await sendWarningEmail(user[0].email, user[0].full_name, reason, warningCount);
+    }
+
+    // 5. Check for auto-suspension when reaching the threshold
+    if (warningCount >= maxWarnings) {
+      console.log(`🚫 Triggering suspension: ${warningCount} >= ${maxWarnings}`);
+      const level = await this.determineNextLevel(userId);
+      await this.createSuspension(
+        userId,
+        level.id,
+        'manual_admin',
+        `Suspension automatique après ${warningCount} avertissements. Dernier motif : ${reason}`
+      );
+      return { warningCount, suspended: true };
+    }
+
+    return { warningCount, suspended: false };
   }
 
   async determineNextLevel(userId: string): Promise<any> {

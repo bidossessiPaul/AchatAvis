@@ -60,6 +60,10 @@ app.get('/health', (_req: Request, res: Response) => {
     });
 });
 
+app.get('/api/test-route', (_req, res) => {
+    res.json({ message: 'Backend is updated', time: new Date().toISOString() });
+});
+
 app.get('/', (_req, res) => {
     res.send('AchatAvis API is running');
 });

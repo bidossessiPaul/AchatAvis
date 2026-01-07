@@ -6,7 +6,7 @@ import './PlanSelection.css';
 
 import { artisanService } from '../../services/artisanService';
 import { SubscriptionPack } from '../../types';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 
 export const PlanSelection: React.FC = () => {
     const navigate = useNavigate();
@@ -37,7 +37,7 @@ export const PlanSelection: React.FC = () => {
             window.location.href = url;
         } catch (error) {
             console.error("Payment error", error);
-            toast.error("Une erreur est survenue lors de l'initialisation du paiement.");
+            showError('Erreur', "Une erreur est survenue lors de l'initialisation du paiement.");
             setIsLoading(null);
         }
     };

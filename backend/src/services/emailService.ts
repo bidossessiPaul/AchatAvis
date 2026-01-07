@@ -674,3 +674,208 @@ export const sendSuspensionLiftedEmail = async (email: string, fullName: string,
         console.error(`Error sending suspension lifted email:`, error);
     }
 };
+
+/**
+ * Send email when a user is whitelisted (exempted)
+ */
+export const sendExemptionEmail = async (email: string, fullName: string, isExempted: boolean) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
+    const title = isExempted ? "Compte Vérifié & Protégé" : "Mise à jour de protection";
+    const statusText = isExempted ? "ACTIVÉ" : "DÉSACTIVÉ";
+    const message = isExempted
+        ? "Bonne nouvelle ! Votre compte bénéficie désormais d'une protection avancée. Vous êtes exempté des suspensions automatiques liées à la géolocalisation ou aux activités suspectes standard."
+        : "Votre statut de protection avancée a été mis à jour. Votre compte est désormais soumis aux protocoles de sécurité standards.";
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `🛡️ Protection Avancée : ${statusText} - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff; }
+                    .card { background-color: ${brandBlack}; border-radius: 20px; padding: 48px; text-align: center; color: white; }
+                    .logo { font-size: 24px; font-weight: 800; color: white; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 24px; font-weight: 800; color: white; margin-bottom: 16px; text-transform: uppercase; }
+                    .badge { background-color: ${isExempted ? '#10b981' : brandRed}; color: white; padding: 8px 20px; border-radius: 30px; font-size: 14px; font-weight: 800; display: inline-block; margin-bottom: 24px; }
+                    .text { font-size: 16px; color: #d1d5db; line-height: 1.6; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo">Achat<span>Avis</span></div>
+                        <h2 class="title">${title}</h2>
+                        <div class="badge">STATUT : ${statusText}</div>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            ${message}
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending exemption email:`, error);
+    }
+};
+
+/**
+ * Send warning email to user
+ */
+export const sendWarningEmail = async (email: string, fullName: string, reason: string, warningCount: number) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `⚠️ Avertissement de sécurité - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff; }
+                    .card { background-color: #ffffff; border-radius: 16px; border: 2px solid ${brandBlack}; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
+                    .warning-box { background-color: #fff7ed; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #fed7aa; border-left: 6px solid #f97316; text-align: left; }
+                    .count-badge { display: inline-block; background-color: ${brandRed}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; margin-top: 8px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo">Achat<span>Avis</span></div>
+                        <h2 class="title">Avertissement Officiel</h2>
+                        <div class="warning-box">
+                            <p style="margin: 0; font-weight: 800; color: #9a3412; text-transform: uppercase; font-size: 13px;">Motif de l'avertissement :</p>
+                            <p style="margin: 12px 0 0 0; color: #4b5563;">"${reason}"</p>
+                        </div>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            Votre compte a reçu un avertissement formel pour non-respect de nos règles communautaires. 
+                        </p>
+                        <div style="margin-top: 24px;">
+                            <span class="count-badge">Avertissement ${warningCount} / 3</span>
+                        </div>
+                        <p class="text" style="margin-top: 24px; font-size: 14px; color: #6b7280; font-style: italic;">
+                            Important : À 3 avertissements, votre compte sera automatiquement suspendu temporairement.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending warning email:`, error);
+    }
+};
+
+/**
+ * Send email to artisan when a mission is submitted for review
+ */
+export const sendMissionSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `📝 Mission " ${companyName} " en attente de validation - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 32px; }
+                    .button-container { text-align: center; margin: 32px 0; }
+                    .button { background-color: ${brandRed}; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo">Achat<span>Avis</span></div>
+                        <h2 class="title">Mission reçue</h2>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            Votre mission pour <strong>${companyName}</strong> a bien été transmise à nos équipes. 
+                            Elle est actuellement en cours de vérification technique.<br><br>
+                            Dès qu'elle sera validée, vous recevrez une confirmation et elle deviendra active pour nos Local Guides.
+                        </p>
+                        <div class="button-container">
+                            <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Voir ma mission</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending mission submitted artisan email:`, error);
+    }
+};
+
+/**
+ * Send alert to admin when a new mission is submitted
+ */
+export const sendMissionSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string) => {
+    const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
+    const brandRed = '#ff3b6a';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: `🚨 [Nouveau] Mission à valider : ${companyName}`,
+        html: `
+            <div style="font-family: 'Segoe UI', sans-serif; padding: 32px; color: #111827; background-color: #f9fafb;">
+                <h2 style="color: ${brandRed}; text-transform: uppercase; letter-spacing: 0.05em;">Nouvelle Mission Soumise</h2>
+                <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb; margin-top: 24px;">
+                    <p style="margin-top: 0;"><strong>Artisan :</strong> ${artisanName}</p>
+                    <p><strong>Entreprise :</strong> ${companyName}</p>
+                    <p><strong>ID Mission :</strong> ${orderId}</p>
+                    
+                    <div style="margin-top: 32px;">
+                        <a href="${emailConfig.frontendUrl}/admin/missions" 
+                           style="background-color: ${brandRed}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                           Accéder au Dashboard Admin
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending mission submitted admin email:`, error);
+    }
+};
