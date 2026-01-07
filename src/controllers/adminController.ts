@@ -85,10 +85,13 @@ export const getArtisanDetail = async (req: Request, res: Response) => {
     const { userId } = req.params;
     try {
         const result = await adminService.getArtisanDetail(userId);
-        res.json(result);
+        if (!result) {
+            return res.status(404).json({ error: 'Artisan non trouvé' });
+        }
+        return res.json(result);
     } catch (error) {
         console.error('Get artisan detail error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -100,10 +103,13 @@ export const getGuideDetail = async (req: Request, res: Response) => {
     const { userId } = req.params;
     try {
         const result = await adminService.getGuideDetail(userId);
-        res.json(result);
+        if (!result) {
+            return res.status(404).json({ error: 'Guide non trouvé' });
+        }
+        return res.json(result);
     } catch (error) {
         console.error('Get guide detail error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
