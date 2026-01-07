@@ -20,9 +20,7 @@ export interface User {
     missions_allowed?: number;
     missions_used?: number;
     permissions?: Record<string, boolean>; // For admin team members
-<<<<<<< HEAD
     last_detected_country?: string;
-=======
     // Artisan Profile Fields
     company_name?: string;
     siret?: string;
@@ -33,7 +31,6 @@ export interface User {
     postal_code?: string;
     google_business_url?: string;
     google_email?: string;
->>>>>>> origin/main
 }
 
 export interface ArtisanProfile {
