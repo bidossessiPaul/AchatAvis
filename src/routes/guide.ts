@@ -10,6 +10,7 @@ router.use(authorize('guide'));
 
 router.get('/missions/available', guideController.getAvailableMissions);
 router.get('/missions/:id', guideController.getMissionDetails);
+router.post('/missions/:id/release-lock', guideController.releaseLock);
 router.get('/submissions', guideController.getMySubmissions);
 router.post('/submissions', guideController.submitReviewProof);
 

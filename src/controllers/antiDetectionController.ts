@@ -72,7 +72,9 @@ export const antiDetectionController = {
 
     async checkMissionCompatibility(req: Request, res: Response) {
         try {
-            const { user_id, campaign_id, gmail_account_id } = req.body;
+            const { campaign_id, gmail_account_id } = req.body;
+            const user_id = req.user?.userId;
+
             if (!user_id || !campaign_id || !gmail_account_id) {
                 return res.status(400).json({ success: false, error: 'Missing parameters' });
             }
@@ -96,9 +98,64 @@ export const antiDetectionController = {
         }
     },
 
+    async getGuideRecap(req: Request, res: Response) {
+        try {
+            const user_id = req.user?.userId;
+            if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+            const recap = await antiDetectionService.getGuideActivityRecap(user_id);
+            return res.json({ success: true, data: recap });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async getGmailHistory(req: Request, res: Response) {
+        try {
+            const user_id = req.user?.userId;
+            const role = req.user?.role;
+            const { accountId } = req.params;
+
+            if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+            // If admin, we don't filter by guide_id. If guide, we only allow seeing their own accounts.
+            let sql = `
+                SELECT 
+                    s.id, 
+                    s.submitted_at, 
+                    s.status, 
+                    s.earnings,
+                    o.company_name as artisan_company,
+                    sd.sector_name,
+                    sd.icon_emoji as sector_icon
+                FROM reviews_submissions s
+                JOIN reviews_orders o ON s.order_id = o.id
+                LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+                WHERE s.gmail_account_id = ?
+            `;
+            const params: any[] = [accountId];
+
+            if (role !== 'admin') {
+                sql += ` AND s.guide_id = ?`;
+                params.push(user_id);
+            }
+
+            sql += ` ORDER BY s.submitted_at DESC`;
+
+            const history = await query(sql, params);
+            return res.json({ success: true, data: history });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
     async submitQuiz(req: Request, res: Response) {
         try {
-            const { user_id, score } = req.body; // In a real app we'd verify the answers
+            const { score } = req.body; // In a real app we'd verify the answers
+            const user_id = req.user?.userId;
+
+            if (!user_id) return res.status(401).json({ error: 'User not found' });
+
             const passed = score >= 80;
 
             if (passed) {
@@ -175,7 +232,8 @@ export const antiDetectionController = {
 
     async addGmailAccount(req: Request, res: Response) {
         try {
-            const { user_id, email, maps_profile_url, local_guide_level, total_reviews_google, avatar_url } = req.body;
+            const { email, maps_profile_url, local_guide_level, total_reviews_google, avatar_url } = req.body;
+            const user_id = req.user?.userId;
 
             if (!user_id || !email) {
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
@@ -225,12 +283,14 @@ export const antiDetectionController = {
     async deleteGmailAccount(req: Request, res: Response) {
         try {
             const { accountId } = req.params;
-            const { userId } = req.body; // Security check
+            const user_id = req.user?.userId;
+
+            if (!user_id) return res.status(401).json({ error: 'User not found' });
 
             await query(`
                 DELETE FROM guide_gmail_accounts 
                 WHERE id = ? AND user_id = ?
-            `, [accountId, userId]);
+            `, [accountId, user_id]);
 
             return res.json({ success: true, message: 'Compte supprimé' });
         } catch (error: any) {
