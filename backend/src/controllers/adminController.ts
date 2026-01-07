@@ -35,10 +35,10 @@ export const getGuides = async (_req: Request, res: Response) => {
  */
 export const updateUserStatus = async (req: Request, res: Response) => {
     const { userId } = req.params;
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
     try {
-        await adminService.updateUserStatus(userId, status);
+        await adminService.updateUserStatus(userId, status, reason);
         res.json({ message: `User status updated to ${status}` });
     } catch (error) {
         console.error('Update user status error:', error);

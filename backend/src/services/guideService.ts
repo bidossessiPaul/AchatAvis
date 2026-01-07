@@ -12,10 +12,17 @@ export const guideService = {
      */
     async getAvailableMissions(guideId: string) {
         // ✅ NOUVEAU : Vérifier si suspendu ou banni
-        const user: any = await query('SELECT status, is_banned FROM users WHERE id = ?', [guideId]);
+        const user: any = await query('SELECT status, is_banned, role FROM users WHERE id = ?', [guideId]);
         if (user && user.length > 0) {
             if (user[0].is_banned) throw new Error('Votre compte est banni définitivement.');
-            if (user[0].status === 'suspended') throw new Error('Votre compte est temporairement suspendu.');
+
+            if (user[0].status === 'suspended') {
+                const { suspensionService } = await import('./suspensionService');
+                const isSystemActive = await suspensionService.isSystemEnabled();
+                if (isSystemActive && user[0].role !== 'admin') {
+                    throw new Error('Votre compte est temporairement suspendu.');
+                }
+            }
         }
 
         return query(`

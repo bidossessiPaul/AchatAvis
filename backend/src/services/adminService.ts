@@ -34,13 +34,24 @@ export const getGuides = async () => {
 /**
  * Update user status (active, pending, suspended, rejected)
  */
-export const updateUserStatus = async (userId: string, status: string) => {
+export const updateUserStatus = async (userId: string, status: string, reason?: string) => {
+    // If status is suspended, we use the suspension service to trigger the full flow
+    if (status === 'suspended') {
+        const { suspensionService } = await import('./suspensionService');
+        await suspensionService.detectAndSuspend(
+            userId,
+            'manual_admin',
+            reason || 'Suspension manuelle par un administrateur'
+        );
+        return { message: 'User suspended via suspension service' };
+    }
+
     const result = await query(
         `UPDATE users SET status = ? WHERE id = ?`,
         [status, userId]
     );
 
-    // Send notification email
+    // Send notification email (for non-suspension updates)
     try {
         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
         if (user && user.length > 0) {

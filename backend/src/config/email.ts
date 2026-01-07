@@ -13,5 +13,5 @@ export const transporter = nodemailer.createTransport({
 
 export const emailConfig = {
     from: `"AchatAvis" <${process.env.EMAIL_USER}>`,
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+    frontendUrl: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
 };

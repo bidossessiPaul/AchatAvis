@@ -183,8 +183,9 @@ export const login = async (req: Request, res: Response) => {
         // Update User Tracking Info
         try {
             const { query } = await import('../config/database');
-            await query('UPDATE users SET last_detected_country = ?, last_ip = ? WHERE email = ?', [
-                country, detectedIp, validatedData.email
+            const userAgent = req.headers['user-agent'] || null;
+            await query('UPDATE users SET last_detected_country = ?, last_ip = ?, last_user_agent = ? WHERE email = ?', [
+                country, detectedIp, userAgent, validatedData.email
             ]);
         } catch (err) {
             console.error('Failed to update user tracking info:', err);
@@ -219,7 +220,26 @@ export const login = async (req: Request, res: Response) => {
             });
         }
 
-        if (error.message.includes('Invalid email or password') || error.message.includes('Account locked')) {
+        const validatedDataEmail = req.body.email || 'unknown';
+
+        // Handle account suspension
+        if (error.code === 'ACCOUNT_SUSPENDED') {
+            const isSystemActive = await suspensionService.isSystemEnabled();
+            if (isSystemActive) {
+                return res.status(403).json({
+                    error: error.message,
+                    code: 'ACCOUNT_SUSPENDED',
+                    suspension: error.suspension,
+                    user_name: error.userName
+                });
+            }
+            console.log(`🔓 [Login] Suspension system is DISABLED. Bypassing suspension error for ${validatedDataEmail}`);
+            // If the service threw but system is now disabled (race condition?), 
+            // we'd theoretically need to re-run login, but authService.login already checks this.
+            // If we are here, it means authService.login THOUGHT it was active.
+        }
+
+        if (error.message && (error.message.includes('Invalid email or password') || error.message.includes('Account locked'))) {
             return res.status(401).json({ error: error.message });
         }
 

@@ -11,6 +11,7 @@ interface AuthState {
     errorCode?: string | null;
     detectedCountry?: string | null;
     suspendedUserName?: string | null;
+    suspension?: any | null;
     mfaToken: string | null;
     twoFactorRequired: boolean;
 
@@ -19,7 +20,7 @@ interface AuthState {
     login: (email: string, password: string) => Promise<any>;
     verify2FA: (token: string) => Promise<void>;
     logout: () => Promise<void>;
-    checkAuth: () => Promise<void>;
+    checkAuth: (silent?: boolean) => Promise<void>;
     silentRefresh: () => Promise<void>;
     clearError: () => void;
     fetchDetectedRegion: () => Promise<void>;
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
             errorCode: null,
             detectedCountry: null,
             suspendedUserName: null,
+            suspension: null,
             mfaToken: null,
             twoFactorRequired: false,
 
@@ -81,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
                         errorCode: error.response?.data?.code || null,
                         detectedCountry: error.response?.data?.country || null,
                         suspendedUserName: error.response?.data?.user_name || null,
+                        suspension: error.response?.data?.suspension || null,
                         isLoading: false,
                     });
                     throw error;
@@ -130,14 +133,14 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            checkAuth: async () => {
+            checkAuth: async (silent = false) => {
                 const token = localStorage.getItem('accessToken');
                 if (!token) {
                     set({ user: null, isAuthenticated: false });
                     return;
                 }
 
-                set({ isLoading: true });
+                if (!silent) set({ isLoading: true });
                 try {
                     const response = await authApi.getMe();
                     const userData = response.user;
@@ -188,7 +191,7 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            clearError: () => set({ error: null, errorCode: null, detectedCountry: null, suspendedUserName: null }),
+            clearError: () => set({ error: null, errorCode: null, detectedCountry: null, suspendedUserName: null, suspension: null }),
 
             fetchDetectedRegion: async () => {
                 try {

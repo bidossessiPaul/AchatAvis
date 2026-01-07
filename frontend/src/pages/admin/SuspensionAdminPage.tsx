@@ -21,8 +21,8 @@ const SuspendedUsersQueue = () => {
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const fetchSuspensions = async () => {
-        setIsRefreshing(true);
+    const fetchSuspensions = async (silent = false) => {
+        if (!silent) setIsRefreshing(true);
         try {
             console.log('Fetching active suspensions...');
             const response = await suspensionApi.getActiveSuspensions();
@@ -30,15 +30,20 @@ const SuspendedUsersQueue = () => {
             setSuspensions(response.data || []);
         } catch (error) {
             console.error('Failed to fetch suspensions:', error);
-            toast.error('Erreur lors de la mise à jour de la liste');
+            if (!silent) toast.error('Erreur lors de la mise à jour de la liste');
         } finally {
-            setLoading(false);
-            setIsRefreshing(false);
+            if (!silent) {
+                setLoading(false);
+                setIsRefreshing(false);
+            }
         }
     };
 
     useEffect(() => {
         fetchSuspensions();
+        // Mettre à jour automatiquement toutes les 10 secondes (silencieusement)
+        const interval = setInterval(() => fetchSuspensions(true), 10000);
+        return () => clearInterval(interval);
     }, []);
 
     const handleApprove = async (id: number) => {

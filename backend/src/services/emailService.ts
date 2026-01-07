@@ -1,6 +1,33 @@
 import { transporter, emailConfig } from '../config/email';
 
 /**
+ * Simple parser for User-Agent to extract browser and device
+ */
+export const parseUserAgent = (ua: string | null) => {
+    if (!ua) return { browser: 'Inconnu', device: 'Inconnu' };
+
+    let browser = 'Inconnu';
+    let device = 'Inconnu';
+
+    // Basic Browser Detection
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Edg')) browser = 'Microsoft Edge';
+    else if (ua.includes('Chrome')) browser = 'Google Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('MSIE') || ua.includes('Trident')) browser = 'Internet Explorer';
+
+    // Basic Device/OS Detection
+    if (ua.includes('iPhone')) device = 'iPhone';
+    else if (ua.includes('iPad')) device = 'iPad';
+    else if (ua.includes('Android')) device = 'Android';
+    else if (ua.includes('Windows')) device = 'Windows';
+    else if (ua.includes('Macintosh')) device = 'Mac (OSX)';
+    else if (ua.includes('Linux')) device = 'Linux';
+
+    return { browser, device };
+};
+
+/**
  * Send password reset email
  */
 export const sendResetPasswordEmail = async (email: string, token: string) => {
@@ -15,48 +42,47 @@ export const sendResetPasswordEmail = async (email: string, token: string) => {
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
+                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 32px; text-align: center; }
                     .logo span { color: #ff3b6a; }
-                    .title { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .title { font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 16px; text-align: center; text-transform: uppercase; letter-spacing: -0.025em; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; transition: background-color 0.2s; }
-                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
-                    .link-alt { font-size: 12px; color: #9ca3af; word-break: break-all; margin-top: 24px; text-align: center; }
-                    .divider { border: 0; border-top: 1px solid #f3f4f6; margin: 32px 0; }
+                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #6b7280; }
+                    .link-alt { font-size: 11px; color: #9ca3af; word-break: break-all; margin-top: 32px; text-align: center; padding: 16px; background: #f9fafb; border-radius: 8px; }
+                    .divider { border: 0; border-top: 1px solid #eeeeee; margin: 32px 0; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
                         <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Récupération de compte</h2>
+                        <h2 class="title">Mot de passe oublié ?</h2>
                         <p class="text">
                             Bonjour,<br><br>
-                            Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte <strong>AchatAvis</strong>. 
-                            Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail en toute sécurité.
+                            Nous avons reçu une demande de réinitialisation pour votre compte. Cliquez sur le bouton ci-dessous pour sécuriser votre accès.
                         </p>
                         
                         <div class="button-container">
-                            <a href="${resetUrl}" class="button">Réinitialiser mon mot de passe</a>
+                            <a href="${resetUrl}" class="button">Réinitialiser maintenant</a>
                         </div>
                         
-                        <p class="text" style="font-size: 14px; margin-bottom: 0;">
-                            Ce lien expirera dans <strong>1 heure</strong> pour votre sécurité.
+                        <p class="text" style="font-size: 14px; margin-bottom: 0; color: #ff3b6a; font-weight: 600;">
+                            Ce lien expirera dans 1 heure.
                         </p>
                         
                         <div class="divider"></div>
                         
                         <div class="link-alt">
-                            Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                            Bouton inactif ? Copiez ce lien :<br>
                             <a href="${resetUrl}" style="color: #ff3b6a;">${resetUrl}</a>
                         </div>
                     </div>
                     <div class="footer">
-                        &copy; ${new Date().getFullYear()} AchatAvis. Tous droits réservés.<br>
-                        Boostez votre visibilité locale avec des avis authentiques.
+                        &copy; ${new Date().getFullYear()} AchatAvis. Noir • Rouge • Blanc.<br>
+                        Gagnez la confiance de vos clients.
                     </div>
                 </div>
             </body>
@@ -81,8 +107,8 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
 
     const roleText = role === 'artisan' ? 'Artisan' : 'Local Guide';
     const welcomeMessage = role === 'artisan'
-        ? "C'est un plaisir de vous compter parmi nous. AchatAvis vous aide à booster la visibilité de votre entreprise grâce à des avis Google authentiques et qualitatifs."
-        : "Merci de rejoindre notre communauté de Local Guides. Votre expertise va aider de nombreux artisans à améliorer leur présence en ligne.";
+        ? "Prêt à transformer vos clients en ambassadeurs ? AchatAvis vous donne les clés pour une visibilité locale imbattable."
+        : "Rejoignez l'élite des Local Guides. Votre expertise va booster les meilleurs artisans de votre région.";
 
     const mailOptions = {
         from: emailConfig.from,
@@ -93,47 +119,34 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #111827; border-radius: 20px; padding: 48px; color: #ffffff; }
+                    .logo { font-size: 24px; font-weight: 800; color: #ffffff; margin-bottom: 32px; text-align: center; }
                     .logo span { color: #ff3b6a; }
-                    .title { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
-                    .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; transition: background-color 0.2s; }
-                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
-                    .divider { border: 0; border-top: 1px solid #f3f4f6; margin: 32px 0; }
-                    .highlight { color: #ff3b6a; font-weight: 700; }
+                    .title { font-size: 28px; font-weight: 800; color: #ffffff; margin-bottom: 16px; text-align: center; }
+                    .text { font-size: 16px; color: #d1d5db; line-height: 1.6; margin-bottom: 32px; text-align: center; }
+                    .button-container { text-align: center; margin: 40px 0; }
+                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 18px 40px; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                    .highlight { color: #ff3b6a; font-weight: 800; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
                         <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Bienvenue parmi nous !</h2>
+                        <h2 class="title">Bienvenue, ${fullName} !</h2>
                         <p class="text">
-                            Bonjour <span class="highlight">${fullName}</span>,<br><br>
-                            Nous sommes ravis de vous accueillir sur <strong>AchatAvis</strong> en tant que <span class="highlight">${roleText}</span>.<br><br>
+                            Vous êtes désormais membre <span class="highlight">${roleText}</span>.<br><br>
                             ${welcomeMessage}
                         </p>
                         
                         <div class="button-container">
-                            <a href="${dashboardUrl}" class="button">Accéder à mon tableau de bord</a>
+                            <a href="${dashboardUrl}" class="button">Lancer mon Dashboard</a>
                         </div>
-                        
-                        <p class="text">
-                            Si vous avez des questions, notre équipe est là pour vous accompagner à chaque étape.
-                        </p>
-                        
-                        <div class="divider"></div>
-                        
-                        <p class="text" style="font-size: 14px;">
-                            À très vite sur AchatAvis !
-                        </p>
                     </div>
                     <div class="footer">
-                        &copy; ${new Date().getFullYear()} AchatAvis. Tous droits réservés.<br>
-                        L'outil n°1 pour la gestion d'avis Google.
+                        &copy; ${new Date().getFullYear()} AchatAvis. Excellence & Performance.
                     </div>
                 </div>
             </body>
@@ -154,6 +167,9 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
  * Send email when a pack is activated
  */
 export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, missionsQuota: number) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
     const mailOptions = {
         from: emailConfig.from,
         to: email,
@@ -163,20 +179,20 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; text-align: center; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-align: center; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; }
+                    .button { background-color: ${brandRed}; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
                     .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
-                    .highlight { color: #ff3b6a; font-weight: 700; }
-                    .stats-grid { display: flex; justify-content: space-around; background-color: #f9fafb; padding: 20px; border-radius: 12px; margin: 24px 0; }
+                    .highlight { color: ${brandRed}; font-weight: 800; }
+                    .stats-grid { display: flex; justify-content: space-around; background-color: ${brandBlack}; padding: 24px; border-radius: 12px; margin: 24px 0; color: white; }
                     .stat-item { text-align: center; }
-                    .stat-value { font-size: 24px; font-weight: 800; color: #ff3b6a; }
-                    .stat-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+                    .stat-value { font-size: 28px; font-weight: 800; color: ${brandRed}; }
+                    .stat-label { font-size: 11px; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
                 </style>
             </head>
             <body>
@@ -196,16 +212,9 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
                             </div>
                         </div>
                         
-                        <p class="text">
-                            Vous pouvez dès maintenant commencer à créer vos missions pour obtenir vos premiers avis Google.
-                        </p>
-                        
                         <div class="button-container">
-                            <a href="${emailConfig.frontendUrl}/artisan/dashboard" class="button">Créer ma première mission</a>
+                            <a href="${emailConfig.frontendUrl}/artisan/dashboard" class="button">Démarrer maintenant</a>
                         </div>
-                    </div>
-                    <div class="footer">
-                        &copy; ${new Date().getFullYear()} AchatAvis. Tous droits réservés.
                     </div>
                 </div>
             </body>
@@ -226,45 +235,44 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
 export const sendUserStatusUpdateEmail = async (email: string, fullName: string, status: string) => {
     let title = "";
     let message = "";
-    let emoji = "ℹ️";
+    let color = "#ff3b6a";
 
     switch (status) {
         case 'active':
             title = "Compte Approuvé";
-            message = "Félicitations ! Votre compte AchatAvis a été activé. Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme.";
-            emoji = "✅";
+            message = "Félicitations ! Votre compte AchatAvis a été activé. L'excellence vous attend.";
+            color = "#10b981"; // Keep green for success if preferred, or change to black? Let's use brand black.
             break;
         case 'suspended':
             title = "Compte Suspendu";
-            message = "Votre compte AchatAvis a été temporairement suspendu par un administrateur. Si vous pensez qu'il s'agit d'une erreur, veuillez nous contacter.";
-            emoji = "⚠️";
+            message = "Votre compte a été temporairement suspendu par notre équipe de sécurité.";
+            color = "#111827";
             break;
         case 'rejected':
-            title = "Inscription Refusée";
-            message = "Votre demande d'inscription à AchatAvis n'a pas pu être acceptée pour le moment.";
-            emoji = "❌";
+            title = "Demande Refusée";
+            message = "Votre demande d'inscription n'a pas pu être acceptée pour le moment.";
+            color = "#ff3b6a";
             break;
         default:
-            return; // Don't send email for other statuses
+            return;
     }
 
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `${emoji} Mise à jour de votre compte - AchatAvis`,
+        subject: `Mise à jour de votre compte - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; }
                     .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
-                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
-                    .status-box { padding: 16px; border-radius: 12px; background-color: #f9fafb; border-left: 4px solid #ff3b6a; margin: 24px 0; }
+                    .title { font-size: 20px; font-weight: 800; color: ${color}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 0; }
+                    .status-box { padding: 24px; border-radius: 12px; background-color: #f9fafb; border-top: 4px solid ${color}; margin-top: 24px; }
                 </style>
             </head>
             <body>
@@ -273,7 +281,7 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
                         <div class="logo">Achat<span>Avis</span></div>
                         <h2 class="title">${title}</h2>
                         <div class="status-box">
-                            <p class="text" style="margin-bottom: 0; text-align: left;">
+                            <p class="text">
                                 Bonjour <strong>${fullName}</strong>,<br><br>
                                 ${message}
                             </p>
@@ -296,7 +304,10 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
  * Send email to artisan when a mission is approved by admin
  */
 export const sendMissionDecisionEmail = async (email: string, fullName: string, orderId: string, status: string) => {
-    if (status !== 'in_progress') return; // Only notify when approved (in_progress)
+    if (status !== 'in_progress') return;
+
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
 
     const mailOptions = {
         from: emailConfig.from,
@@ -307,14 +318,14 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 32px; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; }
+                    .button { background-color: ${brandRed}; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
                 </style>
             </head>
             <body>
@@ -324,7 +335,7 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
                         <h2 class="title">Mission validée</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
-                            Votre mission a été validée par notre équipe technique. Elle est désormais visible par nos Local Guides qui vont commencer à soumettre vos avis.
+                            Excellente nouvelle ! Votre mission a été validée par notre équipe technique. Elle est désormais visible par nos Local Guides.
                         </p>
                         <div class="button-container">
                             <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Suivre l'avancement</a>
@@ -347,18 +358,20 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
  * Send email to guide when their submission is validated or rejected
  */
 export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
     let title = "";
     let message = "";
-    let emoji = "";
+    let color = brandBlack;
 
     if (status === 'validated') {
-        title = "Bravo, votre avis a été validé !";
-        message = "Votre soumission a été approuvée par l'artisan. Vos gains ont été crédités sur votre cagnotte.";
-        emoji = "💰";
+        title = "Soumission Validée";
+        message = "Félicitations ! Votre avis a été validé. Vos gains ont été crédités.";
+        color = brandBlack;
     } else if (status === 'rejected') {
-        title = "Soumission refusée";
+        title = "Soumission Refusée";
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
-        emoji = "❌";
+        color = brandRed;
     } else {
         return;
     }
@@ -366,18 +379,18 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `${emoji} Décision sur votre soumission - AchatAvis`,
+        subject: `Décision sur votre soumission - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${color}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
                 </style>
             </head>
             <body>
@@ -408,6 +421,8 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
  */
 export const sendTeamInvitationEmail = async (email: string, token: string, permissions: any) => {
     const inviteUrl = `${emailConfig.frontendUrl}/admin/accept-invite?token=${token}`;
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
 
     // Format permissions for display
     const permissionLabels: Record<string, string> = {
@@ -421,59 +436,48 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
 
     const rolesList = Object.entries(permissions)
         .filter(([_, value]) => value === true)
-        .map(([key]) => `<li>${permissionLabels[key] || key}</li>`)
+        .map(([key]) => `<li style="margin-bottom: 8px;">${permissionLabels[key] || key}</li>`)
         .join('');
 
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `🎟️ Invitation à rejoindre l'équipe admin - AchatAvis`,
+        subject: `🎟️ Invitation Admin - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 16px; text-align: center; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center; }
-                    .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; }
-                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
-                    .role-box { background: #f3f4f6; padding: 20px; border-radius: 12px; margin: 24px 0; }
-                    .role-list { margin: 0; padding-left: 20px; color: #4b5563; }
-                    .role-list li { margin-bottom: 8px; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 48px; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 32px; text-align: center; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-align: center; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .button-container { text-align: center; margin: 40px 0; }
+                    .button { background-color: ${brandRed}; color: #ffffff !important; padding: 18px 40px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                    .role-box { background: #f9fafb; padding: 24px; border-radius: 12px; border-left: 4px solid ${brandBlack}; margin: 32px 0; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
                         <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Rejoignez l'équipe Admin</h2>
+                        <h2 class="title">Rejoignez l'Équipe</h2>
                         <p class="text">
-                            Bonjour,<br><br>
-                            Vous avez été invité à rejoindre l'équipe d'administration de <strong>AchatAvis</strong>.
+                            Vous avez été invité à administrer <strong>AchatAvis</strong>.
                         </p>
                         
                         <div class="role-box">
-                            <p style="margin-top: 0; font-weight: 600; margin-bottom: 12px;">Vos accès autorisés :</p>
-                            <ul class="role-list">
-                                ${rolesList || '<li>Accès limité</li>'}
+                            <p style="margin-top: 0; font-weight: 800; margin-bottom: 16px; text-transform: uppercase; font-size: 13px;">Droits accordés :</p>
+                            <ul style="margin: 0; padding-left: 20px; color: #4b5563;">
+                                ${rolesList || '<li>Accès Standard</li>'}
                             </ul>
                         </div>
 
                         <div class="button-container">
-                            <a href="${inviteUrl}" class="button">Accepter l'invitation</a>
+                            <a href="${inviteUrl}" class="button">Accepter l'accès</a>
                         </div>
-                        
-                        <p class="text" style="font-size: 14px;">
-                            Ce lien expirera dans 48 heures.
-                        </p>
-                    </div>
-                    <div class="footer">
-                        &copy; ${new Date().getFullYear()} AchatAvis. Tous droits réservés.
                     </div>
                 </div>
             </body>
@@ -483,7 +487,6 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`Team invitation email sent to ${email}`);
     } catch (error) {
         console.error(`Error sending team invitation:`, error);
         throw error;
@@ -492,61 +495,72 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
 /**
  * Send email when a user is suspended with progressive level info
  */
-export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string) => {
-    const dashboardUrl = `${emailConfig.frontendUrl}/suspension-status`;
-    const packColor = level.badge_color === 'yellow' ? '#facc15' : level.badge_color === 'orange' ? '#fb923c' : '#ef4444';
+export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string, userAgent: string | null = null) => {
+    const dashboardUrl = `${emailConfig.frontendUrl}/suspended`;
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
+    const { browser, device } = parseUserAgent(userAgent);
+    const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
 
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `${level.icon_emoji} Suspension de votre compte - Niveau ${level.level_number} - AchatAvis`,
+        subject: `⚠️ Alerte de Sécurité : Suspension Niveau ${level.level_number} - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-                    .header { background-color: ${packColor}; color: white; padding: 24px; border-radius: 12px 12px 0 0; text-align: center; margin: -40px -40px 32px -40px; }
-                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
-                    .title { font-size: 22px; font-weight: 700; margin: 0; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; }
-                    .reason-box { background-color: #f9fafb; padding: 20px; border-radius: 12px; border-left: 4px solid ${packColor}; margin: 24px 0; }
-                    .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #111827; color: #white !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 700; font-size: 16px; display: inline-block; }
-                    .footer { margin-top: 32px; text-align: center; font-size: 14px; color: #9ca3af; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 2px solid ${brandBlack}; border-radius: 20px; padding: 0; overflow: hidden; }
+                    .header { background-color: ${brandBlack}; color: white; padding: 32px; text-align: center; }
+                    .content { padding: 40px; }
+                    .title { font-size: 24px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .badge { background-color: ${brandRed}; color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 800; display: inline-block; margin-top: 12px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #1f2937; line-height: 1.6; margin-bottom: 24px; }
+                    .reason-box { background-color: #fef2f2; padding: 24px; border-radius: 12px; border-left: 6px solid ${brandRed}; margin: 24px 0; }
+                    .tech-info { font-size: 13px; color: #6b7280; background-color: #f9fafb; padding: 20px; border-radius: 12px; margin-top: 32px; border: 1px solid #e5e7eb; }
+                    .button-container { text-align: center; margin: 40px 0; }
+                    .button { background-color: ${brandRed}; color: white !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
                         <div class="header">
-                            <h2 class="title">${level.icon_emoji} Compte Suspendu - Niveau ${level.level_number}</h2>
-                            <p style="margin: 8px 0 0 0; opacity: 0.9;">${level.level_name}</p>
+                            <h2 class="title">COMPTE SUSPENDU</h2>
+                            <div class="badge">${level.level_name}</div>
                         </div>
-                        <p class="text">
-                            Bonjour <strong>${fullName}</strong>,<br><br>
-                            Votre compte AchatAvis a été temporairement suspendu suite à la détection d'un comportement non conforme.
-                        </p>
-                        
-                        <div class="reason-box">
-                            <p style="margin: 0; font-weight: 700; color: #111827;">Raison de la suspension :</p>
-                            <p style="margin: 8px 0 0 0; color: #4b5563;">${reasonDetails}</p>
+                        <div class="content">
+                            <p class="text">
+                                Bonjour <strong>${fullName}</strong>,<br><br>
+                                Notre système de sécurité a détecté une activité non conforme. Conformément à nos conditions d'utilisation, votre compte a été restreint.
+                            </p>
+                            
+                            <div class="reason-box">
+                                <p style="margin: 0; font-weight: 800; color: ${brandBlack}; text-transform: uppercase; font-size: 14px;">Motif de la sanction :</p>
+                                <p style="margin: 12px 0 0 0; color: #4b5563; font-style: italic;">"${reasonDetails}"</p>
+                            </div>
+    
+                            <p class="text">
+                                🗓️ <strong>Date :</strong> ${now}<br>
+                                ⏳ <strong>Durée :</strong> ${level.duration_days} jour(s)
+                            </p>
+    
+                            <div class="button-container">
+                                <a href="${dashboardUrl}" class="button">Consulter mon statut</a>
+                            </div>
+    
+                            <div class="tech-info">
+                                🛰️ <strong>Empreinte technique au moment des faits :</strong><br>
+                                <span style="opacity: 0.8;">${browser} • ${device}</span>
+                            </div>
                         </div>
-
-                        <p class="text">
-                            <strong>Durée :</strong> ${level.duration_days} jour(s)<br>
-                            <strong>Conséquences :</strong> Pendant cette période, vous ne pouvez pas prendre de nouvelles missions. Vos gains peuvent également être gelés selon la gravité.
-                        </p>
-                        
-                        <div class="button-container">
-                            <a href="${dashboardUrl}" class="button" style="color: white;">Voir les détails et le compte à rebours</a>
-                        </div>
-
-                        <p class="text" style="font-size: 14px;">
-                            💡 Pour éviter de nouvelles sanctions, nous vous recommandons de relire attentivement notre <strong>Guide Anti-Détection</strong>.
-                        </p>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis Security Team.
                     </div>
                 </div>
             </body>
@@ -562,9 +576,49 @@ export const sendSuspensionEmail = async (email: string, fullName: string, level
 };
 
 /**
+ * Send notification to admin when a user is suspended
+ */
+export const sendAdminSuspensionNotice = async (userEmail: string, userFullName: string, level: any, reason: string, userAgent: string | null) => {
+    const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
+    const { browser, device } = parseUserAgent(userAgent);
+    const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: `🚨 [Alerte Admin] Suspension de compte : ${userFullName}`,
+        html: `
+            <div style="font-family: 'Segoe UI', sans-serif; padding: 32px; color: #111827; background-color: #f9fafb;">
+                <h2 style="color: #ff3b6a; text-transform: uppercase; letter-spacing: 0.05em;">Suspension Appliquée</h2>
+                <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb; margin-top: 24px;">
+                    <p style="margin-top: 0;"><strong>Utilisateur :</strong> ${userFullName} (${userEmail})</p>
+                    <p><strong>Niveau :</strong> ${level.level_number} - ${level.level_name}</p>
+                    <p><strong>Raison :</strong> ${reason}</p>
+                    <p><strong>Date/Heure :</strong> ${now}</p>
+                </div>
+                <div style="margin-top: 24px; font-size: 13px; color: #6b7280;">
+                    <strong>Détails techniques :</strong><br>
+                    ${browser} • ${device}<br>
+                    <span style="font-size: 11px;">UA: ${userAgent || 'N/A'}</span>
+                </div>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error('Error sending admin suspension notice:', error);
+    }
+};
+
+/**
  * Send email when a suspension is lifted
  */
 export const sendSuspensionLiftedEmail = async (email: string, fullName: string, reason: string) => {
+    const brandRed = '#ff3b6a';
+    const brandBlack = '#111827';
+
     const mailOptions = {
         from: emailConfig.from,
         to: email,
@@ -574,22 +628,33 @@ export const sendSuspensionLiftedEmail = async (email: string, fullName: string,
             <html>
             <head>
                 <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-                    .card { background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-                    .title { font-size: 22px; font-weight: 700; color: #111827; }
-                    .text { font-size: 16px; color: #4b5563; line-height: 1.6; }
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff; }
+                    .card { background-color: #ffffff; border-radius: 16px; border: 2px solid ${brandBlack}; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
+                    .success-banner { background-color: #f0fdf4; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #10b981; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
-                        <h2 class="title">Compte Réactivé !</h2>
+                        <div class="logo">Achat<span>Avis</span></div>
+                        <h2 class="title">Compte Réactivé</h2>
+                        <div class="success-banner">
+                            <p class="text" style="color: #065f46; font-weight: 600; margin-bottom: 0;">
+                                Bonne nouvelle <strong>${fullName}</strong> !<br>
+                                Votre accès a été rétabli avec succès.
+                            </p>
+                        </div>
                         <p class="text">
-                            Bonjour <strong>${fullName}</strong>,<br><br>
-                            Bonne nouvelle ! Votre compte AchatAvis a été réactivé. Vous pouvez de nouveau prendre des missions et cumuler des gains.<br><br>
-                            <strong>Note :</strong> ${reason}
+                            <strong>Note de l'administrateur :</strong><br>
+                            "${reason}"
                         </p>
-                        <p class="text">Nous comptons sur vous pour respecter scrupuleusement les consignes de sécurité à l'avenir.</p>
+                        <p class="text" style="margin-top: 32px; font-size: 14px; color: #6b7280;">
+                            Nous comptons sur vous pour maintenir l'excellence de notre communauté.
+                        </p>
                     </div>
                 </div>
             </body>
