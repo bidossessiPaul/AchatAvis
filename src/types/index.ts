@@ -143,6 +143,7 @@ export interface ReviewOrder {
     rhythme_mode?: 'discret' | 'modere' | 'rapide';
     estimated_duration_days?: number;
     client_cities?: string[] | string;
+    payout_per_review?: number;
 }
 
 export interface ReviewProposal {
@@ -174,6 +175,9 @@ export interface ReviewSubmission {
     earnings: number;
     submitted_at: string;
     validated_at?: string;
+    // Guide info for global view
+    guide_name?: string;
+    guide_avatar?: string;
 }
 
 // Subscription Pack types
