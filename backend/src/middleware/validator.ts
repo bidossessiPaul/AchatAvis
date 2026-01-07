@@ -24,17 +24,8 @@ export const phoneSchema = z
         message: 'Le téléphone doit contenir au moins 10 chiffres',
     });
 
-// Trade validation
-export const tradeSchema = z.enum([
-    'plombier',
-    'electricien',
-    'chauffagiste',
-    'couvreur',
-    'vitrier',
-    'paysagiste',
-    'menage',
-    'demenageur',
-]);
+// Trade validation: Now dynamic, accepts any string corresponding to a sector slug
+export const tradeSchema = z.string().min(2, "Le secteur d'activité est requis");
 
 // User role validation
 export const roleSchema = z.enum(['artisan', 'guide', 'admin']);
@@ -104,6 +95,18 @@ export const reviewOrderSchema = z.object({
 export const profileUpdateSchema = z.object({
     fullName: z.string().min(2, "Le nom complet est requis").optional(),
     avatarUrl: z.string().url("URL d'avatar invalide").optional().or(z.literal('')),
+    companyName: z.string().min(2, 'Le nom de l\'entreprise est requis').optional(),
+    siret: siretSchema.optional().or(z.literal('')),
+    trade: tradeSchema.optional(),
+    phone: phoneSchema.optional(),
+    address: z.string().min(5, 'L\'adresse est requise').optional(),
+    city: z.string().min(2, 'La ville est requise').optional(),
+    postalCode: z.string()
+        .transform(val => val.replace(/\s/g, ''))
+        .refine(val => val === '' || /^\d{5}$/.test(val), 'Le code postal doit faire 5 chiffres')
+        .optional(),
+    googleBusinessUrl: z.string().url('URL Google Business invalide').optional().or(z.literal('')),
+    googleEmail: z.string().email('Email Google invalide').optional().or(z.literal('')),
 });
 
 export type ArtisanRegistrationInput = z.infer<typeof artisanRegistrationSchema>;

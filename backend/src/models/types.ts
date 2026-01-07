@@ -15,6 +15,23 @@ export interface User {
     two_factor_secret?: string;
     two_factor_enabled: boolean;
     permissions?: any; // JSON field for admin team members
+    // Joined Artisan Profile fields
+    company_name?: string;
+    siret?: string;
+    trade?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    postal_code?: string;
+    google_business_url?: string;
+    subscription_status?: string;
+    subscription_end_date?: Date;
+    subscription_tier?: string;
+    monthly_reviews_quota?: number;
+    current_month_reviews?: number;
+    subscription_start_date?: Date;
+    missions_allowed?: number;
+    missions_used?: number;
 }
 
 export interface AdminLog {

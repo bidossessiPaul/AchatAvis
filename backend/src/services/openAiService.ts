@@ -36,13 +36,14 @@ export const openAiService = {
         } = params;
 
         const prompt = `
-            Tu es un système expert en rédaction d'avis clients pour des artisans français.
+            Tu es un système expert en rédaction d'avis clients. 
+            Ton objectif est de générer des avis authentiques et crédibles adaptés à la localisation de l'entreprise.
             Génère ${quantity} avis positifs (4 ou 5 étoiles) pour l'entreprise suivante :
             Nom : ${companyName}
             Métier : ${trade}
             Secteur précis : ${sector || trade}
             Contexte métier : ${context || 'Artisan de qualité'}
-            Zones d'intervention : ${zones || 'France'}
+            Zones d'intervention : ${zones || 'Locale'}
             Type de clients : ${clientTypes || 'Particuliers'}
             Ton souhaité : ${tone || 'professionnel'}
             Noms à citer (si fournis) : ${staffNames || 'Aucun spécifique'}
@@ -51,10 +52,10 @@ export const openAiService = {
             Consignes de rédaction :
             1. VARIÉTÉ DE TAILLE : Produis un mélange d'avis courts (1-2 phrases), moyens (3-4 phrases) et longs (paragraphe détaillé).
             2. VARIÉTÉ DE STYLE : Certains avis doivent être très factuels, d'autres plus émotionnels ou enthousiastes.
-            3. PERSONNALISATION : Utilise les noms des collaborateurs fournis (${staffNames}) de manière naturelle dans environ 30% des avis.
+            3. PERSONNALISATION : C'est CRUCIAL : les noms des collaborateurs fournis (${staffNames}) DOIVENT apparaître dans le texte des avis de manière naturelle. Utilise-les dans au moins 70% des avis produits.
             4. EMOJIS : Ajoute des emojis de manière très parcimonieuse (maximum 1-2 par avis) et SEULEMENT dans environ 40% des avis pour garder un aspect pro mais moderne.
             5. NATURALITÉ : Évite les répétitions de phrases types. Chaque avis doit sembler écrit par une personne différente.
-            6. LANGUE : Uniquement en français.
+            6. LANGUE : Uniquement en français (ou la langue locale si spécifiée).
             7. FORMAT : Tu DEVEZ retourner un objet JSON avec une seule clé "reviews" contenant le tableau des avis.
 
             Exemple de format attendu :
@@ -98,15 +99,16 @@ export const openAiService = {
 
     async generateNearbyCities(baseCity: string, count: number) {
         const prompt = `
-            Basé sur la ville de "${baseCity}" en France.
-            Génère une liste de ${count} villes, communes ou quartiers proches (banlieue ou périphérie directe) qui seraient logiques pour la clientèle d'un artisan local basé à ${baseCity}.
+            Basé sur l'emplacement de "${baseCity}". 
+            Identifie d'abord dans quel pays et région se trouve "${baseCity}".
+            Génère ensuite une liste de ${count} villes, communes ou quartiers proches (banlieue ou périphérie directe) qui seraient logiques pour la clientèle d'un professionnel local basé à ${baseCity}.
             
             Règles :
-            1. Réalisme géographique : Uniquement des villes réellement proches (max 20-30km).
+            1. Réalisme géographique : Uniquement des villes réellement proches de ${baseCity} dans le MÊME PAYS (max 20-30km).
             2. Diversité : Mélange des communes résidentielles et des zones d'activité si pertinent.
             3. Format : Retourne UNIQUEMENT un objet JSON avec une clé "cities" contenant un tableau de chaînes de caractères.
             4. Pas de ville inventée.
-            5. Si c'est une très grande ville (Paris, Lyon, Marseille), propose des arrondissements ou des villes de la petite couronne.
+            5. Si c'est une très grande ville, propose des arrondissements ou des villes de la petite couronne.
             
             Exemple de sortie attendue :
             {
@@ -119,7 +121,7 @@ export const openAiService = {
             const response = await openai.chat.completions.create({
                 model: "gpt-3.5-turbo-0125",
                 messages: [
-                    { role: "system", content: "Tu es un expert en géographie française et zones de chalandise artisanale. Réponds uniquement en JSON." },
+                    { role: "system", content: "Tu es un expert en géographie mondiale et zones de chalandise. Réponds uniquement en JSON." },
                     { role: "user", content: prompt }
                 ],
                 response_format: { type: "json_object" },

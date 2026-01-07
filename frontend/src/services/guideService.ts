@@ -14,6 +14,10 @@ export const guideService = {
         return response.data;
     },
 
+    async releaseLock(orderId: string): Promise<void> {
+        await api.post(`/guide/missions/${orderId}/release-lock`);
+    },
+
     async submitProof(data: {
         orderId: string,
         proposalId: string,

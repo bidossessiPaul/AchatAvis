@@ -229,6 +229,7 @@ export const ArtisanOverview: React.FC = () => {
                             <thead>
                                 <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
                                     <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Entreprise</th>
+                                    <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Pack</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Date</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Status</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Avis</th>
@@ -239,6 +240,18 @@ export const ArtisanOverview: React.FC = () => {
                                 {orders.map((order) => (
                                     <tr key={order.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
                                         <td style={{ padding: '1rem', fontWeight: 500 }}>{order.company_name || 'Sans nom'}</td>
+                                        <td style={{ padding: '1rem', fontSize: '0.875rem' }}>
+                                            <span style={{
+                                                background: '#f3f4f6',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                color: '#374151'
+                                            }}>
+                                                {(order as any).pack_name || '-'}
+                                            </span>
+                                        </td>
                                         <td style={{ padding: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>{new Date(order.created_at).toLocaleDateString()}</td>
                                         <td style={{ padding: '1rem' }}>
                                             <span style={{

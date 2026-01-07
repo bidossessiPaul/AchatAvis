@@ -16,8 +16,13 @@ import {
     Star,
     ExternalLink,
     TrendingUp,
-    BarChart3
+    BarChart3,
+    Shield,
+    ChevronDown,
+    ChevronUp,
+    X
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
@@ -45,6 +50,16 @@ interface GuideProfile {
     city: string;
 }
 
+interface GmailAccount {
+    id: number;
+    email: string;
+    trust_score: number;
+    account_level: string;
+    total_reviews_posted: number;
+    successful_reviews: number;
+    last_review_posted_at: string | null;
+}
+
 interface GuideStats {
     total_submissions: number;
     validated_count: number;
@@ -58,6 +73,10 @@ export const GuideDetail: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [stats, setStats] = useState<GuideStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [gmailAccounts, setGmailAccounts] = useState<GmailAccount[]>([]);
+    const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
+    const [gmailHistory, setGmailHistory] = useState<Record<number, any[]>>({});
+
 
     useEffect(() => {
         if (id) loadData();
@@ -69,11 +88,24 @@ export const GuideDetail: React.FC = () => {
             const data = await adminService.getGuideDetail(id!);
             setProfile(data.profile);
             setSubmissions(data.submissions);
+            setGmailAccounts(data.gmail_accounts || []);
             setStats(data.stats);
         } catch (error) {
             toast.error('Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchGmailHistory = async (accountId: number) => {
+        try {
+            // Set a loading state for this specific account's history
+            setGmailHistory(prev => ({ ...prev, [accountId]: [] })); // Clear previous history or set a loading indicator
+            const historyData = await adminService.getGmailAccountHistory(accountId);
+            setGmailHistory(prev => ({ ...prev, [accountId]: historyData }));
+        } catch (error) {
+            toast.error('Erreur lors du chargement de l\'historique Gmail');
+            setGmailHistory(prev => ({ ...prev, [accountId]: [] })); // Clear or show error
         }
     };
 
@@ -239,6 +271,110 @@ export const GuideDetail: React.FC = () => {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        {/* Gmail Accounts & History (Admin View) */}
+                        <div className="premium-card" style={{ marginTop: '2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                                <Shield size={20} color="#a855f7" />
+                                <h3 style={{ margin: 0 }}>Comptes Gmail Dédiés</h3>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: '1rem' }}>
+                                {gmailAccounts.length > 0 ? gmailAccounts.map(account => (
+                                    <div key={account.id} className="gmail-admin-card" style={{
+                                        padding: '1rem',
+                                        borderRadius: '1rem',
+                                        background: '#f8fafc',
+                                        border: '1px solid #e2e8f0'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div className="info-icon-box"><Mail size={16} /></div>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, color: '#1e293b' }}>{account.email}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                        Score: {account.trust_score} | Niveau: {account.account_level}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    if (expandedHistory === account.id) {
+                                                        setExpandedHistory(null);
+                                                    } else {
+                                                        setExpandedHistory(account.id);
+                                                        if (!gmailHistory[account.id]) {
+                                                            await fetchGmailHistory(account.id);
+                                                        }
+                                                    }
+                                                }}
+                                                style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    padding: '0.4rem 0.8rem',
+                                                    borderRadius: '0.5rem',
+                                                    background: 'white',
+                                                    border: '1px solid #e2e8f0',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.4rem'
+                                                }}
+                                            >
+                                                Auditer l'historique
+                                                {expandedHistory === account.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                            </button>
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {expandedHistory === account.id && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    style={{ overflow: 'hidden' }}
+                                                >
+                                                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                                        <table className="premium-table mini">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Date</th>
+                                                                    <th>Artisan</th>
+                                                                    <th>Gains</th>
+                                                                    <th>Statut</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {!gmailHistory[account.id] ? (
+                                                                    <tr><td colSpan={4} className="text-center">Chargement...</td></tr>
+                                                                ) : gmailHistory[account.id].length === 0 ? (
+                                                                    <tr><td colSpan={4} className="text-center">Aucune mission pour ce compte</td></tr>
+                                                                ) : gmailHistory[account.id].map((h: any) => (
+                                                                    <tr key={h.id}>
+                                                                        <td>{new Date(h.submitted_at).toLocaleDateString()}</td>
+                                                                        <td>{h.artisan_company}</td>
+                                                                        <td>{h.earnings}€</td>
+                                                                        <td>
+                                                                            <span className={`premium-status-badge ${h.status}`}>
+                                                                                {h.status}
+                                                                            </span>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                )) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                        Aucun compte Gmail enregistré pour ce guide.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

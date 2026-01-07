@@ -15,7 +15,11 @@ import {
 
 import { AntiDetectionIntro } from '../../components/AntiDetection/AntiDetectionIntro';
 import { SectorDifficultyList } from '../../components/AntiDetection/SectorDifficultyList';
+<<<<<<< HEAD
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
+=======
+import { SecurityRadar } from '../../components/AntiDetection/SecurityRadar';
+>>>>>>> origin/main
 import {
     User,
     Navigation,
@@ -49,7 +53,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
     const {
         rules,
         complianceData,
-        fetchRules,
+        fetchAntiDetectionRules,
         fetchComplianceData,
         loading
     } = useAntiDetectionStore();
@@ -57,11 +61,11 @@ export const AntiDetectionRulesPage: React.FC = () => {
     const [expandedRule, setExpandedRule] = useState<number | null>(null);
 
     useEffect(() => {
-        fetchRules();
+        fetchAntiDetectionRules();
         if (user) {
             fetchComplianceData(user.id);
         }
-    }, [fetchRules, fetchComplianceData, user]);
+    }, [fetchAntiDetectionRules, fetchComplianceData, user]);
 
     const toggleRule = (id: number) => {
         setExpandedRule(expandedRule === id ? null : id);
@@ -84,6 +88,8 @@ export const AntiDetectionRulesPage: React.FC = () => {
                     if (el) el.scrollIntoView({ behavior: 'smooth' });
                 }}
             />
+
+            <SecurityRadar />
 
             <SectorDifficultyList />
 

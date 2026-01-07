@@ -117,28 +117,40 @@ export const AdminMissions: React.FC = () => {
             <div className="admin-dashboard revamped">
                 {/* Stats Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                    <div className="stat-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6' }}>
+                    <div
+                        className={`stat-card ${statusFilter === 'all' ? 'filter-active' : ''}`}
+                        onClick={() => setStatusFilter('all')}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Missions</span>
                             <Briefcase size={20} color="var(--primary-red)" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.total}</span>
                     </div>
-                    <div className="stat-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6' }}>
+                    <div
+                        className={`stat-card ${statusFilter === 'submitted' ? 'filter-active' : ''}`}
+                        onClick={() => setStatusFilter('submitted')}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>À valider</span>
                             <Clock size={20} color="#f59e0b" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.submitted}</span>
                     </div>
-                    <div className="stat-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6' }}>
+                    <div
+                        className={`stat-card ${statusFilter === 'in_progress' ? 'filter-active' : ''}`}
+                        onClick={() => setStatusFilter('in_progress')}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>En cours</span>
                             <CheckCircle2 size={20} color="#10b981" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.inProgress}</span>
                     </div>
-                    <div className="stat-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6' }}>
+                    <div
+                        className={`stat-card ${statusFilter === 'completed' ? 'filter-active' : ''}`}
+                        onClick={() => setStatusFilter('completed')}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Terminées</span>
                             <CheckCircle2 size={20} color="#3b82f6" />
@@ -198,13 +210,13 @@ export const AdminMissions: React.FC = () => {
                                 </thead>
                                 <tbody>
                                     {filteredMissions.length > 0 ? filteredMissions.map((mission) => (
-                                        <tr key={mission.id}>
+                                        <tr key={mission.id} className={`tr-status-${mission.status}`}>
                                             <td>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <span className="font-medium" style={{ color: 'var(--gray-900)' }}>
                                                         {mission.company_name || mission.original_company_name}
                                                     </span>
-                                                    <span style={{ fontSize: '12px', color: 'var(--gray-500)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <span style={{ fontSize: '12px', color: 'var(--gray-50)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                         <Building2 size={12} /> {mission.artisan_name}
                                                     </span>
                                                 </div>
@@ -222,10 +234,10 @@ export const AdminMissions: React.FC = () => {
                                             <td>
                                                 <div style={{ width: '100px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                                                        <span>{mission.reviews_received}/{mission.quantity}</span>
-                                                        <span>{Math.round((mission.reviews_received / mission.quantity) * 100)}%</span>
+                                                        <span style={{ fontWeight: 600 }}>{mission.reviews_received}/{mission.quantity}</span>
+                                                        <span style={{ fontWeight: 600 }}>{Math.round((mission.reviews_received / mission.quantity) * 100)}%</span>
                                                     </div>
-                                                    <div style={{ width: '100%', height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
                                                         <div style={{ width: `${(mission.reviews_received / mission.quantity) * 100}%`, height: '100%', background: 'var(--primary-red)' }}></div>
                                                     </div>
                                                 </div>
