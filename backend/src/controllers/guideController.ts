@@ -78,5 +78,22 @@ export const guideController = {
                 message: error.message
             });
         }
+    },
+
+    async releaseLock(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const result = await guideService.releaseMissionLock(id, user.userId);
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error releasing lock:', error);
+            return res.status(500).json({
+                error: 'Failed to release lock',
+                message: error.message
+            });
+        }
     }
 };

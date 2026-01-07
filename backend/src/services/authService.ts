@@ -155,10 +155,17 @@ export const login = async (email: string, password: string) => {
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
                 u.two_factor_enabled, u.two_factor_secret,
+                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.address, '') as address,
+                COALESCE(ap.city, gp.city) as city,
+                COALESCE(ap.postal_code, '') as postal_code,
+                gp.google_email,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
+         LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
          WHERE u.email = ?`,
         [email]
     );
@@ -298,10 +305,17 @@ export const verify2FA = async (userId: string, token: string) => {
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, 
                 u.created_at, u.updated_at, u.last_login,
                 u.two_factor_enabled, u.two_factor_secret,
+                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.address, '') as address,
+                COALESCE(ap.city, gp.city) as city,
+                COALESCE(ap.postal_code, '') as postal_code,
+                gp.google_email,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
+         LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
          WHERE u.id = ?`,
         [userId]
     );
@@ -347,10 +361,17 @@ export const verify2FA = async (userId: string, token: string) => {
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
+                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.address, '') as address,
+                COALESCE(ap.city, gp.city) as city,
+                COALESCE(ap.postal_code, '') as postal_code,
+                gp.google_email,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
+         LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
          WHERE u.id = ?`,
         [userId]
     );
@@ -410,27 +431,100 @@ export const deleteAccount = async (userId: string) => {
 /**
  * Update user profile
  */
-export const updateProfile = async (userId: string, data: { fullName?: string, avatarUrl?: string }) => {
-    const updates: string[] = [];
-    const params: any[] = [];
+export const updateProfile = async (userId: string, data: any) => {
+    const connection = await pool.getConnection();
 
-    if (data.fullName !== undefined) {
-        updates.push('full_name = ?');
-        params.push(data.fullName);
+    try {
+        await connection.beginTransaction();
+
+        // 1. Update users table if necessary
+        const userUpdates: string[] = [];
+        const userParams: any[] = [];
+
+        if (data.fullName !== undefined) {
+            userUpdates.push('full_name = ?');
+            userParams.push(data.fullName);
+        }
+        if (data.avatarUrl !== undefined) {
+            userUpdates.push('avatar_url = ?');
+            userParams.push(data.avatarUrl);
+        }
+
+        if (userUpdates.length > 0) {
+            userParams.push(userId);
+            await connection.execute(
+                `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`,
+                userParams
+            );
+        }
+
+        // 2. Update artisan profile if user is an artisan
+        const artisanFields = [
+            'companyName', 'siret', 'trade', 'phone', 'address', 'city', 'postalCode', 'googleBusinessUrl'
+        ];
+
+        // Map camelCase to snake_case for DB
+        const mapping: Record<string, string> = {
+            companyName: 'company_name',
+            siret: 'siret',
+            trade: 'trade',
+            phone: 'phone',
+            address: 'address',
+            city: 'city',
+            postalCode: 'postal_code',
+            googleBusinessUrl: 'google_business_url'
+        };
+
+        const profileUpdates: string[] = [];
+        const profileParams: any[] = [];
+
+        for (const field of artisanFields) {
+            if (data[field] !== undefined) {
+                profileUpdates.push(`${mapping[field]} = ?`);
+                profileParams.push(data[field]);
+            }
+        }
+
+        if (profileUpdates.length > 0) {
+            profileParams.push(userId);
+            await connection.execute(
+                `UPDATE artisans_profiles SET ${profileUpdates.join(', ')} WHERE user_id = ?`,
+                profileParams
+            );
+        }
+
+        // 3. Update guide profile if user is a guide
+        const guideUpdates: string[] = [];
+        const guideParams: any[] = [];
+
+        if (data.googleEmail !== undefined) {
+            guideUpdates.push('google_email = ?');
+            guideParams.push(data.googleEmail);
+        }
+        if (data.phone !== undefined) {
+            guideUpdates.push('phone = ?');
+            guideParams.push(data.phone);
+        }
+        if (data.city !== undefined) {
+            guideUpdates.push('city = ?');
+            guideParams.push(data.city);
+        }
+
+        if (guideUpdates.length > 0) {
+            guideParams.push(userId);
+            await connection.execute(
+                `UPDATE guides_profiles SET ${guideUpdates.join(', ')} WHERE user_id = ?`,
+                guideParams
+            );
+        }
+
+        await connection.commit();
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
     }
-
-    if (data.avatarUrl !== undefined) {
-        updates.push('avatar_url = ?');
-        params.push(data.avatarUrl);
-    }
-
-    if (updates.length === 0) return;
-
-    params.push(userId);
-    await query(
-        `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-        params
-    );
 };
 
 /**

@@ -21,7 +21,7 @@ interface Props {
     onSelectOtherGmail?: () => void;
 }
 
-export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, result, onSelectOtherGmail }) => {
+export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, result }) => {
     if (!isOpen || !result) return null;
 
     const getIcon = () => {
@@ -67,12 +67,40 @@ export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, re
                     {result.message}
                 </p>
 
+                {(result.details?.used !== undefined && result.details?.max !== undefined) && (
+                    <div style={{
+                        marginBottom: '1.5rem',
+                        padding: '1rem',
+                        background: '#f8fafc',
+                        borderRadius: '0.75rem',
+                        border: '1px solid #e2e8f0',
+                        textAlign: 'left'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Quota Secteur (Mois)</span>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: result.details.used >= result.details.max ? '#ef4444' : '#10b981' }}>
+                                {result.details.used} / {result.details.max}
+                            </span>
+                        </div>
+                        <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(result.details.used / result.details.max) * 100}%` }}
+                                style={{
+                                    height: '100%',
+                                    background: result.details.used >= result.details.max ? '#ef4444' : '#10b981'
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {result.details?.next_available_date && (
                     <div style={{
                         background: '#fff7ed',
                         padding: '1rem',
                         borderRadius: '0.75rem',
-                        marginBottom: '2rem',
+                        marginBottom: '1.5rem',
                         border: '1px solid #ffedd5',
                         display: 'flex',
                         alignItems: 'center',
@@ -81,9 +109,27 @@ export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, re
                     }}>
                         <Clock size={20} color="#f59e0b" />
                         <div>
-                            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase' }}>Prochaine dispo</p>
-                            <p style={{ fontWeight: 600, color: '#c2410c' }}>{result.details.next_available_date}</p>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase' }}>Repos requis (Secteur)</p>
+                            <p style={{ fontWeight: 600, color: '#c2410c', fontSize: '0.875rem' }}>Disponible le {result.details.next_available_date}</p>
                         </div>
+                    </div>
+                )}
+
+                {result.can_take && (
+                    <div style={{
+                        padding: '1rem',
+                        borderRadius: '0.75rem',
+                        background: '#f0fdf4',
+                        border: '1px solid #dcfce7',
+                        color: '#166534',
+                        fontSize: '0.8125rem',
+                        textAlign: 'left',
+                        marginBottom: '2rem',
+                        display: 'flex',
+                        gap: '0.5rem'
+                    }}>
+                        <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <span>Compte sécurisé pour ce secteur. Vous pouvez publier cet avis en toute confiance.</span>
                     </div>
                 )}
 
@@ -101,26 +147,10 @@ export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, re
                                 cursor: 'pointer'
                             }}
                         >
-                            C'est parti !
+                            Démarrer la publication
                         </button>
                     ) : (
                         <>
-                            {onSelectOtherGmail && (
-                                <button
-                                    onClick={onSelectOtherGmail}
-                                    style={{
-                                        padding: '1rem',
-                                        borderRadius: '0.75rem',
-                                        border: '1px solid #d1d5db',
-                                        background: 'white',
-                                        color: '#374151',
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    Essayer un autre compte Gmail
-                                </button>
-                            )}
                             <button
                                 onClick={onClose}
                                 style={{

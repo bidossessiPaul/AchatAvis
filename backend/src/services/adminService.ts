@@ -120,9 +120,14 @@ export const getGuideDetail = async (userId: string) => {
         WHERE guide_id = ?
     `, [userId]);
 
+    const gmailAccounts = await query(`
+        SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
+    `, [userId]);
+
     return {
         profile: profile[0],
         submissions,
+        gmail_accounts: gmailAccounts,
         stats: stats[0]
     };
 };
@@ -260,8 +265,11 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             submissionId
         });
 
-        // 2. If validated, increment artisan review counts AND order review count
-        if (status === 'validated') {
+        // 2. Handle reviews_received in reviews_orders
+        // We increment on submission (in guideService), so here we:
+        // - Do nothing on validation (already counted)
+        // - Decrement on rejection (to reopen the slot)
+        if (status === 'rejected' || status === 'validated') {
             const [rows]: any = await connection.query(
                 `SELECT s.artisan_id, p.order_id 
                  FROM reviews_submissions s
@@ -273,21 +281,24 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             if (rows && rows.length > 0) {
                 const { artisan_id, order_id } = rows[0];
 
-                // Update Global Profile Stats
-                await connection.query(`
-                    UPDATE artisans_profiles 
-                    SET current_month_reviews = COALESCE(current_month_reviews, 0) + 1,
-                        total_reviews_received = COALESCE(total_reviews_received, 0) + 1
-                    WHERE user_id = :artisan_id
-                `, { artisan_id });
-
-                // Update Specific Order Stats (Usage per Pack)
-                if (order_id) {
+                if (status === 'validated') {
+                    // Update Global Profile Stats
                     await connection.query(`
-                        UPDATE reviews_orders
-                        SET reviews_received = COALESCE(reviews_received, 0) + 1
-                        WHERE id = :order_id
-                    `, { order_id });
+                        UPDATE artisans_profiles 
+                        SET current_month_reviews = COALESCE(current_month_reviews, 0) + 1,
+                            total_reviews_received = COALESCE(total_reviews_received, 0) + 1
+                        WHERE user_id = :artisan_id
+                    `, { artisan_id });
+                } else if (status === 'rejected') {
+                    // Decrement Specific Order Stats to re-open slot
+                    if (order_id) {
+                        await connection.query(`
+                            UPDATE reviews_orders
+                            SET reviews_received = GREATEST(0, COALESCE(reviews_received, 1) - 1),
+                                status = 'in_progress'
+                            WHERE id = :order_id
+                        `, { order_id });
+                    }
                 }
             }
         }
@@ -545,10 +556,14 @@ export const approveMission = async (orderId: string) => {
  */
 export const getAllMissions = async () => {
     return await query(`
-        SELECT o.*, u.full_name as artisan_name, ap.company_name as original_company_name
+        SELECT o.*, 
+               COALESCE(pay.amount, o.price) as price,
+               u.full_name as artisan_name, 
+               ap.company_name as original_company_name
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
+        LEFT JOIN payments pay ON o.payment_id = pay.id
         ORDER BY o.created_at DESC
     `);
 };
@@ -560,7 +575,8 @@ export const getAdminMissionDetail = async (orderId: string) => {
     const orders: any = await query(`
         SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
                COALESCE(sp.name, pay.description) as pack_name, 
-               pay.missions_quota, pay.missions_used as pack_missions_used
+               pay.missions_quota, pay.missions_used as pack_missions_used,
+               pay.amount as payment_amount
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
@@ -575,8 +591,11 @@ export const getAdminMissionDetail = async (orderId: string) => {
         SELECT * FROM review_proposals WHERE order_id = ? ORDER BY created_at ASC
     `, [orderId]);
 
+    const order = orders[0];
     return {
-        ...orders[0],
+        ...order,
+        // If we have a linked payment, show its actual amount as the price
+        price: order.payment_amount ? parseFloat(order.payment_amount) : order.price,
         proposals
     };
 };

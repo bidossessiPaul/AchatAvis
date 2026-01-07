@@ -97,8 +97,8 @@ export const artisanService = {
         return response.data;
     },
 
-    async getAvailablePacks(): Promise<any[]> {
-        const response = await api.get('/artisan/available-packs');
+    async getAvailablePacks(includeId?: string): Promise<any[]> {
+        const response = await api.get('/artisan/available-packs', { params: { includeId } });
         return response.data;
     }
 };

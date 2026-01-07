@@ -6,6 +6,7 @@ interface CardProps {
     className?: string;
     padding?: 'none' | 'sm' | 'md' | 'lg';
     hover?: boolean;
+    style?: React.CSSProperties;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -13,6 +14,7 @@ export const Card: React.FC<CardProps> = ({
     className = '',
     padding = 'md',
     hover = false,
+    style,
 }) => {
     const classes = [
         'card',
@@ -23,5 +25,5 @@ export const Card: React.FC<CardProps> = ({
         .filter(Boolean)
         .join(' ');
 
-    return <div className={classes}>{children}</div>;
+    return <div className={classes} style={style}>{children}</div>;
 };

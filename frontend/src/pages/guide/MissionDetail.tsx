@@ -9,7 +9,6 @@ import {
     ExternalLink,
     Copy,
     CheckCircle2,
-    AlertCircle,
     ChevronLeft,
     Clock,
     Star,
@@ -38,6 +37,9 @@ export const MissionDetail: React.FC = () => {
     const [selectedGmailId, setSelectedGmailId] = useState<number | null>(null);
     const [compatibilityResult, setCompatibilityResult] = useState<any>(null);
     const [isCompModalOpen, setIsCompModalOpen] = useState(false);
+    const [lockedByOther, setLockedByOther] = useState(false);
+    const [isFull, setIsFull] = useState(false);
+    const [isDailyFull, setIsDailyFull] = useState(false);
 
     const { user } = useAuthStore();
     const { gmailAccounts, fetchGmailAccounts, checkMissionCompatibility } = useAntiDetectionStore();
@@ -49,16 +51,39 @@ export const MissionDetail: React.FC = () => {
         if (user) {
             fetchGmailAccounts(user.id);
         }
+
+        // Cleanup: Release lock on unmount
+        return () => {
+            if (orderId) {
+                guideService.releaseLock(orderId).catch(console.error);
+            }
+        };
     }, [orderId, user, fetchGmailAccounts]);
 
     const loadMissionDetails = async (id: string) => {
         setIsLoading(true);
+        setError(null);
+        setLockedByOther(false);
+        setIsFull(false);
+        setIsDailyFull(false);
         try {
             const data = await guideService.getMissionDetails(id);
             setMission(data);
         } catch (err: any) {
             console.error("Failed to load mission details", err);
-            setError("Impossible de charger les détails de la mission.");
+            const message = err.response?.data?.message || err.message;
+            if (message === 'MISSION_FULL') {
+                setIsFull(true);
+                setError("Désolé, cette mission a déjà atteint son quota d'avis.");
+            } else if (message === 'DAILY_QUOTA_FULL') {
+                setIsDailyFull(true);
+                setError("Le quota journalier pour cette mission a été atteint. Revenez demain !");
+            } else if (message === 'MISSION_LOCKED') {
+                setLockedByOther(true);
+                setError("Un autre guide est déjà en train de traiter cette mission. Veuillez réessayer dans quelques minutes.");
+            } else {
+                setError("Impossible de charger les détails de la mission.");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -157,13 +182,52 @@ export const MissionDetail: React.FC = () => {
 
     if (error || !mission) {
         return (
-            <DashboardLayout title="Erreur">
-                <div style={{ textAlign: 'center', padding: '2rem' }}>
-                    <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 1rem' }} />
-                    <p>{error || "Mission non trouvée"}</p>
-                    <button onClick={() => navigate('/guide')} className="btn-back" style={{ marginTop: '1rem' }}>
+            <DashboardLayout title="Mission indisponible">
+                <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                    <div className={`status-icon-wrapper ${isFull || isDailyFull ? 'warning' : 'locked'}`} style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        background: isFull || isDailyFull ? '#fff7ed' : '#fef2f2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 1.5rem'
+                    }}>
+                        {isFull || isDailyFull ? (
+                            <Star size={40} color="#f97316" />
+                        ) : (
+                            <Shield size={40} color="#ef4444" />
+                        )}
+                    </div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '1rem' }}>
+                        {isFull ? 'Quota Atteint' : isDailyFull ? 'Quota Journalier Atteint' : lockedByOther ? 'Mission en cours' : 'Erreur'}
+                    </h2>
+                    <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: 1.6 }}>
+                        {error}
+                    </p>
+                    <button
+                        onClick={() => navigate('/guide')}
+                        className="btn-back"
+                        style={{
+                            padding: '0.75rem 2rem',
+                            borderRadius: '0.75rem',
+                            background: '#1f2937',
+                            color: 'white',
+                            fontWeight: 600,
+                            border: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
                         Retour aux missions
                     </button>
+
+                    {lockedByOther && (
+                        <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#9ca3af' }}>
+                            <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                            Le verrou expirera automatiquement si le guide ne soumet pas de preuve.
+                        </p>
+                    )}
                 </div>
             </DashboardLayout>
         );
@@ -201,8 +265,28 @@ export const MissionDetail: React.FC = () => {
                                     <h2 className="mission-company-name">
                                         {mission.artisan_company}
                                     </h2>
-                                    <p className="mission-location">
-                                        <MapPin size={18} /> {mission.city || 'Ville non spécifiée'}
+                                    <p className="mission-location" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <MapPin size={18} /> {mission.city || 'Ville non spécifiée'}
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--gray-400)' }}>
+                                            |
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>{(mission as any).sector_icon}</span>
+                                            <span style={{
+                                                fontSize: '0.7rem',
+                                                fontWeight: 800,
+                                                textTransform: 'uppercase',
+                                                background: (mission as any).difficulty === 'hard' ? '#fef2f2' : ((mission as any).difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
+                                                color: (mission as any).difficulty === 'hard' ? '#ef4444' : ((mission as any).difficulty === 'medium' ? '#f59e0b' : '#10b981'),
+                                                padding: '0.2rem 0.5rem',
+                                                borderRadius: '0.4rem',
+                                                border: `1px solid ${(mission as any).difficulty === 'hard' ? '#fee2e2' : ((mission as any).difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
+                                            }}>
+                                                {(mission as any).difficulty === 'easy' ? 'Simple' : ((mission as any).difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                            </span>
+                                        </span>
                                     </p>
                                 </div>
                                 <div className="mission-badge">
@@ -255,14 +339,32 @@ export const MissionDetail: React.FC = () => {
 
                                                     <div className="submission-form">
                                                         <div className="field-group">
-                                                            <label className="field-label">Email Google used</label>
-                                                            <input
-                                                                type="email"
-                                                                placeholder="votre.email@gmail.com"
+                                                            <label className="field-label">Email Google utilisé</label>
+                                                            <select
                                                                 className="text-input"
                                                                 value={googleEmails[proposal.id] || ''}
-                                                                onChange={(e) => setGoogleEmails(prev => ({ ...prev, [proposal.id]: e.target.value }))}
-                                                            />
+                                                                onChange={(e) => {
+                                                                    const email = e.target.value;
+                                                                    setGoogleEmails(prev => ({ ...prev, [proposal.id]: email }));
+
+                                                                    const account = gmailAccounts.find(a => a.email === email);
+                                                                    if (account) {
+                                                                        handleCheckCompatibility(account.id);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <option value="">Choisir un compte Gmail</option>
+                                                                {gmailAccounts.map(account => (
+                                                                    <option key={account.id} value={account.email}>
+                                                                        {account.email} (Niv. {account.local_guide_level || '-'})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            {gmailAccounts.length === 0 && (
+                                                                <Link to="/profile?tab=gmail" className="add-gmail-link" style={{ fontSize: '0.75rem', color: 'var(--primary-brand)', marginTop: '0.5rem', display: 'block' }}>
+                                                                    + Enregistrer un compte Gmail pour continuer
+                                                                </Link>
+                                                            )}
                                                         </div>
                                                         <div className="field-group">
                                                             <label className="field-label">Lien de l'avis posté</label>

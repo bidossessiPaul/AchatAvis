@@ -11,6 +11,8 @@ router.get('/sectors', authenticate, antiDetectionController.getAllSectors);
 // User specific compliance and accounts
 router.get('/compliance-score/:userId', authenticate, antiDetectionController.getComplianceScore);
 router.get('/gmail-accounts/:userId', authenticate, antiDetectionController.getUserGmailAccounts);
+router.get('/guide-recap', authenticate, antiDetectionController.getGuideRecap);
+router.get('/gmail-history/:accountId', authenticate, antiDetectionController.getGmailHistory);
 
 // Gmail Management
 router.post('/gmail-accounts/verify-preview', authenticate, antiDetectionController.verifyGmailAccountPreview);

@@ -13,13 +13,22 @@ export const guideService = {
     async getAvailableMissions(guideId: string) {
         return query(`
             SELECT o.*, 
-                   (o.quantity - o.reviews_received) as remaining_slots
+                   (o.quantity - o.reviews_received) as remaining_slots,
+                   o.locked_by,
+                   o.locked_until,
+                   sd.difficulty,
+                   sd.icon_emoji as sector_icon,
+                   sd.required_gmail_level,
+                   (
+                       SELECT COUNT(*) 
+                       FROM reviews_submissions s 
+                       WHERE s.order_id = o.id 
+                       AND DATE(s.submitted_at) = CURDATE()
+                   ) as daily_submissions_count
             FROM reviews_orders o
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
             WHERE o.status IN ('in_progress')
             AND o.reviews_received < o.quantity
-            -- We show orders even if guide has already participated, 
-            -- but only if they haven't filled ALL slots themselves (unlikely but possible)
-            -- and if there are still slots available globally.
             ORDER BY o.created_at DESC
         `, [guideId]);
     },
@@ -27,9 +36,11 @@ export const guideService = {
     async getMissionDetails(order_id: string, guide_id: string) {
         // Fetch order basic info
         const orderResult: any = await query(`
-            SELECT o.*, a.company_name as artisan_company, a.city
+            SELECT o.*, a.company_name as artisan_company, a.city,
+                   sd.difficulty, sd.icon_emoji as sector_icon
             FROM reviews_orders o
             JOIN artisans_profiles a ON o.artisan_id = a.user_id
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
             WHERE o.id = ?
         `, [order_id]);
 
@@ -38,6 +49,39 @@ export const guideService = {
         }
 
         const order = orderResult[0];
+
+        // 1. Quota Check (Total)
+        if (order.reviews_received >= order.quantity) {
+            throw new Error('MISSION_FULL');
+        }
+
+        // 2. Daily Quota Check
+        const dailyStats: any = await query(`
+            SELECT COUNT(*) as count 
+            FROM reviews_submissions 
+            WHERE order_id = ? AND DATE(submitted_at) = CURDATE()
+        `, [order_id]);
+
+        const dailyCount = dailyStats[0].count;
+        if (dailyCount >= order.reviews_per_day) {
+            throw new Error('DAILY_QUOTA_FULL');
+        }
+
+        // 3. Mission Lock Check
+        if (order.locked_by && order.locked_by !== guide_id) {
+            const lockedUntil = new Date(order.locked_until);
+            if (lockedUntil > new Date()) {
+                throw new Error('MISSION_LOCKED');
+            }
+        }
+
+        // 3. Acquire/Refresh Lock (30 minutes)
+        await query(`
+            UPDATE reviews_orders 
+            SET locked_by = ?, 
+                locked_until = DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+            WHERE id = ?
+        `, [guide_id, order_id]);
 
         // Fetch proposals for this order that have NOT been submitted by ANYONE yet
         // OR have been submitted by the CURRENT guide (to show them in "Published" section)
@@ -60,6 +104,16 @@ export const guideService = {
             proposals,
             submissions
         };
+    },
+
+    async releaseMissionLock(order_id: string, guide_id: string) {
+        await query(`
+            UPDATE reviews_orders 
+            SET locked_by = NULL, 
+                locked_until = NULL
+            WHERE id = ? AND locked_by = ?
+        `, [order_id, guide_id]);
+        return { success: true };
     },
 
     async getMySubmissions(guideId: string) {
@@ -130,7 +184,9 @@ export const guideService = {
         await query(`
             UPDATE reviews_orders 
             SET reviews_received = reviews_received + 1,
-                status = IF(reviews_received + 1 >= quantity, 'completed', 'in_progress')
+                status = IF(reviews_received + 1 >= quantity, 'completed', 'in_progress'),
+                locked_by = NULL,
+                locked_until = NULL
             WHERE id = ?
         `, [data.orderId]);
 

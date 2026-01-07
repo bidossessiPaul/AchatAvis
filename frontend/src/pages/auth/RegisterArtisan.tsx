@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { authApi } from '../../services/api';
+import api, { authApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
+import { Loader } from 'lucide-react';
 import type { ArtisanRegistration } from '../../types';
 import './Auth.css';
 
-const TRADES = [
-    { value: 'plombier', label: 'Plombier' },
-    { value: 'electricien', label: 'Électricien' },
-    { value: 'chauffagiste', label: 'Chauffagiste' },
-    { value: 'couvreur', label: 'Couvreur' },
-    { value: 'vitrier', label: 'Vitrier' },
-    { value: 'paysagiste', label: 'Paysagiste' },
-    { value: 'menage', label: 'Ménage' },
-    { value: 'demenageur', label: 'Déménageur' },
-];
+interface Sector {
+    sector_slug: string;
+    sector_name: string;
+    difficulty: string;
+}
 
 export const RegisterArtisan: React.FC = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const [sectors, setSectors] = useState<Sector[]>([]);
+    const [isLoadingSectors, setIsLoadingSectors] = useState(true);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [success, setSuccess] = useState(false);
 
@@ -30,13 +28,36 @@ export const RegisterArtisan: React.FC = () => {
         password: '',
         companyName: '',
         siret: '',
-        trade: 'plombier',
+        trade: '', // Start empty, will be set once sectors load
         phone: '',
         address: '',
         city: '',
         postalCode: '',
         googleBusinessUrl: '',
     });
+
+    React.useEffect(() => {
+        const fetchSectors = async () => {
+            try {
+                const response = await api.get('/anti-detection/sectors');
+                const grouped = response.data.data;
+                const allSectors = [
+                    ...grouped.easy,
+                    ...grouped.medium,
+                    ...grouped.hard
+                ];
+                setSectors(allSectors);
+                if (allSectors.length > 0) {
+                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch sectors", error);
+            } finally {
+                setIsLoadingSectors(false);
+            }
+        };
+        fetchSectors();
+    }, []);
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -156,21 +177,46 @@ export const RegisterArtisan: React.FC = () => {
 
                                 <div className="input-wrapper">
                                     <label className="input-label">
-                                        Métier <span className="input-required">*</span>
+                                        Métier / Secteur <span className="input-required">*</span>
                                     </label>
-                                    <select
-                                        name="trade"
-                                        className={`input ${errors.trade ? 'input-error' : ''}`}
-                                        value={formData.trade}
-                                        onChange={handleChange}
-                                        required
-                                    >
-                                        {TRADES.map((trade) => (
-                                            <option key={trade.value} value={trade.value}>
-                                                {trade.label}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div style={{ position: 'relative' }}>
+                                        <select
+                                            name="trade"
+                                            className={`input ${errors.trade ? 'input-error' : ''}`}
+                                            value={formData.trade}
+                                            onChange={handleChange}
+                                            disabled={isLoadingSectors}
+                                            required
+                                            style={{ paddingRight: '2.5rem' }}
+                                        >
+                                            {isLoadingSectors ? (
+                                                <option value="">Chargement des secteurs...</option>
+                                            ) : (
+                                                <>
+                                                    <optgroup label="Secteurs Faciles">
+                                                        {sectors.filter(s => s.difficulty === 'easy').map(s => (
+                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                    <optgroup label="Secteurs Moyens">
+                                                        {sectors.filter(s => s.difficulty === 'medium').map(s => (
+                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                    <optgroup label="Secteurs Difficiles">
+                                                        {sectors.filter(s => s.difficulty === 'hard').map(s => (
+                                                            <option key={s.sector_slug} value={s.sector_slug}>{s.sector_name}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                </>
+                                            )}
+                                        </select>
+                                        {isLoadingSectors && (
+                                            <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+                                                <Loader size={16} className="animate-spin" style={{ color: '#94a3b8' }} />
+                                            </div>
+                                        )}
+                                    </div>
                                     {errors.trade && <p className="input-error-text">{errors.trade}</p>}
                                 </div>
 
