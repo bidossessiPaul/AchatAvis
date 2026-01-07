@@ -239,6 +239,20 @@ export const antiDetectionController = {
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
             }
 
+            // Check if maps_profile_url is already used by another user (if provided)
+            if (maps_profile_url) {
+                const existing: any = await query(
+                    'SELECT user_id FROM guide_gmail_accounts WHERE maps_profile_url = ? AND user_id != ?',
+                    [maps_profile_url, user_id]
+                );
+                if (existing && existing.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Ce lien Google Maps est déjà utilisé par un autre compte.'
+                    });
+                }
+            }
+
             // Calcul du trust score initial basé sur les données vérifiées
             let trustScore = 15; // Base pour un compte déclaré
             if (local_guide_level > 1) trustScore += (local_guide_level * 5);
@@ -274,8 +288,9 @@ export const antiDetectionController = {
             return res.json({ success: true, message: 'Compte ajouté et vérifié avec succès' });
         } catch (error: any) {
             if (error.code === 'ER_DUP_ENTRY') {
-                return res.status(400).json({ success: false, error: 'Ce lien Google Maps est déjà utilisé par un autre compte.' });
+                return res.status(400).json({ success: false, error: 'Cet email est déjà enregistré pour votre compte.' });
             }
+            console.error('Error adding Gmail account:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     },
