@@ -95,6 +95,8 @@ export const getArtisanDetail = async (userId: string) => {
         WHERE u.id = ? AND u.role = 'artisan'
     `, [userId]);
 
+    if (!profile || profile.length === 0) return null;
+
     const orders = await query(`
         SELECT id, status, price as amount, quantity as credits_purchased, created_at, reviews_received as validated_reviews_count
         FROM reviews_orders
@@ -121,6 +123,8 @@ export const getGuideDetail = async (userId: string) => {
         JOIN guides_profiles gp ON u.id = gp.user_id
         WHERE u.id = ? AND u.role = 'guide'
     `, [userId]);
+
+    if (!profile || profile.length === 0) return null;
 
     const submissions = await query(`
         SELECT s.id, s.status, s.earnings, s.submitted_at as created_at, s.review_url as proof_url,
@@ -604,7 +608,8 @@ export const getAdminMissionDetail = async (orderId: string) => {
         SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
                COALESCE(sp.name, pay.description) as pack_name, 
                pay.missions_quota, pay.missions_used as pack_missions_used,
-               pay.amount as payment_amount
+               pay.amount as payment_amount,
+               o.payout_per_review
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
@@ -638,10 +643,24 @@ export const updateMission = async (orderId: string, data: any) => {
     if (fields.length === 0) return;
 
     const setClause = fields.map(field => `${field} = ?`).join(', ');
-    return await query(
+
+    // Perform the update on reviews_orders
+    const result = await query(
         `UPDATE reviews_orders SET ${setClause} WHERE id = ?`,
         [...values, orderId]
     );
+
+    // If payout_per_review was updated, cascade the change to PENDING submissions
+    if (data.payout_per_review !== undefined) {
+        await query(
+            `UPDATE reviews_submissions 
+             SET earnings = ? 
+             WHERE order_id = ? AND status = 'pending'`,
+            [data.payout_per_review, orderId]
+        );
+    }
+
+    return result;
 };
 
 /**

@@ -97,21 +97,24 @@ export const guideService = {
             WHERE id = ?
         `, [guide_id, order_id]);
 
-        // Fetch proposals for this order that have NOT been submitted by ANYONE yet
-        // OR have been submitted by the CURRENT guide (to show them in "Published" section)
-        const proposals = await query(`
-            SELECT p.* FROM review_proposals p
-            LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
-            WHERE p.order_id = ?
-            AND (s.id IS NULL OR s.guide_id = ?)
-            ORDER BY p.created_at ASC
-        `, [order_id, guide_id]);
+        // DEBUG: Ensuring global fetch
+        console.log(`[GUIDE] Fetching global details for ${order_id}`);
+        // Fetch ALL proposals for this order
 
-        // Fetch submissions already made by this guide for this order
+        const proposals = await query(`
+            SELECT * FROM review_proposals
+            WHERE order_id = ?
+            ORDER BY created_at ASC
+        `, [order_id]);
+
+        // Fetch ALL submissions for this order (from ALL guides)
         const submissions = await query(`
-            SELECT * FROM reviews_submissions
-            WHERE order_id = ? AND guide_id = ?
-        `, [order_id, guide_id]);
+            SELECT s.*, u.full_name as guide_name, u.avatar_url as guide_avatar
+            FROM reviews_submissions s
+            LEFT JOIN users u ON s.guide_id = u.id
+            WHERE s.order_id = ?
+            ORDER BY s.submitted_at DESC
+        `, [order_id]);
 
         return {
             ...order,
@@ -150,19 +153,29 @@ export const guideService = {
     }) {
         // 0. VÉRIFICATION ANTI-DÉTECTION (si gmailAccountId est fourni)
         let currentSectorSlug = '';
+        let payoutAmount = 2.00; // Default value
         if (data.gmailAccountId) {
             const compatibility = await antiDetectionService.canTakeMission(guideId, data.orderId, data.gmailAccountId);
             if (!compatibility.can_take) {
                 throw new Error(`Anti-Détection: ${compatibility.message}`);
             }
 
-            // Récupérer le slug du secteur pour plus tard
-            const campaign: any = await query(`
-                SELECT sd.sector_slug FROM reviews_orders o
+            // Récupérer le slug du secteur pour plus tard et le payout_per_review
+            const orderInfo: any = await query(`
+                SELECT o.payout_per_review, sd.sector_slug 
+                FROM reviews_orders o
                 LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
                 WHERE o.id = ?
             `, [data.orderId]);
-            currentSectorSlug = campaign?.[0]?.sector_slug || '';
+
+            if (orderInfo && orderInfo.length > 0) {
+                currentSectorSlug = orderInfo[0].sector_slug || '';
+                payoutAmount = Number(orderInfo[0].payout_per_review || 1.50);
+            }
+        } else {
+            // Fallback fetch if no gmail account used (should not happen in prod for most cases but good for safety)
+            const orderInfo: any = await query('SELECT payout_per_review FROM reviews_orders WHERE id = ?', [data.orderId]);
+            payoutAmount = Number(orderInfo[0]?.payout_per_review || 1.50);
         }
 
         // 1. Check if this guide already submitted for THIS proposal
@@ -191,8 +204,8 @@ export const guideService = {
         await query(`
             INSERT INTO reviews_submissions 
             (id, guide_id, artisan_id, order_id, proposal_id, review_url, google_email, gmail_account_id, status, earnings, submitted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 2.00, NOW())
-        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null]);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
+        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null, payoutAmount]);
 
         // 4. Increment reviews_received in order and update status
         await query(`
