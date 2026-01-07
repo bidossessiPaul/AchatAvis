@@ -67,6 +67,8 @@ export const BillingPage: React.FC = () => {
         .filter(p => p.status === 'completed')
         .reduce((acc, curr) => acc + (curr.missions_quota || 0), 0);
 
+    const activePack = packs.find(p => p.id === user?.subscription_tier);
+
     if (isFetching) {
         return (
             <DashboardLayout title="Ma Facturation">
@@ -129,6 +131,17 @@ export const BillingPage: React.FC = () => {
                     {/* Quick Stats sidebar for dates */}
                     <div className="billing-glass-card dates-card">
                         <h3>Détails Abonnement</h3>
+
+                        <div className="info-row">
+                            <Zap size={16} className="text-yellow-500" />
+                            <div>
+                                <span className="info-label">Pack Actuel</span>
+                                <span className="info-value">
+                                    {activePack ? activePack.name : (user?.subscription_tier || 'Aucun pack actif')}
+                                </span>
+                            </div>
+                        </div>
+
                         <div className="info-row">
                             <Calendar size={16} />
                             <div>
@@ -145,7 +158,7 @@ export const BillingPage: React.FC = () => {
                                 <span className="info-value">{totalReviews} Avis cumulés</span>
                             </div>
                         </div>
-                        <button className="receipt-button">
+                        <button className="receipt-button" onClick={() => window.open('https://billing.stripe.com/p/login/test_6oE000000000000', '_blank')}>
                             <CreditCard size={16} />
                             Gérer sur Stripe
                         </button>

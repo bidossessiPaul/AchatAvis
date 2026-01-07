@@ -23,7 +23,21 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => {
                 </div>
 
                 <div className="topbar-actions">
-                    {/* Add notification bell or other actions here */}
+                    {/* Region Display */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                        background: '#f1f5f9',
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '2rem'
+                    }}>
+                        <span style={{ fontSize: '1rem' }}>🌍</span>
+                        <strong>{user?.last_detected_country || 'FR'}</strong>
+                    </div>
+
                     <Link to="/profile" className="user-avatar-wrapper" title="Mon Profil">
                         {user?.avatar_url ? (
                             <img src={user.avatar_url} alt={user.full_name} className="topbar-avatar" />

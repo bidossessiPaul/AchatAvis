@@ -24,6 +24,8 @@ import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
 import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
 import { QuizCertificationPage } from './pages/guide/QuizCertificationPage';
+import { SuspensionStatusPage } from './pages/guide/SuspensionStatusPage';
+import { SuspensionBanner } from './components/SuspensionBanner';
 import { OrdersList } from './pages/artisan/OrdersList';
 import { ReceivedReviews } from './pages/artisan/ReceivedReviews';
 import { BillingPage } from './pages/artisan/BillingPage';
@@ -41,18 +43,44 @@ import { PacksManagement } from './pages/admin/PacksManagement';
 // import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
+import { SuspensionAdminPage } from './pages/admin/SuspensionAdminPage';
 import { Profile } from './pages/Profile';
+import SuspendedPage from './pages/SuspendedPage';
 import { useAuthStore } from './context/authStore';
 
 function App() {
-    const { checkAuth } = useAuthStore();
+    const { checkAuth, isAuthenticated } = useAuthStore();
+
+    // Synchronous URL fixing for malformed links (e.g. starting with //)
+    // This must happen before the first render to avoid catching the "*" route redirect
+    if (window.location.pathname.startsWith('//')) {
+        const cleanPath = window.location.pathname.replace(/\/+/g, '/');
+        window.location.replace(cleanPath + window.location.search);
+        return null;
+    }
 
     useEffect(() => {
+        // Log current path for debugging
+        console.log('📍 [App] Current Path:', window.location.pathname);
+
+        // Initial check
         checkAuth();
-    }, [checkAuth]);
+
+        // Polling for account status (every 30 seconds)
+        // This ensures real-time enforcement of suspensions even without user interaction
+        const pollInterval = setInterval(() => {
+            if (isAuthenticated) {
+                console.log('🔄 [App] Background status check...');
+                checkAuth(true);
+            }
+        }, 30000);
+
+        return () => clearInterval(pollInterval);
+    }, [checkAuth, isAuthenticated]);
 
     return (
         <BrowserRouter>
+            <SuspensionBanner />
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
                 {/* Public Routes */}
@@ -78,16 +106,14 @@ function App() {
                         <ForgotPassword />
                     </PublicRoute>
                 } />
-                <Route path="/reset-password" element={
-                    <PublicRoute>
-                        <ResetPassword />
-                    </PublicRoute>
-                } />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="//reset-password" element={<ResetPassword />} />
                 <Route path="/admin/accept-invite" element={
                     <PublicRoute>
                         <AcceptAdminInvite />
                     </PublicRoute>
                 } />
+                <Route path="/suspended" element={<SuspendedPage />} />
 
                 {/* Protected Routes */}
 
@@ -214,6 +240,11 @@ function App() {
                         <QuizCertificationPage />
                     </ProtectedRoute>
                 } />
+                <Route path="/guide/status" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <SuspensionStatusPage />
+                    </ProtectedRoute>
+                } />
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={
@@ -312,6 +343,14 @@ function App() {
                 <Route path="/profile" element={
                     <ProtectedRoute allowedRoles={['admin', 'artisan', 'guide']}>
                         <Profile />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/admin/suspensions" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission="super_admin">
+                            <SuspensionAdminPage />
+                        </PermissionGuard>
                     </ProtectedRoute>
                 } />
 

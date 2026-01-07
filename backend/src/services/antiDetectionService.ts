@@ -348,13 +348,41 @@ class AntiDetectionService {
     }
 
     /**
-     * Recalculer le score de conformité global
+     * Recalculer le score de conformité global et récupérer les statistiques étendues
      */
-    async calculateComplianceScore(userId: string): Promise<number> {
-        const result: any = await query(`
-            SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
+    async getExtendedComplianceData(userId: string): Promise<any> {
+        // 1. Récupérer le score actuel
+        const scoreResult: any = await query(`
+            SELECT * FROM guide_compliance_scores WHERE user_id = ?
         `, [userId]);
-        return result?.[0]?.compliance_score || 100;
+
+        let data = scoreResult?.[0] || { compliance_score: 100, rules_followed_count: 0, rules_violated_count: 0 };
+
+        // 2. Statistiques des 30 derniers jours
+        const statsResult: any = await query(`
+            SELECT 
+                COUNT(CASE WHEN status = 'validated' THEN 1 END) as validated_count,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
+            FROM reviews_submissions
+            WHERE guide_id = ? 
+            AND submitted_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        `, [userId]);
+
+        const stats = statsResult[0] || { validated_count: 0, rejected_count: 0 };
+
+        // 3. Calculer le taux de réussite sur 30 jours
+        const total = stats.validated_count + stats.rejected_count;
+        const successRate = total > 0 ? Math.round((stats.validated_count / total) * 100) : 100;
+
+        return {
+            ...data,
+            last_30_days: {
+                validated: stats.validated_count,
+                rejected: stats.rejected_count,
+                success_rate: successRate,
+                total
+            }
+        };
     }
 }
 

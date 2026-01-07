@@ -1,0 +1,3 @@
+ALTER TABLE users
+ADD COLUMN last_detected_country VARCHAR(10) NULL,
+ADD COLUMN last_ip VARCHAR(45) NULL;

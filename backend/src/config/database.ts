@@ -26,9 +26,9 @@ export const pool = mysql.createPool(poolConfig);
 /**
  * Execute a query with parameters
  */
-export const query = async (sql: string, params?: any) => {
+export const query = async (sql: string, params?: any): Promise<any> => {
     const [results] = await pool.execute(sql, params);
-    return results;
+    return results as any;
 };
 
 export default pool;

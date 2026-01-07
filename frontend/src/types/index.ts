@@ -20,6 +20,7 @@ export interface User {
     missions_allowed?: number;
     missions_used?: number;
     permissions?: Record<string, boolean>; // For admin team members
+    last_detected_country?: string;
     // Artisan Profile Fields
     company_name?: string;
     siret?: string;

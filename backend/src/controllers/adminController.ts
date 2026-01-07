@@ -35,10 +35,10 @@ export const getGuides = async (_req: Request, res: Response) => {
  */
 export const updateUserStatus = async (req: Request, res: Response) => {
     const { userId } = req.params;
-    const { status } = req.body;
+    const { status, reason } = req.body;
 
     try {
-        await adminService.updateUserStatus(userId, status);
+        await adminService.updateUserStatus(userId, status, reason);
         res.json({ message: `User status updated to ${status}` });
     } catch (error) {
         console.error('Update user status error:', error);
@@ -58,6 +58,20 @@ export const deleteUser = async (req: Request, res: Response) => {
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
         console.error('Delete user error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Get all users (simplified)
+ * GET /api/admin/users
+ */
+export const getUsers = async (_req: Request, res: Response) => {
+    try {
+        const users = await adminService.getAllUsers();
+        res.json(users);
+    } catch (error) {
+        console.error('Get all users error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

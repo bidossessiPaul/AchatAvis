@@ -135,6 +135,20 @@ api.interceptors.response.use(
             }
         }
 
+        // Handle 403 Forbidden - Redirect to /suspended only if account is actually suspended
+        if (error.response && error.response.status === 403 && error.response.data?.code === 'ACCOUNT_SUSPENDED') {
+            // Check if we're already on the suspended page to avoid infinite loops
+            if (!window.location.pathname.includes('/suspended')) {
+                // Pass optional state if available in response data
+                const userData = error.response.data;
+                const params = new URLSearchParams();
+                if (userData?.user_name) params.set('userName', userData.user_name);
+                if (userData?.country) params.set('country', userData.country);
+
+                window.location.href = '/suspended?' + params.toString();
+            }
+        }
+
         return Promise.reject(error);
     }
 );
@@ -235,6 +249,11 @@ export const authApi = {
         const response = await api.post('/auth/reset-password', data);
         return response.data;
     },
+
+    detectRegion: async (): Promise<{ country: string, ip: string }> => {
+        const response = await api.get('/auth/detect-region');
+        return response.data;
+    },
 };
 
 // Payout API
@@ -310,6 +329,11 @@ export const adminApi = {
         await api.delete(`/admin/users/${userId}`);
     },
 
+    getUsers: async (): Promise<any[]> => {
+        const response = await api.get('/admin/users');
+        return response.data;
+    },
+
     // Review Submissions
     getAllSubmissions: async (): Promise<any[]> => {
         const response = await api.get('/admin/submissions');
@@ -375,6 +399,24 @@ export const adminApi = {
 
     deletePack: async (id: string): Promise<void> => {
         await api.delete(`/admin/packs/${id}`);
+    },
+};
+
+// Suspension API
+export const suspensionApi = {
+    getActiveSuspensions: async (): Promise<{ success: boolean, data: any[] }> => {
+        const response = await api.get('/suspensions/active');
+        return response.data;
+    },
+
+    approveSuspension: async (suspensionId: number): Promise<{ message: string }> => {
+        const response = await api.post(`/suspensions/${suspensionId}/approve`);
+        return response.data;
+    },
+
+    createManualSuspension: async (data: { user_id: string, reason_details: string, suspension_level_id: number, admin_notes?: string }): Promise<{ message: string }> => {
+        const response = await api.post('/suspensions/manual', data);
+        return response.data;
     },
 };
 

@@ -36,6 +36,12 @@ interface ComplianceData {
     recommendations: string[];
     certification_passed: boolean;
     certification_score: number | null;
+    last_30_days: {
+        validated: number;
+        rejected: number;
+        success_rate: number;
+        total: number;
+    };
 }
 
 interface AntiDetectionState {

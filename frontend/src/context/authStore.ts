@@ -8,6 +8,10 @@ interface AuthState {
     isAuthenticated: boolean;
     isLoading: boolean;
     error: string | null;
+    errorCode?: string | null;
+    detectedCountry?: string | null;
+    suspendedUserName?: string | null;
+    suspension?: any | null;
     mfaToken: string | null;
     twoFactorRequired: boolean;
 
@@ -16,9 +20,10 @@ interface AuthState {
     login: (email: string, password: string) => Promise<any>;
     verify2FA: (token: string) => Promise<void>;
     logout: () => Promise<void>;
-    checkAuth: () => Promise<void>;
+    checkAuth: (silent?: boolean) => Promise<void>;
     silentRefresh: () => Promise<void>;
     clearError: () => void;
+    fetchDetectedRegion: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,6 +33,10 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             error: null,
+            errorCode: null,
+            detectedCountry: null,
+            suspendedUserName: null,
+            suspension: null,
             mfaToken: null,
             twoFactorRequired: false,
 
@@ -43,6 +52,8 @@ export const useAuthStore = create<AuthState>()(
                             twoFactorRequired: true,
                             mfaToken: response.mfaToken as string,
                             isLoading: false,
+                            error: null,
+                            errorCode: null,
                         });
                         return response;
                     }
@@ -63,11 +74,16 @@ export const useAuthStore = create<AuthState>()(
                         isAuthenticated: true,
                         isLoading: false,
                         error: null,
+                        errorCode: null,
                     });
                     return response;
                 } catch (error: any) {
                     set({
                         error: error.response?.data?.error || 'Login failed',
+                        errorCode: error.response?.data?.code || null,
+                        detectedCountry: error.response?.data?.country || null,
+                        suspendedUserName: error.response?.data?.user_name || null,
+                        suspension: error.response?.data?.suspension || null,
                         isLoading: false,
                     });
                     throw error;
@@ -117,14 +133,14 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            checkAuth: async () => {
+            checkAuth: async (silent = false) => {
                 const token = localStorage.getItem('accessToken');
                 if (!token) {
                     set({ user: null, isAuthenticated: false });
                     return;
                 }
 
-                set({ isLoading: true });
+                if (!silent) set({ isLoading: true });
                 try {
                     const response = await authApi.getMe();
                     const userData = response.user;
@@ -175,7 +191,16 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            clearError: () => set({ error: null }),
+            clearError: () => set({ error: null, errorCode: null, detectedCountry: null, suspendedUserName: null, suspension: null }),
+
+            fetchDetectedRegion: async () => {
+                try {
+                    const data = await authApi.detectRegion();
+                    set({ detectedCountry: data.country || null });
+                } catch (error) {
+                    console.error('Failed to fetch detected region', error);
+                }
+            },
         }),
         {
             name: 'auth-storage',
