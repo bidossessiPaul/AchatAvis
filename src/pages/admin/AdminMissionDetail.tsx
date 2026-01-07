@@ -72,7 +72,7 @@ export const AdminMissionDetail: React.FC = () => {
                 id, artisan_id, artisan_name, artisan_email, artisan_company,
                 proposals, created_at, published_at, reviews_received,
                 pack_name, missions_quota, pack_missions_used,
-                price, quantity, // User asked not to modify these via UI
+                price, quantity, payment_amount, // User asked not to modify these via UI
                 ...updateData
             } = formData;
 
@@ -204,9 +204,23 @@ export const AdminMissionDetail: React.FC = () => {
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label>Prix (€)</label>
+                                <label>Prix Global (Payé par l'Artisan)</label>
                                 <div className="admin-input" style={{ background: '#f9fafb', color: '#6b7280' }}>
                                     {Number(mission.price || 0).toFixed(2)} €
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Gain par avis (Pour le Guide)</label>
+                                <div className="input-with-suffix" style={{ position: 'relative' }}>
+                                    <input
+                                        type="number"
+                                        step="0.10"
+                                        className="admin-input"
+                                        value={formData.payout_per_review || 1.50}
+                                        onChange={(e) => setFormData({ ...formData, payout_per_review: parseFloat(e.target.value) })}
+                                        style={{ paddingRight: '2rem' }}
+                                    />
+                                    <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: '13px' }}>€</span>
                                 </div>
                             </div>
                             <div className="form-group admin-col-span-2">

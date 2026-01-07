@@ -48,6 +48,47 @@ export const GuideDashboard: React.FC = () => {
                 </div>
             </div>
 
+            {/* Anti-Detection Alert */}
+            <div
+                onClick={() => navigate('/guide/anti-detection')}
+                style={{
+                    marginBottom: '2rem',
+                    background: 'linear-gradient(to right, #fff7ed, #ffedd5)',
+                    border: '1px solid #fed7aa',
+                    borderRadius: '1rem',
+                    padding: '1rem 1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                    boxShadow: '0 2px 5px rgba(249, 115, 22, 0.1)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            >
+                <div style={{
+                    background: '#fff',
+                    padding: '0.5rem',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(249, 115, 22, 0.1)'
+                }}>
+                    <ShieldCheck size={24} color="#f97316" />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#9a3412', marginBottom: '0.2rem' }}>
+                        Protégez vos gains et vos comptes !
+                    </h3>
+                    <p style={{ fontSize: '0.875rem', color: '#c2410c', margin: 0 }}>
+                        Découvrez nos conseils anti-détection pour éviter que vos avis ne soient supprimés par Google.
+                    </p>
+                </div>
+                <ArrowRight size={20} color="#9a3412" />
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>
                     {missions.length} Missions près de chez vous
@@ -98,7 +139,7 @@ export const GuideDashboard: React.FC = () => {
                                         alignItems: 'center',
                                         gap: '0.25rem'
                                     }}>
-                                        <DollarSign size={14} /> 2.00€
+                                        <DollarSign size={14} /> {Number(mission.payout_per_review || 1.50).toFixed(2)}€
                                     </div>
                                     <div style={{ color: '#6b7280', fontSize: '0.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                                         <Clock size={14} />
