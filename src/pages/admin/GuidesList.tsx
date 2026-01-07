@@ -35,15 +35,15 @@ export const GuidesList: React.FC = () => {
         loadGuides();
     }, []);
 
-    const loadGuides = async () => {
-        setIsLoading(true);
+    const loadGuides = async (silent = false) => {
+        if (!silent) setIsLoading(true);
         try {
             const data = await adminService.getGuides();
             setGuides(data);
         } catch (error) {
             toast.error('Erreur lors du chargement des guides');
         } finally {
-            setIsLoading(false);
+            if (!silent) setIsLoading(false);
         }
     };
 
@@ -52,7 +52,7 @@ export const GuidesList: React.FC = () => {
         try {
             await adminService.updateUserStatus(userId, newStatus);
             toast.success('Statut mis à jour');
-            loadGuides();
+            loadGuides(true);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
         }
@@ -63,7 +63,7 @@ export const GuidesList: React.FC = () => {
         try {
             await adminService.deleteUser(userId);
             toast.success('Compte supprimé');
-            loadGuides();
+            loadGuides(true);
         } catch (error) {
             toast.error('Erreur lors de la suppression');
         }

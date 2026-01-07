@@ -35,15 +35,15 @@ export const ArtisansList: React.FC = () => {
         loadArtisans();
     }, []);
 
-    const loadArtisans = async () => {
-        setIsLoading(true);
+    const loadArtisans = async (silent = false) => {
+        if (!silent) setIsLoading(true);
         try {
             const data = await adminService.getArtisans();
             setArtisans(data);
         } catch (error) {
             toast.error('Erreur lors du chargement des artisans');
         } finally {
-            setIsLoading(false);
+            if (!silent) setIsLoading(false);
         }
     };
 
@@ -52,7 +52,7 @@ export const ArtisansList: React.FC = () => {
         try {
             await adminService.updateUserStatus(userId, newStatus);
             toast.success('Statut mis à jour');
-            loadArtisans();
+            loadArtisans(true);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
         }
@@ -63,7 +63,7 @@ export const ArtisansList: React.FC = () => {
         try {
             await adminService.deleteUser(userId);
             toast.success('Compte supprimé');
-            loadArtisans();
+            loadArtisans(true);
         } catch (error) {
             toast.error('Erreur lors de la suppression');
         }

@@ -67,8 +67,8 @@ export const ReviewValidation: React.FC = () => {
         fetchData();
     }, []);
 
-    const fetchData = async () => {
-        setIsLoading(true);
+    const fetchData = async (silent = false) => {
+        if (!silent) setIsLoading(true);
         try {
             const [subs, missions] = await Promise.all([
                 adminApi.getAllSubmissions(),
@@ -79,7 +79,7 @@ export const ReviewValidation: React.FC = () => {
         } catch (error) {
             toast.error('Erreur lors du chargement des données');
         } finally {
-            setIsLoading(false);
+            if (!silent) setIsLoading(false);
         }
     };
 
@@ -91,7 +91,7 @@ export const ReviewValidation: React.FC = () => {
             setShowRejectModal(false);
             setRejectionReason('');
             setSelectedSubmissionId(null);
-            fetchData();
+            fetchData(true);
         } catch (error) {
             toast.error('Erreur lors de la mise à jour');
         } finally {
@@ -104,7 +104,7 @@ export const ReviewValidation: React.FC = () => {
         try {
             await adminApi.approveMission(orderId);
             toast.success('Mission publiée !');
-            fetchData();
+            fetchData(true);
         } catch (error) {
             toast.error('Erreur lors de la publication');
         } finally {

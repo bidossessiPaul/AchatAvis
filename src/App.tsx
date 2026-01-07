@@ -49,11 +49,34 @@ import SuspendedPage from './pages/SuspendedPage';
 import { useAuthStore } from './context/authStore';
 
 function App() {
-    const { checkAuth } = useAuthStore();
+    const { checkAuth, isAuthenticated } = useAuthStore();
+
+    // Synchronous URL fixing for malformed links (e.g. starting with //)
+    // This must happen before the first render to avoid catching the "*" route redirect
+    if (window.location.pathname.startsWith('//')) {
+        const cleanPath = window.location.pathname.replace(/\/+/g, '/');
+        window.location.replace(cleanPath + window.location.search);
+        return null;
+    }
 
     useEffect(() => {
+        // Log current path for debugging
+        console.log('📍 [App] Current Path:', window.location.pathname);
+
+        // Initial check
         checkAuth();
-    }, [checkAuth]);
+
+        // Polling for account status (every 30 seconds)
+        // This ensures real-time enforcement of suspensions even without user interaction
+        const pollInterval = setInterval(() => {
+            if (isAuthenticated) {
+                console.log('🔄 [App] Background status check...');
+                checkAuth(true);
+            }
+        }, 30000);
+
+        return () => clearInterval(pollInterval);
+    }, [checkAuth, isAuthenticated]);
 
     return (
         <BrowserRouter>
@@ -83,11 +106,8 @@ function App() {
                         <ForgotPassword />
                     </PublicRoute>
                 } />
-                <Route path="/reset-password" element={
-                    <PublicRoute>
-                        <ResetPassword />
-                    </PublicRoute>
-                } />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="//reset-password" element={<ResetPassword />} />
                 <Route path="/admin/accept-invite" element={
                     <PublicRoute>
                         <AcceptAdminInvite />

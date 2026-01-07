@@ -1,14 +1,16 @@
 import React from 'react';
 import { ShieldAlert, Mail, ArrowLeft, ExternalLink, MessageCircle } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 const SuspendedPage: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
 
-    // Support both state (if redirected internally) and searchParams (if redirected via window.location.href)
-    const userName = searchParams.get('userName');
-    const detectedCountry = searchParams.get('country');
+    // Get data from location.state (passed from Login page) or searchParams (from global interceptor)
+    const userName = location.state?.userName || searchParams.get('userName');
+    const detectedCountry = location.state?.country || searchParams.get('country');
+    const suspension = location.state?.suspension;
 
     return (
         <div style={{
@@ -91,6 +93,74 @@ const SuspendedPage: React.FC = () => {
                         <p style={{ margin: 0 }}>
                             Votre compte a été suspendu par mesure de sécurité ou suite à une détection automatique d'activité inhabituelle.
                         </p>
+                    )}
+
+                    {suspension && (
+                        <div style={{
+                            marginTop: '2rem',
+                            padding: '1.5rem',
+                            background: 'rgba(239, 68, 68, 0.05)',
+                            borderRadius: '1.25rem',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            textAlign: 'left'
+                        }}>
+                            <div style={{ marginBottom: '1rem' }}>
+                                <span style={{
+                                    display: 'inline-block',
+                                    padding: '0.375rem 0.875rem',
+                                    background: suspension.badge_color || '#ef4444',
+                                    color: '#fff',
+                                    borderRadius: '0.5rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 700,
+                                    marginBottom: '0.75rem'
+                                }}>
+                                    {suspension.icon_emoji || '🚫'} {suspension.level_name || `Niveau ${suspension.level_number}`}
+                                </span>
+                            </div>
+
+                            <p style={{ margin: '0.5rem 0', fontSize: '0.875rem' }}>
+                                <strong style={{ color: '#cbd5e1' }}>Raison :</strong>{' '}
+                                <span style={{ color: '#94a3b8' }}>{suspension.reason_details || 'Non spécifiée'}</span>
+                            </p>
+
+                            {suspension.started_at && (
+                                <p style={{ margin: '0.5rem 0', fontSize: '0.875rem' }}>
+                                    <strong style={{ color: '#cbd5e1' }}>Début :</strong>{' '}
+                                    <span style={{ color: '#94a3b8' }}>
+                                        {new Date(suspension.started_at).toLocaleDateString('fr-FR', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
+                                </p>
+                            )}
+
+                            {suspension.ends_at && (
+                                <p style={{ margin: '0.5rem 0', fontSize: '0.875rem' }}>
+                                    <strong style={{ color: '#cbd5e1' }}>Fin prévue :</strong>{' '}
+                                    <span style={{ color: '#94a3b8' }}>
+                                        {new Date(suspension.ends_at).toLocaleDateString('fr-FR', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </span>
+                                </p>
+                            )}
+
+                            {suspension.days_total && (
+                                <p style={{ margin: '0.5rem 0', fontSize: '0.875rem' }}>
+                                    <strong style={{ color: '#cbd5e1' }}>Durée :</strong>{' '}
+                                    <span style={{ color: '#94a3b8' }}>{suspension.days_total} jour(s)</span>
+                                </p>
+                            )}
+                        </div>
                     )}
 
                     {detectedCountry && (

@@ -135,15 +135,17 @@ api.interceptors.response.use(
             }
         }
 
-        // Handle 403 Forbidden - Redirect to /suspended
-        if (error.response && error.response.status === 403) {
+        // Handle 403 Forbidden - Redirect to /suspended only if account is actually suspended
+        if (error.response && error.response.status === 403 && error.response.data?.code === 'ACCOUNT_SUSPENDED') {
             // Check if we're already on the suspended page to avoid infinite loops
             if (!window.location.pathname.includes('/suspended')) {
                 // Pass optional state if available in response data
                 const userData = error.response.data;
-                window.location.href = '/suspended' +
-                    (userData?.user_name ? `?userName=${encodeURIComponent(userData.user_name)}` : '') +
-                    (userData?.country ? `${userData.user_name ? '&' : '?'}country=${encodeURIComponent(userData.country)}` : '');
+                const params = new URLSearchParams();
+                if (userData?.user_name) params.set('userName', userData.user_name);
+                if (userData?.country) params.set('country', userData.country);
+
+                window.location.href = '/suspended?' + params.toString();
             }
         }
 

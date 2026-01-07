@@ -9,8 +9,15 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
-    const { isAuthenticated, user, isLoading } = useAuthStore();
+    const { isAuthenticated, user, isLoading, checkAuth } = useAuthStore();
     const location = useLocation();
+
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            // Check status on every navigation to catch suspensions in real-time
+            checkAuth(true);
+        }
+    }, [location.pathname, checkAuth, isAuthenticated]);
 
     if (isLoading) {
         return <LoadingOverlay text="Vérification de l'accès..." />;
