@@ -436,7 +436,7 @@ export const SuspensionAdminPage: React.FC = () => {
                     background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50
                 }}>
                     <div style={{ background: 'white', padding: '2rem', borderRadius: '1rem', width: '400px', maxWidth: '90%' }}>
-                        <h3 style={{ marginTop: 0 }}>Suspendre un Utilisateur</h3>
+                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Suspendre un Utilisateur</h3>
                         <form onSubmit={handleManualSuspend}>
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Utilisateur</label>
