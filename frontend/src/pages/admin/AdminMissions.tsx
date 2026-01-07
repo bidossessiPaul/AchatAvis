@@ -12,7 +12,7 @@ import {
     Building2,
     Briefcase
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
 import './AdminLists.css';
@@ -51,23 +51,26 @@ export const AdminMissions: React.FC = () => {
             const data = await adminApi.getMissions();
             setMissions(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des missions');
+            showError('Erreur', 'Erreur lors du chargement des missions');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette mission ? Cette action est irréversible.')) {
-            return;
-        }
+        const result = await showConfirm(
+            'Supprimer cette mission ?',
+            'Cette action est irréversible et supprimera toutes les données associées.'
+        );
+
+        if (!result.isConfirmed) return;
 
         try {
             await adminApi.deleteMission(id);
-            toast.success('Mission supprimée');
+            showSuccess('Succès', 'Mission supprimée');
             loadMissions();
         } catch (error) {
-            toast.error('Erreur lors de la suppression');
+            showError('Erreur', 'Erreur lors de la suppression');
         }
     };
 

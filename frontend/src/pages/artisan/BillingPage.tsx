@@ -14,7 +14,7 @@ import {
     Target
 } from 'lucide-react';
 import { SubscriptionPack } from '../../types';
-import toast from 'react-hot-toast';
+import { showError } from '../../utils/Swal';
 import './BillingPage.css';
 import '../artisan/PlanSelection.css';
 
@@ -36,7 +36,7 @@ export const BillingPage: React.FC = () => {
                 setHistory(historyData);
             } catch (error) {
                 console.error("Failed to load billing data", error);
-                toast.error("Erreur lors du chargement des données.");
+                showError('Erreur', "Erreur lors du chargement des données.");
             } finally {
                 setIsFetching(false);
             }
@@ -51,7 +51,7 @@ export const BillingPage: React.FC = () => {
             window.location.href = url;
         } catch (error) {
             console.error("Payment error", error);
-            toast.error("Erreur lors de l'initialisation du paiement.");
+            showError('Erreur', "Erreur lors de l'initialisation du paiement.");
             setIsProcessing(null);
         }
     };

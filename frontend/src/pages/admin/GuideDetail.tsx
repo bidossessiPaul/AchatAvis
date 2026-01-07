@@ -19,11 +19,10 @@ import {
     BarChart3,
     Shield,
     ChevronDown,
-    ChevronUp,
-    X
+    ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
 
@@ -43,6 +42,7 @@ interface GuideProfile {
     avatar_url: string | null;
     google_email: string;
     status: string;
+    warning_count: number;
     created_at: string;
     local_guide_level: number;
     total_reviews_count: number;
@@ -91,7 +91,7 @@ export const GuideDetail: React.FC = () => {
             setGmailAccounts(data.gmail_accounts || []);
             setStats(data.stats);
         } catch (error) {
-            toast.error('Erreur lors du chargement des données');
+            showError('Erreur', 'Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
         }
@@ -104,19 +104,73 @@ export const GuideDetail: React.FC = () => {
             const historyData = await adminService.getGmailAccountHistory(accountId);
             setGmailHistory(prev => ({ ...prev, [accountId]: historyData }));
         } catch (error) {
-            toast.error('Erreur lors du chargement de l\'historique Gmail');
+            showError('Erreur', "Erreur lors du chargement de l'historique Gmail");
             setGmailHistory(prev => ({ ...prev, [accountId]: [] })); // Clear or show error
         }
     };
 
-    const handleStatusUpdate = async (newStatus: string) => {
-        if (!confirm(`Changer le statut en ${newStatus} ?`)) return;
+    const handleIssueWarning = async () => {
+        if (!profile) return;
         try {
-            await adminService.updateUserStatus(id!, newStatus);
-            toast.success('Statut mis à jour');
+            const reasonsData = await adminService.getSuspensionReasons();
+            const reasons = [...reasonsData.warnings, 'Autre (Saisie manuelle)'];
+
+            const result = await showPremiumWarningModal(
+                'Avertissement',
+                `Envoyer un avertissement à ${profile.full_name}. Sélectionnez le motif :`,
+                reasons
+            );
+
+            if (!result.isConfirmed || !result.value) return;
+
+            let finalReason = result.value;
+
+            if (finalReason === 'OTHER') {
+                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
+                if (!manualInput.isConfirmed || !manualInput.value) return;
+                finalReason = manualInput.value;
+            }
+
+            const response = await adminService.issueWarning(id!, finalReason);
+            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
             loadData();
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
+        }
+    };
+
+    const handleStatusUpdate = async (newStatus: string) => {
+        const action = newStatus === 'suspended' ? 'suspendre' : 'activer';
+        const confirmResult = await showConfirm('Confirmation', `Voulez-vous vraiment ${action} ce compte ?`);
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            let reason = '';
+            if (newStatus === 'suspended') {
+                const reasonsData = await adminService.getSuspensionReasons();
+                const suspReasons = [...reasonsData.suspensions, 'Autre (Saisie manuelle)'];
+
+                const selectionResult = await showSelection(
+                    'Motif de suspension',
+                    `Pourquoi souhaitez-vous suspendre ${profile?.full_name} ?`,
+                    suspReasons
+                );
+
+                if (!selectionResult.isConfirmed || !selectionResult.value) return;
+
+                reason = selectionResult.value;
+                if (reason === 'Autre (Saisie manuelle)') {
+                    const manualResult = await showInput('Autre motif', 'Saisissez le motif de la suspension :', 'Précisez la raison...');
+                    if (!manualResult.isConfirmed || !manualResult.value) return;
+                    reason = manualResult.value;
+                }
+            }
+
+            await adminService.updateUserStatus(id!, newStatus, reason);
+            showSuccess('Succès', 'Statut mis à jour');
+            loadData();
+        } catch (error) {
+            showError('Erreur', 'Erreur lors de la mise à jour');
         }
     };
 
@@ -163,6 +217,11 @@ export const GuideDetail: React.FC = () => {
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}
                                     </span>
+                                    {profile.warning_count > 0 && (
+                                        <span className="premium-status-badge warning">
+                                            {profile.warning_count} Avertissement(s)
+                                        </span>
+                                    )}
                                     <span className="premium-status-badge active">
                                         Niveau {profile.local_guide_level}
                                     </span>
@@ -409,11 +468,11 @@ export const GuideDetail: React.FC = () => {
                                         Activer le compte
                                     </button>
                                 )}
-                                <button onClick={() => toast('Avertissement envoyé')} className="premium-action-btn warn">
+                                <button onClick={handleIssueWarning} className="premium-action-btn warn">
                                     <Award size={18} />
                                     Envoyer un avertissement
                                 </button>
-                                <button onClick={() => toast('Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
+                                <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
                                     <Trash2 size={18} />
                                     Supprimer le guide
                                 </button>

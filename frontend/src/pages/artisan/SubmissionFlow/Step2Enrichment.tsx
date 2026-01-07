@@ -3,7 +3,7 @@ import { ReviewOrder } from '../../../types';
 import { SectorSelect } from '../../../components/Campaign/SectorSelect';
 import { RhythmeSlider, RhythmeConfig } from '../../../components/Campaign/RhythmeSlider';
 import { LocalisationClients } from '../../../components/Campaign/LocalisationClients';
-import toast from 'react-hot-toast';
+import { showError } from '../../../utils/Swal';
 
 interface Step2Props {
     initialData: Partial<ReviewOrder> | null;
@@ -65,7 +65,7 @@ export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onB
         e.preventDefault();
 
         if (!formData.sector_slug) {
-            toast.error("Veuillez sélectionner un secteur d'activité");
+            showError('Erreur', "Veuillez sélectionner un secteur d'activité");
             return;
         }
 

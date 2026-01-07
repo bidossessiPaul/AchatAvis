@@ -41,8 +41,8 @@ export const adminService = {
     /**
      * Update user status (block/unblock)
      */
-    updateUserStatus: async (userId: string, status: string) => {
-        const response = await api.patch(`/admin/users/${userId}/status`, { status });
+    updateUserStatus: async (userId: string, status: string, reason?: string) => {
+        const response = await api.patch(`/admin/users/${userId}/status`, { status, reason });
         return response.data;
     },
 
@@ -60,5 +60,21 @@ export const adminService = {
     getGmailAccountHistory: async (accountId: number) => {
         const response = await api.get(`/anti-detection/gmail-history/${accountId}`);
         return response.data.data;
+    },
+
+    /**
+     * Issue a formal warning to a user
+     */
+    issueWarning: async (userId: string, reason: string, warningCount?: number) => {
+        const response = await api.post(`/admin/users/${userId}/warning`, { reason, warningCount });
+        return response.data;
+    },
+
+    /**
+     * Get standardized reasons for warnings and suspensions
+     */
+    getSuspensionReasons: async () => {
+        const response = await api.get('/admin/reasons');
+        return response.data;
     }
 };

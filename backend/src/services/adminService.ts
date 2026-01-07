@@ -6,7 +6,7 @@ import { sendUserStatusUpdateEmail, sendMissionDecisionEmail, sendSubmissionDeci
  */
 export const getArtisans = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                ap.company_name, ap.siret, ap.trade, ap.phone, ap.city, 
                ap.subscription_status, ap.subscription_end_date
         FROM users u
@@ -21,7 +21,7 @@ export const getArtisans = async () => {
  */
 export const getGuides = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.city
         FROM users u
@@ -87,7 +87,7 @@ export const getAllUsers = async () => {
  */
 export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                ap.company_name, ap.siret, ap.trade, ap.phone, ap.address, ap.city, ap.postal_code,
                ap.google_business_url, ap.subscription_status, ap.subscription_end_date
         FROM users u
@@ -116,7 +116,7 @@ export const getArtisanDetail = async (userId: string) => {
  */
 export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.city
         FROM users u

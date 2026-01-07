@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
 import { Login } from './pages/auth/Login';
 import { RegisterArtisan } from './pages/auth/RegisterArtisan';
 import { RegisterGuide } from './pages/auth/RegisterGuide';
@@ -49,7 +48,7 @@ import SuspendedPage from './pages/SuspendedPage';
 import { useAuthStore } from './context/authStore';
 
 function App() {
-    const { checkAuth, isAuthenticated } = useAuthStore();
+    const { checkAuth } = useAuthStore();
 
     // Synchronous URL fixing for malformed links (e.g. starting with //)
     // This must happen before the first render to avoid catching the "*" route redirect
@@ -60,28 +59,13 @@ function App() {
     }
 
     useEffect(() => {
-        // Log current path for debugging
-        console.log('📍 [App] Current Path:', window.location.pathname);
-
         // Initial check
         checkAuth();
-
-        // Polling for account status (every 30 seconds)
-        // This ensures real-time enforcement of suspensions even without user interaction
-        const pollInterval = setInterval(() => {
-            if (isAuthenticated) {
-                console.log('🔄 [App] Background status check...');
-                checkAuth(true);
-            }
-        }, 30000);
-
-        return () => clearInterval(pollInterval);
-    }, [checkAuth, isAuthenticated]);
+    }, [checkAuth]);
 
     return (
         <BrowserRouter>
             <SuspensionBanner />
-            <Toaster position="top-right" reverseOrder={false} />
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Navigate to="/login" replace />} />

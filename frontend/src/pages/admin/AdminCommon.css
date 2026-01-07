@@ -53,9 +53,16 @@
 }
 
 .admin-badge.suspended,
-.admin-badge.inactive,
-.subscription-badge.expired,
 .premium-status-badge.suspended {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #ef4444;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.admin-badge.inactive,
+.subscription-badge.expired {
     background-color: #fef2f2;
     color: #dc2626;
     border-color: #fecaca;

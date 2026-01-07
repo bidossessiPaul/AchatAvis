@@ -11,7 +11,7 @@ import {
     User as UserIcon,
     Wallet
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -47,24 +47,29 @@ export const PaymentsList: React.FC = () => {
             const data = await payoutApi.getAllRequests();
             setRequests(data);
         } catch (error) {
-            toast.error('Erreur lors du chargement des demandes');
+            showError('Erreur', 'Erreur lors du chargement des demandes');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleStatusUpdate = async (payoutId: string, newStatus: string) => {
-        if (!window.confirm(`Voulez-vous passer cette demande au statut : ${newStatus} ?`)) return;
+        const result = await showConfirm(
+            'Confirmation',
+            `Voulez-vous passer cette demande au statut : ${newStatus} ?`
+        );
+
+        if (!result.isConfirmed) return;
 
         setIsActionLoading(true);
         try {
             await payoutApi.updateStatus(payoutId, { status: newStatus, adminNote: adminNote || undefined });
-            toast.success(`Statut mis à jour : ${newStatus}`);
+            showSuccess('Succès', `Statut mis à jour : ${newStatus}`);
             setAdminNote('');
             setSelectedPayout(null);
             loadRequests();
         } catch (error) {
-            toast.error('Erreur lors de la mise à jour');
+            showError('Erreur', 'Erreur lors de la mise à jour');
         } finally {
             setIsActionLoading(false);
         }

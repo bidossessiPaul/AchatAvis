@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as adminService from '../services/adminService';
+import { WARNING_REASONS, SUSPENSION_REASONS } from '../constants/suspensionReasons';
 
 /**
  * Get all artisans
@@ -332,4 +333,42 @@ export const deleteMission = async (req: Request, res: Response) => {
         console.error('Delete mission error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
+};
+
+/**
+ * Issue a formal warning to a user
+ * POST /api/admin/users/:userId/warning
+ */
+export const issueWarning = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { reason, warningCount } = req.body;
+
+    if (!reason) {
+        return res.status(400).json({ error: 'Reason is required' });
+    }
+
+    try {
+        const { suspensionService } = await import('../services/suspensionService');
+        const result = await suspensionService.issueManualWarning(userId, reason, warningCount);
+        return res.json({
+            message: 'Warning issued successfully',
+            warningCount: result.warningCount,
+            suspended: result.suspended
+        });
+    } catch (error: any) {
+        console.error('Issue warning error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Get standardized reasons for warnings and suspensions
+ * GET /api/admin/suspension-reasons
+ */
+export const getSuspensionReasons = async (_req: Request, res: Response) => {
+    console.log('--- HIT getSuspensionReasons ---');
+    return res.json({
+        warnings: WARNING_REASONS,
+        suspensions: SUSPENSION_REASONS
+    });
 };

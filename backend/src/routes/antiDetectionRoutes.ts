@@ -9,6 +9,7 @@ router.get('/sectors', antiDetectionController.getAllSectors);
 
 // Protected routes (authentication required)
 router.get('/rules', authenticate, antiDetectionController.getAllRules);
+router.get('/sectors', antiDetectionController.getAllSectors);
 
 // User specific compliance and accounts
 router.get('/compliance-score/:userId', authenticate, antiDetectionController.getComplianceScore);

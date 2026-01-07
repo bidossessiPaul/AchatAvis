@@ -13,8 +13,9 @@ import {
     X
 } from 'lucide-react';
 import api from '../../services/api';
-import toast from 'react-hot-toast';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { suspensionApi } from '../../services/api';
+import { adminService } from '../../services/adminService';
 
 const SuspendedUsersQueue = () => {
     const [suspensions, setSuspensions] = useState<any[]>([]);
@@ -30,7 +31,7 @@ const SuspendedUsersQueue = () => {
             setSuspensions(response.data || []);
         } catch (error) {
             console.error('Failed to fetch suspensions:', error);
-            if (!silent) toast.error('Erreur lors de la mise à jour de la liste');
+            if (!silent) showError('Erreur', 'Erreur lors de la mise à jour de la liste');
         } finally {
             if (!silent) {
                 setLoading(false);
@@ -47,16 +48,22 @@ const SuspendedUsersQueue = () => {
     }, []);
 
     const handleApprove = async (id: number) => {
-        if (!window.confirm('Voulez-vous vraiment lever cette suspension ?')) return;
+        const result = await showConfirm(
+            'Lever la suspension ?',
+            'Voulez-vous vraiment lever cette suspension ?'
+        );
+
+        if (!result.isConfirmed) return;
+
         try {
             console.log(`Approving suspension ID: ${id}`);
             await suspensionApi.approveSuspension(id);
-            toast.success('Compte approuvé/débloqué');
+            showSuccess('Compte approuvé/débloqué');
             // Wait a small bit to let DB update propagate if needed, though awaited should be enough
             await fetchSuspensions();
         } catch (error: any) {
             console.error('Error approving suspension:', error);
-            toast.error(error.response?.data?.message || 'Erreur lors du déblocage');
+            showError('Erreur', error.response?.data?.message || 'Erreur lors du déblocage');
         }
     };
 
@@ -74,7 +81,7 @@ const SuspendedUsersQueue = () => {
                     <Shield size={16} /> File d'Attente ({suspensions.length})
                 </h4>
                 <button
-                    onClick={fetchSuspensions}
+                    onClick={() => fetchSuspensions()}
                     disabled={isRefreshing}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', padding: '0.25rem' }}
                 >
@@ -132,6 +139,8 @@ export const SuspensionAdminPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [newCountry, setNewCountry] = useState('');
+    const [newExemptCountry, setNewExemptCountry] = useState('');
+    const [newExemptUserId, setNewExemptUserId] = useState('');
     const [diag, setDiag] = useState<any>(null);
 
     const fetchConfig = async () => {
@@ -139,7 +148,7 @@ export const SuspensionAdminPage: React.FC = () => {
             const response = await api.get('/suspensions/config');
             setConfig(response.data.data);
         } catch (error) {
-            toast.error('Erreur lors du chargement de la configuration');
+            showError('Erreur', 'Erreur lors du chargement de la configuration');
             console.error('Error fetching suspension config:', error);
         } finally {
             setLoading(false);
@@ -158,6 +167,7 @@ export const SuspensionAdminPage: React.FC = () => {
     useEffect(() => {
         fetchConfig();
         fetchDiag();
+        fetchUsers(); // Fetch users on load for the whitelist management
     }, []);
 
     const handleSaveConfig = async (newConfig?: any) => {
@@ -165,10 +175,10 @@ export const SuspensionAdminPage: React.FC = () => {
         setSaving(true);
         try {
             await api.put('/suspensions/config', configToSave);
-            toast.success('Configuration enregistrée');
+            showSuccess('Configuration enregistrée');
             if (newConfig) setConfig(newConfig);
         } catch (error) {
-            toast.error('Erreur lors de l\'enregistrement');
+            showError('Erreur', 'Erreur lors de l\'enregistrement');
         } finally {
             setSaving(true); // Small delay before allowing next action
             setTimeout(() => setSaving(false), 500);
@@ -191,29 +201,43 @@ export const SuspensionAdminPage: React.FC = () => {
                 reason_details: suspendForm.reason,
                 suspension_level_id: suspendForm.level
             });
-            toast.success('Utilisateur suspendu avec succès');
+            showSuccess('Succès', 'Utilisateur suspendu avec succès');
             setShowSuspendModal(false);
             setSuspendForm({ user_id: '', reason: '', level: 1 });
             // The SuspendedUsersQueue component will not auto-refresh unless we refetch or use global state.
             // For now, closing the modal is fine.
         } catch (error: any) {
-            toast.error(error.response?.data?.message || 'Erreur lors de la suspension');
+            showError('Erreur', error.response?.data?.message || 'Erreur lors de la suspension');
         }
     };
 
+    const [reasons, setReasons] = useState<{ warnings: string[], suspensions: string[] }>({ warnings: [], suspensions: [] });
+
     const fetchUsers = async () => {
+        // Fetch users independently
         try {
-            const response = await api.get('/admin/users');
-            setUsers(response.data);
+            const usersRes = await api.get('/admin/users');
+            console.log("FETCHED USERS:", usersRes.data);
+            setUsers(usersRes.data || []);
         } catch (e) {
-            console.error("Failed to fetch users");
+            console.error("Failed to fetch users", e);
+            showError('Erreur', "Impossible de charger la liste des utilisateurs");
+        }
+
+        // Fetch reasons independently
+        try {
+            const reasonsRes = await adminService.getSuspensionReasons();
+            if (reasonsRes) {
+                setReasons(reasonsRes);
+            }
+        } catch (e) {
+            console.error("Failed to fetch suspension reasons", e);
+            // Non-critical: modal will just have empty suggestions
         }
     };
 
     useEffect(() => {
-        if (showSuspendModal) {
-            fetchUsers();
-        }
+        // fetchUsers is already called on mount now
     }, [showSuspendModal]);
 
     if (loading || !config) return <DashboardLayout title="Admin Suspensions">Chargement...</DashboardLayout>;
@@ -286,14 +310,78 @@ export const SuspensionAdminPage: React.FC = () => {
                         </h3>
                         <div style={{ display: 'grid', gap: '1.5rem' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>PAYS EXEMPTÉS (ISO 2)</label>
-                                <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: '0.75rem', color: '#0f172a', fontSize: '0.875rem' }}>
-                                    {Array.isArray(config.exempted_countries) ? config.exempted_countries.join(', ') : 'Aucun'}
+                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#10b981', marginBottom: '0.5rem' }}>PAYS EXEMPTÉS (ISO 2)</label>
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (newExemptCountry.length === 2) {
+                                            const current = config.exempted_countries || [];
+                                            if (!current.includes(newExemptCountry)) {
+                                                const updatedConfig = { ...config, exempted_countries: [...current, newExemptCountry] };
+                                                handleSaveConfig(updatedConfig);
+                                            } else {
+                                                showError('Erreur', 'Déjà dans la liste');
+                                            }
+                                            setNewExemptCountry('');
+                                        } else {
+                                            showError('Erreur', 'Le code doit faire 2 lettres');
+                                        }
+                                    }}
+                                    style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}
+                                >
+                                    <input
+                                        type="text"
+                                        value={newExemptCountry}
+                                        onChange={(e) => setNewExemptCountry(e.target.value.toUpperCase().slice(0, 2))}
+                                        placeholder="Code (ex: FR)"
+                                        style={{
+                                            flex: 1, padding: '0.625rem', borderRadius: '0.625rem',
+                                            border: '1px solid #e2e8f0', fontSize: '0.875rem'
+                                        }}
+                                    />
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            background: '#10b981', color: 'white', border: 'none',
+                                            padding: '0.625rem 1rem', borderRadius: '0.625rem',
+                                            fontWeight: 700, cursor: 'pointer', display: 'flex',
+                                            alignItems: 'center', gap: '0.25rem'
+                                        }}
+                                    >
+                                        <Plus size={16} /> Autoriser
+                                    </button>
+                                </form>
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: '#f0fdf4', padding: '1rem', borderRadius: '0.75rem', border: '1px dashed #bbf7d0' }}>
+                                    {Array.isArray(config.exempted_countries) && config.exempted_countries.length > 0 ? (
+                                        config.exempted_countries.map((code: string) => (
+                                            <span key={code} style={{
+                                                background: '#10b981', color: 'white', padding: '0.25rem 0.625rem',
+                                                borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800,
+                                                display: 'flex', alignItems: 'center', gap: '0.375rem'
+                                            }}>
+                                                {code}
+                                                <X
+                                                    size={14}
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        const updatedConfig = {
+                                                            ...config,
+                                                            exempted_countries: (config.exempted_countries || []).filter((c: string) => c !== code)
+                                                        };
+                                                        handleSaveConfig(updatedConfig);
+                                                    }}
+                                                />
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontStyle: 'italic' }}>Aucun pays exempté</span>
+                                    )}
                                 </div>
                             </div>
+
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#ef4444', marginBottom: '0.5rem' }}>PAYS BLOQUÉS À L'INSCRIPTION (ISO 2)</label>
-
                                 <form
                                     onSubmit={(e) => {
                                         e.preventDefault();
@@ -303,11 +391,11 @@ export const SuspensionAdminPage: React.FC = () => {
                                                 const updatedConfig = { ...config, blocked_countries: [...current, newCountry] };
                                                 handleSaveConfig(updatedConfig);
                                             } else {
-                                                toast.error('Déjà dans la liste');
+                                                showError('Erreur', 'Déjà dans la liste');
                                             }
                                             setNewCountry('');
                                         } else {
-                                            toast.error('Le code doit faire 2 lettres');
+                                            showError('Erreur', 'Le code doit faire 2 lettres');
                                         }
                                     }}
                                     style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}
@@ -331,7 +419,7 @@ export const SuspensionAdminPage: React.FC = () => {
                                             alignItems: 'center', gap: '0.25rem'
                                         }}
                                     >
-                                        <Plus size={16} /> Ajouter
+                                        <Plus size={16} /> Bloquer
                                     </button>
                                 </form>
 
@@ -362,10 +450,86 @@ export const SuspensionAdminPage: React.FC = () => {
                                     )}
                                 </div>
                             </div>
+
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>IDS UTILISATEURS EXEMPTÉS</label>
-                                <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: '0.75rem', color: '#0f172a', fontSize: '0.875rem', maxHeight: '100px', overflowY: 'auto' }}>
-                                    {Array.isArray(config.exempted_user_ids) ? config.exempted_user_ids.join('\n') : 'Aucun'}
+                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>IDS UTILISATEURS EXEMPTÉS (WHITELIST)</label>
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        if (newExemptUserId) {
+                                            const current = config.exempted_user_ids || [];
+                                            if (!current.includes(newExemptUserId)) {
+                                                const updatedConfig = { ...config, exempted_user_ids: [...current, newExemptUserId] };
+                                                handleSaveConfig(updatedConfig);
+                                            } else {
+                                                showError('Erreur', 'Déjà dans la liste');
+                                            }
+                                            setNewExemptUserId('');
+                                        } else {
+                                            showError('Erreur', 'Sélectionnez un utilisateur');
+                                        }
+                                    }}
+                                    style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}
+                                >
+                                    <select
+                                        value={newExemptUserId}
+                                        onChange={(e) => setNewExemptUserId(e.target.value)}
+                                        style={{
+                                            flex: 1, padding: '0.625rem', borderRadius: '0.625rem',
+                                            border: '1px solid #e2e8f0', fontSize: '0.875rem'
+                                        }}
+                                    >
+                                        <option value="">Sélectionner un utilisateur...</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>
+                                                {u.full_name} ({u.role}) - {u.email}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            background: '#0f172a', color: 'white', border: 'none',
+                                            padding: '0.625rem 1rem', borderRadius: '0.625rem',
+                                            fontWeight: 700, cursor: 'pointer', display: 'flex',
+                                            alignItems: 'center', gap: '0.25rem'
+                                        }}
+                                    >
+                                        <Plus size={16} /> Whitelister
+                                    </button>
+                                </form>
+
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px dashed #e2e8f0' }}>
+                                    {Array.isArray(config.exempted_user_ids) && config.exempted_user_ids.length > 0 ? (
+                                        config.exempted_user_ids.map((uid: string) => {
+                                            const u = users.find(user => user.id === uid);
+                                            return (
+                                                <span key={uid} style={{
+                                                    background: '#0f172a', color: 'white', padding: '0.25rem 0.625rem',
+                                                    borderRadius: '2rem', fontSize: '0.6875rem',
+                                                    display: 'flex', alignItems: 'center', gap: '0.375rem'
+                                                }}>
+                                                    {u ? u.full_name : `${uid.slice(0, 8)}...`}
+                                                    <X
+                                                        size={12}
+                                                        style={{ cursor: 'pointer' }}
+                                                        onClick={async () => {
+                                                            const confirmRem = await showConfirm(`Retirer ${u ? u.full_name : 'cet utilisateur'} de la whitelist ?`, "L'utilisateur sera à nouveau soumis aux règles de sécurité.");
+                                                            if (confirmRem.isConfirmed) {
+                                                                const updatedConfig = {
+                                                                    ...config,
+                                                                    exempted_user_ids: (config.exempted_user_ids || []).filter((id: string) => id !== uid)
+                                                                };
+                                                                handleSaveConfig(updatedConfig);
+                                                            }
+                                                        }}
+                                                    />
+                                                </span>
+                                            );
+                                        })
+                                    ) : (
+                                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', fontStyle: 'italic' }}>Aucun utilisateur exempté</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -467,13 +631,28 @@ export const SuspensionAdminPage: React.FC = () => {
                             </div>
                             <div style={{ marginBottom: '1rem' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Raison</label>
-                                <textarea
+                                <select
                                     required
                                     value={suspendForm.reason}
                                     onChange={(e) => setSuspendForm({ ...suspendForm, reason: e.target.value })}
-                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem', minHeight: '80px' }}
-                                />
+                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem' }}
+                                >
+                                    <option value="">Sélectionner un motif...</option>
+                                    {reasons?.suspensions?.map((r, i) => (
+                                        <option key={i} value={r}>{r}</option>
+                                    ))}
+                                    <option value="Autre (Précisez)">Autre...</option>
+                                </select>
                             </div>
+                            {suspendForm.reason === 'Autre (Précisez)' && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <textarea
+                                        placeholder="Précisez le motif..."
+                                        onChange={(e) => setSuspendForm({ ...suspendForm, reason: e.target.value })}
+                                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '0.25rem', minHeight: '60px' }}
+                                    />
+                                </div>
+                            )}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
                                 <button
                                     type="button"
