@@ -28,6 +28,8 @@ import { SuspensionBanner } from './components/SuspensionBanner';
 import { OrdersList } from './pages/artisan/OrdersList';
 import { ReceivedReviews } from './pages/artisan/ReceivedReviews';
 import { BillingPage } from './pages/artisan/BillingPage';
+import { MyEstablishments } from './pages/artisan/MyEstablishments';
+import AddEstablishmentPage from './pages/artisan/AddEstablishmentPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { ArtisansList } from './pages/admin/ArtisansList';
 import { GuidesList } from './pages/admin/GuidesList';
@@ -35,6 +37,7 @@ import { PaymentsList } from './pages/admin/PaymentsList';
 import { ArtisanDetail } from './pages/admin/ArtisanDetail';
 import { GuideDetail } from './pages/admin/GuideDetail';
 import { ReviewValidation } from './pages/admin/ReviewValidation';
+import { EstablishmentValidation } from './pages/admin/EstablishmentValidation';
 import { AdminMissions } from './pages/admin/AdminMissions';
 import { AdminMissionDetail } from './pages/admin/AdminMissionDetail';
 import { SubscriptionsList } from './pages/admin/SubscriptionsList';
@@ -143,6 +146,21 @@ function App() {
                     <ProtectedRoute allowedRoles={['artisan']}>
                         <ProtectedArtisanRoute>
                             <SubmissionFlow />
+                        </ProtectedArtisanRoute>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/artisan/establishments/add" element={
+                    <ProtectedRoute allowedRoles={['artisan']}>
+                        <ProtectedArtisanRoute>
+                            <AddEstablishmentPage />
+                        </ProtectedArtisanRoute>
+                    </ProtectedRoute>
+                } />
+                <Route path="/artisan/establishments" element={
+                    <ProtectedRoute allowedRoles={['artisan']}>
+                        <ProtectedArtisanRoute>
+                            <MyEstablishments />
                         </ProtectedArtisanRoute>
                     </ProtectedRoute>
                 } />
@@ -298,6 +316,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission={['can_manage_reviews', 'can_validate_reviews']}>
                             <ReviewValidation />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/establishments" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_reviews', 'can_validate_reviews']}>
+                            <EstablishmentValidation />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />

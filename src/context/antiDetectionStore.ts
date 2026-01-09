@@ -50,7 +50,7 @@ interface AntiDetectionState {
     complianceData: ComplianceData | null;
     gmailAccounts: any[];
     guideRecap: Record<string, any> | null;
-    gmailHistory: Record<number, any[]>;
+    gmailHistory: Record<string, any[]>;
     loading: boolean;
     error: string | null;
 
@@ -59,7 +59,7 @@ interface AntiDetectionState {
     fetchComplianceData: (userId: string) => Promise<void>;
     fetchGmailAccounts: (userId: string) => Promise<void>;
     fetchGuideRecap: () => Promise<void>;
-    fetchGmailHistory: (accountId: number) => Promise<void>;
+    fetchGmailHistory: (accountId: number, sectorId?: number) => Promise<void>;
     verifyGmailPreview: (email: string, mapsProfileUrl?: string) => Promise<any>;
     updateGmailActivity: (accountId: number, sectorSlug: string) => Promise<void>;
     addGmailAccount: (data: any) => Promise<any>;
@@ -129,13 +129,15 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
         }
     },
 
-    fetchGmailHistory: async (accountId: number) => {
+    fetchGmailHistory: async (accountId: number, sectorId?: number) => {
         try {
-            const response = await api.get(`/anti-detection/gmail-history/${accountId}`);
+            const url = `/anti-detection/gmail-history/${accountId}${sectorId ? `?sectorId=${sectorId}` : ''}`;
+            const response = await api.get(url);
+            const key = `${accountId}_${sectorId || 'all'}`;
             set(state => ({
                 gmailHistory: {
                     ...state.gmailHistory,
-                    [accountId]: response.data.data
+                    [key]: response.data.data
                 }
             }));
         } catch (error: any) {

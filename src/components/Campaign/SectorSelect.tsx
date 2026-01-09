@@ -14,9 +14,10 @@ interface Sector {
 interface SectorSelectProps {
     selectedSectorSlug: string;
     onSectorChange: (sector: Sector) => void;
+    disabled?: boolean;
 }
 
-export const SectorSelect: React.FC<SectorSelectProps> = ({ selectedSectorSlug, onSectorChange }) => {
+export const SectorSelect: React.FC<SectorSelectProps> = ({ selectedSectorSlug, onSectorChange, disabled }) => {
     const [sectors, setSectors] = useState<Sector[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedSector, setSelectedSector] = useState<Sector | null>(null);
@@ -74,7 +75,19 @@ export const SectorSelect: React.FC<SectorSelectProps> = ({ selectedSectorSlug, 
                 className="form-select"
                 value={selectedSector?.sector_slug || ''}
                 onChange={handleChange}
-                style={{ height: '3rem', fontSize: '1rem' }}
+                style={{
+                    height: '3rem',
+                    fontSize: '1rem',
+                    ...(disabled ? {
+                        backgroundColor: '#f8fafc',
+                        cursor: 'not-allowed',
+                        color: '#1e293b',
+                        opacity: 1,
+                        border: '1px solid #e2e8f0',
+                        WebkitTextFillColor: '#1e293b' // For Safari
+                    } : {})
+                }}
+                disabled={disabled}
             >
                 <option value="">-- Sélectionnez votre secteur --</option>
 

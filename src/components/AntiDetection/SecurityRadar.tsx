@@ -11,21 +11,23 @@ import {
     Mail,
     X
 } from 'lucide-react';
+import { GmailHistoryTable } from './GmailHistoryTable';
 
 export const SecurityRadar: React.FC = () => {
     const { guideRecap, fetchGuideRecap, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
     const [expandedSector, setExpandedSector] = useState<string | null>(null);
-    const [historyModalAccount, setHistoryModalAccount] = useState<any | null>(null);
+    const [historyModalAccount, setHistoryModalAccount] = useState<{ account: any, sectorId: number | null, sectorName: string } | null>(null);
 
     useEffect(() => {
         fetchGuideRecap();
     }, [fetchGuideRecap]);
 
-    const handleOpenHistory = async (e: React.MouseEvent, account: any) => {
+    const handleOpenHistory = async (e: React.MouseEvent, account: any, sectorId: number | null, sectorName: string) => {
         e.stopPropagation();
-        setHistoryModalAccount(account);
-        if (!gmailHistory[account.id]) {
-            await fetchGmailHistory(account.id);
+        setHistoryModalAccount({ account, sectorId, sectorName });
+        const key = `${account.id}_${sectorId || 'all'}`;
+        if (!gmailHistory[key]) {
+            await fetchGmailHistory(account.id, sectorId || undefined);
         }
     };
 
@@ -55,154 +57,198 @@ export const SecurityRadar: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
-                {sectors.map(([slug, data]: [string, any]) => {
-                    const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
-                    const totalAccounts = data.accounts.length;
+            {/* Dynamic Table Layout */}
+            <div style={{
+                background: 'white',
+                borderRadius: '1.25rem',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+            }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Secteur</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Disponibilité Mails</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Règles Anti-Détection</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '10%', textAlign: 'center' }}>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sectors.map(([slug, data]: [string, any]) => {
+                            const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
+                            const totalAccounts = data.accounts.length;
+                            const readyPercentage = totalAccounts > 0 ? (availableAccounts / totalAccounts) * 100 : 0;
+                            const isExpanded = expandedSector === slug;
 
-                    return (
-                        <div
-                            key={slug}
-                            style={{
-                                background: 'white',
-                                borderRadius: '1.25rem',
-                                border: '1px solid #e2e8f0',
-                                overflow: 'hidden',
-                                transition: 'all 0.2s ease',
-                                boxShadow: expandedSector === slug ? '0 12px 20px -8px rgba(0,0,0,0.08)' : 'none'
-                            }}
-                        >
-                            <div
-                                onClick={() => setExpandedSector(expandedSector === slug ? null : slug)}
-                                style={{
-                                    padding: '1.25rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between'
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{
-                                        width: '44px',
-                                        height: '44px',
-                                        borderRadius: '0.75rem',
-                                        background: '#f8fafc',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '1.25rem'
-                                    }}>
-                                        {data.icon}
-                                    </div>
-                                    <div>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                                            {data.sector_name}
-                                        </h4>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                                            <div style={{
-                                                fontSize: '0.7rem',
-                                                fontWeight: 800,
-                                                textTransform: 'uppercase',
-                                                color: availableAccounts > 0 ? '#10b981' : '#ef4444',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.25rem'
-                                            }}>
-                                                {availableAccounts > 0 ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                                {availableAccounts} / {totalAccounts} Mails Prêts
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{ color: '#94a3b8' }}>
-                                    {expandedSector === slug ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                </div>
-                            </div>
-
-                            <AnimatePresence>
-                                {expandedSector === slug && (
-                                    <motion.div
-                                        initial={{ height: 0 }}
-                                        animate={{ height: 'auto' }}
-                                        exit={{ height: 0 }}
-                                        transition={{ duration: 0.2 }}
+                            return (
+                                <React.Fragment key={slug}>
+                                    <tr
+                                        onClick={() => setExpandedSector(isExpanded ? null : slug)}
+                                        style={{
+                                            borderBottom: '1px solid #f1f5f9',
+                                            cursor: 'pointer',
+                                            transition: 'background 0.2s ease',
+                                            background: isExpanded ? '#f8fafc' : 'transparent'
+                                        }}
+                                        onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = '#fcfdfe')}
+                                        onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
                                     >
-                                        <div style={{ padding: '0 1.25rem 1.25rem', borderTop: '1px solid #f1f5f9' }}>
-                                            <div style={{ marginTop: '1rem', display: 'grid', gap: '0.75rem' }}>
-                                                {data.accounts.map((acc: any) => (
-                                                    <div
-                                                        key={acc.id}
-                                                        style={{
-                                                            padding: '0.75rem',
-                                                            borderRadius: '0.75rem',
-                                                            background: acc.status === 'ready' ? '#f0fdf4' : (acc.status === 'cooldown' ? '#fffbeb' : '#fef2f2'),
-                                                            border: `1px solid ${acc.status === 'ready' ? '#dcfce7' : (acc.status === 'cooldown' ? '#fef3c7' : '#fee2e2')}`,
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'space-between'
-                                                        }}
+                                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    borderRadius: '0.75rem',
+                                                    background: '#f1f5f9',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    fontSize: '1.25rem'
+                                                }}>
+                                                    {data.icon}
+                                                </div>
+                                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                                                    {data.sector_name}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 800,
+                                                        color: availableAccounts > 0 ? '#10b981' : '#ef4444'
+                                                    }}>
+                                                        {availableAccounts} / {totalAccounts} PRÊTS
+                                                    </span>
+                                                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                                                        {Math.round(readyPercentage)}%
+                                                    </span>
+                                                </div>
+                                                <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div style={{
+                                                        width: `${readyPercentage}%`,
+                                                        height: '100%',
+                                                        background: availableAccounts > 0 ? '#10b981' : '#ef4444',
+                                                        transition: 'width 0.3s ease'
+                                                    }} />
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
+                                                    <Zap size={14} color="#f59e0b" />
+                                                    <span>{data.cooldown_days}j repos</span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
+                                                    <Shield size={14} color="#6366f1" />
+                                                    <span>{data.max_per_month} mtd</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                                            <div style={{ color: '#94a3b8' }}>
+                                                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <tr>
+                                                <td colSpan={4} style={{ padding: 0, background: '#fcfdfe' }}>
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        style={{ overflow: 'hidden' }}
                                                     >
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                                    <Mail size={14} color={acc.status === 'ready' ? '#10b981' : (acc.status === 'cooldown' ? '#f59e0b' : '#ef4444')} />
-                                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>
-                                                                        {acc.email}
-                                                                    </div>
-                                                                </div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                                    <button
-                                                                        onClick={(e) => handleOpenHistory(e, acc)}
+                                                        <div style={{ padding: '1.5rem 2rem', borderBottom: '2px solid #f1f5f9' }}>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                                                                {data.accounts.map((acc: any) => (
+                                                                    <div
+                                                                        key={acc.id}
                                                                         style={{
-                                                                            fontSize: '0.7rem',
-                                                                            fontWeight: 700,
-                                                                            color: '#6366f1',
-                                                                            background: '#e0e7ff',
-                                                                            border: 'none',
-                                                                            padding: '0.25rem 0.6rem',
-                                                                            borderRadius: '0.4rem',
-                                                                            cursor: 'pointer',
+                                                                            padding: '1rem',
+                                                                            borderRadius: '1rem',
+                                                                            background: 'white',
+                                                                            border: '1px solid #e2e8f0',
                                                                             display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '0.25rem'
+                                                                            flexDirection: 'column',
+                                                                            gap: '0.75rem',
+                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                                                                         }}
                                                                     >
-                                                                        Historique
-                                                                    </button>
-                                                                    <div style={{ textAlign: 'right' }}>
-                                                                        <div style={{
-                                                                            fontSize: '0.7rem',
-                                                                            fontWeight: 800,
-                                                                            textTransform: 'uppercase',
-                                                                            color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626')
-                                                                        }}>
-                                                                            {acc.status === 'ready' ? 'Disponible' : (acc.status === 'cooldown' ? 'Repos' : 'Quota Atteint')}
+                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                                                <div style={{
+                                                                                    width: '32px',
+                                                                                    height: '32px',
+                                                                                    borderRadius: '50%',
+                                                                                    background: acc.status === 'ready' ? '#dcfce7' : (acc.status === 'cooldown' ? '#fef3c7' : '#fee2e2'),
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626')
+                                                                                }}>
+                                                                                    <Mail size={16} />
+                                                                                </div>
+                                                                                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                    {acc.email}
+                                                                                </div>
+                                                                            </div>
+                                                                            <button
+                                                                                onClick={(e) => handleOpenHistory(e, acc, data.sector_id || null, data.sector_name)}
+                                                                                style={{
+                                                                                    fontSize: '0.7rem',
+                                                                                    fontWeight: 800,
+                                                                                    color: '#6366f1',
+                                                                                    background: '#f5f3ff',
+                                                                                    border: '1px solid #ddd6fe',
+                                                                                    padding: '0.3rem 0.6rem',
+                                                                                    borderRadius: '0.5rem',
+                                                                                    cursor: 'pointer',
+                                                                                    textTransform: 'uppercase'
+                                                                                }}
+                                                                            >
+                                                                                Historique
+                                                                            </button>
                                                                         </div>
-                                                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                                                            {acc.used_this_month} / {data.max_per_month} mtd
+                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+                                                                            <div style={{
+                                                                                fontSize: '0.65rem',
+                                                                                fontWeight: 900,
+                                                                                textTransform: 'uppercase',
+                                                                                color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626'),
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '0.25rem'
+                                                                            }}>
+                                                                                {acc.status === 'ready' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                                                                                {acc.status === 'ready' ? 'Disponible' : (acc.status === 'cooldown' ? 'Repos' : 'Quotas')}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
+                                                                                {acc.used_this_month} / {data.max_per_month} par mois
+                                                                            </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                ))}
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-
-                                            <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.75rem', fontSize: '0.8rem', color: '#64748b', display: 'flex', gap: '0.5rem' }}>
-                                                <Zap size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
-                                                <span>
-                                                    Règle : Max {data.max_per_month} avis/mois par mail avec {data.cooldown_days} jours entre chaque avis pour ce secteur.
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    );
-                })}
+                                                    </motion.div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </AnimatePresence>
+                                </React.Fragment>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
 
             {/* Premium History Modal */}
@@ -229,7 +275,7 @@ export const SecurityRadar: React.FC = () => {
                             style={{
                                 background: 'white',
                                 width: '100%',
-                                maxWidth: '800px',
+                                maxWidth: '900px',
                                 borderRadius: '1.5rem',
                                 overflow: 'hidden',
                                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
@@ -264,8 +310,10 @@ export const SecurityRadar: React.FC = () => {
                                         <Mail size={20} />
                                     </div>
                                     <div>
-                                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>Historique de Contribution</h4>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>{historyModalAccount.email}</div>
+                                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                                            Historique : {historyModalAccount.sectorName}
+                                        </h4>
+                                        <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>{historyModalAccount.account.email}</div>
                                     </div>
                                 </div>
                                 <button
@@ -287,63 +335,17 @@ export const SecurityRadar: React.FC = () => {
                                 </button>
                             </div>
 
-                            {/* Modal Content - Responsive Table */}
+                            {/* Modal Content - Using Premium Table */}
                             <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
-                                {!gmailHistory[historyModalAccount.id] ? (
+                                {!gmailHistory[`${historyModalAccount.account.id}_${historyModalAccount.sectorId || 'all'}`] ? (
                                     <div style={{ padding: '4rem', textAlign: 'center' }}>
                                         <div className="animate-spin" style={{ margin: '0 auto 1rem', width: '24px', height: '24px', border: '3px solid #f1f5f9', borderTopColor: '#6366f1', borderRadius: '50%' }}></div>
                                         <div style={{ color: '#64748b', fontSize: '0.9rem' }}>Récupération de l'historique...</div>
                                     </div>
-                                ) : gmailHistory[historyModalAccount.id].length === 0 ? (
-                                    <div style={{ padding: '4rem', textAlign: 'center' }}>
-                                        <div style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Aucune mission trouvée pour ce compte.</div>
-                                    </div>
                                 ) : (
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 0.5rem' }}>
-                                            <thead>
-                                                <tr>
-                                                    <th style={{ textAlign: 'left', padding: '0 1rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Artisan / Client</th>
-                                                    <th style={{ textAlign: 'left', padding: '0 1rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Date</th>
-                                                    <th style={{ textAlign: 'left', padding: '0 1rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Statut</th>
-                                                    <th style={{ textAlign: 'right', padding: '0 1rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Gain</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {gmailHistory[historyModalAccount.id].map((h: any) => (
-                                                    <tr key={h.id}>
-                                                        <td style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem 0 0 0.75rem' }}>
-                                                            <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>{h.artisan_company}</div>
-                                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                                                {h.sector_icon} {h.sector_name}
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '1rem', background: '#f8fafc', fontSize: '0.85rem', color: '#64748b' }}>
-                                                            {new Date(h.submitted_at).toLocaleDateString()}
-                                                        </td>
-                                                        <td style={{ padding: '1rem', background: '#f8fafc' }}>
-                                                            <span style={{
-                                                                fontSize: '0.7rem',
-                                                                fontWeight: 800,
-                                                                padding: '0.25rem 0.6rem',
-                                                                borderRadius: '2rem',
-                                                                textTransform: 'uppercase',
-                                                                background: h.status === 'validated' ? '#d1fae5' : (h.status === 'rejected' ? '#fee2e2' : '#fef3c7'),
-                                                                color: h.status === 'validated' ? '#059669' : (h.status === 'rejected' ? '#dc2626' : '#d97706'),
-                                                            }}>
-                                                                {h.status === 'validated' ? 'Validé' : (h.status === 'rejected' ? 'Refusé' : 'En attente')}
-                                                            </span>
-                                                        </td>
-                                                        <td style={{ padding: '1rem', background: '#f8fafc', borderRadius: '0 0.75rem 0.75rem 0', textAlign: 'right' }}>
-                                                            <div style={{ fontWeight: 800, color: h.status === 'validated' ? '#059669' : '#1e293b', fontSize: '1rem' }}>
-                                                                {h.earnings}€
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <GmailHistoryTable
+                                        history={gmailHistory[`${historyModalAccount.account.id}_${historyModalAccount.sectorId || 'all'}`]}
+                                    />
                                 )}
                             </div>
 
