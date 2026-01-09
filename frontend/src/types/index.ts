@@ -137,6 +137,7 @@ export interface ReviewOrder {
     created_at: string;
     completed_at?: string;
     // Anti-Detection
+    sector_id?: number | null;
     sector_slug?: string;
     sector_difficulty?: 'easy' | 'medium' | 'hard';
     reviews_per_day?: number;
@@ -144,6 +145,8 @@ export interface ReviewOrder {
     estimated_duration_days?: number;
     client_cities?: string[] | string;
     payout_per_review?: number;
+    establishment_id?: string;
+    city?: string;
 }
 
 export interface ReviewProposal {
@@ -197,4 +200,38 @@ export interface ApiError {
     error: string;
     message?: string;
     details?: any;
+}
+
+export interface Establishment {
+    id: string;
+    user_id: string;
+    name: string;
+    slug: string;
+    address_line1?: string;
+    address_line2?: string;
+    city: string;
+    postal_code?: string;
+    region?: string;
+    country: string;
+    country_code: string;
+    latitude?: number;
+    longitude?: number;
+    geocoded: boolean;
+    phone?: string;
+    email?: string;
+    website?: string;
+    sector_id?: number;
+    sector_name?: string;
+    sector_slug?: string;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
+    platform_links: any;
+    source_type: 'google_search' | 'google_link' | 'manual';
+    google_place_id?: string;
+    verification_status: 'pending' | 'verified' | 'rejected';
+    rejection_reason?: string;
+    google_data?: any;
+    google_business_url?: string;
+    company_context?: string;
+    created_at: string;
+    updated_at: string;
 }

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ReviewOrder } from '../../../types';
 import { SectorSelect } from '../../../components/Campaign/SectorSelect';
 import { RhythmeSlider, RhythmeConfig } from '../../../components/Campaign/RhythmeSlider';
 import { LocalisationClients } from '../../../components/Campaign/LocalisationClients';
 import { showError } from '../../../utils/Swal';
+import { CheckCircle } from 'lucide-react';
 
 interface Step2Props {
     initialData: Partial<ReviewOrder> | null;
@@ -14,14 +15,16 @@ interface Step2Props {
 export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onBack }) => {
     // New Anti-Detection State
     const [formData, setFormData] = useState({
-        sector: initialData?.sector || '', // Keep for legacy/display
+        sector: initialData?.sector || '',
+        sector_id: initialData?.sector_id || null,
         sector_slug: initialData?.sector_slug || '',
         sector_difficulty: initialData?.sector_difficulty || 'easy',
 
         zones: initialData?.zones || '',
-        establishment_city: initialData?.city || initialData?.zones?.split(',')[0] || '', // Try to guess city
+        city: initialData?.city || '',
 
         positioning: initialData?.positioning || '',
+        // ... (lines 26-37)
         client_types: initialData?.client_types || '',
         desired_tone: initialData?.desired_tone || 'professionnel',
         staff_names: initialData?.staff_names || '',
@@ -39,6 +42,7 @@ export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onB
         setFormData(prev => ({
             ...prev,
             sector: sector.sector_name,
+            sector_id: sector.id,
             sector_slug: sector.sector_slug,
             sector_difficulty: sector.difficulty
         }));
@@ -80,26 +84,90 @@ export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onB
             </p>
 
             {/* 1. SECTEUR & DIFFICULTE */}
-            <SectorSelect
-                selectedSectorSlug={formData.sector_slug}
-                onSectorChange={handleSectorChange}
-            />
-
-            {/* 2. LOCALISATION CLIENTS */}
             <div className="form-group">
-                <label className="form-label">Ville de l'établissement</label>
-                <input
-                    type="text"
-                    className="form-input"
-                    value={formData.establishment_city}
-                    onChange={(e) => setFormData({ ...formData, establishment_city: e.target.value })}
-                    placeholder="Ex: Bordeaux"
-                    required
-                />
+                {!!initialData?.establishment_id && !!initialData?.sector_slug ? (
+                    <div style={{
+                        padding: '1.25rem',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '1rem',
+                        border: '2px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ fontSize: '1.5rem', backgroundColor: 'white', padding: '0.5rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                                🏢
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>{initialData.sector || formData.sector}</div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>SYNCHRONISÉ AVEC VOTRE ÉTABLISSEMENT</div>
+                            </div>
+                        </div>
+                        <CheckCircle color="#10b981" />
+                    </div>
+                ) : (
+                    <>
+                        <SectorSelect
+                            selectedSectorSlug={formData.sector_slug}
+                            onSectorChange={handleSectorChange}
+                        />
+                        {initialData?.establishment_id && !initialData?.sector_slug && (
+                            <p style={{ fontSize: '0.75rem', color: '#ff3b6a', marginTop: '-1.25rem', marginBottom: '1.25rem' }}>
+                                Note : Votre établissement n'a pas de secteur défini. Veuillez en sélectionner un.
+                            </p>
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* 2. VILLE DE L'ÉTABLISSEMENT */}
+            <div className="form-group">
+                {!!initialData?.establishment_id && !!initialData?.city ? (
+                    <div style={{
+                        padding: '1.25rem',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '1rem',
+                        border: '2px solid #e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '1rem'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ fontSize: '1.5rem', backgroundColor: 'white', padding: '0.5rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                                📍
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>{initialData.city || formData.city}</div>
+                                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>VILLE DE L'ÉTABLISSEMENT</div>
+                            </div>
+                        </div>
+                        <CheckCircle color="#10b981" />
+                    </div>
+                ) : (
+                    <>
+                        <label className="form-label">Ville de l'établissement</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={formData.city}
+                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            placeholder="Ex: Bordeaux"
+                            required
+                        />
+                        {initialData?.establishment_id && !initialData?.city && (
+                            <p style={{ fontSize: '0.75rem', color: '#ff3b6a', marginTop: '0.4rem' }}>
+                                Note : Votre établissement n'a pas de ville définie. Veuillez l'indiquer.
+                            </p>
+                        )}
+                    </>
+                )}
             </div>
 
             <LocalisationClients
-                establishmentCity={formData.establishment_city}
+                establishmentCity={formData.city}
                 totalReviews={initialData?.quantity || 10} // Default if not passed
                 onCitiesGenerated={handleCitiesChange}
             />

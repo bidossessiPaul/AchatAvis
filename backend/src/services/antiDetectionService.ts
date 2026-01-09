@@ -293,6 +293,7 @@ class AntiDetectionService {
 
         for (const sector of sectors) {
             recap[sector.sector_slug] = {
+                sector_id: sector.id,
                 sector_name: sector.sector_name,
                 icon: sector.icon_emoji,
                 difficulty: sector.difficulty,

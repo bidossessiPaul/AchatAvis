@@ -39,7 +39,7 @@ export const GuideDashboard: React.FC = () => {
                     overflow: 'hidden'
                 }}>
                     <div style={{ position: 'relative', zIndex: 1 }}>
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem' }}>Prêt à gagner de l'argent ?</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: 'white' }}>Prêt à gagner de l'argent ?</h2>
                         <p style={{ opacity: 0.9, maxWidth: '500px' }}>
                             Sélectionnez une mission ci-dessous, postez votre avis sur Google Business et gagnez jusqu'à 2.50€ par contribution validée.
                         </p>

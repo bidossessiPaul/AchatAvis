@@ -41,6 +41,16 @@ export const artisanController = {
             if (!order || order.artisan_id !== user!.userId) {
                 return res.status(404).json({ error: 'Order not found' });
             }
+
+            console.log('🔍 DEBUG getOrder - sector fields:', {
+                sector: order.sector,
+                sector_id: order.sector_id,
+                sector_slug: order.sector_slug,
+                sector_difficulty: order.sector_difficulty,
+                city: order.city,
+                establishment_id: order.establishment_id
+            });
+
             return res.json(order);
         } catch (error: any) {
             return res.status(500).json({ error: 'Failed to fetch order' });

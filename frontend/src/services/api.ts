@@ -366,6 +366,11 @@ export const adminApi = {
         await api.post(`/admin/missions/${orderId}/approve`);
     },
 
+    // Establishment Validation
+    getPendingEstablishments: () => api.get('/establishments/admin/pending').then(res => res.data.data),
+    verifyEstablishment: (id: string, data: { status: string, notes?: string }) =>
+        api.post(`/establishments/admin/verify/${id}`, data).then(res => res.data),
+
     getMissions: async (): Promise<any[]> => {
         const response = await api.get('/admin/missions');
         return response.data;
@@ -458,6 +463,34 @@ export const teamApi = {
         const response = await api.delete(`/team/${id}?type=${type}`);
         return response.data;
     },
+};
+
+// Establishment API
+export const establishmentApi = {
+    searchGoogle: async (search_query: string, city: string) => {
+        const response = await api.post('/establishments/search-google', { search_query, city });
+        return response.data;
+    },
+    createFromLink: async (google_maps_url: string) => {
+        const response = await api.post('/establishments/from-link', { google_maps_url });
+        return response.data;
+    },
+    createManual: async (data: any) => {
+        const response = await api.post('/establishments/manual', data);
+        return response.data;
+    },
+    getMyEstablishments: async () => {
+        const response = await api.get('/establishments/my');
+        return response.data;
+    },
+    getDetails: async (id: string) => {
+        const response = await api.get(`/establishments/${id}`);
+        return response.data;
+    },
+    verify: async (id: string, status: 'verified' | 'rejected', notes?: string) => {
+        const response = await api.put(`/establishments/${id}/verify`, { status, notes });
+        return response.data;
+    }
 };
 
 export default api;

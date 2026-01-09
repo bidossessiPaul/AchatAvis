@@ -107,7 +107,9 @@ export interface ReviewOrder {
     price: number;
     status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
     sector_id?: number;
+    sector_slug?: string;
     sector_difficulty?: 'easy' | 'medium' | 'hard';
+    city?: string;
     reviews_received: number;
     company_name?: string;
     company_context?: string;
@@ -119,6 +121,7 @@ export interface ReviewOrder {
     staff_names?: string;
     specific_instructions?: string;
     google_business_url?: string;
+    establishment_id?: string;
     publication_pace?: string;
     payment_id?: string;
     metadata?: any;
@@ -270,4 +273,63 @@ export interface GuideComplianceScore {
     certification_passed: boolean;
     certification_passed_at?: Date;
     certification_score?: number;
+}
+
+export interface Establishment {
+    id: string;
+    user_id: string;
+    name: string;
+    slug: string;
+    address_line1?: string;
+    address_line2?: string;
+    city: string;
+    postal_code?: string;
+    region?: string;
+    country: string;
+    country_code: string;
+    latitude?: number;
+    longitude?: number;
+    geocoded: boolean;
+    phone?: string;
+    email?: string;
+    website?: string;
+    sector_id?: number;
+    sector_name?: string;
+    sector_slug?: string;
+    sector_difficulty?: 'easy' | 'medium' | 'hard';
+    platform_links: any; // JSON
+    source_type: 'google_search' | 'google_link' | 'manual';
+    google_place_id?: string;
+    verification_status: 'pending' | 'verified' | 'rejected';
+    rejection_reason?: string;
+    verified_at?: Date;
+    verified_by?: string;
+    google_data?: any; // JSON
+    created_at: Date;
+    updated_at: Date;
+    last_sync_google?: Date;
+}
+
+export interface EstablishmentVerificationLog {
+    id: number;
+    establishment_id: string;
+    action: 'created' | 'verified' | 'rejected' | 'updated' | 'link_added';
+    performed_by: string;
+    old_data?: any;
+    new_data?: any;
+    notes?: string;
+    ip_address?: string;
+    created_at: Date;
+}
+
+export interface GooglePlacesConfig {
+    id: number;
+    api_key: string;
+    is_active: boolean;
+    daily_quota: number;
+    used_today: number;
+    last_reset: string;
+    environment: 'development' | 'staging' | 'production';
+    created_at: Date;
+    updated_at: Date;
 }

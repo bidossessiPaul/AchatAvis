@@ -13,6 +13,7 @@ import teamRoutes from './routes/team';
 import debugRoutes from './routes/debug';
 import antiDetectionRoutes from './routes/antiDetectionRoutes';
 import suspensionRoutes from './routes/suspensionRoutes';
+import establishmentRoutes from './routes/establishment';
 // Refreshing routes...
 
 // Load environment variables
@@ -81,6 +82,7 @@ app.use('/api/team', teamRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/anti-detection', antiDetectionRoutes);
 app.use('/api/suspensions', suspensionRoutes);
+app.use('/api/establishments', establishmentRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

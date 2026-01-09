@@ -88,6 +88,10 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rythme</span>
                         <p style={{ fontWeight: 700, margin: '0.25rem 0', color: '#000' }}>{order.reviews_per_day} avis / jour</p>
                     </div>
+                    <div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Ville</span>
+                        <p style={{ fontWeight: 700, margin: '0.25rem 0', color: '#000' }}>{order.city || 'Non renseignée'}</p>
+                    </div>
                 </div>
             </div>
 

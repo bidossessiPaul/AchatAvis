@@ -12,6 +12,7 @@ import {
     DollarSign,
     User,
     Users,
+    Building2,
     FileCheck,
     Briefcase,
     ShieldCheck,
@@ -53,6 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 return [
                     { label: 'Vue d\'ensemble', path: '/artisan', icon: <LayoutDashboard size={20} /> },
                     { label: 'Mes commandes', path: '/artisan/orders', icon: <Package size={20} /> },
+                    { label: 'Mes établissements', path: '/artisan/establishments', icon: <Building2 size={20} /> },
                     { label: 'Avis reçus', path: '/artisan/reviews', icon: <Star size={20} /> },
                     { label: 'Facturation', path: '/artisan/billing', icon: <CreditCard size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
@@ -75,6 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
+                    { label: 'Établissements', path: '/admin/establishments', icon: <Building2 size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Missions', path: '/admin/missions', icon: <Briefcase size={20} />, permissions: ['can_manage_missions', 'can_validate_missions'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_users', 'super_admin'] },
