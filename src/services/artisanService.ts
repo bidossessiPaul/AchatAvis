@@ -31,16 +31,37 @@ export const artisanService = {
             throw new Error("Ce pack est déjà entièrement utilisé. Veuillez en sélectionner un autre.");
         }
 
-        const orderId = uuidv4();
-        const { quantity = 1, company_name = '', company_context = '', google_business_url = '', staff_names = '', specific_instructions = '' } = data;
+        const {
+            quantity = 1,
+            company_name = '',
+            company_context = '',
+            google_business_url = '',
+            staff_names = '',
+            specific_instructions = '',
+            establishment_id = null,
+            sector = '',
+            sector_id = null,
+            sector_slug = '',
+            sector_difficulty = 'easy',
+            city = ''
+        } = data;
 
         // Use the actual price paid for the pack (1 Pack = 1 Mission logic)
         const price = parseFloat(pack.amount);
 
+        const orderId = uuidv4();
+
         await query(
-            `INSERT INTO reviews_orders (id, artisan_id, quantity, price, status, company_name, company_context, google_business_url, staff_names, specific_instructions, payment_id)
-             VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?)`,
-            [orderId, artisanId, quantity, price, company_name, company_context, google_business_url, staff_names, specific_instructions, payment_id]
+            `INSERT INTO reviews_orders (
+                id, artisan_id, quantity, price, status, company_name, company_context, 
+                google_business_url, staff_names, specific_instructions, payment_id, establishment_id,
+                sector, sector_id, sector_slug, sector_difficulty, city
+            ) VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                orderId, artisanId, quantity, price, company_name, company_context,
+                google_business_url, staff_names, specific_instructions, payment_id, establishment_id,
+                sector, sector_id, sector_slug, sector_difficulty, city
+            ]
         );
 
         // Update missions_used in payments table (Mark pack as used)
@@ -82,9 +103,9 @@ export const artisanService = {
         const updateableFields = [
             'company_name', 'company_context', 'sector', 'zones',
             'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
-            'staff_names', 'specific_instructions',
+            'staff_names', 'specific_instructions', 'establishment_id', 'city',
             // Anti-Detection Fields
-            'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
+            'sector_id', 'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
             'estimated_duration_days', 'client_cities'
         ];
 

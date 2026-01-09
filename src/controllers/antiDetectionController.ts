@@ -117,29 +117,36 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
             const user_id = req.user?.userId;
             const role = req.user?.role;
             const { accountId } = req.params;
+            const { sectorId } = req.query;
 
             if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
             // If admin, we don't filter by guide_id. If guide, we only allow seeing their own accounts.
             let sql = `
-SELECT
-s.id,
-    s.submitted_at,
-    s.status,
-    s.earnings,
-    o.company_name as artisan_company,
-    sd.sector_name,
-    sd.icon_emoji as sector_icon
+                SELECT 
+                    s.id, 
+                    s.submitted_at, 
+                    s.status, 
+                    s.earnings,
+                    o.company_name as artisan_company,
+                    sd.id as sector_id,
+                    sd.sector_name,
+                    sd.icon_emoji as sector_icon
                 FROM reviews_submissions s
                 JOIN reviews_orders o ON s.order_id = o.id
                 LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
                 WHERE s.gmail_account_id = ?
-    `;
+            `;
             const params: any[] = [accountId];
 
             if (role !== 'admin') {
                 sql += ` AND s.guide_id = ? `;
                 params.push(user_id);
+            }
+
+            if (sectorId) {
+                sql += ` AND o.sector_id = ? `;
+                params.push(sectorId);
             }
 
             sql += ` ORDER BY s.submitted_at DESC`;

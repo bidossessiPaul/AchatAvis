@@ -135,9 +135,15 @@ export const guideService = {
 
     async getMySubmissions(guideId: string) {
         return query(`
-            SELECT s.*, o.company_name as artisan_company
+            SELECT 
+                s.*, 
+                o.company_name as artisan_company,
+                sd.id as sector_id,
+                sd.sector_name,
+                sd.icon_emoji as sector_icon
             FROM reviews_submissions s
             JOIN reviews_orders o ON s.order_id = o.id
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
             WHERE s.guide_id = ?
             ORDER BY s.submitted_at DESC
         `, [guideId]);
