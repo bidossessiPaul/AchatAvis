@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
-import { GuideLevelProgress } from './GuideLevelProgress';
-import './GuideDashboard.css';
+import './GuideDashboard.css'; // Reuse existing styles
 
-export const GuideDashboard: React.FC = () => {
+export const AllMissions: React.FC = () => {
     const [missions, setMissions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedSector, setSelectedSector] = useState<string>('all');
+    const [showQuotaFull, setShowQuotaFull] = useState<boolean>(true); // Default to showing all, toggle to hide full
+    const [searchQuery, setSearchQuery] = useState('');
+
     const navigate = useNavigate();
     const { user } = useAuthStore();
 
@@ -28,53 +31,99 @@ export const GuideDashboard: React.FC = () => {
         }
     };
 
+    // Extract unique sectors
+    const sectors = useMemo(() => {
+        const sectorSet = new Set(missions.map(m => m.sector).filter(Boolean));
+        return Array.from(sectorSet).sort();
+    }, [missions]);
+
+    // Filter missions
+    const filteredMissions = useMemo(() => {
+        return missions.filter(mission => {
+            // Sector Filter
+            if (selectedSector !== 'all' && mission.sector !== selectedSector) return false;
+
+            // Search Filter
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                if (!mission.company_name?.toLowerCase().includes(query) &&
+                    !mission.city?.toLowerCase().includes(query)) {
+                    return false;
+                }
+            }
+
+            // Quota Filter (Hide if quota full and toggle is OFF)
+            // If showQuotaFull is false, we want to HIDE missions where daily quota is reached
+            const isDailyQuotaFull = (mission.daily_submissions_count || 0) >= mission.reviews_per_day;
+            if (!showQuotaFull && isDailyQuotaFull) return false;
+
+            return true;
+        });
+    }, [missions, selectedSector, searchQuery, showQuotaFull]);
+
     return (
-        <DashboardLayout title="Missions Disponibles">
-            <div className="guide-dashboard-hero">
-                <div className="guide-dashboard-hero-content">
-                    <div className="guide-dashboard-hero-text">
-                        <h2 className="guide-dashboard-hero-title">Prêt à gagner de l'argent ?</h2>
-                        <p className="guide-dashboard-hero-subtitle">
-                            Sélectionnez une mission ci-dessous, postez votre avis sur Google Business et gagnez jusqu'à 2.50€ par contribution validée.
-                        </p>
+        <DashboardLayout title="Toutes les Missions">
+            <div className="filters-container" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', marginBottom: '2rem', border: '1px solid #f3f4f6' }}>
+                <div className="filters-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+
+                    {/* Search */}
+                    <div className="search-wrapper" style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
+                        <input
+                            type="text"
+                            placeholder="Rechercher une entreprise ou ville..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '10px 10px 10px 36px',
+                                borderRadius: '8px',
+                                border: '1px solid #e5e7eb',
+                                fontSize: '0.9rem'
+                            }}
+                        />
                     </div>
-                    <Star className="guide-dashboard-hero-icon" />
-                </div>
-            </div>
 
-            {/* Gamification Progress */}
-            <GuideLevelProgress />
+                    {/* Sector Filter */}
+                    <div className="filter-group">
+                        <select
+                            value={selectedSector}
+                            onChange={(e) => setSelectedSector(e.target.value)}
+                            style={{
+                                padding: '10px',
+                                borderRadius: '8px',
+                                border: '1px solid #e5e7eb',
+                                fontSize: '0.9rem',
+                                minWidth: '150px'
+                            }}
+                        >
+                            <option value="all">Tous les secteurs</option>
+                            {sectors.map(sector => (
+                                <option key={sector} value={sector}>{sector}</option>
+                            ))}
+                        </select>
+                    </div>
 
-            {/* Anti-Detection Alert */}
-            <div
-                onClick={() => navigate('/guide/anti-detection')}
-                className="anti-detection-alert"
-            >
-                <div className="anti-detection-icon-wrapper">
-                    <ShieldCheck size={24} color="#f97316" />
+                    {/* Quota Toggle */}
+                    <div className="filter-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <input
+                            type="checkbox"
+                            id="showQuotaFull"
+                            checked={showQuotaFull}
+                            onChange={(e) => setShowQuotaFull(e.target.checked)}
+                            style={{ width: '16px', height: '16px', accentColor: '#ff3b6a' }}
+                        />
+                        <label htmlFor="showQuotaFull" style={{ fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer' }}>
+                            Afficher quotas atteints
+                        </label>
+                    </div>
                 </div>
-                <div className="anti-detection-content">
-                    <h3 className="anti-detection-title">
-                        Protégez vos gains et vos comptes !
-                    </h3>
-                    <p className="anti-detection-text">
-                        Découvrez nos conseils anti-détection pour éviter que vos avis ne soient supprimés par Google.
-                    </p>
-                </div>
-                <ArrowRight size={20} color="#9a3412" />
             </div>
 
             <div className="missions-header">
                 <h3 className="missions-header-title">
-                    Dernières missions disponibles
+                    {filteredMissions.length} mission{filteredMissions.length !== 1 ? 's' : ''} trouvée{filteredMissions.length !== 1 ? 's' : ''}
                 </h3>
-                <span
-                    className="see-all-link"
-                    onClick={() => navigate('/guide/missions')}
-                    style={{ cursor: 'pointer', color: '#ff3b6a', fontWeight: 600, fontSize: '0.9rem' }}
-                >
-                    Voir tout ({missions.length})
-                </span>
             </div>
 
             {isLoading ? (
@@ -82,11 +131,11 @@ export const GuideDashboard: React.FC = () => {
                     <div className="animate-spin loading-spinner">
                         <Clock size={32} color="#ff3b6a" />
                     </div>
-                    <p className="loading-text">Recherche des meilleures missions...</p>
+                    <p className="loading-text">Chargement des missions...</p>
                 </div>
-            ) : missions.length > 0 ? (
+            ) : filteredMissions.length > 0 ? (
                 <div className="missions-grid">
-                    {missions.slice(0, 3).map((mission) => (
+                    {filteredMissions.map((mission) => (
                         <div
                             key={mission.id}
                             className="mission-card"
@@ -111,7 +160,7 @@ export const GuideDashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <h4 className="mission-company-name" >
+                                <h4 className="mission-company-name">
                                     {mission.company_name}
                                 </h4>
 
@@ -189,11 +238,11 @@ export const GuideDashboard: React.FC = () => {
             ) : (
                 <div className="empty-state">
                     <div className="empty-state-icon">
-                        <ShieldCheck size={40} color="#9ca3af" />
+                        <Filter size={40} color="#9ca3af" />
                     </div>
-                    <h3 className="empty-state-title">Toutes les missions sont complétées !</h3>
+                    <h3 className="empty-state-title">Aucune mission trouvée</h3>
                     <p className="empty-state-text">
-                        Bravo ! Revenez plus tard pour découvrir de nouvelles opportunités de gagner de l'argent.
+                        Essayez de modifier vos filtres pour voir plus de résultats.
                     </p>
                 </div>
             )}

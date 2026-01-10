@@ -18,6 +18,7 @@ import { ArtisanOverview } from './pages/artisan/ArtisanOverview';
 import { SubmissionFlow } from './pages/artisan/SubmissionFlow/SubmissionFlow';
 import { OrderDetail } from './pages/artisan/OrderDetail';
 import { GuideDashboard } from './pages/guide/GuideDashboard';
+import { AllMissions } from './pages/guide/AllMissions';
 import { MissionDetail } from './pages/guide/MissionDetail';
 import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
@@ -215,6 +216,11 @@ function App() {
                 <Route path="/guide/dashboard" element={
                     <ProtectedRoute allowedRoles={['guide']}>
                         <GuideDashboard />
+                    </ProtectedRoute>
+                } />
+                <Route path="/guide/missions" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <AllMissions />
                     </ProtectedRoute>
                 } />
                 <Route path="/guide/missions/:orderId" element={

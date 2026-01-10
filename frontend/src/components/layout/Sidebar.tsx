@@ -62,7 +62,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 ];
             case 'guide':
                 return [
-                    { label: 'Missions', path: '/guide', icon: <MapPin size={20} /> },
+                    { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },
+                    { label: 'Toutes les missions', path: '/guide/missions', icon: <MapPin size={20} /> },
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
