@@ -52,10 +52,10 @@ SELECT * FROM sector_difficulty
 
             // Add visual meta
             let scoreColor = 'green';
-            let scoreLabel = 'Excellent ⭐';
-            if (data.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique 🚨'; }
-            else if (data.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer ⚠️'; }
-            else if (data.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bon 👍'; }
+            let scoreLabel = 'Excellent';
+            if (data.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique'; }
+            else if (data.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer'; }
+            else if (data.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bon'; }
 
             return res.json({
                 success: true,

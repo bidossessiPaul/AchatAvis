@@ -1,20 +1,41 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { MdRestaurant, MdPlumbing, MdElectricalServices, MdRealEstateAgent, MdLocalHospital, MdOutlineDoorBack, MdDirectionsCar } from 'react-icons/md';
+import { FaTruckMoving, FaGavel, FaHotel, FaGamepad, FaTools } from 'react-icons/fa';
+import { GiBread, GiScissors } from 'react-icons/gi';
+import { IoCafe, IoStorefrontSharp } from 'react-icons/io5';
+import { HiOutlineComputerDesktop } from 'react-icons/hi2';
+
+interface SectorItem {
+    label: string;
+    icon: React.ReactNode;
+    critical?: boolean;
+}
+
+interface SectorGroup {
+    level: string;
+    rate: string;
+    color: string;
+    icon: React.ReactNode;
+    items: SectorItem[];
+}
 
 export const SectorDifficultyList: React.FC = () => {
-    const sectors = [
+    const sectors: SectorGroup[] = [
         {
             level: 'FACILE',
             rate: '85-95%',
             color: '#22c55e',
             icon: <CheckCircle size={18} />,
             items: [
-                'Restaurant, Café, Boulangerie',
-                'Coiffure, Esthétique, Massage',
-                'Commerce (Boutiques, Magasins)',
-                'Hôtel, Hébergement',
-                'Loisirs (Cinéma, Bowling)'
+                { label: 'Restaurant', icon: <MdRestaurant /> },
+                { label: 'Café', icon: <IoCafe /> },
+                { label: 'Boulangerie', icon: <GiBread /> },
+                { label: 'Coiffure & Esthétique', icon: <GiScissors /> },
+                { label: 'Commerce & Boutiques', icon: <IoStorefrontSharp /> },
+                { label: 'Hôtel & Hébergement', icon: <FaHotel /> },
+                { label: 'Loisirs & Divertissement', icon: <FaGamepad /> }
             ]
         },
         {
@@ -23,11 +44,11 @@ export const SectorDifficultyList: React.FC = () => {
             color: '#f59e0b',
             icon: <Info size={18} />,
             items: [
-                'Automobile (Garage, Carrosserie)',
-                'Immobilier (Agence)',
-                'Santé (Dentiste, Kinésithérapeute)',
-                'Éducation (École privée, Cours particuliers)',
-                'Technologie (Informatique, Réparation)'
+                { label: 'Automobile & VTC', icon: <MdDirectionsCar /> },
+                { label: 'Immobilier (Agence)', icon: <MdRealEstateAgent /> },
+                { label: 'Santé & Bien-être', icon: <MdLocalHospital /> },
+                { label: 'Menuiserie', icon: <FaTools /> },
+                { label: 'Technologie & Réparation', icon: <HiOutlineComputerDesktop /> }
             ]
         },
         {
@@ -36,11 +57,11 @@ export const SectorDifficultyList: React.FC = () => {
             color: '#ef4444',
             icon: <AlertTriangle size={18} />,
             items: [
-                'Plomberie, Chauffage ⚠️',
-                'Dépannage, Serrurier ⚠️',
-                'Électricité ⚠️',
-                'Déménagement ⚠️',
-                'Services juridiques ⚠️'
+                { label: 'Plomberie & Chauffage', icon: <MdPlumbing />, critical: true },
+                { label: 'Serrurier (Urgence)', icon: <MdOutlineDoorBack />, critical: true },
+                { label: 'Électricité', icon: <MdElectricalServices />, critical: true },
+                { label: 'Déménagement', icon: <FaTruckMoving />, critical: true },
+                { label: 'Services Juridiques', icon: <FaGavel />, critical: true }
             ]
         }
     ];
@@ -102,8 +123,11 @@ export const SectorDifficultyList: React.FC = () => {
                                     padding: '0.5rem 0',
                                     borderBottom: i === group.items.length - 1 ? 'none' : '1px solid #f1f5f9'
                                 }}>
-                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: group.color, flexShrink: 0 }} />
-                                    {item}
+                                    <div style={{ color: group.color, display: 'flex', fontSize: '1rem' }}>
+                                        {item.icon}
+                                    </div>
+                                    {item.label}
+                                    {item.critical && <AlertTriangle size={14} color="#ef4444" />}
                                 </li>
                             ))}
                         </ul>

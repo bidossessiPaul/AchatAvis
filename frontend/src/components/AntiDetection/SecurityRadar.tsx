@@ -11,7 +11,72 @@ import {
     Mail,
     X
 } from 'lucide-react';
+import {
+    MdRestaurant, MdPlumbing, MdElectricalServices, MdRealEstateAgent,
+    MdHealthAndSafety, MdCarRepair, MdCleaningServices,
+    MdOutlineAccountBalanceWallet, MdOutlineLocalFlorist, MdOutlinePets,
+    MdOutlineDoorBack, MdOutlinePhotoCamera, MdOutlineHotel, MdOutlineGrass,
+    MdRoofing, MdOutlineAcUnit, MdWindow, MdDirectionsCar, MdOutlineConstruction
+} from 'react-icons/md';
+import { FaHardHat, FaTruckMoving, FaGavel, FaSpa, FaGamepad, FaTooth, FaTaxi, FaTools } from 'react-icons/fa';
+import { GiBread, GiScissors, GiLipstick } from 'react-icons/gi';
+import { IoCafe } from 'react-icons/io5';
+import { HiOutlineComputerDesktop } from 'react-icons/hi2';
+import { BiShoppingBag } from 'react-icons/bi';
+import { BsBriefcase, BsBrush } from 'react-icons/bs';
+import { FiGlobe } from 'react-icons/fi';
 import { GmailHistoryTable } from './GmailHistoryTable';
+
+const getSectorIcon = (identifier: string) => {
+    const s = identifier.toLowerCase().trim();
+
+    // Food & Drink
+    if (s.includes('restaur')) return <MdRestaurant size={20} />;
+    if (s.includes('cafe')) return <IoCafe size={20} />;
+    if (s.includes('boulanger')) return <GiBread size={20} />;
+
+    // Services & Beauty
+    if (s.includes('coiffure')) return <GiScissors size={20} />;
+    if (s.includes('esthetique') || s.includes('beaut') || s.includes('salon')) return <GiLipstick size={20} />;
+    if (s.includes('massage') || s.includes('spa') || s.includes('bien-etre')) return <FaSpa size={20} />;
+    if (s.includes('nettoy') || s.includes('menage')) return <MdCleaningServices size={20} />;
+    if (s.includes('fleurist')) return <MdOutlineLocalFlorist size={20} />;
+    if (s.includes('photo')) return <MdOutlinePhotoCamera size={20} />;
+    if (s.includes('animaux') || s.includes('pets') || s.includes('animal')) return <MdOutlinePets size={20} />;
+
+    // Home & Building
+    if (s.includes('plomb') || s.includes('assainiss')) return <MdPlumbing size={20} />;
+    if (s.includes('elec')) return <MdElectricalServices size={20} />;
+    if (s.includes('immo')) return <MdRealEstateAgent size={20} />;
+    if (s.includes('serrur') || s.includes('depann')) return <MdOutlineDoorBack size={20} />;
+    if (s.includes('toiture') || s.includes('couver') || s.includes('couvreur') || s.includes('charpen') || s.includes('ardois')) return <MdRoofing size={20} />;
+    if (s.includes('chauff') || s.includes('climo') || s.includes('clim')) return <MdOutlineAcUnit size={20} />;
+    if (s.includes('vitr')) return <MdWindow size={20} />;
+    if (s.includes('menuis') || s.includes('bois') || s.includes('ebenist')) return <FaTools size={20} />;
+    if (s.includes('bati') || s.includes('renov') || s.includes('travaux')) return <FaHardHat size={20} />;
+    if (s.includes('macon')) return <MdOutlineConstruction size={20} />;
+    if (s.includes('peint') || s.includes('deco')) return <BsBrush size={20} />;
+    if (s.includes('jardin') || s.includes('paysag')) return <MdOutlineGrass size={20} />;
+    if (s.includes('demenag')) return <FaTruckMoving size={20} />;
+
+    // Tech & Professional
+    if (s.includes('info') || s.includes('tech') || s.includes('repar') || s.includes('ordi')) return <HiOutlineComputerDesktop size={20} />;
+    if (s.includes('compta') || s.includes('expert') || s.includes('audit')) return <MdOutlineAccountBalanceWallet size={20} />;
+    if (s.includes('jurid') || s.includes('avocat') || s.includes('notaire')) return <FaGavel size={20} />;
+    if (s.includes('service')) return <BsBriefcase size={20} />;
+
+    // Health & Transport & Others
+    if (s.includes('dentist')) return <FaTooth size={20} />;
+    if (s.includes('sant') || s.includes('medic') || s.includes('docteur') || s.includes('hopital')) return <MdHealthAndSafety size={20} />;
+    if (s.includes('vtc') || s.includes('transport') || s.includes('chauffeur') || s.includes('camion')) return <MdDirectionsCar size={20} />;
+    if (s.includes('taxi')) return <FaTaxi size={20} />;
+    if (s.includes('hotel') || s.includes('voyage') || s.includes('sejour')) return <MdOutlineHotel size={20} />;
+    if (s.includes('auto') || s.includes('garage') || s.includes('mecani')) return <MdCarRepair size={20} />;
+    if (s.includes('loysir') || s.includes('loisir') || s.includes('divertis') || s.includes('jeu') || s.includes('sport')) return <FaGamepad size={20} />;
+    if (s.includes('shop') || s.includes('commerce') || s.includes('boutique') || s.includes('magasin')) return <BiShoppingBag size={20} />;
+
+    return <FiGlobe size={20} />;
+};
 
 export const SecurityRadar: React.FC = () => {
     const { guideRecap, fetchGuideRecap, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
@@ -105,9 +170,9 @@ export const SecurityRadar: React.FC = () => {
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        fontSize: '1.25rem'
+                                                        color: readyPercentage > 0 ? '#6366f1' : '#94a3b8'
                                                     }}>
-                                                        {data.icon}
+                                                        {getSectorIcon(slug)}
                                                     </div>
                                                     <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
                                                         {data.sector_name}
@@ -273,7 +338,7 @@ export const SecurityRadar: React.FC = () => {
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             style={{
                                 background: 'white',
                                 width: '100%',
