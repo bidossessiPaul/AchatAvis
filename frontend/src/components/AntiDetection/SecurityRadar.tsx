@@ -57,198 +57,200 @@ export const SecurityRadar: React.FC = () => {
                 </div>
             </div>
 
-            {/* Dynamic Table Layout */}
+            {/* Dynamic Table Layout - Scrollable Container */}
             <div style={{
                 background: 'white',
                 borderRadius: '1.25rem',
                 border: '1px solid #e2e8f0',
-                overflow: 'hidden',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                overflow: 'hidden'
             }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead>
-                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Secteur</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Disponibilité Mails</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Règles Anti-Détection</th>
-                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '10%', textAlign: 'center' }}>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sectors.map(([slug, data]: [string, any]) => {
-                            const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
-                            const totalAccounts = data.accounts.length;
-                            const readyPercentage = totalAccounts > 0 ? (availableAccounts / totalAccounts) * 100 : 0;
-                            const isExpanded = expandedSector === slug;
+                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Secteur</th>
+                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Disponibilité Mails</th>
+                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Règles Anti-Détection</th>
+                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '10%', textAlign: 'center' }}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {sectors.map(([slug, data]: [string, any]) => {
+                                const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
+                                const totalAccounts = data.accounts.length;
+                                const readyPercentage = totalAccounts > 0 ? (availableAccounts / totalAccounts) * 100 : 0;
+                                const isExpanded = expandedSector === slug;
 
-                            return (
-                                <React.Fragment key={slug}>
-                                    <tr
-                                        onClick={() => setExpandedSector(isExpanded ? null : slug)}
-                                        style={{
-                                            borderBottom: '1px solid #f1f5f9',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s ease',
-                                            background: isExpanded ? '#f8fafc' : 'transparent'
-                                        }}
-                                        onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = '#fcfdfe')}
-                                        onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
-                                    >
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                <div style={{
-                                                    width: '40px',
-                                                    height: '40px',
-                                                    borderRadius: '0.75rem',
-                                                    background: '#f1f5f9',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '1.25rem'
-                                                }}>
-                                                    {data.icon}
-                                                </div>
-                                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
-                                                    {data.sector_name}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                    <span style={{
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 800,
-                                                        color: availableAccounts > 0 ? '#10b981' : '#ef4444'
-                                                    }}>
-                                                        {availableAccounts} / {totalAccounts} PRÊTS
-                                                    </span>
-                                                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
-                                                        {Math.round(readyPercentage)}%
-                                                    </span>
-                                                </div>
-                                                <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                return (
+                                    <React.Fragment key={slug}>
+                                        <tr
+                                            onClick={() => setExpandedSector(isExpanded ? null : slug)}
+                                            style={{
+                                                borderBottom: '1px solid #f1f5f9',
+                                                cursor: 'pointer',
+                                                transition: 'background 0.2s ease',
+                                                background: isExpanded ? '#f8fafc' : 'transparent'
+                                            }}
+                                            onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = '#fcfdfe')}
+                                            onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
+                                        >
+                                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                     <div style={{
-                                                        width: `${readyPercentage}%`,
-                                                        height: '100%',
-                                                        background: availableAccounts > 0 ? '#10b981' : '#ef4444',
-                                                        transition: 'width 0.3s ease'
-                                                    }} />
+                                                        width: '40px',
+                                                        height: '40px',
+                                                        borderRadius: '0.75rem',
+                                                        background: '#f1f5f9',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '1.25rem'
+                                                    }}>
+                                                        {data.icon}
+                                                    </div>
+                                                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
+                                                        {data.sector_name}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
-                                                    <Zap size={14} color="#f59e0b" />
-                                                    <span>{data.cooldown_days}j repos</span>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <span style={{
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 800,
+                                                            color: availableAccounts > 0 ? '#10b981' : '#ef4444'
+                                                        }}>
+                                                            {availableAccounts} / {totalAccounts} PRÊTS
+                                                        </span>
+                                                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                                                            {Math.round(readyPercentage)}%
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                                        <div style={{
+                                                            width: `${readyPercentage}%`,
+                                                            height: '100%',
+                                                            background: availableAccounts > 0 ? '#10b981' : '#ef4444',
+                                                            transition: 'width 0.3s ease'
+                                                        }} />
+                                                    </div>
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
-                                                    <Shield size={14} color="#6366f1" />
-                                                    <span>{data.max_per_month} mtd</span>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
+                                                        <Zap size={14} color="#f59e0b" />
+                                                        <span>{data.cooldown_days}j repos</span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
+                                                        <Shield size={14} color="#6366f1" />
+                                                        <span>{data.max_per_month} mtd</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                                            <div style={{ color: '#94a3b8' }}>
-                                                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                            </td>
+                                            <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                                                <div style={{ color: '#94a3b8' }}>
+                                                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                                </div>
+                                            </td>
+                                        </tr>
 
-                                    <AnimatePresence>
-                                        {isExpanded && (
-                                            <tr>
-                                                <td colSpan={4} style={{ padding: 0, background: '#fcfdfe' }}>
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        transition={{ duration: 0.2 }}
-                                                        style={{ overflow: 'hidden' }}
-                                                    >
-                                                        <div style={{ padding: '1.5rem 2rem', borderBottom: '2px solid #f1f5f9' }}>
-                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                                                                {data.accounts.map((acc: any) => (
-                                                                    <div
-                                                                        key={acc.id}
-                                                                        style={{
-                                                                            padding: '1rem',
-                                                                            borderRadius: '1rem',
-                                                                            background: 'white',
-                                                                            border: '1px solid #e2e8f0',
-                                                                            display: 'flex',
-                                                                            flexDirection: 'column',
-                                                                            gap: '0.75rem',
-                                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                                                        }}
-                                                                    >
-                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <AnimatePresence>
+                                            {isExpanded && (
+                                                <tr>
+                                                    <td colSpan={4} style={{ padding: 0, background: '#fcfdfe' }}>
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: 'auto', opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            style={{ overflow: 'hidden' }}
+                                                        >
+                                                            <div style={{ padding: '1.5rem 2rem', borderBottom: '2px solid #f1f5f9' }}>
+                                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                                                                    {data.accounts.map((acc: any) => (
+                                                                        <div
+                                                                            key={acc.id}
+                                                                            style={{
+                                                                                padding: '1rem',
+                                                                                borderRadius: '1rem',
+                                                                                background: 'white',
+                                                                                border: '1px solid #e2e8f0',
+                                                                                display: 'flex',
+                                                                                flexDirection: 'column',
+                                                                                gap: '0.75rem',
+                                                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                                            }}
+                                                                        >
+                                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                                                    <div style={{
+                                                                                        width: '32px',
+                                                                                        height: '32px',
+                                                                                        borderRadius: '50%',
+                                                                                        background: acc.status === 'ready' ? '#dcfce7' : (acc.status === 'cooldown' ? '#fef3c7' : '#fee2e2'),
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626')
+                                                                                    }}>
+                                                                                        <Mail size={16} />
+                                                                                    </div>
+                                                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                                        {acc.email}
+                                                                                    </div>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={(e) => handleOpenHistory(e, acc, data.sector_id || null, data.sector_name)}
+                                                                                    style={{
+                                                                                        fontSize: '0.7rem',
+                                                                                        fontWeight: 800,
+                                                                                        color: '#6366f1',
+                                                                                        background: '#f5f3ff',
+                                                                                        border: '1px solid #ddd6fe',
+                                                                                        padding: '0.3rem 0.6rem',
+                                                                                        borderRadius: '0.5rem',
+                                                                                        cursor: 'pointer',
+                                                                                        textTransform: 'uppercase'
+                                                                                    }}
+                                                                                >
+                                                                                    Historique
+                                                                                </button>
+                                                                            </div>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
                                                                                 <div style={{
-                                                                                    width: '32px',
-                                                                                    height: '32px',
-                                                                                    borderRadius: '50%',
-                                                                                    background: acc.status === 'ready' ? '#dcfce7' : (acc.status === 'cooldown' ? '#fef3c7' : '#fee2e2'),
+                                                                                    fontSize: '0.65rem',
+                                                                                    fontWeight: 900,
+                                                                                    textTransform: 'uppercase',
+                                                                                    color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626'),
                                                                                     display: 'flex',
                                                                                     alignItems: 'center',
-                                                                                    justifyContent: 'center',
-                                                                                    color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626')
+                                                                                    gap: '0.25rem'
                                                                                 }}>
-                                                                                    <Mail size={16} />
+                                                                                    {acc.status === 'ready' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                                                                                    {acc.status === 'ready' ? 'Disponible' : (acc.status === 'cooldown' ? 'Repos' : 'Quotas')}
                                                                                 </div>
-                                                                                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                                    {acc.email}
+                                                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
+                                                                                    {acc.used_this_month} / {data.max_per_month} par mois
                                                                                 </div>
-                                                                            </div>
-                                                                            <button
-                                                                                onClick={(e) => handleOpenHistory(e, acc, data.sector_id || null, data.sector_name)}
-                                                                                style={{
-                                                                                    fontSize: '0.7rem',
-                                                                                    fontWeight: 800,
-                                                                                    color: '#6366f1',
-                                                                                    background: '#f5f3ff',
-                                                                                    border: '1px solid #ddd6fe',
-                                                                                    padding: '0.3rem 0.6rem',
-                                                                                    borderRadius: '0.5rem',
-                                                                                    cursor: 'pointer',
-                                                                                    textTransform: 'uppercase'
-                                                                                }}
-                                                                            >
-                                                                                Historique
-                                                                            </button>
-                                                                        </div>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
-                                                                            <div style={{
-                                                                                fontSize: '0.65rem',
-                                                                                fontWeight: 900,
-                                                                                textTransform: 'uppercase',
-                                                                                color: acc.status === 'ready' ? '#059669' : (acc.status === 'cooldown' ? '#d97706' : '#dc2626'),
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                gap: '0.25rem'
-                                                                            }}>
-                                                                                {acc.status === 'ready' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                                                                                {acc.status === 'ready' ? 'Disponible' : (acc.status === 'cooldown' ? 'Repos' : 'Quotas')}
-                                                                            </div>
-                                                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
-                                                                                {acc.used_this_month} / {data.max_per_month} par mois
                                                                             </div>
                                                                         </div>
-                                                                    </div>
-                                                                ))}
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </motion.div>
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </AnimatePresence>
-                                </React.Fragment>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                                        </motion.div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </AnimatePresence>
+                                    </React.Fragment>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Premium History Modal */}
