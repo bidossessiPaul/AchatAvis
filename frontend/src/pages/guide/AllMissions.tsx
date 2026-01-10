@@ -10,7 +10,7 @@ export const AllMissions: React.FC = () => {
     const [missions, setMissions] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedSector, setSelectedSector] = useState<string>('all');
-    const [showQuotaFull, setShowQuotaFull] = useState<boolean>(true); // Default to showing all, toggle to hide full
+    const [onlyAvailable, setOnlyAvailable] = useState<boolean>(true); // Default to showing only available
     const [searchQuery, setSearchQuery] = useState('');
 
     const navigate = useNavigate();
@@ -52,14 +52,14 @@ export const AllMissions: React.FC = () => {
                 }
             }
 
-            // Quota Filter (Hide if quota full and toggle is OFF)
-            // If showQuotaFull is false, we want to HIDE missions where daily quota is reached
+            // Quota Filter
+            // If onlyAvailable is true, we HIDE missions where daily quota is reached
             const isDailyQuotaFull = (mission.daily_submissions_count || 0) >= mission.reviews_per_day;
-            if (!showQuotaFull && isDailyQuotaFull) return false;
+            if (onlyAvailable && isDailyQuotaFull) return false;
 
             return true;
         });
-    }, [missions, selectedSector, searchQuery, showQuotaFull]);
+    }, [missions, selectedSector, searchQuery, onlyAvailable]);
 
     return (
         <DashboardLayout title="Toutes les Missions">
@@ -108,13 +108,13 @@ export const AllMissions: React.FC = () => {
                     <div className="filter-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="checkbox"
-                            id="showQuotaFull"
-                            checked={showQuotaFull}
-                            onChange={(e) => setShowQuotaFull(e.target.checked)}
+                            id="onlyAvailable"
+                            checked={onlyAvailable}
+                            onChange={(e) => setOnlyAvailable(e.target.checked)}
                             style={{ width: '16px', height: '16px', accentColor: '#ff3b6a' }}
                         />
-                        <label htmlFor="showQuotaFull" style={{ fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer' }}>
-                            Afficher quotas atteints
+                        <label htmlFor="onlyAvailable" style={{ fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer' }}>
+                            Quotas disponibles uniquement
                         </label>
                     </div>
                 </div>
