@@ -7,7 +7,7 @@ import qrcode from 'qrcode';
 import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/validator';
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
-import { sendResetPasswordEmail, sendWelcomeEmail } from './emailService';
+import { sendResetPasswordEmail, sendVerificationEmail } from './emailService';
 import { suspensionService } from './suspensionService';
 
 
@@ -63,8 +63,8 @@ export const registerArtisan = async (data: ArtisanRegistrationInput) => {
         // Generate email verification token
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
 
-        // Send welcome email
-        await sendWelcomeEmail(user.email, user.full_name, 'artisan');
+        // Send verification email
+        await sendVerificationEmail(user.email, user.full_name, verificationToken);
 
         return {
             user,
@@ -136,8 +136,8 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
 
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
 
-        // Send welcome email
-        await sendWelcomeEmail(user.email, user.full_name, 'guide');
+        // Send verification email
+        await sendVerificationEmail(user.email, user.full_name, verificationToken);
 
         return {
             user,

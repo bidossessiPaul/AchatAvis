@@ -106,6 +106,71 @@ export const sendResetPasswordEmail = async (email: string, token: string) => {
 };
 
 /**
+ * Send email verification link
+ */
+export const sendVerificationEmail = async (email: string, fullName: string, token: string) => {
+    const verificationUrl = `${emailConfig.frontendUrl}/verify-email?token=${token}`;
+
+    // Determine user role based on token payload if needed, but for now we keep it generic or assume passed info
+    // Actually, we can just make a generic verification email
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: '✉️ Confirmez votre adresse email - AchatAvis',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
+                    .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 32px; text-align: center; }
+                    .logo span { color: #ff3b6a; }
+                    .title { font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 16px; text-align: center; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
+                    .button-container { text-align: center; margin: 32px 0; }
+                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #6b7280; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo">Achat<span>Avis</span></div>
+                        <h2 class="title">Vérifiez votre email</h2>
+                        <p class="text">
+                            Bonjour <strong>${fullName}</strong>,<br><br>
+                            Merci de vous être inscrit sur AchatAvis. Pour sécuriser votre compte et accéder à toutes les fonctionnalités, veuillez confirmer votre adresse email.
+                        </p>
+                        
+                        <div class="button-container">
+                            <a href="${verificationUrl}" class="button">Confirmer mon email</a>
+                        </div>
+                        
+                        <p class="text" style="font-size: 14px; margin-bottom: 0; color: #6b7280;">
+                            Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.
+                        </p>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Verification email sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending verification email to ${email}:`, error);
+        // We log but don't fail the registration process, the user can request a new token later
+    }
+};
+
+/**
  * Send welcome email to new users
  */
 export const sendWelcomeEmail = async (email: string, fullName: string, role: 'artisan' | 'guide') => {

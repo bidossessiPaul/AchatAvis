@@ -59,8 +59,8 @@ export const registerArtisan = async (req: Request, res: Response) => {
         return res.status(201).json({
             message: 'Artisan account created successfully. Awaiting admin approval.',
             user: result.user,
-            // In production, send this token via email instead
-            verificationToken: result.verificationToken,
+            // Only return token in dev mode
+            verificationToken: process.env.NODE_ENV !== 'production' ? result.verificationToken : undefined,
         });
     } catch (error: any) {
         if (error instanceof ZodError) {
@@ -108,7 +108,8 @@ export const registerGuide = async (req: Request, res: Response) => {
         return res.status(201).json({
             message: 'Guide account created successfully',
             user: result.user,
-            verificationToken: result.verificationToken,
+            // Only return token in dev mode
+            verificationToken: process.env.NODE_ENV !== 'production' ? result.verificationToken : undefined,
         });
     } catch (error: any) {
         if (error instanceof ZodError) {
