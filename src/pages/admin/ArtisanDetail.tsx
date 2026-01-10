@@ -19,6 +19,7 @@ import {
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
+import { color } from 'framer-motion';
 
 interface Order {
     id: string;
@@ -179,9 +180,8 @@ export const ArtisanDetail: React.FC = () => {
                                 )}
                             </div>
                             <div className="header-titles">
-                                <span className="header-subtitle">{profile.full_name}</span>
-                                <h2>{profile.company_name}</h2>
-
+                                <span className="header-subtitle" title={profile.full_name}>{profile.full_name}</span>
+                                <h1 style={{ color: '#fff' }}>{profile.company_name}</h1>
                                 <div className="status-row">
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}
