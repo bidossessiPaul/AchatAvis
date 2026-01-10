@@ -30,6 +30,10 @@ export interface User {
     city?: string;
     postal_code?: string;
     google_business_url?: string;
+    // Guide Profile Fields
+    local_guide_level?: number;
+    total_reviews_validated?: number;
+    total_earnings?: number;
     google_email?: string;
 }
 
