@@ -191,7 +191,7 @@ export const MissionDetail: React.FC = () => {
     if (isLoading) {
         return (
             <DashboardLayout title="Chargement...">
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
+                <div className="loading-container">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-yellow-500" />
                 </div>
             </DashboardLayout>
@@ -202,46 +202,28 @@ export const MissionDetail: React.FC = () => {
         return (
             <DashboardLayout title="Mission indisponible">
                 <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <div className={`status-icon-wrapper ${isFull || isDailyFull ? 'warning' : 'locked'}`} style={{
-                        width: '80px',
-                        height: '80px',
-                        borderRadius: '50%',
-                        background: isFull || isDailyFull ? '#fff7ed' : '#fef2f2',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        margin: '0 auto 1.5rem'
-                    }}>
+                    <div className={`status-icon-wrapper ${isFull || isDailyFull ? 'warning' : 'locked'}`}>
                         {isFull || isDailyFull ? (
                             <Star size={40} color="#f97316" />
                         ) : (
                             <Shield size={40} color="#ef4444" />
                         )}
                     </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1f2937', marginBottom: '1rem' }}>
+                    <h2 className="error-title">
                         {isFull ? 'Quota Atteint' : isDailyFull ? 'Quota Journalier Atteint' : lockedByOther ? 'Mission en cours' : 'Erreur'}
                     </h2>
-                    <p style={{ color: '#6b7280', maxWidth: '400px', margin: '0 auto 2rem', lineHeight: 1.6 }}>
+                    <p className="error-text">
                         {error}
                     </p>
                     <button
                         onClick={() => navigate('/guide')}
-                        className="btn-back"
-                        style={{
-                            padding: '0.75rem 2rem',
-                            borderRadius: '0.75rem',
-                            background: '#1f2937',
-                            color: 'white',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer'
-                        }}
+                        className="btn-back-error"
                     >
                         Retour aux missions
                     </button>
 
                     {lockedByOther && (
-                        <p style={{ marginTop: '1.5rem', fontSize: '0.875rem', color: '#9ca3af' }}>
+                        <p className="lock-info">
                             <Clock size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                             Le verrou expirera automatiquement si le guide ne soumet pas de preuve.
                         </p>
@@ -291,25 +273,16 @@ export const MissionDetail: React.FC = () => {
                                     <h2 className="mission-company-name">
                                         {mission.artisan_company}
                                     </h2>
-                                    <p className="mission-location" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <p className="mission-location">
+                                        <span className="location-item">
                                             <MapPin size={18} /> {mission.city || 'Ville non spécifiée'}
                                         </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--gray-400)' }}>
+                                        <span className="location-separator">
                                             |
                                         </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <span className="location-item">
                                             <span style={{ fontSize: '1.2rem' }}>{(mission as any).sector_icon}</span>
-                                            <span style={{
-                                                fontSize: '0.7rem',
-                                                fontWeight: 800,
-                                                textTransform: 'uppercase',
-                                                background: (mission as any).difficulty === 'hard' ? '#fef2f2' : ((mission as any).difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
-                                                color: (mission as any).difficulty === 'hard' ? '#ef4444' : ((mission as any).difficulty === 'medium' ? '#f59e0b' : '#10b981'),
-                                                padding: '0.2rem 0.5rem',
-                                                borderRadius: '0.4rem',
-                                                border: `1px solid ${(mission as any).difficulty === 'hard' ? '#fee2e2' : ((mission as any).difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
-                                            }}>
+                                            <span className={`difficulty-badge ${(mission as any).difficulty}`}>
                                                 {(mission as any).difficulty === 'easy' ? 'Simple' : ((mission as any).difficulty === 'medium' ? 'Modéré' : 'Difficile')}
                                             </span>
                                         </span>
@@ -469,47 +442,33 @@ export const MissionDetail: React.FC = () => {
                             </div>
 
                             {/* Gmail Account Selector */}
-                            <div style={{ marginTop: 'var(--space-4)', padding: '1.25rem', background: '#f0f9ff', borderRadius: '1rem', border: '1px solid #e0f2fe' }}>
-                                <h4 style={{ fontSize: '0.875rem', fontWeight: 800, color: '#0369a1', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div className="gmail-selector-box">
+                                <h4 className="gmail-selector-title">
                                     <Shield size={18} /> COMPTE GMAIL
                                 </h4>
 
                                 {gmailAccounts.length > 0 ? (
-                                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                                    <div className="gmail-accounts-grid">
                                         {gmailAccounts.map(account => (
                                             <button
                                                 key={account.id}
                                                 onClick={() => handleCheckCompatibility(account.id)}
+                                                className="gmail-account-btn"
                                                 style={{
-                                                    padding: '0.75rem',
-                                                    borderRadius: '0.75rem',
-                                                    border: `2px solid ${selectedGmailId === account.id ? '#0ea5e9' : '#f3f4f6'}`,
-                                                    background: 'white',
-                                                    textAlign: 'left',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center'
+                                                    border: `2px solid ${selectedGmailId === account.id ? '#0ea5e9' : '#f3f4f6'}`
                                                 }}
                                             >
-                                                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151' }}>{account.email}</span>
+                                                <span className="gmail-account-email">{account.email}</span>
                                                 {selectedGmailId === account.id && <CheckCircle2 size={16} color="#0ea5e9" />}
                                             </button>
                                         ))}
                                     </div>
                                 ) : (
-                                    <div style={{ textAlign: 'center' }}>
-                                        <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Aucun compte Gmail enregistré.</p>
+                                    <div className="gmail-empty-state">
+                                        <p className="gmail-empty-text">Aucun compte Gmail enregistré.</p>
                                         <Link
                                             to="/profile?tab=gmail"
-                                            style={{
-                                                display: 'inline-block',
-                                                marginTop: '0.5rem',
-                                                fontSize: '0.75rem',
-                                                color: '#0ea5e9',
-                                                fontWeight: 600,
-                                                textDecoration: 'none'
-                                            }}
+                                            className="gmail-add-btn"
                                         >
                                             + Ajouter un compte
                                         </Link>
@@ -520,8 +479,8 @@ export const MissionDetail: React.FC = () => {
 
                         {/* Published Reviews Section - Moved to sidebar */}
                         {publishedProposals.length > 0 && (
-                            <div className="mission-published-card sidebar-card" style={{ marginTop: 'var(--space-4)' }}>
-                                <h3 className="section-header" style={{ marginTop: 0, fontSize: 'var(--text-lg)' }}>
+                            <div className="mission-published-card sidebar-card mt-4">
+                                <h3 className="section-header small-header">
                                     <CheckCircle2 size={20} color="var(--success)" /> Avis déjà publiés ({publishedProposals.length})
                                 </h3>
 
@@ -529,8 +488,8 @@ export const MissionDetail: React.FC = () => {
                                     {publishedProposals.map((item) => (
                                         <div key={item.id} className="published-item sidebar-item">
                                             <div className="published-info">
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem' }}>
-                                                    <p className="published-text" style={{ fontSize: 'var(--text-xs)', margin: 0, flex: 1 }}>
+                                                <div className="published-item-header">
+                                                    <p className="published-text">
                                                         {item.content}
                                                     </p>
                                                     {item.submission?.guide_avatar && item.submission.guide_id !== user?.id && (
@@ -538,23 +497,23 @@ export const MissionDetail: React.FC = () => {
                                                             src={item.submission.guide_avatar}
                                                             alt={item.submission.guide_name}
                                                             title={`Publié par ${item.submission.guide_name}`}
-                                                            style={{ width: '20px', height: '20px', borderRadius: '50%', marginLeft: '0.5rem', border: '1px solid #e5e7eb' }}
+                                                            className="published-avatar"
                                                         />
                                                     )}
                                                 </div>
-                                                <div className="published-meta" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <div className="published-meta-row">
+                                                    <div className="published-meta-left">
                                                         <a href={item.submission?.review_url} target="_blank" rel="noopener noreferrer" className="proof-link">
                                                             Preuve <ExternalLink size={10} />
                                                         </a>
                                                         {item.submission?.guide_id !== user?.id && (
-                                                            <span style={{ fontSize: '0.65rem', color: '#9ca3af' }}>
+                                                            <span className="published-author">
                                                                 par {item.submission?.guide_name?.split(' ')[0]}
                                                             </span>
                                                         )}
                                                     </div>
                                                     {item.submission?.google_email && (
-                                                        <span className="account-info" style={{ fontSize: '0.65rem' }}>
+                                                        <span className="account-info">
                                                             {item.submission.google_email}
                                                         </span>
                                                     )}
