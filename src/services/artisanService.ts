@@ -100,5 +100,10 @@ export const artisanService = {
     async getAvailablePacks(includeId?: string): Promise<any[]> {
         const response = await api.get('/artisan/available-packs', { params: { includeId } });
         return response.data;
+    },
+
+    async getStats(): Promise<any> {
+        const response = await api.get('/artisan/stats');
+        return response.data;
     }
 };

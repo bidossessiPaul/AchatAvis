@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../../context/authStore';
 import { Trophy, Unlock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import './GuideLevelProgress.css';
 
 export const GuideLevelProgress: React.FC = () => {
@@ -35,7 +36,11 @@ export const GuideLevelProgress: React.FC = () => {
     const reviewsNeeded = Math.max(0, levelData.nextLevelXP - currentXP);
 
     return (
-        <div className="guide-level-card">
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="guide-level-card"
+        >
             <div className="level-header">
                 <div className="level-badge-container">
                     <div className="level-badge-circle">
@@ -60,10 +65,12 @@ export const GuideLevelProgress: React.FC = () => {
                     <span className="progress-label-right">{currentXP} / {levelData.nextLevelXP} XP</span>
                 </div>
                 <div className="progress-bar-container">
-                    <div
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
                         className="progress-bar-fill"
-                        style={{ width: `${progressPercent}%` }}
-                    ></div>
+                    ></motion.div>
                 </div>
                 <p className="next-milestone-text">
                     Plus que <strong>{reviewsNeeded} avis validés</strong> pour atteindre le niveau suivant !
@@ -79,6 +86,6 @@ export const GuideLevelProgress: React.FC = () => {
                     <span className="benefit-value">{levelData.nextBenefit}</span>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };

@@ -1,28 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, TrendingUp, Wallet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { GuideLevelProgress } from './GuideLevelProgress';
+import { EarningsChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
+import { motion } from 'framer-motion';
 import './GuideDashboard.css';
 
 export const GuideDashboard: React.FC = () => {
     const [missions, setMissions] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
     const { user } = useAuthStore();
 
     useEffect(() => {
-        loadMissions();
+        loadDashboardData();
     }, []);
 
-    const loadMissions = async () => {
+    const loadDashboardData = async () => {
+        setIsLoading(true);
         try {
-            const data = await guideService.getAvailableMissions();
-            setMissions(data);
+            const [missionsData, statsData] = await Promise.all([
+                guideService.getAvailableMissions(),
+                guideService.getStats()
+            ]);
+            setMissions(missionsData);
+            setStats(statsData);
         } catch (error) {
-            console.error("Failed to load missions", error);
+            console.error("Failed to load guide dashboard data", error);
         } finally {
             setIsLoading(false);
         }
@@ -44,6 +52,63 @@ export const GuideDashboard: React.FC = () => {
 
             {/* Gamification Progress */}
             <GuideLevelProgress />
+
+            {/* Earnings Recap */}
+            <div className="earnings-recap-grid">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="recap-card"
+                >
+                    <span className="recap-label">Solde Actuel</span>
+                    <span className="recap-value">{Number(stats?.balance || 0).toFixed(2)}€</span>
+                    <div className="recap-subvalue">
+                        <Wallet size={14} />
+                        <span>Prêt pour retrait</span>
+                    </div>
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="recap-card"
+                >
+                    <span className="recap-label">En attente</span>
+                    <span className="recap-value" style={{ color: '#f59e0b' }}>{Number(stats?.pending || 0).toFixed(2)}€</span>
+                    <div className="recap-subvalue" style={{ color: '#6b7280' }}>
+                        <Clock size={14} />
+                        <span>Vérification Google</span>
+                    </div>
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="recap-card"
+                >
+                    <span className="recap-label">Total Gagné</span>
+                    <span className="recap-value" style={{ color: '#10b981' }}>{Number((stats?.totalPaid || 0) + (stats?.balance || 0)).toFixed(2)}€</span>
+                    <div className="recap-subvalue">
+                        <TrendingUp size={14} />
+                        <span>Depuis le début</span>
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* Analytics Section */}
+            <div className="guide-analytics-grid">
+                <div className="analytics-card">
+                    <h3 className="analytics-card-title">Gains des 7 derniers jours</h3>
+                    <EarningsChart data={stats?.dailyEarnings || []} />
+                </div>
+                <div className="analytics-card">
+                    <h3 className="analytics-card-title">État de vos contributions</h3>
+                    <DistributionChart data={stats?.statusDistribution?.map((s: any) => ({
+                        name: s.status === 'validated' ? 'Validés' : (s.status === 'rejected' ? 'Rejetés' : 'En attente'),
+                        value: s.count
+                    })) || []} />
+                </div>
+            </div>
 
             {/* Anti-Detection Alert */}
             <div
