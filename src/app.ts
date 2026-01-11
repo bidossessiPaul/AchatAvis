@@ -14,6 +14,7 @@ import debugRoutes from './routes/debug';
 import antiDetectionRoutes from './routes/antiDetectionRoutes';
 import suspensionRoutes from './routes/suspensionRoutes';
 import establishmentRoutes from './routes/establishment';
+import notificationRoutes from './routes/notifications';
 // Refreshing routes...
 
 // Load environment variables
@@ -83,6 +84,7 @@ app.use('/api/payouts', payoutRoutes);
 app.use('/api/anti-detection', antiDetectionRoutes);
 app.use('/api/suspensions', suspensionRoutes);
 app.use('/api/establishments', establishmentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

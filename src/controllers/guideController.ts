@@ -95,5 +95,21 @@ export const guideController = {
                 message: error.message
             });
         }
+    },
+
+    async getStats(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const stats = await guideService.getGuideStats(user.userId);
+            return res.json(stats);
+        } catch (error: any) {
+            console.error('Error fetching guide stats:', error);
+            return res.status(500).json({
+                error: 'Failed to fetch guide stats',
+                message: error.message
+            });
+        }
     }
 };

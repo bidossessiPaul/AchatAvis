@@ -4,6 +4,7 @@ import { query, pool } from '../config/database';
 import { generateAccessToken } from '../utils/token';
 import { v4 as uuidv4 } from 'uuid';
 import { sendPackActivationEmail } from '../services/emailService';
+import { notificationService } from '../services/notificationService';
 
 export const paymentController = {
     async createCheckoutSession(req: Request, res: Response): Promise<any> {
@@ -135,6 +136,14 @@ export const paymentController = {
                 console.error('⚠️ Erreur envoi email activation:', emailError);
             }
 
+            // 5. Send Real-time notification
+            notificationService.sendToUser(userId, {
+                type: 'payment_success',
+                title: 'Pack Activé ! 🚀',
+                message: `Votre pack ${plan.name} (${quota} avis) est maintenant actif.`,
+                link: '/artisan/dashboard'
+            });
+
             // Refresh token logic if needed? For now just success result
             res.json({
                 success: true,
@@ -216,6 +225,14 @@ export const paymentController = {
                         `Abonnement ${planId}`,
                         quantity
                     ]);
+
+                    // LOG NOTIFICATION
+                    notificationService.sendToUser(userId, {
+                        type: 'payment_success',
+                        title: 'Paiement Confirmé ! ✅',
+                        message: `Merci pour votre achat. Votre pack ${planId} est prêt.`,
+                        link: '/artisan/dashboard'
+                    });
 
                     // Generate a NEW token with the updated 'active' status
                     // to avoid stale token issues on the frontend
