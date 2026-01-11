@@ -1,5 +1,6 @@
 import { query, pool } from '../config/database';
 import { sendUserStatusUpdateEmail, sendMissionDecisionEmail, sendSubmissionDecisionEmail } from './emailService';
+import { notificationService } from './notificationService';
 
 /**
  * Get all artisans with their profiles
@@ -60,6 +61,14 @@ export const updateUserStatus = async (userId: string, status: string, reason?: 
     } catch (error) {
         console.error('Error sending user status update email:', error);
     }
+
+    // REAL-TIME NOTIFICATION
+    notificationService.sendToUser(userId, {
+        type: 'system',
+        title: 'Mise à jour du compte 👤',
+        message: `Le statut de votre compte a été mis à jour: ${status}`,
+        link: '/profile'
+    });
 
     return result;
 };
@@ -348,6 +357,30 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                     const { suspensionTriggers } = await import('./suspensionTriggers');
                     await suspensionTriggers.checkRepeatedRejections(rows[0].guide_id, submissionId);
                 }
+
+                // SSE NOTIFICATION - Guide
+                notificationService.sendToUser(rows[0].guide_id, {
+                    type: 'system',
+                    title: status === 'validated' ? 'Avis Validé ! 🎉' : 'Avis Rejeté ❌',
+                    message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : 'Désolé, votre soumission n\'a pas été retenue.',
+                    link: '/guide/dashboard'
+                });
+
+                // SSE NOTIFICATION - Artisan (only if validated)
+                if (status === 'validated') {
+                    const [subInfo]: any = await connection.query(`
+                        SELECT artisan_id FROM reviews_submissions WHERE id = :submissionId
+                    `, { submissionId });
+
+                    if (subInfo && subInfo.length > 0) {
+                        notificationService.sendToUser(subInfo[0].artisan_id, {
+                            type: 'order_update',
+                            title: 'Un avis a été publié ! ✅',
+                            message: 'Google a validé un nouvel avis pour votre entreprise.',
+                            link: '/artisan/dashboard'
+                        });
+                    }
+                }
             }
         } catch (error) {
             console.error('Error sending submission decision email:', error);
@@ -564,7 +597,7 @@ export const approveMission = async (orderId: string) => {
         // 3. Send notification to artisan
         try {
             const [rows]: any = await connection.query(`
-                SELECT u.full_name, u.email 
+                SELECT u.id, u.full_name, u.email, o.artisan_id
                 FROM reviews_orders o
                 JOIN users u ON o.artisan_id = u.id
                 WHERE o.id = ?
@@ -572,6 +605,14 @@ export const approveMission = async (orderId: string) => {
 
             if (rows && rows.length > 0) {
                 await sendMissionDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress');
+
+                // SSE NOTIFICATION
+                notificationService.sendToUser(rows[0].artisan_id || rows[0].id, { // Fallback to id if needed
+                    type: 'new_mission',
+                    title: 'Mission Validée ! 🎈',
+                    message: 'Votre mission est maintenant visible par nos Guides Locaux.',
+                    link: '/artisan/dashboard'
+                });
             }
         } catch (error) {
             console.error('Error sending mission decision email:', error);

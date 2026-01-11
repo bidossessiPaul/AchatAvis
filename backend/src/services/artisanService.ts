@@ -441,5 +441,75 @@ export const artisanService = {
                 pack_features: def ? def.features : null
             };
         });
+    },
+
+    /**
+     * Get statistics for artisan dashboard
+     */
+    async getArtisanStats(artisanId: string) {
+        // 1. Status Breakdown
+        const statusBreakdown: any = await query(`
+            SELECT status, COUNT(*) as count 
+            FROM reviews_orders 
+            WHERE artisan_id = ? 
+            GROUP BY status
+        `, [artisanId]);
+
+        // 2. Weekly Growth (published reviews over the last 4 weeks)
+        const weeklyGrowth: any = await query(`
+            SELECT 
+                DATE_FORMAT(submitted_at, '%Y-%u') as week_code,
+                YEAR(submitted_at) as year,
+                WEEK(submitted_at, 1) as week,
+                COUNT(*) as count
+            FROM reviews_submissions
+            WHERE artisan_id = ? 
+            AND status = 'validated'
+            AND submitted_at >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
+            GROUP BY week_code, year, week
+            ORDER BY year ASC, week ASC
+        `, [artisanId]);
+
+        // 3. Sector Distribution
+        const sectorDist: any = await query(`
+            SELECT 
+                COALESCE(sd.sector_name, 'Autre') as name, 
+                COUNT(*) as value
+            FROM reviews_orders ro
+            LEFT JOIN sector_difficulty sd ON ro.sector_id = sd.id
+            WHERE ro.artisan_id = ?
+            GROUP BY name
+        `, [artisanId]);
+
+        // 4. Global KPIs (Missions & Reviews)
+        const missionKpis: any = await query(`
+            SELECT 
+                COUNT(DISTINCT id) as total_missions,
+                SUM(quantity) as total_reviews_ordered,
+                SUM(reviews_received) as total_reviews_received
+            FROM reviews_orders
+            WHERE artisan_id = ?
+        `, [artisanId]);
+
+        // 5. Financial KPIs (Actual money spent)
+        const financialKpis: any = await query(`
+            SELECT 
+                SUM(amount) as total_investment
+            FROM payments
+            WHERE user_id = ? AND status = 'completed'
+        `, [artisanId]);
+
+        return {
+            statusBreakdown,
+            weeklyGrowth: weeklyGrowth.map((w: any) => ({
+                label: `Semaine ${w.week}`,
+                count: w.count
+            })),
+            sectorDistribution: sectorDist,
+            kpis: {
+                ...(missionKpis[0] || { total_missions: 0, total_reviews_ordered: 0, total_reviews_received: 0 }),
+                total_investment: financialKpis[0]?.total_investment || 0
+            }
+        };
     }
 };

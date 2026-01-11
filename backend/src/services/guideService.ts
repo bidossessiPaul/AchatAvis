@@ -1,6 +1,7 @@
 import { query } from '../config/database';
 import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
+import { notificationService } from './notificationService';
 
 export const guideService = {
     /**
@@ -236,6 +237,14 @@ export const guideService = {
             await suspensionTriggers.checkSectorCooldown(guideId, data.gmailAccountId, currentSectorSlug, submissionId);
         }
 
+        // 7. Notify Artisan
+        notificationService.sendToUser(data.artisanId, {
+            type: 'order_update',
+            title: 'Nouvel avis reçu ! ✨',
+            message: 'Un guide vient de soumettre une preuve pour votre mission.',
+            link: '/artisan/dashboard'
+        });
+
         return { id: submissionId, success: true };
     },
 
@@ -289,6 +298,61 @@ export const guideService = {
             VALUES (?, ?, ?, 'pending', NOW())
         `, [payoutId, guideId, stats.balance]);
 
-        return { id: payoutId, amount: stats.balance };
+        return {
+            id: payoutId,
+            amount: stats.balance
+        };
+    },
+
+    /**
+     * Get statistics for guide dashboard
+     */
+    async getGuideStats(guideId: string) {
+        // 1. Daily Earnings (last 7 days)
+        const dailyEarnings: any = await query(`
+            SELECT 
+                DATE(submitted_at) as date,
+                SUM(earnings) as amount,
+                COUNT(*) as count
+            FROM reviews_submissions
+            WHERE guide_id = ? 
+            AND status = 'validated'
+            AND submitted_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY DATE(submitted_at)
+            ORDER BY DATE(submitted_at) ASC
+        `, [guideId]);
+
+        // 2. Success rate (validated vs rejected vs pending)
+        const successRate: any = await query(`
+            SELECT 
+                status, 
+                COUNT(*) as count
+            FROM reviews_submissions
+            WHERE guide_id = ?
+            GROUP BY status
+        `, [guideId]);
+
+        // 3. Global Stats
+        const globalStats = await this.getEarningsStats(guideId);
+
+        // Map daily earnings to ensure we have all 7 days
+        const last7Days = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            const dateStr = date.toISOString().split('T')[0];
+            const found = (dailyEarnings as any[]).find(d => d.date.toISOString().split('T')[0] === dateStr);
+            last7Days.push({
+                day: date.toLocaleDateString('fr-FR', { weekday: 'short' }),
+                amount: found ? Number(found.amount) : 0,
+                count: found ? found.count : 0
+            });
+        }
+
+        return {
+            dailyEarnings: last7Days,
+            statusDistribution: successRate,
+            ...globalStats
+        };
     }
 };

@@ -17,6 +17,7 @@ router.get('/orders/history/urls', artisanController.getGoogleUrlHistory);
 router.get('/packs', artisanController.getSubscriptionPacks);
 router.get('/submissions', artisanController.getMySubmissions);
 router.get('/available-packs', artisanController.getAvailablePacks);
+router.get('/stats', artisanController.getStats);
 
 // Toutes les routes suivantes demandent un abonnement actif (actions d'écriture)
 router.use(requireActiveSubscription);

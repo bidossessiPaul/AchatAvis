@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
 import { ReviewOrder } from '../../types';
-import { PlusCircle, Clock, CheckCircle2, AlertCircle, ArrowRight, Star } from 'lucide-react';
+import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
+import { GrowthChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
+import { motion } from 'framer-motion';
 
 export const ArtisanOverview: React.FC = () => {
     const { user } = useAuthStore();
     const [orders, setOrders] = useState<ReviewOrder[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -22,7 +25,7 @@ export const ArtisanOverview: React.FC = () => {
         if (sessionId) {
             handlePaymentReturn(sessionId);
         } else {
-            loadOrders();
+            loadDashboardData();
         }
     }, []);
 
@@ -31,21 +34,14 @@ export const ArtisanOverview: React.FC = () => {
         try {
             const result = await artisanService.verifyPaymentSession(sessionId);
             if (result.success) {
-                // IMPORTANT: Update the access token if provided to clear stale 'pending' status
                 if (result.accessToken) {
                     localStorage.setItem('accessToken', result.accessToken);
                 }
-
                 setPaymentStatus('success');
-
-                // CRITICAL: Refresh auth state to update store with DB content
                 const { checkAuth } = useAuthStore.getState();
                 await checkAuth();
-
-                // Clean URL ONLY after state is refreshed to prevent SubscriptionGate race condition
                 window.history.replaceState({}, '', '/artisan');
-
-                await loadOrders();
+                await loadDashboardData();
             } else {
                 setPaymentStatus('error');
             }
@@ -55,22 +51,20 @@ export const ArtisanOverview: React.FC = () => {
         }
     };
 
-    const loadOrders = async () => {
+    const loadDashboardData = async () => {
+        setIsLoading(true);
         try {
-            const data = await artisanService.getMyOrders();
-            setOrders(data);
+            const [ordersData, statsData] = await Promise.all([
+                artisanService.getMyOrders(),
+                artisanService.getStats()
+            ]);
+            setOrders(ordersData);
+            setStats(statsData);
         } catch (error) {
-            console.error("Failed to load orders", error);
+            console.error("Failed to load dashboard data", error);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const stats = {
-        total: orders.length,
-        submitted: orders.filter(o => ['submitted', 'pending', 'in_progress'].includes(o.status)).length,
-        completed: orders.filter(o => o.status === 'completed').length,
-        drafts: orders.filter(o => o.status === 'draft').length
     };
 
     return (
@@ -159,28 +153,68 @@ export const ArtisanOverview: React.FC = () => {
                 )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 500 }}>Total Soumissions</span>
-                            <div style={{ background: '#f3f4f6', padding: '0.5rem', borderRadius: '0.5rem' }}><Clock size={20} color="#6b7280" /></div>
+                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Investissement Total</span>
+                            <div style={{ background: '#fff1f2', padding: '0.5rem', borderRadius: '0.75rem' }}><DollarSign size={20} color="#ff3b6a" /></div>
                         </div>
-                        <span style={{ fontSize: '1.875rem', fontWeight: 700, color: '#111827' }}>{stats.total}</span>
-                    </div>
+                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>{Number(stats?.kpis?.total_investment || 0).toFixed(2)}€</span>
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <TrendingUp size={14} />
+                            <span>Visibilité en hausse</span>
+                        </div>
+                    </motion.div>
 
-                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 500 }}>En cours</span>
-                            <div style={{ background: '#fff7ed', padding: '0.5rem', borderRadius: '0.5rem' }}><Clock size={20} color="#f97316" /></div>
+                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avis Récoltés</span>
+                            <div style={{ background: '#ecfdf5', padding: '0.5rem', borderRadius: '0.75rem' }}><CheckCircle2 size={20} color="#10b981" /></div>
                         </div>
-                        <span style={{ fontSize: '1.875rem', fontWeight: 700, color: '#f97316' }}>{stats.submitted}</span>
-                    </div>
+                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>{stats?.kpis?.total_reviews_received || 0}</span>
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                            Sur {stats?.kpis?.total_reviews_ordered || 0} commandés
+                        </div>
+                    </motion.div>
 
-                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
+                    >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 500 }}>Avis Validés</span>
-                            <div style={{ background: '#ecfdf5', padding: '0.5rem', borderRadius: '0.5rem' }}><CheckCircle2 size={20} color="#10b981" /></div>
+                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Taux de Succès</span>
+                            <div style={{ background: '#eff6ff', padding: '0.5rem', borderRadius: '0.75rem' }}><Target size={20} color="#3b82f6" /></div>
                         </div>
-                        <span style={{ fontSize: '1.875rem', fontWeight: 700, color: '#10b981' }}>{stats.completed}</span>
+                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>
+                            {stats?.kpis?.total_reviews_ordered > 0
+                                ? Math.round((stats.kpis.total_reviews_received / stats.kpis.total_reviews_ordered) * 100)
+                                : 0}%
+                        </span>
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                            Missions en cours : {stats?.statusBreakdown?.find((s: any) => s.status === 'in_progress')?.count || 0}
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Charts Section */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem', color: '#111827' }}>Évolution de votre Réputation</h3>
+                        <GrowthChart data={stats?.weeklyGrowth || []} />
+                    </div>
+                    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem', color: '#111827' }}>Distribution par Secteur</h3>
+                        <DistributionChart data={stats?.sectorDistribution || []} />
                     </div>
                 </div>
 

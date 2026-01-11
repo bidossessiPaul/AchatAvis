@@ -13,5 +13,6 @@ router.get('/missions/:id', guideController.getMissionDetails);
 router.post('/missions/:id/release-lock', guideController.releaseLock);
 router.get('/submissions', guideController.getMySubmissions);
 router.post('/submissions', guideController.submitReviewProof);
+router.get('/stats', guideController.getStats);
 
 export default router;

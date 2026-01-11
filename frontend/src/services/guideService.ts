@@ -33,5 +33,10 @@ export const guideService = {
     async getSubmissions(): Promise<any[]> {
         const response = await api.get('/guide/submissions');
         return response.data;
+    },
+
+    async getStats(): Promise<any> {
+        const response = await api.get('/guide/stats');
+        return response.data;
     }
 };

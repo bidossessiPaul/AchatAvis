@@ -211,5 +211,15 @@ export const artisanController = {
         } catch (error: any) {
             return res.status(500).json({ error: 'Failed to fetch available packs', message: error.message });
         }
+    },
+
+    async getStats(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            const stats = await artisanService.getArtisanStats(user!.userId);
+            return res.json(stats);
+        } catch (error: any) {
+            return res.status(500).json({ error: 'Failed to fetch artisan stats', message: error.message });
+        }
     }
 };

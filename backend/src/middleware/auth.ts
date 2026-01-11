@@ -17,20 +17,24 @@ declare global {
  */
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        let token = '';
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'No token provided' });
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.substring(7);
+        } else if (req.query.token) {
+            token = req.query.token as string;
         }
 
-        const token = authHeader.substring(7);
+        if (!token) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
 
         const payload = verifyAccessToken(token);
 
         console.log(`🔍 [Auth Middleware] Checking status for user: ${payload.email} (${payload.userId})`);
 
         // REAL-TIME CHECK: Fetch current user status from DB
-        // Tokens might be valid for a long time, but we need to block suspended users immediately.
         const { query } = await import('../config/database');
         const rows: any = await query('SELECT status, full_name, last_detected_country, last_ip FROM users WHERE id = ?', [payload.userId]);
 
