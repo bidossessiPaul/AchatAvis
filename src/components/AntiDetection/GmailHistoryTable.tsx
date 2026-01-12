@@ -23,6 +23,7 @@ import { BsBriefcase, BsBrush } from 'react-icons/bs';
 import { FiGlobe } from 'react-icons/fi';
 
 const getSectorIcon = (identifier: string) => {
+    if (!identifier) return <FiGlobe size={14} />;
     const s = identifier.toLowerCase().trim();
 
     // Food & Drink
@@ -235,7 +236,7 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#475569' }}>
                                                 {getSectorIcon(item.sector_name)}
-                                                {item.sector_name}
+                                                {item.sector_name || 'Général'}
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>

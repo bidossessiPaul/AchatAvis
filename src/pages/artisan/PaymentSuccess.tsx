@@ -49,7 +49,7 @@ export default function PaymentSuccess() {
                 setTimeout(() => setStatus('success'), 500);
 
                 setTimeout(() => {
-                    navigate('/artisan/dashboard');
+                    navigate('/artisan/submit');
                 }, 3500);
 
             } catch (error) {
@@ -88,12 +88,12 @@ export default function PaymentSuccess() {
                         </div>
                         <h2 className="success-title">Paiement Validé !</h2>
                         <p className="success-description">
-                            Votre compte est désormais actif. Vous avez accès à toutes les fonctionnalités premium de votre pack.
+                            Votre compte est désormais actif. Vous allez être redirigé pour lancer votre première mission.
                         </p>
                         <div className="progress-bar-container">
                             <div className="progress-bar-fill" style={{ width: '100%', transition: 'none' }} />
                         </div>
-                        <p className="status-note">Redirection automatique...</p>
+                        <p className="status-note">Lancement de la mission...</p>
                     </>
                 )}
 

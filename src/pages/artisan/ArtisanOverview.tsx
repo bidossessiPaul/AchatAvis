@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
 import { ReviewOrder } from '../../types';
-import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target } from 'lucide-react';
+import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
@@ -51,25 +51,54 @@ export const ArtisanOverview: React.FC = () => {
         }
     };
 
+    const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
+
     const loadDashboardData = async () => {
         setIsLoading(true);
         try {
-            const [ordersData, statsData] = await Promise.all([
+            const [ordersData, statsData, packs] = await Promise.all([
                 artisanService.getMyOrders(),
-                artisanService.getStats()
+                artisanService.getStats(),
+                artisanService.getAvailablePacks()
             ]);
             setOrders(ordersData);
             setStats(statsData);
+            setHasActivePacks(packs.length > 0);
         } catch (error) {
-            console.error("Failed to load dashboard data", error);
+            console.error("Failed to load data", error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleDeleteOrder = async (orderId: string, companyName: string = 'Sans nom') => {
+        const Swal = (await import('sweetalert2')).default;
+        const result = await Swal.fire({
+            title: 'Supprimer cette mission ?',
+            html: `Êtes-vous sûr de vouloir supprimer la mission <strong>${companyName}</strong> ?<br/><small>Le crédit de votre pack sera restauré.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ff3b6a',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await artisanService.deleteOrder(orderId);
+                await Swal.fire('Supprimé !', 'La mission a été supprimée.', 'success');
+                loadDashboardData();
+            } catch (error) {
+                console.error('Delete error:', error);
+                await Swal.fire('Erreur', 'Impossible de supprimer cette mission.', 'error');
+            }
+        }
+    };
+
     return (
         <DashboardLayout title="Vue d'ensemble">
-            <PremiumBlurOverlay isActive={(user?.missions_allowed || 0) > 0}>
+            <PremiumBlurOverlay isActive={isLoading || hasActivePacks || orders.length > 0}>
                 {paymentStatus === 'success' && (
                     <div style={{
                         background: '#ecfdf5',
@@ -301,12 +330,41 @@ export const ArtisanOverview: React.FC = () => {
                                         </td>
                                         <td style={{ padding: '1rem' }}>{order.reviews_received} / {order.quantity}</td>
                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
-                                            <button
-                                                onClick={() => navigate((order.status === 'draft' || order.status === 'submitted') ? `/artisan/submit/${order.id}` : `/artisan/orders/${order.id}`)}
-                                                style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', fontWeight: 600 }}
-                                            >
-                                                {(order.status === 'draft' || order.status === 'submitted') ? 'Modifier' : <ArrowRight size={18} />}
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                                {(order.status === 'draft' || order.status === 'submitted') && (
+                                                    <button
+                                                        onClick={() => handleDeleteOrder(order.id, order.company_name)}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: '1px solid #ef4444',
+                                                            color: '#ef4444',
+                                                            padding: '0.5rem',
+                                                            borderRadius: '0.5rem',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#ef4444';
+                                                            e.currentTarget.style.color = 'white';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'none';
+                                                            e.currentTarget.style.color = '#ef4444';
+                                                        }}
+                                                        title="Supprimer"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => navigate((order.status === 'draft' || order.status === 'submitted') ? `/artisan/submit/${order.id}` : `/artisan/orders/${order.id}`)}
+                                                    style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', fontWeight: 600 }}
+                                                >
+                                                    {(order.status === 'draft' || order.status === 'submitted') ? 'Modifier' : <ArrowRight size={18} />}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
 import { Trash2, Edit2, Check, RefreshCw, Sparkles } from 'lucide-react';
@@ -16,9 +16,27 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     const [isGenerating, setIsGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState("");
+    const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+    const loadingMessages = [
+        "L'IA analyse vos informations...",
+        "Optimisation du ton et du style...",
+        "Rédaction de vos avis personnalisés...",
+        "Finalisation des propositions..."
+    ];
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isGenerating) {
+            interval = setInterval(() => {
+                setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+            }, 2500);
+        }
+        return () => clearInterval(interval);
+    }, [isGenerating]);
 
     const handleGenerate = async () => {
         setIsGenerating(true);
+        setLoadingMessageIndex(0);
         if (onError) onError(null);
         try {
             // Save to backend - triggered with no proposals to use OpenAI on backend
@@ -71,9 +89,24 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
             </div>
 
             {isGenerating ? (
-                <div style={{ textAlign: 'center', padding: '3rem' }}>
-                    <RefreshCw className="animate-spin" size={48} style={{ color: '#ff3b6a', marginBottom: '1rem' }} />
-                    <p style={{ fontWeight: 600, color: '#000' }}>L'IA analyse vos informations et rédige vos avis...</p>
+                <div className="ai-loader-container">
+                    <div className="ai-loader-visual">
+                        <div className="ai-loader-ring"></div>
+                        <div className="ai-loader-ring"></div>
+                        <div className="ai-loader-ring"></div>
+                        <div className="ai-loader-icon">
+                            <Sparkles size={60} />
+                        </div>
+                    </div>
+                    <div className="ai-loader-text-container">
+                        <h3 className="ai-loader-title">Génération en cours</h3>
+                        <p className="ai-loader-subtitle">{loadingMessages[loadingMessageIndex]}</p>
+                        <div className="ai-loader-progress-dots">
+                            <div className="ai-dot"></div>
+                            <div className="ai-dot"></div>
+                            <div className="ai-dot"></div>
+                        </div>
+                    </div>
                 </div>
             ) : proposals.length > 0 ? (
                 <div className="proposals-list">

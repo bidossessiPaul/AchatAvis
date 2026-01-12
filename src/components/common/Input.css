@@ -57,6 +57,32 @@
     box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
+.input-container {
+    position: relative;
+    width: 100%;
+}
+
+.input-container.has-icon .input {
+    padding-left: 2.75rem;
+}
+
+.input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    color: var(--gray-500);
+    z-index: 1;
+    pointer-events: none;
+    transition: color 0.2s;
+}
+
+.input:focus+.input-icon {
+    color: var(--primary-brand);
+}
+
 .input-error-text {
     font-size: var(--text-sm);
     color: var(--error);

@@ -54,7 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 return [
                     { label: 'Vue d\'ensemble', path: '/artisan', icon: <LayoutDashboard size={20} /> },
                     { label: 'Mes commandes', path: '/artisan/orders', icon: <Package size={20} /> },
-                    { label: 'Mes établissements', path: '/artisan/establishments', icon: <Building2 size={20} /> },
                     { label: 'Avis reçus', path: '/artisan/reviews', icon: <Star size={20} /> },
                     { label: 'Facturation', path: '/artisan/billing', icon: <CreditCard size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },

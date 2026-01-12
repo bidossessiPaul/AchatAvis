@@ -20,6 +20,7 @@ interface Pack {
     name: string;
     price_cents: number;
     quantity: number;
+    missions_quota: number;
     features: string[];
     color: string;
     is_popular: boolean;
@@ -37,6 +38,7 @@ export const PacksManagement: React.FC = () => {
         name: '',
         price_cents: 0,
         quantity: 0,
+        missions_quota: 1,
         features: [],
         color: '#3b82f6',
         is_popular: false
@@ -76,6 +78,7 @@ export const PacksManagement: React.FC = () => {
                 name: '',
                 price_cents: 0,
                 quantity: 0,
+                missions_quota: 1,
                 features: [],
                 color: '#3b82f6',
                 is_popular: false
@@ -177,6 +180,10 @@ export const PacksManagement: React.FC = () => {
                                         <Star size={16} />
                                         <span>{pack.quantity} crédits / mois</span>
                                     </div>
+                                    <div className="detail-item">
+                                        <Package size={16} />
+                                        <span>{pack.missions_quota || 1} missions / pack</span>
+                                    </div>
                                     <div className="features-list">
                                         {(pack.features || []).map((feature, i) => (
                                             <div key={i} className="feature-item">
@@ -250,6 +257,16 @@ export const PacksManagement: React.FC = () => {
                                                 onChange={e => setFormData({ ...formData, quantity: parseInt(e.target.value) })}
                                                 required
                                             />
+                                        </div>
+                                        <div className="pack-form-field">
+                                            <label>Quota de Missions</label>
+                                            <input
+                                                type="number"
+                                                value={formData.missions_quota}
+                                                onChange={e => setFormData({ ...formData, missions_quota: parseInt(e.target.value) })}
+                                                required
+                                            />
+                                            <small>Nombre de missions créables avec ce pack</small>
                                         </div>
                                         <div className="pack-form-field">
                                             <label>Couleur du Pack</label>

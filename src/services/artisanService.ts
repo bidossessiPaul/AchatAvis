@@ -105,5 +105,10 @@ export const artisanService = {
     async getStats(): Promise<any> {
         const response = await api.get('/artisan/stats');
         return response.data;
+    },
+
+    async generateReviewResponse(content: string, authorName: string): Promise<{ response: string }> {
+        const response = await api.post('/artisan/submissions/generate-response', { content, author_name: authorName });
+        return response.data;
     }
 };

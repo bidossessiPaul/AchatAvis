@@ -1,93 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ReviewOrder, Establishment } from '../../../types';
 import { useAuthStore } from '../../../context/authStore';
 import { artisanService } from '../../../services/artisanService';
-import { establishmentApi } from '../../../services/api';
-import { Globe, BookOpen, Info, PlusCircle, Building2, ChevronRight, AlertCircle } from 'lucide-react';
+import { PlusCircle, BookOpen, Info, HelpCircle } from 'lucide-react';
 
 interface Step1Props {
     initialData: Partial<ReviewOrder> | null;
     onNext: (data: Partial<ReviewOrder>) => void;
+    onBack: () => void;
+    fixedEstablishment?: Establishment | null;
 }
 
-export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
-    const navigate = useNavigate();
+export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack, fixedEstablishment }) => {
     const { user } = useAuthStore();
     const [availablePacks, setAvailablePacks] = useState<any[]>([]);
     const [isLoadingPacks, setIsLoadingPacks] = useState(true);
-    const [establishments, setEstablishments] = useState<Establishment[]>([]);
-    const [isLoadingEst, setIsLoadingEst] = useState(true);
 
     const [formData, setFormData] = useState({
-        establishment_id: initialData?.establishment_id || '',
-        company_name: initialData?.company_name || '',
-        google_business_url: initialData?.google_business_url || '',
-        company_context: initialData?.company_context || '',
-        sector: initialData?.sector || '',
-        sector_id: initialData?.sector_id || null,
-        sector_slug: initialData?.sector_slug || '',
-        sector_difficulty: initialData?.sector_difficulty || 'easy',
-        city: initialData?.city || '',
+        establishment_id: initialData?.establishment_id || (fixedEstablishment as any)?.establishment_id || fixedEstablishment?.id || '',
+        mission_name: initialData?.mission_name || '',
+        company_name: initialData?.company_name || fixedEstablishment?.name || '',
+        google_business_url: initialData?.google_business_url || fixedEstablishment?.google_business_url || fixedEstablishment?.platform_links?.google?.url || '',
+        company_context: initialData?.company_context || fixedEstablishment?.company_context || '',
+        sector: initialData?.sector || fixedEstablishment?.sector_name || '',
+        sector_id: initialData?.sector_id || fixedEstablishment?.sector_id || null,
+        sector_slug: initialData?.sector_slug || fixedEstablishment?.sector_slug || '',
+        sector_difficulty: initialData?.sector_difficulty || fixedEstablishment?.sector_difficulty || 'easy',
+        city: initialData?.city || fixedEstablishment?.city || '',
         quantity: user?.monthly_reviews_quota || 10,
         payment_id: initialData?.payment_id || ''
     });
 
-    // Sync establishment data whenever establishment_id or establishments list changes
-    useEffect(() => {
-        if (formData.establishment_id && establishments.length > 0) {
-            const est = establishments.find(e => e.id === formData.establishment_id);
-            if (est) {
-                // Determine if we should update (only if fields are currently empty or it's a new establishment selection)
-                const shouldSync = !formData.sector_slug || !formData.city || !formData.company_name;
-
-                if (shouldSync) {
-                    setFormData(prev => ({
-                        ...prev,
-                        company_name: est.name,
-                        google_business_url: est.google_business_url || est.platform_links?.google?.url || prev.google_business_url,
-                        company_context: est.company_context || prev.company_context,
-                        sector: est.sector_name || prev.sector,
-                        sector_id: est.sector_id || prev.sector_id,
-                        sector_slug: est.sector_slug || prev.sector_slug,
-                        sector_difficulty: est.sector_difficulty || prev.sector_difficulty,
-                        city: est.city || prev.city
-                    }));
-                }
-            }
-        }
-    }, [formData.establishment_id, establishments]);
-
     useEffect(() => {
         const fetchData = async () => {
             setIsLoadingPacks(true);
-            setIsLoadingEst(true);
             try {
-                const [packs, estResults] = await Promise.all([
-                    artisanService.getAvailablePacks(initialData?.payment_id),
-                    establishmentApi.getMyEstablishments()
-                ]);
-
-                const fetchedEsts = estResults.data || [];
-                setEstablishments(fetchedEsts);
+                const packs = await artisanService.getAvailablePacks(initialData?.payment_id);
                 setAvailablePacks(packs);
-
-                // If only one establishment and none selected, select it
-                if (fetchedEsts.length === 1 && !formData.establishment_id) {
-                    const est = fetchedEsts[0];
-                    setFormData(prev => ({
-                        ...prev,
-                        establishment_id: est.id,
-                        company_name: est.name,
-                        google_business_url: est.google_business_url || est.platform_links?.google?.url || '',
-                        company_context: est.company_context || '',
-                        sector: est.sector_name || '',
-                        sector_id: est.sector_id || null,
-                        sector_slug: est.sector_slug || '',
-                        sector_difficulty: est.sector_difficulty || 'easy',
-                        city: est.city || ''
-                    }));
-                }
 
                 // Auto-sync pack data
                 if (packs.length > 0) {
@@ -113,44 +62,13 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                     });
                 }
             } catch (error) {
-                console.error("Failed to fetch packs or establishments", error);
+                console.error("Failed to fetch packs", error);
             } finally {
                 setIsLoadingPacks(false);
-                setIsLoadingEst(false);
             }
         };
         fetchData();
     }, []);
-
-    const handleEstablishmentChange = (estId: string) => {
-        const est = establishments.find(e => e.id === estId);
-        if (est) {
-            setFormData({
-                ...formData,
-                establishment_id: est.id,
-                company_name: est.name,
-                google_business_url: est.google_business_url || est.platform_links?.google?.url || '',
-                company_context: est.company_context || formData.company_context,
-                sector: est.sector_name || '',
-                sector_id: est.sector_id || null,
-                sector_slug: est.sector_slug || '',
-                sector_difficulty: est.sector_difficulty || 'easy',
-                city: est.city || ''
-            });
-        } else {
-            setFormData({
-                ...formData,
-                establishment_id: '',
-                company_name: '',
-                google_business_url: '',
-                sector: '',
-                sector_id: null,
-                sector_slug: '',
-                sector_difficulty: 'easy',
-                city: ''
-            });
-        }
-    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -159,69 +77,28 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
 
     return (
         <form onSubmit={handleSubmit} className="step-container">
-            <h2 className="submission-card-title">Informations de la mission</h2>
+            <h2 className="submission-card-title">Configuration de la mission</h2>
 
             <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                        <Building2 size={18} style={{ color: '#ff3b6a' }} />
-                        Établissement cible
-                    </label>
-                    <button
-                        type="button"
-                        className="text-btn"
-                        onClick={() => navigate('/artisan/establishments/add')}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff3b6a', fontSize: '0.85rem', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}
-                    >
-                        <PlusCircle size={14} />
-                        Ajouter nouveau
-                    </button>
-                </div>
-
-                {isLoadingEst ? (
-                    <div className="skeleton-line" style={{ height: '48px' }}></div>
-                ) : establishments.length > 0 ? (
-                    <select
-                        className="form-input"
-                        value={formData.establishment_id}
-                        onChange={(e) => handleEstablishmentChange(e.target.value)}
-                        required
-                    >
-                        <option value="">Sélectionnez un établissement...</option>
-                        {establishments.map(est => (
-                            <option key={est.id} value={est.id}>
-                                {est.name} ({est.city})
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    <div className="empty-est-notice" onClick={() => navigate('/artisan/establishments/add')}>
-                        <div className="icon-circle">
-                            <PlusCircle size={24} />
-                        </div>
-                        <div className="text-content">
-                            <h4>Aucun établissement enregistré</h4>
-                            <p>Vous devez ajouter un établissement avant de pouvoir lancer une campagne.</p>
-                        </div>
-                        <ChevronRight size={20} className="arrow" />
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <PlusCircle size={18} style={{ color: '#ff3b6a' }} />
+                    Nom de la collaboration
+                    <div className="info-tooltip-container">
+                        <HelpCircle size={16} />
+                        <span className="info-tooltip-text">
+                            Utilisez un nom clair pour identifier cette mission dans votre tableau de bord (ex: "Booster Clients Été", "Campagne Plomberie").
+                        </span>
                     </div>
-                )}
+                </label>
+                <input
+                    type="text"
+                    className="form-input"
+                    value={formData.mission_name}
+                    onChange={(e) => setFormData({ ...formData, mission_name: e.target.value })}
+                    placeholder="Ex: Pose de climatisation, Rénovation salle de bain, Installation pompe à chaleur..."
+                    required
+                />
             </div>
-
-            {formData.establishment_id && (
-                <div className="est-preview-card animate-in">
-                    <div className="info-row">
-                        <Globe size={16} />
-                        <span>Google Business : <strong>{formData.google_business_url ? 'Connecté' : 'Non renseigné'}</strong></span>
-                    </div>
-                    {establishments.find(e => e.id === formData.establishment_id)?.verification_status === 'pending' && (
-                        <div className="status-badge pending">
-                            <AlertCircle size={14} />
-                            En attente de validation admin
-                        </div>
-                    )}
-                </div>
-            )}
 
             <div className="form-group" style={{ marginTop: '1.5rem' }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -262,7 +139,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                         >
                             {availablePacks.map(pack => (
                                 <option key={pack.id} value={pack.id}>
-                                    {pack.pack_name || pack.description} ({pack.missions_used}/{pack.missions_allowed})
+                                    {pack.pack_name || pack.description} ({pack.missions_used}/{pack.missions_quota} Mission{pack.missions_quota > 1 ? 's' : ''})
                                 </option>
                             ))}
                         </select>
@@ -290,10 +167,13 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
             )}
 
             <div className="submission-actions">
+                <button type="button" onClick={onBack} className="btn-back">
+                    Retour
+                </button>
                 <button
                     type="submit"
                     className="btn-next"
-                    disabled={!formData.establishment_id || isLoadingPacks}
+                    disabled={!formData.mission_name || !formData.company_context || !formData.payment_id || isLoadingPacks}
                 >
                     Suivant
                 </button>
@@ -376,6 +256,17 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                     border: 1px solid #ff3b6a;
                     box-shadow: 0 4px 12px rgba(255, 59, 106, 0.1);
                 }
+                @media (max-width: 640px) {
+                    .pack-recap-card {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: 1rem;
+                    }
+                    .pack-status {
+                        width: 100%;
+                        justify-content: flex-end;
+                    }
+                }
                 .pack-name { font-weight: 800; color: #1e293b; font-size: 0.925rem; }
                 .pack-stats {
                     display: flex;
@@ -389,7 +280,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext }) => {
                     font-size: 0.8rem;
                     margin-top: 4px;
                 }
-                .pack-status { color: #ff3b6a; font-weight: 800; display: flex; alignItems: center; gap: 4px; font-size: 0.85rem; }
+                .pack-status { color: #ff3b6a; font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
                 .status-dot { width: 6px; height: 6px; background: #ff3b6a; border-radius: 50%; }
             `}</style>
         </form>
