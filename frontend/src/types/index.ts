@@ -125,11 +125,13 @@ export interface ReviewOrder {
     price: number;
     status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
     reviews_received: number;
+    mission_name?: string;
     company_name?: string;
     google_business_url?: string;
     company_context?: string;
     sector?: string;
     zones?: string;
+    services?: string;
     positioning?: string;
     client_types?: string;
     desired_tone?: string;

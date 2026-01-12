@@ -6,6 +6,7 @@ import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import type { GuideRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
+import { Sparkles, Mail, User, Lock, Smartphone, MapPin } from 'lucide-react';
 import './Auth.css';
 
 export const RegisterGuide: React.FC = () => {
@@ -68,7 +69,8 @@ export const RegisterGuide: React.FC = () => {
             <div className="auth-content">
                 <div className="auth-logo">
                     <h1 className="auth-brand">
-                        Achat<span className="text-brand">Avis</span>
+                        <Sparkles className="brand-icon" size={32} />
+                        AchatAvis
                     </h1>
                     <p className="auth-tagline">Inscription Local Guide</p>
                 </div>
@@ -82,7 +84,10 @@ export const RegisterGuide: React.FC = () => {
                         </div>
                     ) : (
                         <>
-                            <h2 className="auth-title">Créer un compte Local Guide</h2>
+                            <div className="auth-header" style={{ textAlign: 'center' }}>
+                                <h2 className="auth-title">Créer un compte Local Guide</h2>
+                                <p className="auth-subtitle">Gagnez de l'argent en partageant vos expériences authentiques.</p>
+                            </div>
 
                             <form onSubmit={handleSubmit} className="auth-form">
                                 {errors.global && <div className="auth-error">{errors.global}</div>}
@@ -95,6 +100,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     error={errors.email}
+                                    icon={<Mail size={18} />}
                                     required
                                 />
 
@@ -106,6 +112,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     error={errors.fullName}
+                                    icon={<User size={18} />}
                                     required
                                 />
 
@@ -118,6 +125,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.password}
                                     onChange={handleChange}
                                     error={errors.password}
+                                    icon={<Lock size={18} />}
                                     required
                                 />
 
@@ -130,6 +138,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.googleEmail}
                                     onChange={handleChange}
                                     error={errors.googleEmail}
+                                    icon={<Mail size={18} />}
                                     required
                                 />
 
@@ -141,6 +150,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     error={errors.phone}
+                                    icon={<Smartphone size={18} />}
                                     required
                                 />
 
@@ -152,6 +162,7 @@ export const RegisterGuide: React.FC = () => {
                                     value={formData.city}
                                     onChange={handleChange}
                                     error={errors.city}
+                                    icon={<MapPin size={18} />}
                                     required
                                 />
 

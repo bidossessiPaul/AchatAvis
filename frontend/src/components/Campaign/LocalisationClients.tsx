@@ -6,17 +6,16 @@ import { showSuccess, showError } from '../../utils/Swal';
 
 interface LocalisationProps {
     establishmentCity: string;
-    totalReviews: number;
     onCitiesGenerated: (cities: string[]) => void;
 }
 
 export const LocalisationClients: React.FC<LocalisationProps> = ({
     establishmentCity,
-    totalReviews,
     onCitiesGenerated
 }) => {
     const [cities, setCities] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [manualInput, setManualInput] = useState("");
 
     const generateCities = async () => {
         if (!establishmentCity) {
@@ -26,13 +25,15 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
 
         setLoading(true);
         try {
-            const count = Math.min(10, Math.ceil(totalReviews / 2)); // Generate enough cities
+            const count = 10; // Fixed count as requested
             const response = await api.post('/anti-detection/generate-cities', {
                 base_city: establishmentCity,
                 count
             });
 
             if (response.data.success) {
+                // Ensure unique cities and combine with existing if any? 
+                // User said "les villes générer je veux 10 a chaque fois" - replacing seems to be current behavior
                 setCities(response.data.cities);
                 onCitiesGenerated(response.data.cities);
                 showSuccess('Succès', `${response.data.cities.length} zones trouvées via IA`);
@@ -43,6 +44,22 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleManualAdd = () => {
+        if (!manualInput.trim()) return;
+
+        // Support comma separated
+        const newManualCities = manualInput.split(',')
+            .map(c => c.trim())
+            .filter(c => c.length > 0 && !cities.includes(c));
+
+        if (newManualCities.length === 0) return;
+
+        const updatedCities = [...cities, ...newManualCities];
+        setCities(updatedCities);
+        onCitiesGenerated(updatedCities);
+        setManualInput("");
     };
 
     const removeCity = (cityToRemove: string) => {
@@ -64,10 +81,9 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
                 borderRadius: '0.75rem',
                 padding: '1.25rem'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', maxWidth: '70%' }}>
-                        Générez des villes cohérentes via l'IA pour diversifier vos avis.
-                        Vous pouvez supprimer celles qui ne vous conviennent pas.
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', maxWidth: '60%' }}>
+                        Générez des villes via l'IA ou ajoutez-les manuellement (séparez par des virgules).
                     </p>
                     <Button
                         type="button"
@@ -76,9 +92,29 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
                         onClick={generateCities}
                         isLoading={loading}
                         disabled={!establishmentCity}
+                        style={{ flexShrink: 0 }}
                     >
                         <RefreshCw size={14} style={{ marginRight: '0.5rem' }} />
-                        Générer via IA
+                        Générer via IA (10)
+                    </Button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Ex: Paris, Lyon, Marseille..."
+                        value={manualInput}
+                        onChange={(e) => setManualInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleManualAdd())}
+                        style={{ marginBottom: 0 }}
+                    />
+                    <Button
+                        type="button"
+                        onClick={handleManualAdd}
+                        disabled={!manualInput.trim()}
+                    >
+                        Ajouter
                     </Button>
                 </div>
 
@@ -124,7 +160,7 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
                         fontSize: '0.875rem',
                         color: '#94a3b8'
                     }}>
-                        Cliquez sur générer pour obtenir des villes cibles
+                        Aucune ville sélectionnée
                     </div>
                 )}
             </div>

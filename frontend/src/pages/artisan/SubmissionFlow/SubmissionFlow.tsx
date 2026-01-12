@@ -9,17 +9,22 @@ import { useAuthStore } from '../../../context/authStore';
 import { showError } from '../../../utils/Swal';
 import './SubmissionFlow.css';
 
-// Steps components (we will create them next)
+// Steps components
+import { Step0PlatformSelection } from './Step0PlatformSelection';
+import { Step0AddEstablishment } from './Step0AddEstablishment';
 import { Step1Initial } from './Step1Initial';
 import { Step2Enrichment } from './Step2Enrichment';
 import { Step3AIGeneration } from './Step3AIGeneration';
 import { Step4Review } from './Step4Review';
+import { establishmentApi } from '../../../services/api';
 
 const STEPS = [
-    { id: 1, label: 'Essentiels' },
-    { id: 2, label: 'Contexte' },
-    { id: 3, label: 'Génération' },
-    { id: 4, label: 'Validation' }
+    { id: 1, label: 'Plateforme' },
+    { id: 2, label: 'Fiche' },
+    { id: 3, label: 'Pack' },
+    { id: 4, label: 'Détails' },
+    { id: 5, label: 'Génération' },
+    { id: 6, label: 'Validation' }
 ];
 
 export const SubmissionFlow: React.FC = () => {
@@ -30,9 +35,13 @@ export const SubmissionFlow: React.FC = () => {
     const [proposals, setProposals] = useState<ReviewProposal[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
+    const [hasActivePacks, setHasActivePacks] = useState<boolean | null>(null);
     const { silentRefresh } = useAuthStore();
     const [isRefreshingAuth, setIsRefreshingAuth] = useState(true);
+
+    // Flow persistence for newly created establishments (fiches)
+    const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+    const [tempEstablishment, setTempEstablishment] = useState<any>(null);
 
     useEffect(() => {
         const init = async () => {
@@ -43,15 +52,23 @@ export const SubmissionFlow: React.FC = () => {
 
                 // 2. Double check specifically for available packs (unused)
                 const packs = await artisanService.getAvailablePacks();
-                setHasActivePacks(packs.length > 0);
+
+                // If we are editing an existing mission (orderId exists), we don't block even if 0 unused packs remain
+                // because this mission ALREADY used a pack.
+                if (orderId) {
+                    setHasActivePacks(true);
+                } else {
+                    setHasActivePacks(packs.length > 0);
+                }
             } catch (err) {
                 console.error("Auth/Packs refresh failed", err);
+                setHasActivePacks(false);
             } finally {
                 setIsRefreshingAuth(false);
             }
         };
         init();
-    }, [silentRefresh]);
+    }, [silentRefresh, orderId]);
 
     useEffect(() => {
         if (!isRefreshingAuth && orderId) {
@@ -76,12 +93,46 @@ export const SubmissionFlow: React.FC = () => {
             // If we are coming from the detail page, we stay at step 1 to allow full review
             if (data.status === 'draft') {
                 if (data.sector && data.desired_tone) {
-                    setCurrentStep(3);
+                    setCurrentStep(5);
                 } else {
-                    setCurrentStep(2);
+                    setCurrentStep(4);
                 }
             } else {
-                setCurrentStep(1);
+                setCurrentStep(3); // Start at Pack collection if already has orderId
+            }
+
+            // Sync persistence states
+            if (data.establishment_id) {
+                try {
+                    const estResponse = await establishmentApi.getDetails(data.establishment_id);
+                    const establishment = estResponse.data || estResponse;
+                    setTempEstablishment(establishment);
+
+                    // Infer platform
+                    if (data.google_business_url) {
+                        setSelectedPlatform('google');
+                    } else if (establishment?.platform_links?.trustpilot?.url) {
+                        setSelectedPlatform('trustpilot');
+                    } else if (establishment?.platform_links?.pagesjaunes?.url) {
+                        setSelectedPlatform('pagesjaunes');
+                    }
+                } catch (err) {
+                    console.error("Failed to load establishment details", err);
+                }
+            } else {
+                // Populate from order data directly if no linked establishment record
+                setTempEstablishment({
+                    name: data.company_name,
+                    city: data.city,
+                    sector_slug: data.sector_slug,
+                    google_business_url: data.google_business_url,
+                    platform_links: {
+                        google: { url: data.google_business_url, verified: false }
+                    }
+                });
+                if (data.google_business_url) {
+                    setSelectedPlatform('google');
+                }
             }
         } catch (error) {
             console.error("Failed to load order", error);
@@ -90,19 +141,43 @@ export const SubmissionFlow: React.FC = () => {
         }
     };
 
-    const handleNext = async (data: Partial<ReviewOrder>) => {
+    const handleNext = async (data: any) => {
         setIsLoading(true);
         setError(null);
         try {
-            let updatedOrder;
             if (currentStep === 1) {
+                setSelectedPlatform(data);
+                setCurrentStep(2);
+                setIsLoading(false);
+                return;
+            }
+
+            if (currentStep === 2) {
+                setTempEstablishment(data);
+                setCurrentStep(3);
+                setIsLoading(false);
+                return;
+            }
+
+            let updatedOrder;
+            if (currentStep === 3) {
                 if (!order?.id) {
-                    updatedOrder = await artisanService.createDraft(data);
+                    // Inject temp fiche data if available
+                    const missionData = {
+                        ...data,
+                        // If we don't have a real establishment_id yet, we pass null
+                        establishment_id: (tempEstablishment?.id || tempEstablishment?.establishment_id || data.establishment_id) || null,
+                        company_name: tempEstablishment?.company_name || tempEstablishment?.name || data.company_name,
+                        city: tempEstablishment?.city || data.city,
+                        sector_slug: tempEstablishment?.sector_slug || data.sector_slug,
+                        google_business_url: tempEstablishment?.platform_links?.[selectedPlatform || '']?.url || data.google_business_url
+                    };
+                    updatedOrder = await artisanService.createDraft(missionData);
                     navigate(`/artisan/submit/${updatedOrder.id}`, { replace: true });
                 } else {
                     updatedOrder = await artisanService.updateDraft(order.id, data);
                 }
-            } else if (currentStep === 2) {
+            } else if (currentStep === 4) {
                 updatedOrder = await artisanService.updateDraft(order!.id!, data);
             }
 
@@ -128,32 +203,47 @@ export const SubmissionFlow: React.FC = () => {
     const renderStep = () => {
         switch (currentStep) {
             case 1:
-                return <Step1Initial initialData={order} onNext={handleNext} />;
+                return <Step0PlatformSelection initialPlatform={selectedPlatform} onNext={handleNext} />;
             case 2:
-                return <Step2Enrichment initialData={order} onNext={handleNext} onBack={handleBack} />;
+                return <Step0AddEstablishment initialData={tempEstablishment} platformId={selectedPlatform || 'google'} onNext={handleNext} onBack={handleBack} />;
             case 3:
+                return <Step1Initial initialData={order} onNext={handleNext} fixedEstablishment={tempEstablishment} onBack={handleBack} />;
+            case 4:
+                return <Step2Enrichment initialData={order} onNext={handleNext} onBack={handleBack} />;
+            case 5:
                 return <Step3AIGeneration
                     order={order as ReviewOrder}
                     proposals={proposals}
-                    onNext={() => setCurrentStep(4)}
+                    onNext={() => setCurrentStep(6)}
                     onBack={handleBack}
                     setProposals={setProposals}
                     onError={setError}
                 />;
-            case 4:
+            case 6:
                 return <Step4Review order={order as ReviewOrder} proposals={proposals} onBack={handleBack} />;
             default:
                 return null;
         }
     };
+
+    // Strict loading state to avoid flash
+    if (isRefreshingAuth || hasActivePacks === null) {
+        return (
+            <DashboardLayout title="Soumettre une fiche">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
+                    <div className="loading-spinner"></div>
+                    <p style={{ color: '#64748b', fontWeight: 500 }}>Vérification de vos accès...</p>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout title="Soumettre une fiche">
             <PremiumBlurOverlay
-                isActive={isRefreshingAuth || isLoading || hasActivePacks || !!order?.payment_id}
-                title={!hasActivePacks ? "Aucun pack disponible" : "Compte Inactif"}
-                description={!hasActivePacks
-                    ? "Vous avez déjà utilisé tous vos packs actifs. Veuillez en reprendre un nouveau pour créer une mission."
-                    : "Activez votre compte avec un pack pour accéder à cette fonctionnalité."}
+                isActive={hasActivePacks || !!order?.payment_id}
+                title="Aucun pack disponible"
+                description="Vous avez déjà utilisé tous vos packs actifs ou votre compte n'est pas encore activé. Veuillez prendre un pack pour créer une mission."
             >
                 <div className="submission-flow-container">
                     <div className="submission-header">

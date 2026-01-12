@@ -10,7 +10,8 @@ import {
     AlertCircle,
     CheckCircle2,
     XCircle,
-    Search as SearchIcon
+    Search as SearchIcon,
+    Eye
 } from 'lucide-react';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Button } from '../../components/common/Button';
@@ -168,9 +169,28 @@ export const MyEstablishments: React.FC = () => {
                                             <span className="no-link">Lien non renseigné</span>
                                         );
                                     })()}
-                                    <div className="card-actions">
-                                        {/* Future: Add edit/delete buttons if needed */}
-                                    </div>
+                                    <button
+                                        onClick={() => navigate(`/artisan/establishments/${est.id}`)}
+                                        style={{
+                                            background: '#ff3b6a',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            fontWeight: 600,
+                                            fontSize: '0.875rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#c4ed1a', e.currentTarget.style.color = '#000')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = '#ff3b6a', e.currentTarget.style.color = 'white')}
+                                    >
+                                        <Eye size={16} />
+                                        Voir détails
+                                    </button>
                                 </div>
                                 {est.verification_status === 'rejected' && est.rejection_reason && (
                                     <div className="rejection-box">

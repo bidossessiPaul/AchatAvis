@@ -5,10 +5,11 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
     helperText?: string;
+    icon?: React.ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ label, error, helperText, className = '', ...props }, ref) => {
+    ({ label, error, helperText, icon, className = '', ...props }, ref) => {
         const inputId = props.id || props.name || `input-${Math.random()}`;
 
         return (
@@ -19,12 +20,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         {props.required && <span className="input-required">*</span>}
                     </label>
                 )}
-                <input
-                    ref={ref}
-                    id={inputId}
-                    className={`input ${error ? 'input-error' : ''} ${className}`}
-                    {...props}
-                />
+                <div className={`input-container ${icon ? 'has-icon' : ''}`}>
+                    {icon && <div className="input-icon">{icon}</div>}
+                    <input
+                        ref={ref}
+                        id={inputId}
+                        className={`input ${error ? 'input-error' : ''} ${className}`}
+                        {...props}
+                    />
+                </div>
                 {error && <p className="input-error-text">{error}</p>}
                 {!error && helperText && <p className="input-helper-text">{helperText}</p>}
             </div>

@@ -42,7 +42,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // 2. Security & Parsers
 app.use(helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" }
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false // Disable CSP for local dev to avoid SSE issues
 }));
 
 app.use(express.json({ limit: '10mb' }));
@@ -96,11 +97,9 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     console.error('SERVER ERROR:', err);
 
     // Ensure CORS headers are present even on errors
-    const origin = req.headers.origin;
-    if (origin) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
+    const origin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
     return res.status(err.status || 500).json({
         error: 'Internal server error',

@@ -13,12 +13,13 @@ export const notificationController = {
             return;
         }
 
+        const origin = req.headers.origin || '*';
+
         // Set headers for SSE
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-            'Access-Control-Allow-Origin': '*' // Adjust based on env
+            'Connection': 'keep-alive'
         });
 
         // Add client to service

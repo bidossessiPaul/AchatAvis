@@ -102,6 +102,7 @@ export interface AdminProfile {
 
 export interface ReviewOrder {
     id: string;
+    mission_name?: string;
     artisan_id: string;
     quantity: number;
     price: number;
@@ -115,6 +116,7 @@ export interface ReviewOrder {
     company_context?: string;
     sector?: string;
     zones?: string;
+    services?: string;
     positioning?: string;
     client_types?: string;
     desired_tone?: string;
@@ -124,6 +126,10 @@ export interface ReviewOrder {
     establishment_id?: string;
     publication_pace?: string;
     payment_id?: string;
+    reviews_per_day?: number;
+    rhythme_mode?: string;
+    estimated_duration_days?: number;
+    client_cities?: string[] | string;
     metadata?: any;
     created_at: Date;
     completed_at?: Date;

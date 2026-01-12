@@ -619,6 +619,95 @@ class EstablishmentService {
             ORDER BY e.created_at ASC
         `);
     }
+
+    /**
+     * Update an establishment (Artisan can edit their own)
+     */
+    async updateEstablishment(id: string, userId: string, updateData: any) {
+        // Verify ownership
+        const existing = await this.getEstablishmentById(id);
+        if (!existing) throw new Error('Établissement introuvable');
+        if (existing.user_id !== userId) throw new Error('Vous n\'êtes pas autorisé à modifier cet établissement');
+
+        const fields: string[] = [];
+        const values: any[] = [];
+
+        // Allowed fields to update
+        const allowedFields = [
+            'name', 'address_line1', 'city', 'postal_code', 'region',
+            'phone', 'website', 'company_context', 'sector_id', 'sector_name',
+            'sector_slug', 'sector_difficulty'
+        ];
+
+        for (const field of allowedFields) {
+            if (updateData[field] !== undefined) {
+                fields.push(`${field} = ?`);
+                values.push(updateData[field]);
+            }
+        }
+
+        if (fields.length === 0) {
+            throw new Error('Aucune donnée à mettre à jour');
+        }
+
+        values.push(id);
+
+        await query(
+            `UPDATE establishments SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`,
+            values
+        );
+
+        await this.logAction(id, userId, 'updated', existing, updateData);
+
+        return this.getEstablishmentById(id);
+    }
+
+    /**
+     * Delete an establishment (Artisan can delete their own if not linked to active missions)
+     */
+    async deleteEstablishment(id: string, userId: string) {
+        // Verify ownership
+        const existing = await this.getEstablishmentById(id);
+        if (!existing) throw new Error('Établissement introuvable');
+        if (existing.user_id !== userId) throw new Error('Vous n\'êtes pas autorisé à supprimer cet établissement');
+
+        // Check if linked to active missions
+        const linkedMissions: any = await query(
+            'SELECT COUNT(*) as count FROM reviews_orders WHERE establishment_id = ? AND status IN (?, ?)',
+            [id, 'in_progress', 'submitted']
+        );
+
+        if (linkedMissions[0].count > 0) {
+            throw new Error('Impossible de supprimer cet établissement car il est lié à des missions actives.');
+        }
+
+        // Delete the establishment
+        await query('DELETE FROM establishments WHERE id = ?', [id]);
+
+        await this.logAction(id, userId, 'deleted', existing, null);
+
+        return { success: true, message: 'Établissement supprimé avec succès' };
+    }
+
+    /**
+     * Get establishment with user ownership check
+     */
+    async getEstablishmentByIdWithOwnership(id: string, userId: string) {
+        const establishment = await this.getEstablishmentById(id);
+        if (!establishment) throw new Error('Établissement introuvable');
+        if (establishment.user_id !== userId) throw new Error('Accès non autorisé');
+
+        // Get linked missions count
+        const missionsCount: any = await query(
+            'SELECT COUNT(*) as count FROM reviews_orders WHERE establishment_id = ?',
+            [id]
+        );
+
+        return {
+            ...establishment,
+            missions_count: missionsCount[0].count
+        };
+    }
 }
 
 export const establishmentService = new EstablishmentService();

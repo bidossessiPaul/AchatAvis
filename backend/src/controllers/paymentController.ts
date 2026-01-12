@@ -104,7 +104,7 @@ export const paymentController = {
                     subscription_start_date = NOW(),
                     subscription_end_date = DATE_ADD(NOW(), INTERVAL 30 DAY)
                 WHERE user_id = ?
-            `, [planId, quota, quota, userId]);
+            `, [planId, quota, plan.missions_quota || 1, userId]);
 
             // Activer user
             await connection.execute('UPDATE users SET status = ? WHERE id = ?', ['active', userId]);
@@ -113,9 +113,9 @@ export const paymentController = {
             // Logger paiement
             const paymentId = uuidv4();
             await connection.execute(`
-                INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, processed_at)
-                VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, NOW())
-            `, [paymentId, userId, price, `Abonnement ${plan.name}`, quota]);
+                INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, review_credits, processed_at)
+                VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, NOW())
+            `, [paymentId, userId, price, `Abonnement ${plan.name}`, plan.missions_quota || 1, quota]);
 
             console.log('✅ Paiement enregistré');
 
@@ -185,6 +185,10 @@ export const paymentController = {
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
 
+                    // Fetch pack definition to get correct missions_quota
+                    const [packs]: any = await query('SELECT missions_quota FROM subscription_packs WHERE id = ?', [planId]);
+                    const missionsQuota = packs.length > 0 ? packs[0].missions_quota : 1;
+
                     // Update artisan profile in DB with FULL details
                     const startDate = new Date();
                     const endDate = new Date();
@@ -201,7 +205,7 @@ export const paymentController = {
                              last_payment_date = ?,
                              missions_allowed = missions_allowed + ?
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, quantity, userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, missionsQuota, userId]
                     );
 
                     // Also update user status
@@ -215,14 +219,15 @@ export const paymentController = {
                     const amount = (session.amount_total || 0) / 100;
 
                     await query(`
-                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, processed_at)
-                        VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, NOW())
+                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, review_credits, processed_at)
+                        VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, ?, NOW())
                     `, [
                         paymentId,
                         userId,
                         amount,
                         session.payment_intent as string || session.id,
                         `Abonnement ${planId}`,
+                        missionsQuota,
                         quantity
                     ]);
 

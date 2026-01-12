@@ -32,4 +32,7 @@ router.post('/orders/:id/proposals/generate', artisanController.generateProposal
 router.put('/proposals/:proposalId', artisanController.updateProposal);
 router.post('/orders/:id/proposals', artisanController.generateProposals);
 
+// AI Response Generation
+router.post('/submissions/generate-response', artisanController.generateReviewResponse);
+
 export default router;

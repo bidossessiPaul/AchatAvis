@@ -57,15 +57,21 @@ export const BillingPage: React.FC = () => {
     };
 
     // Calculate stats purely from history
-    const boughtPacks = history.filter(p => p.status === 'completed').length;
-    const usedPacks = history.filter(p => p.status === 'completed' && p.missions_used > 0).length;
+    const boughtPacks = history
+        .filter(p => p.status === 'completed')
+        .reduce((acc, curr) => acc + (curr.missions_quota || 0), 0);
+
+    const usedPacks = history
+        .filter(p => p.status === 'completed')
+        .reduce((acc, curr) => acc + (curr.missions_used || 0), 0);
+
     const remainingPacks = Math.max(0, boughtPacks - usedPacks);
     const progressPercentage = boughtPacks > 0 ? (usedPacks / boughtPacks) * 100 : 0;
 
     // Calculate total reviews (sum of quotas from all packs)
     const totalReviews = history
         .filter(p => p.status === 'completed')
-        .reduce((acc, curr) => acc + (curr.missions_quota || 0), 0);
+        .reduce((acc, curr) => acc + (curr.review_credits || 0), 0);
 
     const activePack = packs.find(p => p.id === user?.subscription_tier);
 

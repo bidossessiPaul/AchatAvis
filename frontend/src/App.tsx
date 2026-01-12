@@ -29,8 +29,6 @@ import { SuspensionBanner } from './components/SuspensionBanner';
 import { OrdersList } from './pages/artisan/OrdersList';
 import { ReceivedReviews } from './pages/artisan/ReceivedReviews';
 import { BillingPage } from './pages/artisan/BillingPage';
-import { MyEstablishments } from './pages/artisan/MyEstablishments';
-import AddEstablishmentPage from './pages/artisan/AddEstablishmentPage';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { ArtisansList } from './pages/admin/ArtisansList';
 import { GuidesList } from './pages/admin/GuidesList';
@@ -48,6 +46,7 @@ import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 import { SuspensionAdminPage } from './pages/admin/SuspensionAdminPage';
 import { Profile } from './pages/Profile';
+import { NotFound } from './pages/NotFound';
 import SuspendedPage from './pages/SuspendedPage';
 import { useAuthStore } from './context/authStore';
 
@@ -151,20 +150,9 @@ function App() {
                     </ProtectedRoute>
                 } />
 
-                <Route path="/artisan/establishments/add" element={
-                    <ProtectedRoute allowedRoles={['artisan']}>
-                        <ProtectedArtisanRoute>
-                            <AddEstablishmentPage />
-                        </ProtectedArtisanRoute>
-                    </ProtectedRoute>
-                } />
-                <Route path="/artisan/establishments" element={
-                    <ProtectedRoute allowedRoles={['artisan']}>
-                        <ProtectedArtisanRoute>
-                            <MyEstablishments />
-                        </ProtectedArtisanRoute>
-                    </ProtectedRoute>
-                } />
+                <Route path="/artisan/establishments/add" element={<Navigate to="/artisan/dashboard" replace />} />
+                <Route path="/artisan/establishments/:id" element={<Navigate to="/artisan/dashboard" replace />} />
+                <Route path="/artisan/establishments" element={<Navigate to="/artisan/dashboard" replace />} />
 
                 <Route path="/artisan/order" element={
                     <ProtectedRoute allowedRoles={['artisan']}>
@@ -369,8 +357,8 @@ function App() {
                     </ProtectedRoute>
                 } />
 
-                {/* Catch all redirect */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
+                {/* Catch all route - Premium 404 */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </BrowserRouter>
     );

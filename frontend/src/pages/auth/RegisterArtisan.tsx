@@ -4,7 +4,7 @@ import api, { authApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
-import { Loader } from 'lucide-react';
+import { Loader, Sparkles, Mail, User, Lock, Building, Smartphone, MapPin, Hash, Globe } from 'lucide-react';
 import type { ArtisanRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
 import './Auth.css';
@@ -102,7 +102,8 @@ export const RegisterArtisan: React.FC = () => {
             <div className="auth-content" style={{ maxWidth: '600px' }}>
                 <div className="auth-logo">
                     <h1 className="auth-brand">
-                        Achat<span className="text-brand">Avis</span>
+                        <Sparkles className="brand-icon" size={32} />
+                        AchatAvis
                     </h1>
                     <p className="auth-tagline">Inscription Artisan</p>
                 </div>
@@ -116,7 +117,10 @@ export const RegisterArtisan: React.FC = () => {
                         </div>
                     ) : (
                         <>
-                            <h2 className="auth-title">Créer un compte artisan</h2>
+                            <div className="auth-header" style={{ textAlign: 'center' }}>
+                                <h2 className="auth-title">Créer un compte artisan</h2>
+                                <p className="auth-subtitle">Rejoignez le réseau leader pour booster votre visibilité Google Business.</p>
+                            </div>
 
                             <form onSubmit={handleSubmit} className="auth-form">
                                 {errors.global && <div className="auth-error">{errors.global}</div>}
@@ -129,6 +133,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     error={errors.email}
+                                    icon={<Mail size={18} />}
                                     required
                                 />
 
@@ -140,6 +145,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     error={errors.fullName}
+                                    icon={<User size={18} />}
                                     required
                                 />
 
@@ -152,6 +158,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.password}
                                     onChange={handleChange}
                                     error={errors.password}
+                                    icon={<Lock size={18} />}
                                     required
                                 />
 
@@ -163,6 +170,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.companyName}
                                     onChange={handleChange}
                                     error={errors.companyName}
+                                    icon={<Building size={18} />}
                                     required
                                 />
 
@@ -175,6 +183,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.siret}
                                     onChange={handleChange}
                                     error={errors.siret}
+                                    icon={<Hash size={18} />}
                                 />
 
                                 <div className="input-wrapper">
@@ -221,6 +230,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     error={errors.phone}
+                                    icon={<Smartphone size={18} />}
                                     required
                                 />
 
@@ -232,6 +242,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.address}
                                     onChange={handleChange}
                                     error={errors.address}
+                                    icon={<MapPin size={18} />}
                                     required
                                 />
 
@@ -244,6 +255,7 @@ export const RegisterArtisan: React.FC = () => {
                                         value={formData.city}
                                         onChange={handleChange}
                                         error={errors.city}
+                                        icon={<MapPin size={18} />}
                                         required
                                     />
 
@@ -256,6 +268,7 @@ export const RegisterArtisan: React.FC = () => {
                                         value={formData.postalCode}
                                         onChange={handleChange}
                                         error={errors.postalCode}
+                                        icon={<Hash size={18} />}
                                         required
                                     />
                                 </div>
@@ -268,6 +281,7 @@ export const RegisterArtisan: React.FC = () => {
                                     value={formData.googleBusinessUrl}
                                     onChange={handleChange}
                                     error={errors.googleBusinessUrl}
+                                    icon={<Globe size={18} />}
                                 />
 
                                 <Button
