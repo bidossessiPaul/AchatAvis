@@ -86,13 +86,13 @@ export const artisanController = {
 
             const generationParams = {
                 companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
+                missionName: order.mission_name,
                 trade: artisanProfile?.trade || 'Artisan',
                 quantity: order.quantity || 1,
                 context: order.company_context,
                 sector: order.sector,
                 zones: order.zones,
-                tone: order.desired_tone,
-                clientTypes: order.client_types,
+                services: order.services,
                 staffNames: order.staff_names,
                 specificInstructions: order.specific_instructions
             };
@@ -220,6 +220,21 @@ export const artisanController = {
             return res.json(stats);
         } catch (error: any) {
             return res.status(500).json({ error: 'Failed to fetch artisan stats', message: error.message });
+        }
+    },
+
+    async generateReviewResponse(req: Request, res: Response) {
+        try {
+            const { content, author_name } = req.body;
+            if (!content || !author_name) {
+                return res.status(400).json({ error: 'Missing content or author_name' });
+            }
+
+            const responseText = await openAiService.generateReviewResponse(content, author_name);
+            return res.json({ response: responseText });
+        } catch (error: any) {
+            console.error("❌ Error generating review response:", error);
+            return res.status(500).json({ error: 'Failed to generate review response', message: error.message });
         }
     }
 };

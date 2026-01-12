@@ -28,14 +28,16 @@ export const artisanService = {
         const pack = packs[0];
 
         if (pack.missions_used >= pack.missions_quota) {
-            throw new Error("Ce pack est déjà entièrement utilisé. Veuillez en sélectionner un autre.");
+            throw new Error("Ce pack est déjà entièrement utilisé. Veuillez en sélectionner un nouveau.");
         }
 
         const {
+            mission_name = '',
             quantity = 1,
             company_name = '',
             company_context = '',
             google_business_url = '',
+            services = '',
             staff_names = '',
             specific_instructions = '',
             establishment_id = null,
@@ -43,8 +45,16 @@ export const artisanService = {
             sector_id = null,
             sector_slug = '',
             sector_difficulty = 'easy',
-            city = ''
+            city = '',
+            reviews_per_day = 3,
+            rhythme_mode = 'modere',
+            estimated_duration_days = 0,
+            client_cities = []
         } = data;
+
+        // Ensure establishment_id is properly handled (null if empty string)
+        const finalEstablishmentId = establishment_id || null;
+        const finalClientCities = Array.isArray(client_cities) ? JSON.stringify(client_cities) : client_cities;
 
         // Use the actual price paid for the pack (1 Pack = 1 Mission logic)
         const price = parseFloat(pack.amount);
@@ -53,14 +63,16 @@ export const artisanService = {
 
         await query(
             `INSERT INTO reviews_orders (
-                id, artisan_id, quantity, price, status, company_name, company_context, 
-                google_business_url, staff_names, specific_instructions, payment_id, establishment_id,
-                sector, sector_id, sector_slug, sector_difficulty, city
-            ) VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                id, mission_name, artisan_id, quantity, price, status, company_name, company_context, 
+                google_business_url, services, staff_names, specific_instructions, payment_id, establishment_id,
+                sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
+                estimated_duration_days, client_cities, zones
+            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                orderId, artisanId, quantity, price, company_name, company_context,
-                google_business_url, staff_names, specific_instructions, payment_id, establishment_id,
-                sector, sector_id, sector_slug, sector_difficulty, city
+                orderId, mission_name, artisanId, quantity, price, company_name, company_context,
+                google_business_url, services, staff_names, specific_instructions, payment_id, finalEstablishmentId,
+                sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
+                estimated_duration_days, finalClientCities, data.zones || ''
             ]
         );
 
@@ -101,8 +113,8 @@ export const artisanService = {
         }
 
         const updateableFields = [
-            'company_name', 'company_context', 'sector', 'zones',
-            'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
+            'mission_name', 'company_name', 'company_context', 'sector', 'zones',
+            'services', 'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
             'staff_names', 'specific_instructions', 'establishment_id', 'city',
             // Anti-Detection Fields
             'sector_id', 'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
@@ -117,6 +129,11 @@ export const artisanService = {
                 let value = data[field as keyof ReviewOrder];
                 if (field === 'client_cities' && typeof value === 'object') {
                     value = JSON.stringify(value);
+                }
+
+                // Handle empty string for foreign keys
+                if (field === 'establishment_id' && value === '') {
+                    value = null;
                 }
 
                 values.push(value);
@@ -191,6 +208,16 @@ export const artisanService = {
         // Use active pack price if available
         if (order.payment_amount) {
             order.price = parseFloat(order.payment_amount);
+        }
+
+        // Parse client_cities if it's a string
+        if (order.client_cities && typeof order.client_cities === 'string') {
+            try {
+                order.client_cities = JSON.parse(order.client_cities);
+            } catch (e) {
+                console.error("Failed to parse client_cities", e);
+                order.client_cities = [];
+            }
         }
         const proposals: any = await query(`
             SELECT 
@@ -361,6 +388,8 @@ export const artisanService = {
                 p.content as proposal_content,
                 p.author_name as proposal_author,
                 p.rating,
+                o.mission_name,
+                o.id as mission_id,
                 o.company_name,
                 u.full_name as guide_name
             FROM reviews_submissions s
@@ -389,20 +418,19 @@ export const artisanService = {
      */
     async getAvailablePacks(artisanId: string, includeId?: string) {
         const results = await query(
-            'SELECT id, description, missions_quota, missions_used, created_at, type, status, amount FROM payments WHERE user_id = ? ORDER BY created_at ASC',
+            'SELECT id, description, missions_quota, missions_used, review_credits, created_at, type, status, amount FROM payments WHERE user_id = ? ORDER BY created_at ASC',
             [artisanId]
         );
         console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
 
         // A pack is available if it's a completed subscription and has NOT exceeded its quota
-        // OR if it's explicitly requested (for editing an existing mission)
         const packs = (results as any[]).filter(p =>
             p.type === "subscription" &&
             p.status === "completed" &&
             (p.missions_used < p.missions_quota || p.id === includeId)
         );
 
-        // Fetch subscription definitions to map quantities
+        // Fetch subscription definitions to map identities
         const definitions: any = await query('SELECT * FROM subscription_packs');
 
         return packs.map(p => {
@@ -416,23 +444,14 @@ export const artisanService = {
                 return false;
             });
 
-            // 2. Fallback to price matching
-            if (!def) {
-                def = definitions.find((d: any) => Math.abs((d.price_cents / 100) - parseFloat(p.amount)) < 0.1);
-            }
-
-            // 3. Ultimate logical fallback based on keywords if def still null
-            let finalName = p.description;
-            let finalQuantity = 10; // Default safety
-
+            // If no definition match, use description as name
+            let finalName = p.description || 'Pack Booster';
             if (def) {
                 finalName = `Pack ${def.name}`;
-                finalQuantity = def.quantity;
-            } else {
-                if (desc.includes('expert')) { finalName = 'Pack Expert'; finalQuantity = 20; }
-                else if (desc.includes('croissance') || desc.includes('growth')) { finalName = 'Pack Croissance'; finalQuantity = 10; }
-                else if (desc.includes('découverte') || desc.includes('discovery')) { finalName = 'Pack Découverte'; finalQuantity = 5; }
             }
+
+            // The core fix: use review_credits from the payment record
+            const finalQuantity = p.review_credits || (def ? def.quantity : 10);
 
             return {
                 ...p,

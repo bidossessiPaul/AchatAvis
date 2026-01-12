@@ -9,13 +9,13 @@ const openai = new OpenAI({
 
 interface GenerateReviewsParams {
     companyName: string;
+    missionName?: string;
     trade: string;
     quantity: number;
     context?: string;
     sector?: string;
     zones?: string;
-    tone?: string;
-    clientTypes?: string;
+    services?: string;
     staffNames?: string;
     specificInstructions?: string;
 }
@@ -24,13 +24,13 @@ export const openAiService = {
     async generateReviews(params: GenerateReviewsParams) {
         const {
             companyName,
+            missionName,
             trade,
             quantity,
             context,
             sector,
             zones,
-            tone,
-            clientTypes,
+            services,
             staffNames,
             specificInstructions
         } = params;
@@ -38,25 +38,28 @@ export const openAiService = {
         const prompt = `
             Tu es un système expert en rédaction d'avis clients. 
             Ton objectif est de générer des avis authentiques et crédibles adaptés à la localisation de l'entreprise.
-            Génère ${quantity} avis positifs (4 ou 5 étoiles) pour l'entreprise suivante :
+            IMPORTANT : Utilise les "Zones d'intervention" fournies pour localiser certains avis de manière naturelle (ex: "Intervention rapide à [Ville]", "Très content du service sur [Ville]").
+            Génère ${quantity} avis positifs (4 ou 5 étoiles) pour la mission "${missionName || 'Campagne d\'avis'}" pour l'entreprise suivante :
             Nom : ${companyName}
             Métier : ${trade}
             Secteur précis : ${sector || trade}
             Contexte métier : ${context || 'Artisan de qualité'}
+            Services principaux à mettre en avant : ${services || 'Tous les services standards du métier'}
             Zones d'intervention : ${zones || 'Locale'}
-            Type de clients : ${clientTypes || 'Particuliers'}
-            Ton souhaité : ${tone || 'professionnel'}
-            Noms à citer (si fournis) : ${staffNames || 'Aucun spécifique'}
+            Noms des collaborateurs (si fournis) : ${staffNames || 'Aucun spécifique'}
             Instructions spécifiques : ${specificInstructions || 'Aucune'}
 
             Consignes de rédaction :
             1. VARIÉTÉ DE TAILLE : Produis un mélange d'avis courts (1-2 phrases), moyens (3-4 phrases) et longs (paragraphe détaillé).
             2. VARIÉTÉ DE STYLE : Certains avis doivent être très factuels, d'autres plus émotionnels ou enthousiastes.
-            3. PERSONNALISATION : C'est CRUCIAL : les noms des collaborateurs fournis (${staffNames}) DOIVENT apparaître dans le texte des avis de manière naturelle. Utilise-les dans au moins 70% des avis produits.
-            4. EMOJIS : Ajoute des emojis de manière très parcimonieuse (maximum 1-2 par avis) et SEULEMENT dans environ 40% des avis pour garder un aspect pro mais moderne.
-            5. NATURALITÉ : Évite les répétitions de phrases types. Chaque avis doit sembler écrit par une personne différente.
-            6. LANGUE : Uniquement en français (ou la langue locale si spécifiée).
-            7. FORMAT : Tu DEVEZ retourner un objet JSON avec une seule clé "reviews" contenant le tableau des avis.
+            3. PERSONNALISATION DES NOMS : Les noms des collaborateurs fournis (${staffNames}) sont des employés de l'entreprise. 
+               - ILS DOIVENT apparaître EXCLUSIVEMENT dans le corps du texte (ex: "Merci à Paul", "Sarah a été top").
+               - ILS NE DOIVENT JAMAIS être utilisés comme 'author_name' (l'auteur doit être un client fictif).
+               - Utilise ces noms de manière naturelle dans environ 50% des avis seulement pour que cela reste crédible.
+            4. EMOJIS : Ajoute des emojis de manière très parcimonieuse (maximum 1-2 par avis) et SEULEMENT dans environ 40% des avis.
+            5. NATURALITÉ : Évite les répétitions. Chaque avis doit sembler écrit par une personne différente, avec ses propres fautes de frappe légères ou sa propre manière de s'exprimer.
+            6. LANGUE : Uniquement en français.
+            7. FORMAT : Tu DOIS retourner un objet JSON avec une seule clé "reviews" contenant le tableau des avis.
 
             Exemple de format attendu :
             {
@@ -137,6 +140,43 @@ export const openAiService = {
             return [];
         } catch (error: any) {
             console.error("❌ Erreur OpenAI City Gen:", error.message);
+            throw error;
+        }
+    },
+
+    async generateReviewResponse(reviewContent: string, authorName: string) {
+        const prompt = `
+            Tu es un artisan professionnel qui répond à ses clients sur Google Maps avec courtoisie, professionnalisme et authenticité.
+            
+            Client : ${authorName}
+            Avis : "${reviewContent}"
+            
+            Consignes :
+            1. Remercie le client chaleureusement.
+            2. Personnalise la réponse en utilisant son nom si possible.
+            3. Reste concis (2-3 phrases maximum).
+            4. Ne sois pas trop formel, mais reste pro (utilise le "vous").
+            5. Ajoute une touche positive (ex: "Au plaisir de vous revoir").
+            6. Réponds UNIQUEMENT avec le texte de la réponse, sans guillemets ni introduction.
+        `;
+
+        try {
+            console.log("🤖 Génération de réponse IA pour l'avis de:", authorName);
+            const response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo-0125",
+                messages: [
+                    { role: "system", content: "Tu es un assistant de gestion de réputation pour artisans." },
+                    { role: "user", content: prompt }
+                ],
+                temperature: 0.7,
+            });
+
+            const content = response.choices[0].message.content;
+            if (!content) throw new Error("Aucun contenu renvoyé par OpenAI");
+
+            return content.trim();
+        } catch (error: any) {
+            console.error("❌ Erreur OpenAI Response Gen:", error.message);
             throw error;
         }
     }

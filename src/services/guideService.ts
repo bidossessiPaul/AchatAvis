@@ -138,10 +138,10 @@ export const guideService = {
         return query(`
             SELECT 
                 s.*, 
-                o.company_name as artisan_company,
+                COALESCE(o.company_name, 'Établissement inconnu') as artisan_company,
                 sd.id as sector_id,
-                sd.sector_name,
-                sd.icon_emoji as sector_icon
+                COALESCE(sd.sector_name, 'Général') as sector_name,
+                COALESCE(sd.icon_emoji, '🌐') as sector_icon
             FROM reviews_submissions s
             JOIN reviews_orders o ON s.order_id = o.id
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id

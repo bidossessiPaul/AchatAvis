@@ -182,5 +182,76 @@ export const establishmentController = {
                 message: 'Erreur lors de la récupération des établissements en attente.'
             });
         }
+    },
+
+    /**
+     * Get establishment by ID with ownership check and missions count
+     */
+    async getEstablishmentByIdWithOwnership(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const userId = (req as any).user.userId;
+
+            const establishment = await establishmentService.getEstablishmentByIdWithOwnership(id, userId);
+
+            return res.json({
+                success: true,
+                data: establishment
+            });
+        } catch (error: any) {
+            const status = error.message.includes('introuvable') ? 404 : error.message.includes('non autorisé') ? 403 : 500;
+            return res.status(status).json({
+                success: false,
+                message: error.message || 'Erreur lors de la récupération des détails.'
+            });
+        }
+    },
+
+    /**
+     * Update establishment
+     */
+    async updateEstablishment(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const userId = (req as any).user.userId;
+            const updateData = req.body;
+
+            const updated = await establishmentService.updateEstablishment(id, userId, updateData);
+
+            return res.json({
+                success: true,
+                message: 'Établissement mis à jour avec succès.',
+                data: updated
+            });
+        } catch (error: any) {
+            const status = error.message.includes('autorisé') ? 403 : error.message.includes('introuvable') ? 404 : 400;
+            return res.status(status).json({
+                success: false,
+                message: error.message || 'Erreur lors de la mise à jour.'
+            });
+        }
+    },
+
+    /**
+     * Delete establishment
+     */
+    async deleteEstablishment(req: Request, res: Response) {
+        try {
+            const { id } = req.params;
+            const userId = (req as any).user.userId;
+
+            const result = await establishmentService.deleteEstablishment(id, userId);
+
+            return res.json({
+                success: true,
+                message: result.message
+            });
+        } catch (error: any) {
+            const status = error.message.includes('autorisé') ? 403 : error.message.includes('introuvable') ? 404 : 400;
+            return res.status(status).json({
+                success: false,
+                message: error.message || 'Erreur lors de la suppression.'
+            });
+        }
     }
 };
