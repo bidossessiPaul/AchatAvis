@@ -45,7 +45,7 @@ export const EstablishmentDetail: React.FC = () => {
             html: `<strong>${establishment.name}</strong><br/><small>Cette action est irréversible.</small>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ff3b6a',
+            confirmButtonColor: 'var(--primary-blue)',
             cancelButtonColor: '#6b7280',
             confirmButtonText: 'Oui, supprimer',
             cancelButtonText: 'Annuler'
@@ -183,7 +183,7 @@ export const EstablishmentDetail: React.FC = () => {
                 <div style={{ background: 'white', borderRadius: '1rem', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                         <div style={{ background: '#f3f4f6', padding: '1rem', borderRadius: '0.75rem' }}>
-                            <Building2 size={32} color="#ff3b6a" />
+                            <Building2 size={32} color="var(--primary-brand)" />
                         </div>
                         <div>
                             {isEditing ? (

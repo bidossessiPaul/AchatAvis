@@ -1,5 +1,6 @@
 import React from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { useAuthStore } from '../../context/authStore';
 import './LoadingOverlay.css';
 
 interface LoadingOverlayProps {
@@ -13,8 +14,11 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     fullScreen = true,
     className = ''
 }) => {
+    const { user } = useAuthStore();
+    const isGuide = user?.role === 'guide';
+
     return (
-        <div className={`loading-overlay ${fullScreen ? 'fixed' : 'absolute'} ${className}`}>
+        <div className={`loading-overlay ${fullScreen ? 'fixed' : 'absolute'} ${isGuide ? 'theme-guide' : ''} ${className}`}>
             <div className="overlay-content">
                 <LoadingSpinner size="lg" text={text} />
             </div>

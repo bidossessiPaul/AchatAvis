@@ -65,7 +65,7 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                     {/* Header */}
                     <div style={{ background: '#0f172a', padding: '1.5rem', color: 'white', position: 'relative' }}>
                         <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <ShieldCheck size={24} color="#38bdf8" /> Validation avant envoi
+                            <ShieldCheck size={24} color="var(--guide-primary)" /> Validation avant envoi
                         </h3>
                         <p style={{ margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.875rem' }}>
                             Secteur : {sectorName} {isHardSector && <span style={{ color: '#ef4444' }}>(🔴 Difficile)</span>}
@@ -104,28 +104,28 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                         {/* Checklist */}
                         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '2rem' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.navigation ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.navigation ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.navigation} onChange={() => setChecks({ ...checks, navigation: !checks.navigation })} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                <input type="checkbox" checked={checks.navigation} onChange={() => setChecks({ ...checks, navigation: !checks.navigation })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
                                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>J'ai navigué 3+ minutes sur la fiche avant</span>
                             </label>
 
                             <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.age ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.age ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.age} onChange={() => setChecks({ ...checks, age: !checks.age })} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                <input type="checkbox" checked={checks.age} onChange={() => setChecks({ ...checks, age: !checks.age })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
                                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Mon compte Gmail a +60 jours d'ancienneté</span>
                             </label>
 
                             <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.connection ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.connection ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.connection} onChange={() => setChecks({ ...checks, connection: !checks.connection })} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                <input type="checkbox" checked={checks.connection} onChange={() => setChecks({ ...checks, connection: !checks.connection })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
                                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>J'ai posté depuis une connexion 4G/5G</span>
                             </label>
 
                             <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.limit ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.limit ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.limit} onChange={() => setChecks({ ...checks, limit: !checks.limit })} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                <input type="checkbox" checked={checks.limit} onChange={() => setChecks({ ...checks, limit: !checks.limit })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
                                 <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Je n'ai pas posté d'autre avis aujourd'hui</span>
                             </label>
 
                             {isHardSector && (
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.cooldown ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.cooldown ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                    <input type="checkbox" checked={checks.cooldown} onChange={() => setChecks({ ...checks, cooldown: !checks.cooldown })} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                    <input type="checkbox" checked={checks.cooldown} onChange={() => setChecks({ ...checks, cooldown: !checks.cooldown })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
                                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Mon dernier avis "{sectorName}" date de +15 jours</span>
                                 </label>
                             )}
@@ -146,10 +146,11 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                                     padding: '1rem',
                                     borderRadius: '1rem',
                                     border: 'none',
-                                    background: allChecked ? '#0f172a' : '#f1f5f9',
+                                    background: allChecked ? 'var(--guide-gradient)' : '#f1f5f9',
                                     color: allChecked ? 'white' : '#94a3b8',
-                                    fontWeight: 700,
+                                    fontWeight: 800,
                                     cursor: allChecked ? 'pointer' : 'not-allowed',
+                                    boxShadow: allChecked ? 'var(--shadow-guide)' : 'none',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',

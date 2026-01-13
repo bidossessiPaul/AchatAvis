@@ -154,8 +154,8 @@ export const ReviewValidation: React.FC = () => {
                                     padding: '0.75rem 0',
                                     fontWeight: 700,
                                     fontSize: '0.9375rem',
-                                    color: activeTab === 'submissions' ? '#ff3b6a' : 'var(--gray-500)',
-                                    borderBottom: activeTab === 'submissions' ? '2px solid #ff3b6a' : 'none',
+                                    color: activeTab === 'submissions' ? 'var(--primary-brand)' : 'var(--gray-500)',
+                                    borderBottom: activeTab === 'submissions' ? '2px solid var(--primary-brand)' : 'none',
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer'
@@ -170,8 +170,8 @@ export const ReviewValidation: React.FC = () => {
                                     padding: '0.75rem 0',
                                     fontWeight: 700,
                                     fontSize: '0.9375rem',
-                                    color: activeTab === 'missions' ? '#ff3b6a' : 'var(--gray-500)',
-                                    borderBottom: activeTab === 'missions' ? '2px solid #ff3b6a' : 'none',
+                                    color: activeTab === 'missions' ? 'var(--primary-brand)' : 'var(--gray-500)',
+                                    borderBottom: activeTab === 'missions' ? '2px solid var(--primary-brand)' : 'none',
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer'
@@ -270,7 +270,7 @@ export const ReviewValidation: React.FC = () => {
                                                         {submission.google_email}
                                                     </span>
                                                     {isOldReview(submission.submitted_at) && submission.status === 'pending' && (
-                                                        <span style={{ fontSize: '10px', color: '#e11d48', fontWeight: 600 }}>En retard</span>
+                                                        <span style={{ fontSize: '10px', color: 'var(--brand-red)', fontWeight: 600 }}>En retard</span>
                                                     )}
                                                 </div>
                                             </td>

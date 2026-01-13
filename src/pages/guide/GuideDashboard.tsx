@@ -136,7 +136,7 @@ export const GuideDashboard: React.FC = () => {
                 <span
                     className="see-all-link"
                     onClick={() => navigate('/guide/missions')}
-                    style={{ cursor: 'pointer', color: '#ff3b6a', fontWeight: 600, fontSize: '0.9rem' }}
+                    style={{ cursor: 'pointer', color: 'var(--guide-primary)', fontWeight: 600, fontSize: '0.9rem' }}
                 >
                     Voir tout ({missions.length})
                 </span>
@@ -145,7 +145,7 @@ export const GuideDashboard: React.FC = () => {
             {isLoading ? (
                 <div className="loading-state">
                     <div className="animate-spin loading-spinner">
-                        <Clock size={32} color="#ff3b6a" />
+                        <Clock size={32} color="var(--guide-primary)" />
                     </div>
                     <p className="loading-text">Recherche des meilleures missions...</p>
                 </div>

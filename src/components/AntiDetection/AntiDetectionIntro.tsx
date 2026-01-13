@@ -72,12 +72,12 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '3rem', position: 'relative' }}>
                 <div style={{
-                    background: 'rgba(56, 189, 248, 0.1)',
+                    background: 'rgba(255, 153, 31, 0.1)',
                     padding: '1rem',
                     borderRadius: '1rem',
-                    border: '1px solid rgba(56, 189, 248, 0.2)'
+                    border: '1px solid rgba(255, 153, 31, 0.2)'
                 }}>
-                    <FileSearch size={32} color="#38bdf8" />
+                    <FileSearch size={32} color="var(--guide-primary)" />
                 </div>
                 <div>
                     <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0, color: '#f8fafc' }}>Système Anti-Détection Google</h2>
@@ -91,7 +91,7 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
                 {/* Protocol 1 */}
                 <motion.div variants={itemVariants} style={cardStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ color: '#38bdf8' }}><Fingerprint size={20} /></div>
+                        <div style={{ color: 'var(--guide-primary)' }}><Fingerprint size={20} /></div>
                         <h4 style={cardTitleStyle}>Analyse de Pattern</h4>
                     </div>
                     <p style={cardTextStyle}>
@@ -102,7 +102,7 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
                 {/* Protocol 2 */}
                 <motion.div variants={itemVariants} style={cardStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ color: '#38bdf8' }}><Activity size={20} /></div>
+                        <div style={{ color: 'var(--guide-primary)' }}><Activity size={20} /></div>
                         <h4 style={cardTitleStyle}>Activité Organique</h4>
                     </div>
                     <p style={cardTextStyle}>
@@ -113,7 +113,7 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
                 {/* Protocol 3 */}
                 <motion.div variants={itemVariants} style={cardStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ color: '#38bdf8' }}><Shield size={20} /></div>
+                        <div style={{ color: 'var(--guide-primary)' }}><Shield size={20} /></div>
                         <h4 style={cardTitleStyle}>Multi-Gestion</h4>
                     </div>
                     <p style={cardTextStyle}>
@@ -124,7 +124,7 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
                 {/* Protocol 4 */}
                 <motion.div variants={itemVariants} style={cardStyle}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ color: '#38bdf8' }}><MapPin size={20} /></div>
+                        <div style={{ color: 'var(--guide-primary)' }}><MapPin size={20} /></div>
                         <h4 style={cardTitleStyle}>Validation Géo</h4>
                     </div>
                     <p style={cardTextStyle}>
@@ -175,11 +175,12 @@ export const AntiDetectionIntro: React.FC<AntiDetectionIntroProps> = ({
                     style={{
                         padding: '0.875rem 1.5rem',
                         borderRadius: '0.75rem',
-                        background: '#38bdf8',
-                        color: '#0f172a',
+                        background: 'var(--guide-gradient)',
+                        color: 'white',
                         border: 'none',
-                        fontWeight: 700,
+                        fontWeight: 800,
                         fontSize: '0.9375rem',
+                        boxShadow: 'var(--shadow-guide)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.6rem',

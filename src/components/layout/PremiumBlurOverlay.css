@@ -110,12 +110,12 @@
     font-size: var(--text-base);
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 4px 12px rgba(255, 59, 106, 0.3);
+    box-shadow: none;
 }
 
 .overlay-action-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(255, 59, 106, 0.4);
+    box-shadow: none;
     filter: brightness(1.05);
 }
 

@@ -20,7 +20,7 @@ interface GrowthChartProps {
     color?: string;
 }
 
-export const GrowthChart: React.FC<GrowthChartProps> = ({ data, color = "#ff3b6a" }) => {
+export const GrowthChart: React.FC<GrowthChartProps> = ({ data, color = "#2383E2" }) => {
     return (
         <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
@@ -101,7 +101,7 @@ export const EarningsChart: React.FC<EarningsChartProps> = ({ data }) => {
                     />
                     <Bar
                         dataKey="amount"
-                        fill="#ff3b6a"
+                        fill="var(--primary-brand)"
                         radius={[6, 6, 0, 0]}
                         barSize={40}
                     />
@@ -115,7 +115,7 @@ interface DistributionChartProps {
     data: { name: string; value: number }[];
 }
 
-const COLORS = ['#ff3b6a', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+const COLORS = ['#FF991F', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 
 export const DistributionChart: React.FC<DistributionChartProps> = ({ data }) => {
     return (

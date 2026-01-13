@@ -65,7 +65,7 @@ export const NotificationCenter: React.FC = () => {
                         position: 'absolute',
                         top: '-4px',
                         right: '-4px',
-                        background: '#ff3b6a',
+                        background: 'var(--primary-brand)',
                         color: 'white',
                         fontSize: '0.625rem',
                         fontWeight: 700,

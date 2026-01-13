@@ -55,8 +55,8 @@ export const OrdersList: React.FC = () => {
                 padding: '0.75rem 1.5rem',
                 border: 'none',
                 background: 'none',
-                borderBottom: activeFilter === status ? '3px solid #ff3b6a' : '3px solid transparent',
-                color: activeFilter === status ? '#ff3b6a' : '#6b7280',
+                borderBottom: activeFilter === status ? '3px solid var(--primary-brand)' : '3px solid transparent',
+                color: activeFilter === status ? 'var(--primary-brand)' : 'var(--gray-500)',
                 fontWeight: activeFilter === status ? 700 : 500,
                 cursor: 'pointer',
                 display: 'flex',
@@ -67,7 +67,7 @@ export const OrdersList: React.FC = () => {
         >
             {label}
             <span style={{
-                background: activeFilter === status ? '#ff3b6a' : '#f3f4f6',
+                background: activeFilter === status ? 'var(--primary-brand)' : 'var(--gray-100)',
                 color: activeFilter === status ? 'white' : '#6b7280',
                 padding: '0.1rem 0.5rem',
                 borderRadius: '9999px',
@@ -104,7 +104,7 @@ export const OrdersList: React.FC = () => {
                     {isLoading ? (
                         <div style={{ padding: '4rem', textAlign: 'center' }}>
                             <div className="animate-spin" style={{ margin: '0 auto 1rem' }}>
-                                <Clock size={32} color="#ff3b6a" />
+                                <Clock size={32} color="var(--primary-brand)" />
                             </div>
                             <p>Chargement de vos commandes...</p>
                         </div>
@@ -156,7 +156,7 @@ export const OrdersList: React.FC = () => {
                                                     <div style={{
                                                         width: `${(order.reviews_received / order.quantity) * 100}%`,
                                                         height: '100%',
-                                                        background: '#ff3b6a',
+                                                        background: 'var(--primary-brand)',
                                                         transition: 'width 0.5s ease'
                                                     }} />
                                                 </div>

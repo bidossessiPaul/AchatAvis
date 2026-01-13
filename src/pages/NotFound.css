@@ -25,7 +25,7 @@
     position: absolute;
     width: 500px;
     height: 500px;
-    background: linear-gradient(135deg, rgba(255, 59, 106, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+    background: var(--bg-gray);
     filter: blur(100px);
     border-radius: 50%;
     animation: blob-float 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
@@ -100,7 +100,7 @@
     font-weight: 900;
     margin: 0;
     line-height: 1;
-    background: linear-gradient(to right, #ff3b6a, #a855f7);
+    background: var(--primary-brand);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -274,7 +274,7 @@
     align-items: center;
     gap: 0.75rem;
     padding: 1rem 2rem;
-    background: linear-gradient(135deg, #ff3b6a 0%, #a855f7 100%);
+    background: var(--primary-brand);
     border: none;
     border-radius: 1rem;
     color: white;

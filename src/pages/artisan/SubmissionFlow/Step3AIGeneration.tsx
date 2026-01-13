@@ -114,7 +114,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                         <span style={{ fontSize: '0.875rem', color: '#4b5563', fontWeight: 500 }}>
                             {proposals.length} avis générés sur {order.quantity} demandés
                         </span>
-                        <button onClick={handleGenerate} style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                        <button onClick={handleGenerate} style={{ background: 'none', border: 'none', color: 'var(--primary-brand)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
                             <RefreshCw size={14} />
                             Régénérer tout
                         </button>

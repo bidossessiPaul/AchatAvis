@@ -20,8 +20,8 @@ body {
     font-size: var(--text-base);
     font-weight: var(--font-normal);
     line-height: 1.5;
-    color: var(--gray-700);
-    background-color: #ffffff;
+    color: var(--text-gray);
+    background-color: var(--bg-light);
     overflow-x: hidden;
 }
 
@@ -34,7 +34,7 @@ h5,
 h6 {
     font-weight: var(--font-bold);
     line-height: 1.2;
-    color: var(--gray-900);
+    color: var(--text-dark);
 }
 
 h1 {
@@ -157,4 +157,38 @@ a:hover {
 
 .fade-in {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* Artisan Button Styles */
+.theme-artisan .btn-next,
+.btn-next-artisan {
+    background: var(--artisan-gradient);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-bold);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-artisan);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.theme-artisan .btn-next:hover,
+.btn-next-artisan:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
+}
+
+.theme-artisan .btn-next:disabled,
+.btn-next-artisan:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
 }

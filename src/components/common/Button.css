@@ -29,6 +29,17 @@
     transform: translateY(-1px);
 }
 
+.btn-guide {
+    background: var(--guide-gradient);
+    color: white;
+    box-shadow: var(--shadow-guide);
+}
+
+.btn-guide:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
 .btn-secondary {
     background: transparent;
     color: var(--primary-brand);

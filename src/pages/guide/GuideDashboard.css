@@ -5,11 +5,11 @@
 }
 
 .guide-dashboard-hero-content {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    background: var(--guide-gradient);
     padding: 2rem;
     border-radius: 1.5rem;
     color: white;
-    box-shadow: 0 10px 25px rgba(30, 27, 75, 0.2);
+    box-shadow: var(--shadow-guide);
     position: relative;
     overflow: hidden;
 }
@@ -42,7 +42,7 @@
 
 .anti-detection-alert {
     margin-bottom: 2rem;
-    background: linear-gradient(to right, #fff7ed, #ffedd5);
+    background: var(--bg-gray);
     border: 1px solid #fed7aa;
     border-radius: 1rem;
     padding: 1rem 1.5rem;
@@ -109,7 +109,11 @@
 
 .loading-text {
     font-weight: 600;
-    color: #6b7280;
+    color: black;
+}
+
+.theme-guide .loading-text {
+    color: var(--gray-900);
 }
 
 .missions-grid {
@@ -147,8 +151,8 @@
 }
 
 .payout-badge {
-    background: #fff1f2;
-    color: #ff3b6a;
+    background: #fff7ed;
+    color: var(--guide-primary);
     padding: 0.4rem 0.8rem;
     border-radius: 0.75rem;
     font-size: 0.75rem;
@@ -156,6 +160,7 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    border: 1px solid #ffedd5;
 }
 
 .time-badge {
@@ -263,7 +268,7 @@
     padding: 1rem;
     border-radius: 1rem;
     border: none;
-    background: #ff3b6a;
+    background: var(--guide-gradient);
     color: white;
     font-weight: 700;
     font-size: 0.9375rem;
@@ -272,12 +277,13 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    box-shadow: 0 4px 12px rgba(255, 59, 106, 0.2);
-    transition: background 0.2s;
+    box-shadow: var(--shadow-guide);
+    transition: all 0.2s;
 }
 
 .mission-action-btn:hover {
-    background: #e11d48;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 153, 31, 0.3);
 }
 
 .mission-status-message {

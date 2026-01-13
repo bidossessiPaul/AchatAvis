@@ -7,6 +7,8 @@ import { Card } from '../../components/common/Card';
 import { Sparkles, User, MapPin, ArrowRight, Lock, Mail } from 'lucide-react';
 import './Auth.css';
 
+import { ParticlesBackground } from '../../components/common/ParticlesBackground';
+
 export const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login, verify2FA, error, errorCode, isLoading, clearError, twoFactorRequired, detectedCountry, suspendedUserName, suspension } = useAuthStore();
@@ -88,6 +90,7 @@ export const Login: React.FC = () => {
 
     return (
         <div className="auth-container">
+            <ParticlesBackground />
             <div className="auth-content">
                 <div className="auth-logo">
                     <h1 className="auth-brand">

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle, Sparkles } from 'lucide-react';
 import api from '../../services/api';
 import { useAuthStore } from '../../context/authStore';
+import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 import './PaymentSuccess.css';
 
 // Global flag to prevent activation loop when component re-mounts due to Auth wrappers
@@ -25,8 +27,6 @@ export default function PaymentSuccess() {
         // Prevent multiple activations across re-mounts
         if (globalActivationStarted) {
             console.log('⚠️ Activation already in progress or completed, skipping...');
-            // If already success, we might want to still show success if it's currently success in state
-            // but since state is local, we just let it be. Usually it will stay on the page until navigate.
             return;
         }
 
@@ -64,60 +64,97 @@ export default function PaymentSuccess() {
 
     return (
         <div className="payment-success-container">
-            <div className="success-glass-card">
-                {status === 'loading' && (
-                    <>
-                        <div className="loading-spinner-wrapper">
-                            <div className="premium-spinner" />
-                        </div>
-                        <h2 className="success-title">Activation de votre compte</h2>
-                        <p className="success-description">
-                            Nous configurons votre pack et vos nouveaux avantages.
-                            Veuillez ne pas quitter cette page.
-                        </p>
-                        <div className="progress-bar-container">
-                            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
-                        </div>
-                    </>
-                )}
+            <ParticlesBackground />
 
-                {status === 'success' && (
-                    <>
-                        <div className="icon-animation-wrapper">
-                            <CheckCircle2 size={80} className="success-check-icon" />
-                        </div>
-                        <h2 className="success-title">Paiement Validé !</h2>
-                        <p className="success-description">
-                            Votre compte est désormais actif. Vous allez être redirigé pour lancer votre première mission.
-                        </p>
-                        <div className="progress-bar-container">
-                            <div className="progress-bar-fill" style={{ width: '100%', transition: 'none' }} />
-                        </div>
-                        <p className="status-note">Lancement de la mission...</p>
-                    </>
-                )}
+            <div className="success-content">
+                <div className="auth-logo">
+                    <h1 className="auth-brand">
+                        <Sparkles className="brand-icon" size={32} />
+                        AchatAvis
+                    </h1>
+                </div>
 
-                {status === 'error' && (
-                    <>
-                        <div className="icon-animation-wrapper">
-                            <XCircle size={80} className="error-cross-icon" />
-                        </div>
-                        <h2 className="success-title">Erreur d'activation</h2>
-                        <p className="success-description">
-                            Le paiement a été validé par Stripe, mais une erreur est survenue lors de l'activation de votre compte.
-                            Ne vous inquiétez pas, notre équipe peut régler cela.
-                        </p>
-                        <button
-                            onClick={() => {
-                                globalActivationStarted = false;
-                                window.location.reload();
-                            }}
-                            className="retry-button"
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="success-glass-card"
+                >
+                    {status === 'loading' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                         >
-                            Réessayer l'activation
-                        </button>
-                    </>
-                )}
+                            <div className="loading-spinner-wrapper">
+                                <div className="premium-spinner" />
+                            </div>
+                            <h2 className="success-title">Activation en cours</h2>
+                            <p className="success-description">
+                                Nous configurons votre pack et vos nouveaux avantages.<br />
+                                Veuillez ne pas quitter cette page.
+                            </p>
+                            <div className="progress-bar-container">
+                                <motion.div
+                                    className="progress-bar-fill"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: `${progress}%` }}
+                                    transition={{ duration: 2, ease: "easeInOut" }}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {status === 'success' && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                        >
+                            <div className="icon-animation-wrapper">
+                                <CheckCircle2 size={80} className="success-check-icon" />
+                            </div>
+                            <h2 className="success-title">Compte Activé !</h2>
+                            <p className="success-description">
+                                Félicitations ! Votre compte est désormais actif.<br />
+                                Redirection vers votre espace mission...
+                            </p>
+                            <div className="progress-bar-container">
+                                <motion.div
+                                    className="progress-bar-fill success"
+                                    initial={{ width: "0%" }}
+                                    animate={{ width: "100%" }}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {status === 'error' && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                        >
+                            <div className="icon-animation-wrapper">
+                                <XCircle size={80} className="error-cross-icon" />
+                            </div>
+                            <h2 className="success-title">Erreur d'activation</h2>
+                            <p className="success-description">
+                                Une erreur est survenue lors de l'activation.<br />
+                                Notre équipe a été notifiée.
+                            </p>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    globalActivationStarted = false;
+                                    window.location.reload();
+                                }}
+                                className="retry-button"
+                            >
+                                Réessayer
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </motion.div>
             </div>
         </div>
     );

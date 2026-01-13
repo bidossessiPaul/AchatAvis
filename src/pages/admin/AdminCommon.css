@@ -148,7 +148,7 @@
     color: var(--gray-800);
     letter-spacing: -0.01em;
     font-size: var(--text-lg);
-    background: linear-gradient(90deg, var(--primary-brand), #f43f5e);
+    background: var(--primary-brand);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

@@ -20,7 +20,7 @@
 }
 
 .mission-back-button:hover {
-    color: var(--primary-brand);
+    color: var(--guide-primary);
     background-color: var(--gray-100);
 }
 
@@ -166,19 +166,19 @@
     display: inline-flex;
     align-items: center;
     gap: var(--space-2);
-    color: var(--primary-brand);
+    color: white;
     text-decoration: none;
     font-weight: var(--font-bold);
     font-size: var(--text-sm);
     padding: var(--space-3) var(--space-6);
-    border: 1px solid rgba(255, 59, 106, 0.2);
+    border: none;
     border-radius: var(--radius-lg);
-    background-color: rgba(255, 59, 106, 0.05);
+    background: var(--guide-gradient);
     transition: all var(--transition-base);
 }
 
 .maps-link-btn:hover {
-    background-color: rgba(255, 59, 106, 0.1);
+    background-color: rgba(255, 153, 31, 0.1);
     transform: translateY(-1px);
 }
 
@@ -233,7 +233,7 @@
 
 .review-card:hover {
     transform: translateX(4px);
-    border-color: var(--primary-brand);
+    border-color: var(--guide-primary);
 }
 
 .review-card-header {
@@ -274,8 +274,8 @@
 
 .copy-btn {
     width: 100%;
-    background: white;
-    border: 1px solid var(--gray-300);
+    background: var(--guide-gradient);
+    border: none;
     padding: var(--space-4);
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -285,8 +285,9 @@
     gap: var(--space-2);
     font-weight: var(--font-bold);
     font-size: var(--text-sm);
-    color: var(--gray-700);
+    color: white;
     transition: all var(--transition-base);
+    box-shadow: var(--shadow-guide);
 }
 
 .copy-btn:hover {
@@ -325,7 +326,7 @@
 }
 
 .text-input:focus {
-    border-color: var(--primary-brand);
+    border-color: var(--guide-primary);
 }
 
 .proof-input-row {
@@ -334,7 +335,7 @@
 }
 
 .submit-btn {
-    background: var(--primary-brand);
+    background: var(--guide-gradient);
     color: white;
     border: none;
     padding: var(--space-4) var(--space-8);
@@ -348,9 +349,9 @@
 }
 
 .submit-btn:hover:not(:disabled) {
-    background-color: var(--primary-brand-hover);
+    background-color: var(--guide-primary-hover);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-brand);
+    box-shadow: var(--shadow-guide);
 }
 
 .submit-btn:disabled {
@@ -402,7 +403,7 @@
 
 .proof-link {
     font-size: var(--text-xs);
-    color: var(--primary-brand);
+    color: var(--guide-primary);
     font-weight: var(--font-bold);
     text-decoration: none;
     display: flex;
@@ -550,6 +551,7 @@
         transform: translateY(0);
     }
 }
+
 /* Additional Styles for Refactoring */
 
 .loading-container {
@@ -595,11 +597,12 @@
 .btn-back-error {
     padding: 0.75rem 2rem;
     border-radius: 0.75rem;
-    background: #1f2937;
+    background: var(--guide-gradient);
     color: white;
     font-weight: 600;
     border: none;
     cursor: pointer;
+    box-shadow: var(--shadow-guide);
 }
 
 .lock-info {
@@ -649,7 +652,7 @@
 
 .add-gmail-link {
     font-size: 0.75rem;
-    color: var(--primary-brand);
+    color: var(--guide-primary);
     margin-top: 0.5rem;
     display: block;
 }

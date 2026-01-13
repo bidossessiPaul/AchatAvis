@@ -172,7 +172,7 @@ export const MyEstablishments: React.FC = () => {
                                     <button
                                         onClick={() => navigate(`/artisan/establishments/${est.id}`)}
                                         style={{
-                                            background: '#ff3b6a',
+                                            background: 'var(--primary-brand)',
                                             color: 'white',
                                             border: 'none',
                                             padding: '0.5rem 1rem',
@@ -186,7 +186,7 @@ export const MyEstablishments: React.FC = () => {
                                             transition: 'all 0.2s'
                                         }}
                                         onMouseEnter={(e) => (e.currentTarget.style.background = '#c4ed1a', e.currentTarget.style.color = '#000')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = '#ff3b6a', e.currentTarget.style.color = 'white')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--primary-brand)', e.currentTarget.style.color = 'white')}
                                     >
                                         <Eye size={16} />
                                         Voir détails

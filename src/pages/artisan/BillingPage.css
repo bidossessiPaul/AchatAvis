@@ -167,8 +167,8 @@
 
 .progress-bar-fill-premium {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-brand), #f43f5e);
-    box-shadow: 0 0 15px rgba(var(--primary-brand-rgb), 0.3);
+    background: var(--artisan-gradient);
+    box-shadow: 0 0 15px rgba(35, 131, 226, 0.3);
     transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -177,7 +177,7 @@
     font-size: var(--text-lg);
     font-weight: 700;
     margin-bottom: var(--space-6);
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
 }
 
 .info-row {
@@ -231,7 +231,7 @@
 .section-header h3 {
     font-size: var(--text-xl);
     font-weight: 800;
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
 }
 
 .plan-card-mini {
@@ -246,7 +246,7 @@
 }
 
 .plan-card-mini:hover {
-    border-color: var(--primary-brand);
+    border-color: var(--artisan-primary);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
 }
 
@@ -282,7 +282,7 @@
 
 .plan-quota-text {
     font-size: 11px;
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
     font-weight: 700;
 }
 
@@ -299,7 +299,7 @@
 }
 
 .buy-again-button:hover:not(:disabled) {
-    background: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: white;
     transform: scale(1.1);
 }

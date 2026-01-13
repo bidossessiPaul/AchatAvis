@@ -444,7 +444,7 @@ export const Profile: React.FC = () => {
                                         <div className="form-actions">
                                             <Button
                                                 type="submit"
-                                                variant="primary"
+                                                variant={user?.role === 'guide' ? 'guide' : 'primary'}
                                                 isLoading={isLoading}
                                             >
                                                 <Save size={18} style={{ marginRight: '8px' }} />
@@ -489,7 +489,7 @@ export const Profile: React.FC = () => {
                                                             Renforcez la sécurité de votre compte en activant la double authentification par application (Google Authenticator, Authy...).
                                                         </p>
                                                         <Button
-                                                            variant="primary"
+                                                            variant={user?.role === 'guide' ? 'guide' : 'primary'}
                                                             onClick={handleGenerate2FA}
                                                             isLoading={is2FALoading}
                                                             fullWidth
@@ -520,7 +520,13 @@ export const Profile: React.FC = () => {
                                                         />
                                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
                                                             <Button variant="secondary" onClick={() => setShow2FASetup(false)}>Annuler</Button>
-                                                            <Button variant="primary" onClick={handleEnable2FA} isLoading={is2FALoading}>Vérifier</Button>
+                                                            <Button
+                                                                variant={user?.role === 'guide' ? 'guide' : 'primary'}
+                                                                onClick={handleEnable2FA}
+                                                                isLoading={is2FALoading}
+                                                            >
+                                                                Vérifier
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 )}

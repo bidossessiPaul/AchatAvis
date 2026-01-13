@@ -156,7 +156,7 @@
     left: 0;
     right: 0;
     height: 6px;
-    background: linear-gradient(90deg, var(--primary-brand), var(--accent-lime));
+    background: var(--primary-brand);
 }
 
 .tab-content {
