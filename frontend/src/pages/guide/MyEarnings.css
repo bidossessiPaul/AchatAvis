@@ -12,8 +12,9 @@
 }
 
 .stat-card.balance {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: var(--guide-gradient);
     color: white;
+    box-shadow: var(--shadow-guide);
 }
 
 .stat-card.balance .stat-label {
@@ -53,16 +54,16 @@
 }
 
 .withdraw-btn {
-    background: var(--primary-brand);
+    background: var(--guide-gradient);
     color: white;
     border: none;
     padding: var(--space-4) var(--space-12);
     border-radius: var(--radius-full);
     font-size: var(--text-lg);
-    font-weight: var(--font-bold);
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 10px 15px -3px rgba(255, 59, 106, 0.3);
+    box-shadow: var(--shadow-guide);
 }
 
 .withdraw-btn:hover:not(:disabled) {

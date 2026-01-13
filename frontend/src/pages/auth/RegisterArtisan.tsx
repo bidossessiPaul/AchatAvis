@@ -7,6 +7,7 @@ import { Card } from '../../components/common/Card';
 import { Loader, Sparkles, Mail, User, Lock, Building, Smartphone, MapPin, Hash, Globe } from 'lucide-react';
 import type { ArtisanRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
+import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 import './Auth.css';
 
 interface Sector {
@@ -99,6 +100,7 @@ export const RegisterArtisan: React.FC = () => {
 
     return (
         <div className="auth-container">
+            <ParticlesBackground />
             <div className="auth-content" style={{ maxWidth: '600px' }}>
                 <div className="auth-logo">
                     <h1 className="auth-brand">

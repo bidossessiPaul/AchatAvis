@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,8 +10,7 @@ import {
     Lightbulb,
     ShieldCheck as ShieldIcon,
     AlertTriangle,
-    CheckCircle,
-    Award
+    CheckCircle
 } from 'lucide-react';
 
 import { AntiDetectionIntro } from '../../components/AntiDetection/AntiDetectionIntro';
@@ -71,24 +71,16 @@ export const AntiDetectionRulesPage: React.FC = () => {
     if (loading && !rules.length) {
         return (
             <DashboardLayout title="Protocoles de Sécurité">
-                <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>Initialisation du module de sécurité...</div>
+                <div style={{ padding: '80px 0' }}>
+                    <LoadingSpinner text="Initialisation du module de sécurité..." size="lg" className="theme-guide" />
+                </div>
             </DashboardLayout>
         );
     }
 
     return (
         <DashboardLayout title="Protocoles de Sécurité">
-            <AntiDetectionIntro
-                onAddEmails={() => window.location.href = '/profile?tab=gmail'}
-                onViewFullGuide={() => {
-                    const el = document.getElementById('rules-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }}
-            />
-
             <SecurityRadar />
-
-            <SectorDifficultyList />
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start', marginBottom: '3rem' }}>
                 <div id="rules-section">
@@ -200,7 +192,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
                                                         <Lightbulb size={14} /> Analyse d'Expert
                                                     </h5>
                                                     <div style={{ color: '#0c4a6e', fontSize: '0.8125rem', lineHeight: '1.5' }}>
-                                                        {rule.tips?.map((tip: string, i: number) => <div key={i}>{tip}</div>)}
+                                                        {rule.tips?.map((tip: string, i: number) => <div key={i}>💡 {tip}</div>)}
                                                     </div>
                                                 </div>
                                             </div>
@@ -215,50 +207,15 @@ export const AntiDetectionRulesPage: React.FC = () => {
                 <div style={{ position: 'sticky', top: '2rem' }}>
                     <ComplianceWidget data={complianceData} />
 
-                    {!complianceData?.certification_passed && (
-                        <div style={{
-                            marginTop: '1.25rem',
-                            padding: '1.5rem',
-                            background: '#0f172a',
-                            borderRadius: '1.25rem',
-                            textAlign: 'center',
-                            color: 'white'
-                        }}>
-                            <p style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
-                                Débloquez l'accès aux missions premium en validant vos connaissances.
-                            </p>
-                            <button
-                                onClick={() => window.location.href = '/guide/quiz'}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.875rem',
-                                    borderRadius: '0.75rem',
-                                    background: 'white',
-                                    color: '#0f172a',
-                                    border: 'none',
-                                    fontWeight: 700,
-                                    fontSize: '0.875rem',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '0.6rem'
-                                }}
-                            >
-                                <Award size={16} /> Passer la Certification
-                            </button>
-                        </div>
-                    )}
-
                     <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
                         <h5 style={{ fontWeight: 700, fontSize: '0.75rem', marginBottom: '1rem', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pratiques Recommandées</h5>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.875rem' }}>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#38bdf8', marginTop: '6px', flexShrink: 0 }}></div>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--guide-primary)', marginTop: '6px', flexShrink: 0 }}></div>
                                 Interactions communautaires régulières.
                             </li>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#38bdf8', marginTop: '6px', flexShrink: 0 }}></div>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--guide-primary)', marginTop: '6px', flexShrink: 0 }}></div>
                                 Documentation photographique authentique.
                             </li>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
@@ -269,6 +226,9 @@ export const AntiDetectionRulesPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <SectorDifficultyList />
         </DashboardLayout>
     );
 };
+

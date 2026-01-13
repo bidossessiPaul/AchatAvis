@@ -148,7 +148,7 @@
 
 .pack-form-field input:focus {
     outline: none;
-    border-color: #ff3b6a;
+    border-color: var(--primary-brand);
     background: white;
     box-shadow: 0 0 0 4px rgba(255, 59, 106, 0.08);
 }
@@ -189,14 +189,14 @@
 .pack-checkbox-field input[type="checkbox"] {
     width: 20px;
     height: 20px;
-    accent-color: #ff3b6a;
+    accent-color: var(--primary-brand);
     cursor: pointer;
 }
 
 .pack-checkbox-field span {
     font-size: 14px;
     font-weight: 700;
-    color: #ff3b6a;
+    color: var(--primary-brand);
 }
 
 /* Features Management */
@@ -321,7 +321,7 @@
     height: 48px;
     padding: 0 32px;
     border-radius: 14px;
-    background: #ff3b6a;
+    background: var(--primary-brand);
     color: white;
     font-weight: 700;
     box-shadow: 0 10px 15px -3px rgba(255, 59, 106, 0.3);

@@ -27,10 +27,14 @@
     padding: var(--space-8) var(--space-12);
     border-radius: var(--radius-2xl);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 59, 106, 0.1);
+    border: 1px solid rgba(23, 131, 226, 0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.theme-guide .overlay-content {
+    border-color: rgba(255, 153, 31, 0.2);
 }
 
 @keyframes fadeInOverlay {

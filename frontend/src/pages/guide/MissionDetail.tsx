@@ -192,7 +192,7 @@ export const MissionDetail: React.FC = () => {
         return (
             <DashboardLayout title="Chargement...">
                 <div className="loading-container">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-yellow-500" />
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-orange-500" style={{ borderColor: 'var(--guide-primary)', borderTopColor: 'transparent' }} />
                 </div>
             </DashboardLayout>
         );
@@ -308,7 +308,7 @@ export const MissionDetail: React.FC = () => {
                             {/* Pending Reviews Section */}
                             <section>
                                 <h3 className="section-header" style={{ marginTop: 0 }}>
-                                    <Clock size={24} color="var(--warning)" /> Avis en attente ({pendingProposals.length})
+                                    <Clock size={24} color="var(--guide-primary)" /> Avis en attente ({pendingProposals.length})
                                 </h3>
 
                                 {pendingProposals.length > 0 ? (
@@ -481,7 +481,7 @@ export const MissionDetail: React.FC = () => {
                         {publishedProposals.length > 0 && (
                             <div className="mission-published-card sidebar-card mt-4">
                                 <h3 className="section-header small-header">
-                                    <CheckCircle2 size={20} color="var(--success)" /> Avis déjà publiés ({publishedProposals.length})
+                                    <CheckCircle2 size={20} color="var(--guide-primary)" /> Avis déjà publiés ({publishedProposals.length})
                                 </h3>
 
                                 <div className="reviews-stack published-stack">

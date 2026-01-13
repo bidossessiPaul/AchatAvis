@@ -57,8 +57,8 @@
 }
 
 .plan-card.premium {
-    box-shadow: 0 10px 40px -10px rgba(255, 59, 106, 0.2);
-    border: 2px solid var(--primary-brand);
+    box-shadow: 0 10px 40px -10px rgba(35, 131, 226, 0.2);
+    border: 2px solid var(--artisan-primary);
     transform: translateY(-8px);
 }
 
@@ -78,7 +78,7 @@
 }
 
 .plan-badge.premium {
-    background-color: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: #ffffff;
 }
 
@@ -136,7 +136,7 @@
 }
 
 .feature-icon.premium {
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
 }
 
 .plan-button {
@@ -164,11 +164,12 @@
 }
 
 .plan-button.premium {
-    background-color: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(255, 59, 106, 0.3);
+    box-shadow: var(--shadow-artisan);
 }
 
 .plan-button.premium:hover:not(:disabled) {
-    background-color: #e02e5a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
 }

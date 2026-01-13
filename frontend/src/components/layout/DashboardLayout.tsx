@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { useAuthStore } from '../../context/authStore';
 import { useNotifications } from '../../hooks/useNotifications';
 import './Layout.css';
 
@@ -10,6 +11,7 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) => {
+    const { user } = useAuthStore();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     useNotifications(); // Initialize real-time connection
 
@@ -17,7 +19,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, titl
     const closeSidebar = () => setIsSidebarOpen(false);
 
     return (
-        <div className="dashboard-layout">
+        <div className={`dashboard-layout ${user?.role === 'guide' ? 'theme-guide' : user?.role === 'artisan' ? 'theme-artisan' : ''}`}>
             <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
             {/* Mobile Overlay */}

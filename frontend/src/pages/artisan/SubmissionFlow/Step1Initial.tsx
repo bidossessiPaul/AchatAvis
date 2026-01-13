@@ -81,7 +81,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
 
             <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <PlusCircle size={18} style={{ color: '#ff3b6a' }} />
+                    <PlusCircle size={18} style={{ color: 'var(--primary-brand)' }} />
                     Nom de la collaboration
                     <div className="info-tooltip-container">
                         <HelpCircle size={16} />
@@ -102,7 +102,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
 
             <div className="form-group" style={{ marginTop: '1.5rem' }}>
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <BookOpen size={18} style={{ color: '#ff3b6a' }} />
+                    <BookOpen size={18} style={{ color: 'var(--primary-brand)' }} />
                     Contexte général de la mission
                 </label>
                 <textarea
@@ -119,7 +119,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
             ) : availablePacks.length > 0 && (
                 <div className="form-group" style={{ marginBottom: '2rem' }}>
                     <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <Info size={18} style={{ color: '#ff3b6a' }} />
+                        <Info size={18} style={{ color: 'var(--primary-brand)' }} />
                         Pack utilisé
                     </label>
 
@@ -193,14 +193,14 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
                 }
                 .empty-est-notice:hover {
                     background: rgba(255, 59, 106, 0.05);
-                    border-color: #ff3b6a;
+                    border-color: var(--primary-brand);
                 }
                 .icon-circle {
                     width: 48px;
                     height: 48px;
                     border-radius: 50%;
                     background: #fff1f2;
-                    color: #ff3b6a;
+                    color: var(--primary-brand);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -272,7 +272,7 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
                     display: flex;
                     gap: 8px;
                     align-items: center;
-                    color: #ff3b6a;
+                    color: var(--primary-brand);
                     font-weight: bold;
                     background: #fff1f2;
                     padding: 4px 12px;
@@ -280,8 +280,8 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
                     font-size: 0.8rem;
                     margin-top: 4px;
                 }
-                .pack-status { color: #ff3b6a; font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
-                .status-dot { width: 6px; height: 6px; background: #ff3b6a; border-radius: 50%; }
+                .pack-status { color: var(--brand-red); font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+                .status-dot { width: 6px; height: 6px; background: var(--brand-red); border-radius: 50%; }
             `}</style>
         </form>
     );

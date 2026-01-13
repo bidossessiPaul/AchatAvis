@@ -174,7 +174,7 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                                     fontSize: '0.75rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
-                                    background: statusFilter === status ? '#0f172a' : 'transparent',
+                                    background: statusFilter === status ? 'var(--guide-gradient)' : 'transparent',
                                     color: statusFilter === status ? 'white' : '#64748b',
                                     transition: 'all 0.2s ease'
                                 }}

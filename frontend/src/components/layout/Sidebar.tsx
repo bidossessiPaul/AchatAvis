@@ -7,7 +7,6 @@ import {
     Package,
     Star,
     CreditCard,
-    Settings,
     MapPin,
     DollarSign,
     User,
@@ -57,7 +56,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Avis reçus', path: '/artisan/reviews', icon: <Star size={20} /> },
                     { label: 'Facturation', path: '/artisan/billing', icon: <CreditCard size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
-                    { label: 'Paramètres', path: '/artisan/settings', icon: <Settings size={20} /> },
                 ];
             case 'guide':
                 return [
@@ -109,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
                 <Link to="/" className="sidebar-brand">
-                    Achat<span className="text-brand">Avis</span>
+                    Achat<span className={user?.role === 'guide' ? 'text-guide' : 'text-brand'}>Avis</span>
                 </Link>
             </div>
 

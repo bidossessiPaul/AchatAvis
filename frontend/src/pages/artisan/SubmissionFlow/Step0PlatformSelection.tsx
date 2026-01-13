@@ -68,7 +68,7 @@ export const Step0PlatformSelection: React.FC<Step0Props> = ({ onNext, initialPl
                 }
 
                 .platform-select-card:hover, .platform-select-card.selected {
-                    border-color: #ff3b6a;
+                    border-color: var(--primary-brand);
                     transform: translateY(-4px);
                     box-shadow: 0 12px 20px -8px rgba(255, 59, 106, 0.15);
                 }

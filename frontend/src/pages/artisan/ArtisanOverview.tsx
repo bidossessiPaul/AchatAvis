@@ -8,6 +8,7 @@ import { useAuthStore } from '../../context/authStore';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { GrowthChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
 import { motion } from 'framer-motion';
+import './ArtisanOverview.css';
 
 export const ArtisanOverview: React.FC = () => {
     const { user } = useAuthStore();
@@ -99,6 +100,19 @@ export const ArtisanOverview: React.FC = () => {
     return (
         <DashboardLayout title="Vue d'ensemble">
             <PremiumBlurOverlay isActive={isLoading || hasActivePacks || orders.length > 0}>
+                {/* Hero Section with Blue-White Gradient */}
+                <div className="artisan-dashboard-hero">
+                    <div className="artisan-dashboard-hero-content">
+                        <div className="artisan-dashboard-hero-text">
+                            <h2 className="artisan-dashboard-hero-title">Boostez votre visibilité sur Google !</h2>
+                            <p className="artisan-dashboard-hero-subtitle">
+                                Gérez vos missions, suivez vos avis et développez votre présence en ligne.
+                            </p>
+                        </div>
+                        <Star className="artisan-dashboard-hero-icon" />
+                    </div>
+                </div>
+
                 {paymentStatus === 'success' && (
                     <div style={{
                         background: '#ecfdf5',
@@ -251,33 +265,7 @@ export const ArtisanOverview: React.FC = () => {
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827' }}>Soumissions Récentes</h2>
                     <button
                         onClick={() => navigate('/artisan/submit')}
-                        style={{
-                            background: '#ff3b6a',
-                            color: 'white',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '0.75rem',
-                            fontWeight: 700,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            cursor: 'pointer',
-                            boxShadow: '0 6px 20px rgba(255, 59, 106, 0.3)',
-                            transition: 'all 0.3s ease',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            fontSize: '0.875rem'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#c4ed1a';
-                            e.currentTarget.style.color = '#000';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#ff3b6a';
-                            e.currentTarget.style.color = 'white';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }}
+                        className="artisan-submit-btn"
                     >
                         <PlusCircle size={18} />
                         Soumettre une fiche

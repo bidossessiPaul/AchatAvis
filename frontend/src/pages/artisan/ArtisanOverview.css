@@ -1,0 +1,101 @@
+/* ArtisanOverview.css */
+
+.artisan-dashboard-hero {
+    margin-bottom: 2rem;
+}
+
+.artisan-dashboard-hero-content {
+    background: var(--artisan-gradient);
+    padding: 2rem;
+    border-radius: 1.5rem;
+    color: white;
+    box-shadow: var(--shadow-artisan);
+    position: relative;
+    overflow: hidden;
+}
+
+.artisan-dashboard-hero-text {
+    position: relative;
+    z-index: 1;
+}
+
+.artisan-dashboard-hero-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.artisan-dashboard-hero-subtitle {
+    opacity: 0.95;
+    max-width: 500px;
+    color: white;
+}
+
+.artisan-dashboard-hero-icon {
+    position: absolute;
+    right: -1rem;
+    top: -1rem;
+    opacity: 0.1;
+    width: 150px;
+    height: 150px;
+}
+
+.artisan-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.artisan-stat-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.artisan-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.artisan-analytics-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 1.5rem;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.artisan-submit-btn {
+    background: var(--artisan-gradient);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-artisan);
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.875rem;
+}
+
+.artisan-submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(35, 131, 226, 0.25);
+}
+
+@media (max-width: 768px) {
+    .artisan-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { guideService } from '../../services/guideService';
 import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -111,7 +112,7 @@ export const AllMissions: React.FC = () => {
                             id="onlyAvailable"
                             checked={onlyAvailable}
                             onChange={(e) => setOnlyAvailable(e.target.checked)}
-                            style={{ width: '16px', height: '16px', accentColor: '#ff3b6a' }}
+                            style={{ width: '16px', height: '16px', accentColor: 'var(--guide-primary)' }}
                         />
                         <label htmlFor="onlyAvailable" style={{ fontSize: '0.9rem', color: '#4b5563', cursor: 'pointer' }}>
                             Quotas disponibles uniquement
@@ -127,11 +128,8 @@ export const AllMissions: React.FC = () => {
             </div>
 
             {isLoading ? (
-                <div className="loading-state">
-                    <div className="animate-spin loading-spinner">
-                        <Clock size={32} color="#ff3b6a" />
-                    </div>
-                    <p className="loading-text">Chargement des missions...</p>
+                <div style={{ padding: '80px 0' }}>
+                    <LoadingSpinner text="Chargement des missions..." size="lg" className="theme-guide" />
                 </div>
             ) : filteredMissions.length > 0 ? (
                 <div className="missions-grid">
@@ -199,7 +197,7 @@ export const AllMissions: React.FC = () => {
                                         Objectif du jour
                                     </div>
                                     <div className="daily-goal-value">
-                                        <Clock size={16} color="#3b82f6" />
+                                        <Clock size={16} color="var(--guide-primary)" />
                                         <span>{mission.daily_submissions_count || 0} / {mission.reviews_per_day} avis demandés</span>
                                     </div>
                                 </div>

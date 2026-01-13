@@ -8,6 +8,7 @@ import type { GuideRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
 import { Sparkles, Mail, User, Lock, Smartphone, MapPin } from 'lucide-react';
 import './Auth.css';
+import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 
 export const RegisterGuide: React.FC = () => {
     const navigate = useNavigate();
@@ -66,6 +67,7 @@ export const RegisterGuide: React.FC = () => {
 
     return (
         <div className="auth-container">
+            <ParticlesBackground />
             <div className="auth-content">
                 <div className="auth-logo">
                     <h1 className="auth-brand">
