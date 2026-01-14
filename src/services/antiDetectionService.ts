@@ -19,31 +19,41 @@ class AntiDetectionService {
         let score = 0;
 
         // 1. Ancienneté (40 points max)
-        // Score = min(40, age_days * 0.5) -> 80 jours pour 40 points
-        score += Math.min(40, (account.account_age_days || 0) * 0.5);
+        // Calculer l'âge réel dynamique (en jours)
+        const createdAt = new Date(account.created_at);
+        const now = new Date();
+        const ageDays = Math.max(0, Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)));
 
-        // 2. Nombre avis validés (30 points max)
+        // Formule ajustée : 1 point par jour pour les 30 premiers jours (boost démarrage), puis 0.5
+        // Score = min(40, age_days * 0.5) est l'ancienne, passons à plus généreux pour le début
+        if (ageDays <= 30) {
+            score += Math.min(30, ageDays * 1); // 30 jours = 30 points
+        } else {
+            score += 30 + Math.min(10, (ageDays - 30) * 0.2); // Le reste plus lentement
+        }
+
+        // 2. Bonus Vérification (BOOST DÉMARRAGE) (+15 points)
+        if (account.is_verified) {
+            score += 15;
+        }
+
+        // 3. Nombre avis validés (30 points max)
         score += Math.min(30, (account.successful_reviews || 0) * 3);
 
-        // 3. Taux de réussite (20 points max)
+        // 4. Taux de réussite (15 points max)
         if (account.total_reviews_posted > 0) {
-            const rate = (account.successful_reviews / account.total_reviews_posted) * 100;
-            score += (rate / 100) * 20;
+            const rate = (account.successful_reviews / account.total_reviews_posted);
+            score += rate * 15;
+        } else {
+            // Petit bonus de confiance par défaut si 0 avis (innocent jusqu'à preuve du contraire)
+            score += 5;
         }
 
-        // 4. Diversité/Activité (10 points max)
+        // 5. Diversité/Activité (Bonus divers)
         if (account.has_profile_picture) score += 5;
-        try {
-            const activityLog = typeof account.sector_activity_log === 'string'
-                ? JSON.parse(account.sector_activity_log)
-                : account.sector_activity_log || {};
-            const sectorsCount = Object.keys(activityLog).length;
-            score += Math.min(5, sectorsCount * 2);
-        } catch (e) {
-            // Log parse error
-        }
 
-        return Math.round(score);
+        // Plafond à 100
+        return Math.min(100, Math.round(score));
     }
 
     /**

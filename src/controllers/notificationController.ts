@@ -15,11 +15,13 @@ export const notificationController = {
 
         const origin = req.headers.origin || '*';
 
-        // Set headers for SSE
+        // Set headers for SSE with explicit CORS to prevent overwrite
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive'
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Credentials': 'true'
         });
 
         // Add client to service
