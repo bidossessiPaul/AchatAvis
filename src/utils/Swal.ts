@@ -1,22 +1,45 @@
 import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
 export const showSuccess = (title: string, text?: string) => {
-    return Swal.fire({
-        icon: 'success',
-        title,
-        text,
-        timer: 3000,
-        timerProgressBar: true,
-        confirmButtonColor: '#10b981',
+    toast.success(text ? `${title} : ${text}` : title, {
+        duration: 4000,
+        style: {
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            color: '#333',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            fontSize: '14px',
+            fontWeight: 500,
+        },
+        iconTheme: {
+            primary: '#10b981',
+            secondary: '#fff',
+        },
     });
 };
 
 export const showError = (title: string, text?: string) => {
-    return Swal.fire({
-        icon: 'error',
-        title,
-        text,
-        confirmButtonColor: '#ef4444',
+    toast.error(text ? `${title} : ${text}` : title, {
+        duration: 5000,
+        style: {
+            background: 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            color: '#333',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            fontSize: '14px',
+            fontWeight: 500,
+        },
+        iconTheme: {
+            primary: '#ef4444',
+            secondary: '#fff',
+        },
     });
 };
 
@@ -24,12 +47,19 @@ export const showConfirm = (title: string, text: string) => {
     return Swal.fire({
         title,
         text,
-        icon: 'warning',
+        icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#64748b',
+        showCloseButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#94a3b8',
         confirmButtonText: 'Confirmer',
         cancelButtonText: 'Annuler',
+        customClass: {
+            popup: 'clean-swal-popup',
+            confirmButton: 'clean-swal-confirm',
+            cancelButton: 'clean-swal-cancel',
+        },
+        buttonsStyling: false
     });
 };
 
@@ -40,10 +70,11 @@ export const showInput = (title: string, text: string, placeholder: string = '')
         input: 'text',
         inputPlaceholder: placeholder,
         showCancelButton: true,
+        showCloseButton: true,
         confirmButtonText: 'Valider',
         cancelButtonText: 'Annuler',
         confirmButtonColor: '#0ea5e9',
-        cancelButtonColor: '#ef4444',
+        cancelButtonColor: '#94a3b8',
     });
 };
 
@@ -63,7 +94,7 @@ export const showSelection = (title: string, text: string, options: string[]) =>
         confirmButtonText: 'Valider',
         cancelButtonText: 'Annuler',
         confirmButtonColor: '#10b981', // Green for positive action selecting
-        cancelButtonColor: '#ff3b6a', // Brand red
+        cancelButtonColor: '#FF6B35', // Brand red
         inputValidator: (value) => {
             return new Promise((resolve) => {
                 if (value) {
@@ -88,7 +119,7 @@ export const showPremiumWarningModal = (title: string, subtitle: string, reasons
                 
                 <label style="display: block; font-weight: 700; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.05em;">Motif de l'avertissement</label>
                 <div class="reason-grid">
-                    ${reasons.map((r, i) => `
+                    ${reasons.map((r) => `
                         <div class="reason-tile" data-reason="${r}">
                             ${r}
                         </div>
@@ -139,7 +170,7 @@ export const showPremiumWarningModal = (title: string, subtitle: string, reasons
         confirmButtonText: 'Envoyer l\'avertissement',
         cancelButtonText: 'Annuler',
         confirmButtonColor: '#10b981',
-        cancelButtonColor: '#ff3b6a',
+        cancelButtonColor: '#FF6B35',
         didOpen: (popup) => {
             const tiles = popup.querySelectorAll('.reason-tile');
             tiles.forEach(tile => {

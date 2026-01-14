@@ -185,7 +185,7 @@ export const MyEstablishments: React.FC = () => {
                                             fontSize: '0.875rem',
                                             transition: 'all 0.2s'
                                         }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#c4ed1a', e.currentTarget.style.color = '#000')}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = '#FFD700', e.currentTarget.style.color = '#000')}
                                         onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--primary-brand)', e.currentTarget.style.color = 'white')}
                                     >
                                         <Eye size={16} />

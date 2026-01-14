@@ -261,7 +261,7 @@ export const SuspensionAdminPage: React.FC = () => {
                                 onClick={() => handleSaveConfig({ ...config, is_enabled: !config.is_enabled })}
                                 style={{
                                     background: 'transparent', border: 'none', cursor: 'pointer',
-                                    color: config.is_enabled ? '#10b981' : '#ef4444'
+                                    color: config.is_enabled ? '#FF991F' : '#ef4444'
                                 }}
                             >
                                 {config.is_enabled ? <ToggleRight size={48} /> : <ToggleLeft size={48} />}
@@ -310,7 +310,7 @@ export const SuspensionAdminPage: React.FC = () => {
                         </h3>
                         <div style={{ display: 'grid', gap: '1.5rem' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#10b981', marginBottom: '0.5rem' }}>PAYS EXEMPTÉS (ISO 2)</label>
+                                <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, color: '#FF991F', marginBottom: '0.5rem' }}>PAYS EXEMPTÉS (ISO 2)</label>
                                 <form
                                     onSubmit={(e) => {
                                         e.preventDefault();
@@ -342,7 +342,7 @@ export const SuspensionAdminPage: React.FC = () => {
                                     <button
                                         type="submit"
                                         style={{
-                                            background: '#10b981', color: 'white', border: 'none',
+                                            background: '#FF991F', color: 'white', border: 'none',
                                             padding: '0.625rem 1rem', borderRadius: '0.625rem',
                                             fontWeight: 700, cursor: 'pointer', display: 'flex',
                                             alignItems: 'center', gap: '0.25rem'
@@ -356,7 +356,7 @@ export const SuspensionAdminPage: React.FC = () => {
                                     {Array.isArray(config.exempted_countries) && config.exempted_countries.length > 0 ? (
                                         config.exempted_countries.map((code: string) => (
                                             <span key={code} style={{
-                                                background: '#10b981', color: 'white', padding: '0.25rem 0.625rem',
+                                                background: '#FF991F', color: 'white', padding: '0.25rem 0.625rem',
                                                 borderRadius: '2rem', fontSize: '0.75rem', fontWeight: 800,
                                                 display: 'flex', alignItems: 'center', gap: '0.375rem'
                                             }}>
@@ -538,25 +538,6 @@ export const SuspensionAdminPage: React.FC = () => {
 
                 {/* Sidebar Mini-Stats & Links */}
                 <div style={{ display: 'grid', gap: '1.5rem' }}>
-                    <div style={{ background: '#0f172a', padding: '1.5rem', borderRadius: '1.25rem', color: 'white' }}>
-                        <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <History size={16} /> Activité Récente
-                        </h4>
-                        <div style={{ display: 'grid', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-                                <span style={{ opacity: 0.6 }}>Suspensions actives</span>
-                                <span style={{ fontWeight: 800 }}>--</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-                                <span style={{ opacity: 0.6 }}>Avertissements (24h)</span>
-                                <span style={{ fontWeight: 800 }}>--</span>
-                            </div>
-                        </div>
-                        <button style={{ width: '100%', marginTop: '1.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.625rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                            Voir l'historique complet
-                        </button>
-                    </div>
-
                     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0' }}>
                         <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '1rem', color: 'black' }}>Action Manuelle</h4>
                         <p style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1.25rem' }}>Bannir ou suspendre un utilisateur via son ID.</p>
@@ -583,7 +564,7 @@ export const SuspensionAdminPage: React.FC = () => {
                                     <span style={{ fontWeight: 700, color: '#0f172a' }}>{diag.country || 'Inconnu'}</span>
                                 </div>
                                 {diag.is_local && (
-                                    <div style={{ background: '#ecfdf5', color: '#059669', padding: '0.5rem', borderRadius: '0.5rem', fontWeight: 600 }}>
+                                    <div style={{ background: '#fff8e1', color: '#FF991F', padding: '0.5rem', borderRadius: '0.5rem', fontWeight: 600 }}>
                                         Environnement Local (Détection fixée sur FR)
                                     </div>
                                 )}

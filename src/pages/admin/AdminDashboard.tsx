@@ -83,7 +83,7 @@ export const AdminDashboard: React.FC = () => {
                             alignItems: 'center',
                             gap: '8px',
                             padding: '10px 20px',
-                            background: 'var(--primary-brand)',
+                            background: 'var(--artisan-gradient)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',
@@ -158,7 +158,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="chart-card">
                         <div className="chart-header">
                             <div className="header-titles">
-                                <h3>Évolution des Revenus</h3>
+                                <h3 style={{ color: '#666' }}>Évolution des Revenus</h3>
                                 <span className="chart-subtitle">30 derniers jours</span>
                             </div>
                         </div>
@@ -167,15 +167,15 @@ export const AdminDashboard: React.FC = () => {
                                 <AreaChart data={stats.revenue}>
                                     <defs>
                                         <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            <stop offset="5%" stopColor="#FF991F" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#FF991F" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                                     <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                                     <Tooltip />
-                                    <Area type="monotone" dataKey="total_revenue" stroke="#3b82f6" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
+                                    <Area type="monotone" dataKey="total_revenue" stroke="#FF991F" fillOpacity={1} fill="url(#colorRev)" strokeWidth={2} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
@@ -184,7 +184,7 @@ export const AdminDashboard: React.FC = () => {
                     {/* Quick Access & Recent Actions */}
                     <div className="quick-access-panel">
                         <div className="chart-card quick-links-card">
-                            <h3>Raccourcis</h3>
+                            <h3 style={{ color: '#666' }}>Raccourcis</h3>
                             <div className="quick-links-grid">
                                 <LinkCard icon={<Briefcase size={20} />} label="Artisans" path="/admin/artisans" />
                                 <LinkCard icon={<Users size={20} />} label="Guides" path="/admin/guides" />
@@ -194,7 +194,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
 
                         <div className="chart-card recent-activity">
-                            <h3>Dernières Activités</h3>
+                            <h3 style={{ color: '#666' }}>Dernières Activités</h3>
                             <div className="notif-list">
                                 <div className="notif-item">
                                     <div className="notif-dot blue"></div>

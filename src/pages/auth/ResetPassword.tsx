@@ -4,7 +4,7 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import { authApi } from '../../services/api';
-import { Sparkles } from 'lucide-react';
+import { Lock, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 import './Auth.css';
 
@@ -63,10 +63,7 @@ export const ResetPassword: React.FC = () => {
             <ParticlesBackground />
             <div className="auth-content">
                 <div className="auth-logo">
-                    <h1 className="auth-brand">
-                        <Sparkles className="brand-icon" size={32} />
-                        AchatAvis
-                    </h1>
+                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
                     <p className="auth-tagline">Gestion d'avis Google pour artisans</p>
                 </div>
 

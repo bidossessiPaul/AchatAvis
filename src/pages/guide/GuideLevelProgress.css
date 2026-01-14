@@ -26,13 +26,13 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-guide);
     border: 3px solid white;
-    outline: 2px solid var(--guide-primary);
+    outline: 2px solid var(--artisan-primary);
 }
 
 .level-number {
@@ -90,7 +90,7 @@
 
 .progress-bar-fill {
     height: 100%;
-    background: var(--guide-primary);
+    background: var(--artisan-gradient);
     border-radius: 9999px;
     transition: width 1s ease-in-out;
 }
@@ -103,8 +103,8 @@
 }
 
 .next-benefit-card {
-    background-color: #fff7ed;
-    border: 1px solid #ffedd5;
+    background-color: #fff8e1;
+    border: 1px solid #FFE6A5;
     border-radius: 12px;
     padding: 12px 16px;
     display: flex;
@@ -131,14 +131,14 @@
 .benefit-label {
     font-size: 11px;
     text-transform: uppercase;
-    color: #9a3412;
+    color: #FF991F;
     font-weight: 600;
     letter-spacing: 0.05em;
 }
 
 .benefit-value {
     font-size: 13px;
-    color: #7c2d12;
+    color: #37352f;
     font-weight: 500;
 }
 

@@ -4,7 +4,7 @@ import { useAuthStore } from '../../context/authStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
-import { Sparkles, User, MapPin, ArrowRight, Lock, Mail } from 'lucide-react';
+import { User, MapPin, ArrowRight, Lock, Mail } from 'lucide-react';
 import './Auth.css';
 
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
@@ -13,7 +13,7 @@ export const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login, verify2FA, error, errorCode, isLoading, clearError, twoFactorRequired, detectedCountry, suspendedUserName, suspension } = useAuthStore();
 
-    const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+    const [userType, setUserType] = useState<'artisan' | 'guide'>('artisan');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [otpToken, setOtpToken] = useState('');
@@ -93,159 +93,136 @@ export const Login: React.FC = () => {
             <ParticlesBackground />
             <div className="auth-content">
                 <div className="auth-logo">
-                    <h1 className="auth-brand">
-                        <Sparkles className="brand-icon" size={32} />
-                        AchatAvis
-                    </h1>
+                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
                     <p className="auth-tagline">Boostez votre e-réputation Google</p>
                 </div>
 
                 <div className="auth-toggle-container">
                     <button
-                        className={`auth-toggle-btn ${authMode === 'login' ? 'active' : ''}`}
-                        onClick={() => { setAuthMode('login'); clearError(); setFormError(''); }}
+                        className={`auth-toggle-btn ${userType === 'artisan' ? 'active' : ''} artisan-mode`}
+                        onClick={() => { setUserType('artisan'); clearError(); setFormError(''); }}
                     >
-                        Connexion
+                        Artisan
                     </button>
                     <button
-                        className={`auth-toggle-btn ${authMode === 'register' ? 'active' : ''}`}
-                        onClick={() => { setAuthMode('register'); clearError(); setFormError(''); }}
+                        className={`auth-toggle-btn ${userType === 'guide' ? 'active' : ''} guide-mode`}
+                        onClick={() => { setUserType('guide'); clearError(); setFormError(''); }}
                     >
-                        Inscription
+                        Guide Local
                     </button>
                 </div>
 
-                <Card className="auth-card">
-                    {authMode === 'login' ? (
+                <Card className={`auth-card ${userType === 'artisan' ? 'artisan-theme' : 'guide-theme'}`}>
+                    {!twoFactorRequired ? (
                         <>
                             <div className="auth-header">
-                                <h2 className="auth-title">
-                                    {twoFactorRequired ? 'Vérification 2FA' : 'Bon retour !'}
-                                </h2>
+                                <h2 className="auth-title">Bon retour !</h2>
                                 <p className="auth-subtitle">
-                                    {twoFactorRequired
-                                        ? 'Entrez le code généré par votre application.'
-                                        : 'Connectez-vous pour gérer vos avis.'}
+                                    {userType === 'artisan'
+                                        ? 'Connectez-vous pour gérer vos avis.'
+                                        : 'Connectez-vous pour rédiger des avis.'}
                                 </p>
                             </div>
 
-                            {!twoFactorRequired ? (
-                                <form onSubmit={handleLoginSubmit} className="auth-form">
-                                    {(error || formError) && errorCode !== 'ACCOUNT_SUSPENDED' && errorCode !== 'COUNTRY_SUSPENDED' && (
-                                        <div className="auth-error">
-                                            {formError || error}
-                                        </div>
-                                    )}
-
-                                    <Input
-                                        type="email"
-                                        label="Email"
-                                        placeholder="votre@email.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        icon={<Mail size={18} />}
-                                        required
-                                    />
-
-                                    <Input
-                                        type="password"
-                                        label="Mot de passe"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        icon={<Lock size={18} />}
-                                        required
-                                    />
-
-                                    <Button
-                                        type="submit"
-                                        variant="primary"
-                                        size="lg"
-                                        fullWidth
-                                        isLoading={isLoading}
-                                        style={{ marginTop: '0.5rem' }}
-                                    >
-                                        Se connecter
-                                    </Button>
-
-                                    <div className="auth-links">
-                                        <Link to="/forgot-password" className="auth-link">
-                                            Mot de passe oublié ?
-                                        </Link>
+                            <form onSubmit={handleLoginSubmit} className="auth-form">
+                                {(error || formError) && errorCode !== 'ACCOUNT_SUSPENDED' && errorCode !== 'COUNTRY_SUSPENDED' && (
+                                    <div className="auth-error">
+                                        {formError || error}
                                     </div>
-                                </form>
-                            ) : (
-                                <form onSubmit={handleVerifySubmit} className="auth-form">
-                                    {(error || formError) && (
-                                        <div className="auth-error">
-                                            {formError || error}
-                                        </div>
-                                    )}
+                                )}
 
-                                    <Input
-                                        type="text"
-                                        label="Code de sécurité"
-                                        placeholder="000000"
-                                        value={otpToken}
-                                        onChange={(e) => setOtpToken(e.target.value)}
-                                        required
-                                        autoFocus
-                                        autoComplete="one-time-code"
-                                        style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '4px' }}
-                                    />
+                                <Input
+                                    type="email"
+                                    label="Email"
+                                    placeholder="votre@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    icon={<Mail size={18} />}
+                                    required
+                                />
 
-                                    <Button
-                                        type="submit"
-                                        variant="primary"
-                                        size="lg"
-                                        fullWidth
-                                        isLoading={isLoading}
+                                <Input
+                                    type="password"
+                                    label="Mot de passe"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    icon={<Lock size={18} />}
+                                    required
+                                />
+
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    size="lg"
+                                    fullWidth
+                                    isLoading={isLoading}
+                                    style={{ marginTop: '0.3rem' }}
+                                    className={userType === 'artisan' ? 'btn-artisan' : 'btn-guide'}
+                                >
+                                    Se connecter
+                                </Button>
+
+                                <div className="auth-links">
+                                    <Link to="/forgot-password" className="auth-link">
+                                        Mot de passe oublié ?
+                                    </Link>
+                                    <br />
+                                    <Link
+                                        to={userType === 'artisan' ? '/register/artisan' : '/register/guide'}
+                                        className="auth-link register-link"
                                     >
-                                        Vérifier
-                                    </Button>
-
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        fullWidth
-                                        onClick={() => window.location.reload()}
-                                        style={{ marginTop: '0.5rem', color: '#94a3b8' }}
-                                    >
-                                        Retour à la connexion
-                                    </Button>
-                                </form>
-                            )}
+                                        {userType === 'artisan' ? 'Créer un compte artisan' : 'Créer un compte guide'}
+                                    </Link>
+                                </div>
+                            </form>
                         </>
                     ) : (
                         <>
                             <div className="auth-header">
-                                <h2 className="auth-title">Créer un compte</h2>
-                                <p className="auth-subtitle">Choisissez votre profil pour commencer l'aventure.</p>
+                                <h2 className="auth-title">Vérification 2FA</h2>
+                                <p className="auth-subtitle">Entrez le code généré par votre application.</p>
                             </div>
 
-                            <div className="registration-choice-grid">
-                                <Link to="/register/artisan" className="choice-card">
-                                    <div className="choice-icon-wrapper">
-                                        <User size={24} />
+                            <form onSubmit={handleVerifySubmit} className="auth-form">
+                                {(error || formError) && (
+                                    <div className="auth-error">
+                                        {formError || error}
                                     </div>
-                                    <div className="choice-info">
-                                        <h3>Je suis un Artisan</h3>
-                                        <p>Je souhaite obtenir plus d'avis positifs sur ma fiche Google Business.</p>
-                                    </div>
-                                    <ArrowRight className="choice-arrow" size={20} />
-                                </Link>
+                                )}
 
-                                <Link to="/register/guide" className="choice-card">
-                                    <div className="choice-icon-wrapper">
-                                        <MapPin size={24} />
-                                    </div>
-                                    <div className="choice-info">
-                                        <h3>Je suis un Guide Local</h3>
-                                        <p>Je souhaite gagner de l'argent en rédigeant des avis authentiques.</p>
-                                    </div>
-                                    <ArrowRight className="choice-arrow" size={20} />
-                                </Link>
-                            </div>
+                                <Input
+                                    type="text"
+                                    label="Code de sécurité"
+                                    placeholder="000000"
+                                    value={otpToken}
+                                    onChange={(e) => setOtpToken(e.target.value)}
+                                    required
+                                    autoFocus
+                                    autoComplete="one-time-code"
+                                    style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '4px' }}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    size="lg"
+                                    fullWidth
+                                    isLoading={isLoading}
+                                >
+                                    Vérifier
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    fullWidth
+                                    onClick={() => window.location.reload()}
+                                    style={{ marginTop: '0.5rem', color: '#94a3b8' }}
+                                >
+                                    Retour à la connexion
+                                </Button>
+                            </form>
                         </>
                     )}
                 </Card>

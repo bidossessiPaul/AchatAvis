@@ -41,6 +41,9 @@ export const AllMissions: React.FC = () => {
     // Filter missions
     const filteredMissions = useMemo(() => {
         return missions.filter(mission => {
+            // Exclude completed or cancelled missions
+            if (mission.status === 'completed' || mission.status === 'cancelled') return false;
+
             // Sector Filter
             if (selectedSector !== 'all' && mission.sector !== selectedSector) return false;
 
@@ -164,14 +167,14 @@ export const AllMissions: React.FC = () => {
 
                                 <div className="mission-details-row">
                                     <div className="mission-sector">
-                                        <span style={{ fontSize: '1.2rem' }}>{mission.sector_icon || <MapPin size={16} />}</span>
+                                        <MapPin size={16} />
                                         <span>{mission.sector || 'Secteur non précisé'}</span>
                                     </div>
                                     <div
                                         className="mission-difficulty"
                                         style={{
                                             background: mission.difficulty === 'hard' ? '#fef2f2' : (mission.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
-                                            color: mission.difficulty === 'hard' ? '#ef4444' : (mission.difficulty === 'medium' ? '#f59e0b' : '#10b981'),
+                                            color: mission.difficulty === 'hard' ? '#ef4444' : (mission.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
                                             border: `1px solid ${mission.difficulty === 'hard' ? '#fee2e2' : (mission.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
                                         }}
                                     >

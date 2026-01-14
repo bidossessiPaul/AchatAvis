@@ -54,7 +54,19 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onNext(formData);
+
+        // Find the selected sector to get full details
+        const selectedSector = sectors.find(s => s.sector_slug === formData.sector_slug);
+
+        // Enrich formData with complete sector information
+        const enrichedData = {
+            ...formData,
+            sector_id: selectedSector?.id || null,
+            sector_name: selectedSector?.sector_name || '',
+            sector_difficulty: selectedSector?.difficulty || 'easy'
+        };
+
+        onNext(enrichedData);
     };
 
     return (

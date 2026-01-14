@@ -207,11 +207,11 @@ export const SecurityRadar: React.FC = () => {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
                                                         <Zap size={14} color="#f59e0b" />
-                                                        <span>{data.cooldown_days}j repos</span>
+                                                        <span>Pause : {data.cooldown_days} jours</span>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
                                                         <Shield size={14} color="#6366f1" />
-                                                        <span>{data.max_per_month} mtd</span>
+                                                        <span>Max : {data.max_per_month} avis/mois</span>
                                                     </div>
                                                 </div>
                                             </td>

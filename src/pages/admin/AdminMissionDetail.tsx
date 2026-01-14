@@ -269,9 +269,9 @@ export const AdminMissionDetail: React.FC = () => {
                     {/* Sidebar Info */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         {mission.pack_name && (
-                            <div className="admin-main-card" style={{ background: 'linear-gradient(135deg, #fff 0%, #fef2f2 100%)', borderColor: '#fee2e2' }}>
+                            <div className="admin-main-card" style={{ background: '#fff8e1', borderColor: '#FFE6A5' }}>
                                 <div className="admin-card-header">
-                                    <h3 className="card-title" style={{ color: 'var(--primary-red)' }}>Pack Actif</h3>
+                                    <h3 className="card-title" style={{ color: 'var(--artisan-primary)' }}>Pack Actif</h3>
                                 </div>
                                 <div style={{ padding: '0 1.5rem 1.5rem' }}>
                                     <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '0.5rem', color: '#1f2937' }}>{mission.pack_name}</div>
@@ -291,7 +291,7 @@ export const AdminMissionDetail: React.FC = () => {
                             </div>
                             <div style={{ padding: '1.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                                    <Building2 size={24} color="var(--primary-red)" />
+                                    <Building2 size={24} color="var(--artisan-primary)" />
                                     <div>
                                         <div style={{ fontWeight: 700 }}>{mission.artisan_name}</div>
                                         <div style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{mission.artisan_email}</div>
@@ -324,7 +324,7 @@ export const AdminMissionDetail: React.FC = () => {
                                 </div>
                                 {mission.published_at && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                        <CheckCircle2 size={20} color="#10b981" />
+                                        <CheckCircle2 size={20} color="#FF991F" />
                                         <div>
                                             <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--gray-400)' }}>Publiée le</div>
                                             <div style={{ fontSize: '13px' }}>{new Date(mission.published_at).toLocaleString()}</div>

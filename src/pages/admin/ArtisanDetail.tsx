@@ -181,7 +181,7 @@ export const ArtisanDetail: React.FC = () => {
                             </div>
                             <div className="header-titles">
                                 <span className="header-subtitle" title={profile.full_name}>{profile.full_name}</span>
-                                <h2 style={{ color: '#fff' }}>{profile.company_name}</h2>
+                                <h2>{profile.company_name}</h2>
                                 <div className="status-row">
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}

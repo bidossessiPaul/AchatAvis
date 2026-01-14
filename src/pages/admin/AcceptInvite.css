@@ -36,22 +36,19 @@
 }
 
 .brand-highlight {
-    color: #ff3b6a;
+    color: #FF6B35;
 }
 
 .team-badge {
     padding: 2px 8px;
     border-radius: 6px;
-    background-color: #dbeafe;
-    /* blue-100 */
-    color: #1d4ed8;
-    /* blue-700 */
+    background-color: #fff8e1;
+    color: #FF991F;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border: 1px solid #bfdbfe;
-    /* blue-200 */
+    border: 1px solid #FFE6A5;
     margin-left: 8px;
 }
 
@@ -130,8 +127,8 @@
 }
 
 .invite-input:focus {
-    border-color: #ff3b6a;
-    box-shadow: 0 0 0 2px rgba(255, 59, 106, 0.2);
+    border-color: #FF6B35;
+    box-shadow: 0 0 0 2px rgba(255, 153, 31, 0.2);
 }
 
 /* Button */
@@ -143,21 +140,17 @@
     padding: 0.75rem 1rem;
     border: none;
     border-radius: 0.75rem;
-    /* xl */
     font-size: 0.875rem;
-    /* sm */
     font-weight: 500;
     color: white;
-    background-color: #2563eb;
-    /* blue-600 */
+    background: var(--artisan-gradient);
     cursor: pointer;
-    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 10px 15px -3px rgba(255, 153, 31, 0.2);
     transition: all 0.2s;
 }
 
 .btn-activate:hover {
-    background-color: #1d4ed8;
-    /* blue-700 */
+    background: #000;
     transform: scale(1.02);
 }
 

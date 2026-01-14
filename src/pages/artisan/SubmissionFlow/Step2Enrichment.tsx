@@ -58,19 +58,16 @@ export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onB
 
     return (
         <form onSubmit={handleSubmit} className="step-content">
-            <h2 className="submission-card-title">Détails de votre mission</h2>
-            <p style={{ color: '#64748b', marginBottom: '2rem', marginTop: '-0.5rem' }}>
-                Précisez ce que vous faites pour que l'IA génère les avis les plus pertinents.
-            </p>
+            <h2 className="submission-card-title">Instruction des avis</h2>
 
 
             <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800 }}>
-                    Zone d'intervention du client
+                    Zone d'intervention
                     <div className="info-tooltip-container">
                         <HelpCircle size={14} />
                         <span className="info-tooltip-text">
-                            Sélectionnez les villes où se situent vos clients pour que l'IA puisse localiser les avis de manière cohérente.
+                            Sélectionnez les villes où vous intervenez pour que l'IA puisse localiser les avis de manière cohérente.
                         </span>
                     </div>
                 </label>

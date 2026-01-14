@@ -1,3 +1,52 @@
+/* Fullscreen wrapper */
+.fullscreen-submission {
+    min-height: 100vh;
+    background: #f8fafc;
+    position: relative;
+}
+
+/* Back button */
+.back-button-fullscreen {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.back-button-fullscreen:hover {
+    background: #f8fafc;
+    border-color: #FF991F;
+    color: #FF991F;
+    transform: translateX(-2px);
+}
+
+/* Mobile: hide text, show only icon */
+@media (max-width: 640px) {
+    .back-button-fullscreen {
+        padding: 0.75rem;
+        width: 48px;
+        height: 48px;
+        justify-content: center;
+    }
+
+    .back-button-fullscreen span {
+        display: none;
+    }
+}
+
 .submission-flow-container {
     max-width: 900px;
     margin: 2rem auto;
@@ -8,6 +57,13 @@
 .submission-header {
     margin-bottom: 3rem;
     text-align: center;
+}
+
+/* Mobile: add top padding to avoid back button overlap */
+@media (max-width: 640px) {
+    .submission-header {
+        padding-top: 4rem;
+    }
 }
 
 .submission-title {
@@ -83,8 +139,8 @@
 }
 
 .step-item.active .step-circle {
-    background: #c4ed1a;
-    border-color: #c4ed1a;
+    background: #FFD700;
+    border-color: #FFD700;
     color: #000;
     box-shadow: 0 0 30px rgba(196, 237, 26, 0.4);
     transform: scale(1.15);
@@ -107,7 +163,7 @@
 }
 
 .step-item.active .step-label {
-    color: #c4ed1a;
+    color: #FFD700;
     font-weight: 800;
 }
 
@@ -153,15 +209,18 @@
     }
 
     .progress-stepper {
-        padding: 1rem;
+        padding: 0.5rem;
     }
 
     .submission-card {
-        padding: 1.5rem;
+        padding: 1rem;
+        border-radius: 1rem;
     }
 
     .submission-card-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
     }
 }
 
@@ -274,7 +333,7 @@
 }
 
 .btn-next {
-    background: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: white;
     padding: 1rem 3.5rem;
     border-radius: 1rem;
@@ -282,17 +341,17 @@
     font-weight: 800;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(35, 131, 226, 0.3);
+    box-shadow: 0 4px 15px rgba(255, 153, 31, 0.2);
     border: none;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .btn-next:hover {
-    background: var(--primary-blue-hover);
+    background: var(--artisan-primary-hover);
     color: #fff;
     transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(35, 131, 226, 0.2);
+    box-shadow: 0 15px 40px rgba(255, 153, 31, 0.25);
 }
 
 .btn-next:active {

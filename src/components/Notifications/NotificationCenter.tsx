@@ -105,7 +105,7 @@ export const NotificationCenter: React.FC = () => {
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button
                                     onClick={markAllAsRead}
-                                    style={{ background: 'none', border: 'none', color: '#ff3b6a', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                                    style={{ background: 'none', border: 'none', color: '#FF6B35', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
                                 >
                                     Tout lu
                                 </button>
@@ -158,7 +158,7 @@ export const NotificationCenter: React.FC = () => {
                                             </span>
                                         </div>
                                         {!n.read && (
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff3b6a', marginTop: '0.5rem' }}></div>
+                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#FF6B35', marginTop: '0.5rem' }}></div>
                                         )}
                                     </div>
                                 ))

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { artisanService } from '../../../services/artisanService';
 import { ReviewOrder, ReviewProposal } from '../../../types';
-import { CheckCircle, AlertCircle, X } from 'lucide-react';
-import { DashboardLayout } from '../../../components/layout/DashboardLayout';
+import { CheckCircle, AlertCircle, X, ArrowLeft } from 'lucide-react';
 import { PremiumBlurOverlay } from '../../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../../context/authStore';
 import { showError } from '../../../utils/Swal';
@@ -229,17 +228,21 @@ export const SubmissionFlow: React.FC = () => {
     // Strict loading state to avoid flash
     if (isRefreshingAuth || hasActivePacks === null) {
         return (
-            <DashboardLayout title="Soumettre une fiche">
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
+            <div className="fullscreen-submission">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: '1rem' }}>
                     <div className="loading-spinner"></div>
                     <p style={{ color: '#64748b', fontWeight: 500 }}>Vérification de vos accès...</p>
                 </div>
-            </DashboardLayout>
+            </div>
         );
     }
 
     return (
-        <DashboardLayout title="Soumettre une fiche">
+        <div className="fullscreen-submission">
+            <button onClick={() => navigate('/artisan/dashboard')} className="back-button-fullscreen">
+                <ArrowLeft size={20} />
+                <span>Retour au tableau de bord</span>
+            </button>
             <PremiumBlurOverlay
                 isActive={hasActivePacks || !!order?.payment_id}
                 title="Aucun pack disponible"
@@ -266,8 +269,8 @@ export const SubmissionFlow: React.FC = () => {
                         {error && (
                             <div style={{
                                 backgroundColor: '#fff1f2',
-                                border: '1px solid #ff3b6a',
-                                color: '#ff3b6a',
+                                border: '1px solid #FF6B35',
+                                color: '#FF6B35',
                                 padding: '1rem',
                                 borderRadius: '0.75rem',
                                 marginBottom: '1.5rem',
@@ -279,7 +282,7 @@ export const SubmissionFlow: React.FC = () => {
                                     <AlertCircle size={20} />
                                     <span style={{ fontWeight: 600 }}>{error}</span>
                                 </div>
-                                <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer' }}>
+                                <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: '#FF6B35', cursor: 'pointer' }}>
                                     <X size={18} />
                                 </button>
                             </div>
@@ -288,6 +291,6 @@ export const SubmissionFlow: React.FC = () => {
                     </div>
                 </div>
             </PremiumBlurOverlay>
-        </DashboardLayout>
+        </div>
     );
 };

@@ -5,11 +5,12 @@
 }
 
 .guide-dashboard-hero-content {
-    background: var(--guide-gradient);
+    background: #fff8e1;
     padding: 2rem;
     border-radius: 1.5rem;
-    color: white;
-    box-shadow: var(--shadow-guide);
+    color: #37352f;
+    border: 1px solid #FFE6A5;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     position: relative;
     overflow: hidden;
 }
@@ -23,12 +24,13 @@
     font-size: 1.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
-    color: white;
+    color: #37352f;
 }
 
 .guide-dashboard-hero-subtitle {
     opacity: 0.9;
     max-width: 500px;
+    color: #37352f;
 }
 
 .guide-dashboard-hero-icon {
@@ -42,16 +44,16 @@
 
 .anti-detection-alert {
     margin-bottom: 2rem;
-    background: var(--bg-gray);
-    border: 1px solid #fed7aa;
+    background: #fff8e1;
+    border: 1px solid #FFE6A5;
     border-radius: 1rem;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     cursor: pointer;
     transition: transform 0.2s ease;
-    box-shadow: 0 2px 5px rgba(249, 115, 22, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .anti-detection-alert:hover {
@@ -73,15 +75,16 @@
 }
 
 .anti-detection-title {
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: #9a3412;
+    color: #37352f;
     margin-bottom: 0.2rem;
 }
 
 .anti-detection-text {
     font-size: 0.875rem;
-    color: #c2410c;
+    color: #37352f;
+    opacity: 0.8;
     margin: 0;
 }
 
@@ -151,8 +154,8 @@
 }
 
 .payout-badge {
-    background: #fff7ed;
-    color: var(--guide-primary);
+    background: #fff8e1;
+    color: #FF991F;
     padding: 0.4rem 0.8rem;
     border-radius: 0.75rem;
     font-size: 0.75rem;
@@ -160,7 +163,11 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    border: 1px solid #ffedd5;
+    border: 1px solid #FFE6A5;
+}
+
+.payout-badge .check-icon {
+    color: #FF991F;
 }
 
 .time-badge {
@@ -228,13 +235,13 @@
 }
 
 .progress-value {
-    color: #10b981;
+    color: var(--artisan-primary);
 }
 
 .progress-bar-bg {
     width: 100%;
     height: 6px;
-    background: #e5e7eb;
+    background: #f1f5f9;
     border-radius: 3px;
     margin-bottom: 1rem;
     overflow: hidden;
@@ -242,7 +249,7 @@
 
 .progress-bar-fill {
     height: 100%;
-    background: #10b981;
+    background: var(--artisan-gradient);
     border-radius: 3px;
 }
 
@@ -268,7 +275,7 @@
     padding: 1rem;
     border-radius: 1rem;
     border: none;
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     color: white;
     font-weight: 700;
     font-size: 0.9375rem;

@@ -241,7 +241,7 @@ export const SuspensionStatusPage: React.FC = () => {
                         <p style={{ color: '#64748b' }}>Vous n'avez aucune suspension active sur votre compte.</p>
                         <button
                             onClick={() => window.location.href = '/guide/dashboard'}
-                            style={{ marginTop: '2rem', padding: '0.875rem 2rem', background: '#ff3b6a', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700 }}
+                            style={{ marginTop: '2rem', padding: '0.875rem 2rem', background: '#FF6B35', color: 'white', border: 'none', borderRadius: '0.75rem', fontWeight: 700 }}
                         >
                             Retour au Dashboard
                         </button>

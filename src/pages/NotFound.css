@@ -121,7 +121,7 @@
 
 .not-found-title::before {
     left: 2px;
-    text-shadow: -2px 0 #ff3b6a;
+    text-shadow: -2px 0 #FF6B35;
     clip: rect(44px, 450px, 56px, 0);
     animation: glitch-anim 5s infinite linear alternate-reverse;
 }
@@ -250,7 +250,7 @@
 }
 
 .countdown-ring circle:nth-child(2) {
-    stroke: #ff3b6a;
+    stroke: #FF6B35;
     stroke-dasharray: 188;
     transition: stroke-dashoffset 1s linear;
 }
@@ -258,7 +258,7 @@
 .countdown-number {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #ff3b6a;
+    color: #FF6B35;
 }
 
 .countdown-label {

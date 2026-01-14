@@ -47,9 +47,9 @@
 .subscription-badge.premium,
 .subscription-badge.pro,
 .premium-status-badge.active {
-    background-color: #ecfdf5;
-    color: #059669;
-    border-color: #a7f3d0;
+    background-color: #fff8e1;
+    color: #FF991F;
+    border-color: #FFE6A5;
 }
 
 .admin-badge.suspended,
@@ -84,9 +84,9 @@
 }
 
 .level-badge {
-    background: #eff6ff;
-    color: #2563eb;
-    border-color: #bfdbfe;
+    background: #fff8e1;
+    color: #FF6B35;
+    border-color: #FFE6A5;
     gap: var(--space-1);
 }
 
@@ -137,7 +137,7 @@
 .admin-spinner::after {
     width: 70%;
     height: 70%;
-    border-top-color: #f43f5e;
+    border-top-color: #FF6B35;
     animation-direction: reverse;
     animation-duration: 1s;
     opacity: 0.6;
@@ -148,7 +148,7 @@
     color: var(--gray-800);
     letter-spacing: -0.01em;
     font-size: var(--text-lg);
-    background: var(--primary-brand);
+    background: var(--artisan-gradient);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -182,19 +182,19 @@
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-2) var(--space-4);
-    background: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: white;
     border-radius: var(--radius-lg);
     font-size: var(--text-sm);
     font-weight: var(--font-bold);
     transition: all var(--transition-base);
-    box-shadow: 0 4px 10px rgba(255, 59, 106, 0.2);
+    box-shadow: 0 4px 10px rgba(255, 153, 31, 0.2);
 }
 
 .admin-btn-primary:hover {
-    background: #e11d48;
+    background: #000;
     transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(255, 59, 106, 0.3);
+    box-shadow: 0 6px 15px rgba(255, 153, 31, 0.3);
 }
 
 .admin-btn-primary:active {

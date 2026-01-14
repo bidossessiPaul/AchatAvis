@@ -297,7 +297,7 @@ export const QuizCertificationPage: React.FC = () => {
                                     width: '100px',
                                     height: '100px',
                                     background: '#f0fdf4',
-                                    color: '#10b981',
+                                    color: '#FF991F',
                                     borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -317,13 +317,13 @@ export const QuizCertificationPage: React.FC = () => {
                                     </h4>
                                     <div style={{ display: 'grid', gap: '1rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#475569', fontSize: '0.9rem', fontWeight: 600 }}>
-                                            <CheckCircle size={16} color="#10b981" /> Accès prioritaire secteurs critiques
+                                            <CheckCircle size={16} color="#FF991F" /> Accès prioritaire secteurs critiques
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#475569', fontSize: '0.9rem', fontWeight: 600 }}>
-                                            <CheckCircle size={16} color="#10b981" /> Multiplicateur de gains actif (+50%)
+                                            <CheckCircle size={16} color="#FF991F" /> Multiplicateur de gains actif (+50%)
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#475569', fontSize: '0.9rem', fontWeight: 600 }}>
-                                            <CheckCircle size={16} color="#10b981" /> Badge Expertise de Sécurité
+                                            <CheckCircle size={16} color="#FF991F" /> Badge Expertise de Sécurité
                                         </div>
                                     </div>
                                 </div>

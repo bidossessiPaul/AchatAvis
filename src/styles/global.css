@@ -192,3 +192,41 @@ a:hover {
     cursor: not-allowed;
     transform: none;
 }
+/* Minimal SweetAlert Styles */
+div:where(.swal2-container).clean-swal-popup,
+.clean-swal-popup {
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+    background: #ffffff !important;
+}
+
+.clean-swal-confirm {
+    background: #10b981 !important;
+    color: white !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    box-shadow: none !important;
+    margin: 0 0.5rem !important;
+}
+
+.clean-swal-cancel {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    box-shadow: none !important;
+    margin: 0 0.5rem !important;
+}
+
+.clean-swal-confirm:hover {
+    filter: brightness(0.95);
+}
+
+.clean-swal-cancel:hover {
+    background: #e2e8f0 !important;
+}

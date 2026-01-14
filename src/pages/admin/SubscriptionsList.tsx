@@ -62,9 +62,9 @@ interface Stats {
 }
 
 const PACK_COLORS: Record<string, string> = {
-    'Découverte': '#3b82f6',
-    'Croissance': '#10b981',
-    'Expert': '#a855f7'
+    'Découverte': '#FF991F',
+    'Croissance': '#FF6B35',
+    'Expert': '#d97706'
 };
 
 export const SubscriptionsList: React.FC = () => {
@@ -126,7 +126,7 @@ export const SubscriptionsList: React.FC = () => {
                         {stats && (
                             <div className="admin-glass-stats-container">
                                 <div className="subs-stat-card-premium">
-                                    <div className="stat-icon-wrapper blue">
+                                    <div className="stat-icon-wrapper blue" style={{ background: '#fff8e1', color: '#FF991F' }}>
                                         <Users size={20} />
                                     </div>
                                     <div className="stat-info">
@@ -139,7 +139,7 @@ export const SubscriptionsList: React.FC = () => {
                                 </div>
 
                                 <div className="subs-stat-card-premium">
-                                    <div className="stat-icon-wrapper green">
+                                    <div className="stat-icon-wrapper green" style={{ background: '#fff8e1', color: '#FF6B35' }}>
                                         <TrendingUp size={20} />
                                     </div>
                                     <div className="stat-info">
@@ -172,7 +172,7 @@ export const SubscriptionsList: React.FC = () => {
                             <div className="admin-glass-card chart-container-premium">
                                 <div className="card-header-simple">
                                     <PieChartIcon size={18} className="text-primary" />
-                                    <h3 className="chart-title">Répartition des Packs</h3>
+                                    <h3 className="chart-title" style={{ color: '#666' }}>Répartition des Packs</h3>
                                 </div>
                                 <div className="chart-wrapper">
                                     {stats && (
@@ -210,7 +210,7 @@ export const SubscriptionsList: React.FC = () => {
                             <div className="admin-glass-card chart-container-premium">
                                 <div className="card-header-simple">
                                     <BarChart3 size={18} className="text-primary" />
-                                    <h3 className="chart-title">Tendances des Packs</h3>
+                                    <h3 className="chart-title" style={{ color: '#666' }}>Tendances des Packs</h3>
                                 </div>
                                 <div className="chart-wrapper">
                                     {stats && stats.packTrends && (
@@ -334,7 +334,7 @@ export const SubscriptionsList: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span className={`sub-status ${sub.is_pack_used > 0 ? 'active' : 'pending'}`} style={{ background: sub.is_pack_used > 0 ? '#DCFCE7' : '#F1F5F9', color: sub.is_pack_used > 0 ? '#166534' : '#64748B' }}>
+                                                    <span className={`sub-status ${sub.is_pack_used > 0 ? 'active' : 'pending'}`} style={{ background: sub.is_pack_used > 0 ? '#fff8e1' : '#F1F5F9', color: sub.is_pack_used > 0 ? '#FF991F' : '#64748B' }}>
                                                         {sub.is_pack_used > 0 ? (
                                                             <>
                                                                 <CheckCircle2 size={12} style={{ marginRight: '4px' }} />
@@ -360,7 +360,7 @@ export const SubscriptionsList: React.FC = () => {
                                                                 style={{
                                                                     height: '100%',
                                                                     width: `${Math.min(100, ((sub.total_used || 0) / (sub.total_quota || 1)) * 100)}%`,
-                                                                    background: (sub.total_used || 0) >= (sub.total_quota || 0) && (sub.total_quota || 0) > 0 ? '#ef4444' : '#3b82f6',
+                                                                    background: (sub.total_used || 0) >= (sub.total_quota || 0) && (sub.total_quota || 0) > 0 ? '#ef4444' : 'var(--artisan-gradient)',
                                                                     borderRadius: '10px'
                                                                 }}
                                                             />
@@ -393,7 +393,7 @@ export const SubscriptionsList: React.FC = () => {
                                                             <button
                                                                 className="premium-icon-btn"
                                                                 title="Voir la mission liée"
-                                                                style={{ color: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.3)', background: 'rgba(59, 130, 246, 0.05)' }}
+                                                                style={{ color: '#FF991F', borderColor: '#FFE6A5', background: '#fff8e1' }}
                                                                 onClick={() => window.location.href = `/admin/missions/${sub.order_id}`}
                                                             >
                                                                 <FolderOpen size={16} />

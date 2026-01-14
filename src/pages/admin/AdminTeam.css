@@ -15,10 +15,11 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-2xl);
-    background: linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%);
+    background: #fff8e1;
+    border: 1px solid #FFE6A5;
     padding: var(--space-8);
-    color: white;
-    box-shadow: var(--shadow-xl);
+    color: #37352f;
+    box-shadow: var(--shadow-sm);
 }
 
 .team-header-bg-icon {
@@ -28,6 +29,7 @@
     padding: 3rem;
     opacity: 0.1;
     pointer-events: none;
+    color: var(--artisan-primary);
 }
 
 .team-header-content {
@@ -50,11 +52,11 @@
     font-size: var(--text-3xl);
     font-weight: var(--font-bold);
     margin-bottom: var(--space-2);
-    color: white;
+    color: #37352f;
 }
 
 .team-header-title p {
-    color: var(--gray-300);
+    color: #64748b;
     max-width: 36rem;
     font-size: var(--text-base);
     line-height: 1.5;
@@ -69,15 +71,17 @@
     color: var(--gray-900);
     border-radius: var(--radius-xl);
     font-weight: var(--font-bold);
-    box-shadow: var(--shadow-lg);
-    border: none;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #FFE6A5;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .btn-invite-member:hover {
-    background: var(--gray-50);
-    transform: scale(1.05);
+    background: #fff;
+    border-color: #FF991F;
+    transform: scale(1.02);
+    box-shadow: var(--shadow-md);
 }
 
 .btn-invite-member:active {
@@ -140,8 +144,8 @@
 }
 
 .status-badge.active {
-    background: #dcfce7;
-    color: #15803d;
+    background: #fff8e1;
+    color: #FF991F;
 }
 
 .status-badge.pending {
@@ -184,7 +188,7 @@
 }
 
 .user-avatar-circle.active {
-    background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+    background: var(--artisan-gradient);
     color: white;
 }
 
@@ -271,13 +275,13 @@
 }
 
 .btn-action-card.edit {
-    color: #2563eb;
+    color: var(--artisan-primary);
 }
 
 .btn-action-card.edit:hover {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-color: #dbeafe;
+    background: #fff8e1;
+    color: #FF6B35;
+    border-color: #FFE6A5;
 }
 
 /* Add New Card */
@@ -298,8 +302,8 @@
 }
 
 .btn-add-card:hover {
-    border-color: #93c5fd;
-    background: rgba(239, 246, 255, 0.4);
+    border-color: #FFE6A5;
+    background: #fff8e1;
 }
 
 .add-icon-circle {
@@ -443,8 +447,8 @@
 }
 
 .form-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    border-color: var(--artisan-primary);
+    box-shadow: 0 0 0 4px rgba(255, 153, 31, 0.1);
 }
 
 /* Permission List */
@@ -484,10 +488,8 @@
 }
 
 .permission-item:hover {
-    border-color: #bfdbfe;
-    /* blue-200 */
-    background: rgba(239, 246, 255, 0.3);
-    /* blue-50/30 */
+    border-color: #FFE6A5;
+    background: rgba(255, 248, 225, 0.3);
 }
 
 /* Custom Checkbox */
@@ -506,13 +508,12 @@
 }
 
 .permission-item:hover .checkbox-visual {
-    border-color: #60a5fa;
+    border-color: var(--artisan-primary);
 }
 
 .checkbox-visual.checked {
-    background: #2563eb;
-    /* blue-600 */
-    border-color: #2563eb;
+    background: var(--artisan-primary);
+    border-color: var(--artisan-primary);
 }
 
 .hidden-checkbox {
@@ -561,14 +562,13 @@
 .btn-submit {
     flex: 1;
     padding: var(--space-3) var(--space-4);
-    background: #2563eb;
-    /* blue-600 */
+    background: var(--artisan-gradient);
     color: white;
     border: none;
     border-radius: var(--radius-xl);
     font-weight: var(--font-medium);
     cursor: pointer;
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(255, 153, 31, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -577,8 +577,7 @@
 }
 
 .btn-submit:hover {
-    background: #1d4ed8;
-    /* blue-700 */
+    background: #000;
     transform: translateY(-1px);
 }
 

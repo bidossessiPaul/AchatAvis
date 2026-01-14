@@ -79,7 +79,7 @@ export const ArtisanOverview: React.FC = () => {
             html: `Êtes-vous sûr de vouloir supprimer la mission <strong>${companyName}</strong> ?<br/><small>Le crédit de votre pack sera restauré.</small>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ff3b6a',
+            confirmButtonColor: '#FF991F',
             cancelButtonColor: '#6b7280',
             confirmButtonText: 'Oui, supprimer',
             cancelButtonText: 'Annuler'
@@ -144,9 +144,9 @@ export const ArtisanOverview: React.FC = () => {
                 {/* Subscription CTA Banner for Pending/Non-active users */}
                 {(!user?.subscription_status || user.subscription_status !== 'active') && paymentStatus !== 'success' && (
                     <div style={{
-                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                        border: '1px solid #f59e0b',
-                        color: '#92400e',
+                        background: '#fff8e1',
+                        border: '1px solid #FFE6A5',
+                        color: '#37352f',
                         padding: '1.25rem',
                         borderRadius: '1rem',
                         marginBottom: '2rem',
@@ -154,14 +154,14 @@ export const ArtisanOverview: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         gap: '1.5rem',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ background: '#f59e0b', borderRadius: '50%', padding: '0.5rem', display: 'flex' }}>
-                                <Star size={24} color="white" fill="white" />
+                            <div style={{ background: '#FFE6A5', borderRadius: '50%', padding: '0.5rem', display: 'flex' }}>
+                                <Star size={24} color="#37352f" fill="#37352f" />
                             </div>
                             <div>
-                                <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#78350f' }}>Activez votre compte pour obtenir des avis</h4>
+                                <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.25rem', color: '#37352f' }}>Offre de lancement : Profitez de 5 avis Google gratuits</h4>
                                 <p style={{ margin: '0.25rem 0 0', fontSize: '1rem', opacity: 0.9 }}>
                                     Choisissez un pack d'avis pour commencer à booster votre visibilité sur Google Maps.
                                 </p>
@@ -169,22 +169,23 @@ export const ArtisanOverview: React.FC = () => {
                         </div>
                         <button
                             onClick={() => navigate('/artisan/plan')}
+                            className="artisan-submit-btn"
                             style={{
-                                background: '#ff3b6a',
-                                color: 'white',
-                                border: 'none',
+                                background: '#fff',
+                                color: '#2383E2',
+                                border: '1px solid #e2e8f0',
                                 padding: '0.75rem 1.5rem',
                                 borderRadius: '0.75rem',
                                 fontWeight: 700,
                                 whiteSpace: 'nowrap',
                                 cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(255, 59, 106, 0.2)',
-                                transition: 'all 0.2s'
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                transition: 'all 0.2s',
+                                textTransform: 'none',
+                                letterSpacing: 'normal'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
-                            Voir les Packs
+                            Réclamer l'offre →
                         </button>
                     </div>
                 )}
@@ -203,7 +204,7 @@ export const ArtisanOverview: React.FC = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Investissement Total</span>
-                            <div style={{ background: '#fff1f2', padding: '0.5rem', borderRadius: '0.75rem' }}><DollarSign size={20} color="#ff3b6a" /></div>
+                            <div style={{ background: '#fff1f2', padding: '0.5rem', borderRadius: '0.75rem' }}><DollarSign size={20} color="#FF6B35" /></div>
                         </div>
                         <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>{Number(stats?.kpis?.total_investment || 0).toFixed(2)}€</span>
                         <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -268,7 +269,7 @@ export const ArtisanOverview: React.FC = () => {
                         className="artisan-submit-btn"
                     >
                         <PlusCircle size={18} />
-                        Soumettre une fiche
+                        SOUMETTRE UNE FICHE
                     </button>
                 </div>
 
@@ -348,7 +349,7 @@ export const ArtisanOverview: React.FC = () => {
                                                 )}
                                                 <button
                                                     onClick={() => navigate((order.status === 'draft' || order.status === 'submitted') ? `/artisan/submit/${order.id}` : `/artisan/orders/${order.id}`)}
-                                                    style={{ background: 'none', border: 'none', color: '#ff3b6a', cursor: 'pointer', fontWeight: 600 }}
+                                                    style={{ background: 'none', border: 'none', color: '#FF991F', cursor: 'pointer', fontWeight: 600 }}
                                                 >
                                                     {(order.status === 'draft' || order.status === 'submitted') ? 'Modifier' : <ArrowRight size={18} />}
                                                 </button>

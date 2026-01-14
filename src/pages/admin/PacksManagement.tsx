@@ -40,7 +40,7 @@ export const PacksManagement: React.FC = () => {
         quantity: 0,
         missions_quota: 1,
         features: [],
-        color: '#3b82f6',
+        color: '#FF991F',
         is_popular: false
     });
     const [featureInput, setFeatureInput] = useState('');
@@ -80,7 +80,7 @@ export const PacksManagement: React.FC = () => {
                 quantity: 0,
                 missions_quota: 1,
                 features: [],
-                color: '#3b82f6',
+                color: '#FF991F',
                 is_popular: false
             });
         }

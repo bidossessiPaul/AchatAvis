@@ -12,7 +12,7 @@
 }
 
 .stat-card.balance {
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     color: white;
     box-shadow: var(--shadow-guide);
 }
@@ -26,20 +26,20 @@
 }
 
 .payout-info-banner {
-    background-color: #fefce8;
-    border: 1px solid #fef08a;
+    background-color: #fff8e1;
+    border: 1px solid #FFE6A5;
     border-radius: var(--radius-lg);
     padding: var(--space-4) var(--space-6);
     display: flex;
     align-items: center;
     gap: var(--space-4);
-    color: #854d0e;
+    color: #37352f;
     font-size: var(--text-sm);
 }
 
 .payout-info-banner svg {
     flex-shrink: 0;
-    color: #eab308;
+    color: #FF991F;
 }
 
 .withdraw-section {
@@ -54,7 +54,7 @@
 }
 
 .withdraw-btn {
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     color: white;
     border: none;
     padding: var(--space-4) var(--space-12);
@@ -67,9 +67,9 @@
 }
 
 .withdraw-btn:hover:not(:disabled) {
-    background: var(--primary-brand-hover);
+    background: #000;
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(255, 59, 106, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(255, 153, 31, 0.4);
 }
 
 .withdraw-btn:disabled {
@@ -85,13 +85,13 @@
 }
 
 .status-badge.paid {
-    background-color: #ecfdf5;
-    color: #059669;
+    background-color: #fff8e1;
+    color: #FF991F;
 }
 
 .status-badge.in_revision {
-    background-color: #eff6ff;
-    color: #2563eb;
+    background-color: #f8fafc;
+    color: #64748b;
 }
 
 .status-badge.refused {

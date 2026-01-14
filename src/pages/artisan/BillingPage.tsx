@@ -164,10 +164,7 @@ export const BillingPage: React.FC = () => {
                                 <span className="info-value">{totalReviews} Avis cumulés</span>
                             </div>
                         </div>
-                        <button className="receipt-button" onClick={() => window.open('https://billing.stripe.com/p/login/test_6oE000000000000', '_blank')}>
-                            <CreditCard size={16} />
-                            Gérer sur Stripe
-                        </button>
+                    
                     </div>
                 </div>
 

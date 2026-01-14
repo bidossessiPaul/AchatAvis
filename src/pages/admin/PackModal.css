@@ -70,6 +70,7 @@
     font-size: 22px;
     font-weight: 800;
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -148,9 +149,9 @@
 
 .pack-form-field input:focus {
     outline: none;
-    border-color: var(--primary-brand);
+    border-color: var(--artisan-primary);
     background: white;
-    box-shadow: 0 0 0 4px rgba(255, 59, 106, 0.08);
+    box-shadow: 0 0 0 4px rgba(255, 153, 31, 0.08);
 }
 
 .pack-form-field input:disabled {
@@ -175,28 +176,28 @@
     align-items: center;
     gap: 12px;
     padding: 16px;
-    background: rgba(255, 59, 106, 0.04);
-    border: 1px dashed rgba(255, 59, 106, 0.2);
+    background: rgba(255, 153, 31, 0.04);
+    border: 1px dashed rgba(255, 153, 31, 0.2);
     border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .pack-checkbox-field:hover {
-    background: rgba(255, 59, 106, 0.08);
+    background: rgba(255, 153, 31, 0.08);
 }
 
 .pack-checkbox-field input[type="checkbox"] {
     width: 20px;
     height: 20px;
-    accent-color: var(--primary-brand);
+    accent-color: var(--artisan-primary);
     cursor: pointer;
 }
 
 .pack-checkbox-field span {
     font-size: 14px;
     font-weight: 700;
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
 }
 
 /* Features Management */
@@ -321,17 +322,17 @@
     height: 48px;
     padding: 0 32px;
     border-radius: 14px;
-    background: var(--primary-brand);
+    background: var(--artisan-gradient);
     color: white;
     font-weight: 700;
-    box-shadow: 0 10px 15px -3px rgba(255, 59, 106, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(255, 153, 31, 0.3);
     transition: all 0.2s;
 }
 
 .pack-btn-save:hover {
-    background: #e11d48;
+    background: #000;
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(255, 59, 106, 0.4);
+    box-shadow: 0 20px 25px -5px rgba(255, 153, 31, 0.4);
 }
 
 .pack-btn-save:active {

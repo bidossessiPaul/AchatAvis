@@ -6,7 +6,7 @@ import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import type { GuideRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
-import { Sparkles, Mail, User, Lock, Smartphone, MapPin } from 'lucide-react';
+import { User, MapPin, Lock, Mail, Smartphone } from 'lucide-react';
 import './Auth.css';
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 
@@ -66,14 +66,11 @@ export const RegisterGuide: React.FC = () => {
     };
 
     return (
-        <div className="auth-container">
+        <div className="auth-container guide-side">
             <ParticlesBackground />
             <div className="auth-content">
                 <div className="auth-logo">
-                    <h1 className="auth-brand">
-                        <Sparkles className="brand-icon" size={32} />
-                        AchatAvis
-                    </h1>
+                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
                     <p className="auth-tagline">Inscription Local Guide</p>
                 </div>
 
