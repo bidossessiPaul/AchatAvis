@@ -21,7 +21,7 @@
 
 .submissions-info-banner svg {
     flex-shrink: 0;
-    color: var(--guide-primary);
+    color: var(--artisan-primary);
 }
 
 .submissions-info-banner p {
@@ -61,13 +61,13 @@
 }
 
 .stat-card.earnings .stat-icon-wrapper {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success);
+    background-color: #fff8e1;
+    color: #FF991F;
 }
 
 .stat-card.count .stat-icon-wrapper {
-    background-color: rgba(255, 153, 31, 0.1);
-    color: var(--guide-primary);
+    background-color: #fff8e1;
+    color: #FF6B35;
 }
 
 .stat-card.pending-stats .stat-icon-wrapper {
@@ -134,7 +134,7 @@
 
 .filter-btn.active {
     background-color: white;
-    color: var(--guide-primary);
+    color: var(--artisan-primary);
     box-shadow: var(--shadow-sm);
 }
 
@@ -207,8 +207,8 @@
 }
 
 .status-badge.validated {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--success-dark);
+    background-color: #fff8e1;
+    color: #FF991F;
 }
 
 .status-badge.pending {
@@ -237,13 +237,13 @@
     width: 36px;
     height: 36px;
     border-radius: var(--radius-md);
-    color: var(--guide-primary);
+    color: var(--artisan-primary);
     background-color: rgba(255, 153, 31, 0.05);
     transition: all var(--transition-base);
 }
 
 .action-link:hover {
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     color: white;
     transform: scale(1.1);
 }
@@ -260,7 +260,7 @@
     width: 48px;
     height: 48px;
     border: 3px solid var(--gray-200);
-    border-top-color: var(--guide-primary);
+    border-top-color: var(--artisan-primary);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
@@ -291,7 +291,7 @@
 .retry-btn,
 .browse-btn {
     margin-top: var(--space-4);
-    background: var(--guide-gradient);
+    background: var(--artisan-gradient);
     color: white;
     border: none;
     padding: var(--space-3) var(--space-8);

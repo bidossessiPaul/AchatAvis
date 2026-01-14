@@ -22,21 +22,22 @@
     margin-bottom: var(--space-8);
 }
 
-.auth-brand {
-    font-size: 2.5rem;
-    font-weight: 900;
-    color: var(--gray-900);
-    margin-bottom: var(--space-2);
-    letter-spacing: -0.05em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+.auth-logo-img {
+    height: 64px;
+    width: auto;
+    margin-bottom: var(--space-4);
+    object-fit: contain;
 }
 
-.auth-brand .brand-icon {
-    color: var(--primary-brand);
-    animation: pulse 2s infinite;
+.guide-side .auth-brand {
+    background: linear-gradient(135deg, #FFD700 0%, #FF991F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.guide-side .brand-icon {
+    color: #FFD700 !important;
 }
 
 @keyframes pulse {
@@ -143,7 +144,7 @@
 .auth-error {
     padding: var(--space-4);
     background: rgba(239, 68, 68, 0.1);
-    border-left: 4px solid var(--brand-red);
+    border-left: 4px solid var(--primary-orange);
     color: #f87171;
     font-size: var(--text-sm);
     border-radius: var(--radius-md);
@@ -275,4 +276,60 @@
 
 .auth-container .input::placeholder {
     color: var(--gray-400);
+}
+
+/* Artisan vs Guide theme differentiation */
+.auth-toggle-btn.artisan-mode.active {
+    background: white;
+    color: #FF991F;
+    box-shadow: 0 10px 25px -5px rgba(255, 153, 31, 0.3);
+}
+
+.auth-toggle-btn.guide-mode.active {
+    background: white;
+    color: #2383e2;
+    box-shadow: 0 10px 25px -5px rgba(35, 131, 226, 0.3);
+}
+
+/* Artisan theme for auth card */
+.auth-card.artisan-theme {
+    border: 1px solid rgba(255, 153, 31, 0.2) !important;
+    box-shadow: 0 10px 40px -10px rgba(255, 153, 31, 0.15) !important;
+}
+
+/* Guide theme for auth card */
+.auth-card.guide-theme {
+    border: 1px solid rgba(35, 131, 226, 0.2) !important;
+    box-shadow: 0 10px 40px -10px rgba(35, 131, 226, 0.15) !important;
+}
+
+/* Registration link styling */
+.auth-links {
+    margin-top: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    text-align: center;
+}
+
+.auth-link.register-link {
+    color: var(--primary-brand);
+    font-weight: 600;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s;
+}
+
+.auth-link.register-link:hover {
+    background: rgba(255, 153, 31, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Button theme variations */
+.btn-artisan {
+    background: linear-gradient(135deg, #FF991F, #FF6B35) !important;
+}
+
+.btn-guide {
+    background: linear-gradient(135deg, #2383e2, #1e73c8) !important;
 }

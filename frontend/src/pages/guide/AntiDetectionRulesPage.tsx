@@ -166,7 +166,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
 
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
                                                     <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #f1f5f9' }}>
-                                                        <h5 style={{ fontWeight: 700, color: '#059669', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem' }}>
+                                                        <h5 style={{ fontWeight: 700, color: '#2383e2', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem' }}>
                                                             <CheckCircle size={14} /> STANDARD REQUIS
                                                         </h5>
                                                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
@@ -176,7 +176,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
                                                         </ul>
                                                     </div>
                                                     <div style={{ background: '#fffafb', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #fff1f2' }}>
-                                                        <h5 style={{ fontWeight: 700, color: '#e11d48', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem' }}>
+                                                        <h5 style={{ fontWeight: 700, color: '#ef4444', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8125rem' }}>
                                                             <AlertTriangle size={14} /> FACTEUR DE RISQUE
                                                         </h5>
                                                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
@@ -211,15 +211,15 @@ export const AntiDetectionRulesPage: React.FC = () => {
                         <h5 style={{ fontWeight: 700, fontSize: '0.75rem', marginBottom: '1rem', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pratiques Recommandées</h5>
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.875rem' }}>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--guide-primary)', marginTop: '6px', flexShrink: 0 }}></div>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#2383e2', marginTop: '6px', flexShrink: 0 }}></div>
                                 Interactions communautaires régulières.
                             </li>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--guide-primary)', marginTop: '6px', flexShrink: 0 }}></div>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#2383e2', marginTop: '6px', flexShrink: 0 }}></div>
                                 Documentation photographique authentique.
                             </li>
                             <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#38bdf8', marginTop: '6px', flexShrink: 0 }}></div>
+                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#1e73c8', marginTop: '6px', flexShrink: 0 }}></div>
                                 Rédaction sémantique diversifiée.
                             </li>
                         </ul>

@@ -5,11 +5,12 @@
 }
 
 .artisan-dashboard-hero-content {
-    background: var(--artisan-gradient);
+    background: #fff8e1;
     padding: 2rem;
     border-radius: 1.5rem;
-    color: white;
-    box-shadow: var(--shadow-artisan);
+    color: #37352f;
+    border: 1px solid #FFE6A5;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     position: relative;
     overflow: hidden;
 }
@@ -23,13 +24,13 @@
     font-size: 1.5rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
-    color: white;
+    color: #37352f;
 }
 
 .artisan-dashboard-hero-subtitle {
     opacity: 0.95;
     max-width: 500px;
-    color: white;
+    color: #37352f;
 }
 
 .artisan-dashboard-hero-icon {
@@ -72,7 +73,7 @@
 }
 
 .artisan-submit-btn {
-    background: var(--artisan-gradient);
+    background: linear-gradient(135deg, #FF991F, #FF6B35);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -91,7 +92,7 @@
 
 .artisan-submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(35, 131, 226, 0.25);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.25);
 }
 
 @media (max-width: 768px) {

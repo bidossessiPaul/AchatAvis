@@ -31,6 +31,7 @@ export const guideService = {
                    (o.quantity - o.reviews_received) as remaining_slots,
                    o.locked_by,
                    o.locked_until,
+                   sd.sector_name as sector,
                    sd.difficulty,
                    sd.icon_emoji as sector_icon,
                    sd.required_gmail_level,

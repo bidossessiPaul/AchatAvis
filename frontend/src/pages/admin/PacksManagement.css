@@ -24,14 +24,14 @@
 }
 
 .pack-card.popular {
-    border: 2px solid var(--primary-brand);
+    border: 2px solid var(--artisan-primary);
 }
 
 .popular-badge {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: var(--primary-brand);
+    background: var(--artisan-primary);
     color: white;
     padding: 4px 12px;
     border-radius: 99px;
@@ -122,7 +122,7 @@
 }
 
 .feature-item svg {
-    color: #10b981;
+    color: #FF991F;
     margin-top: 2px;
 }
 

@@ -40,7 +40,6 @@ export const artisanService = {
             services = '',
             staff_names = '',
             specific_instructions = '',
-            establishment_id = null,
             sector = '',
             sector_id = null,
             sector_slug = '',
@@ -52,8 +51,6 @@ export const artisanService = {
             client_cities = []
         } = data;
 
-        // Ensure establishment_id is properly handled (null if empty string)
-        const finalEstablishmentId = establishment_id || null;
         const finalClientCities = Array.isArray(client_cities) ? JSON.stringify(client_cities) : client_cities;
 
         // Use the actual price paid for the pack (1 Pack = 1 Mission logic)
@@ -64,13 +61,13 @@ export const artisanService = {
         await query(
             `INSERT INTO reviews_orders (
                 id, mission_name, artisan_id, quantity, price, status, company_name, company_context, 
-                google_business_url, services, staff_names, specific_instructions, payment_id, establishment_id,
+                google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
                 estimated_duration_days, client_cities, zones
-            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 orderId, mission_name, artisanId, quantity, price, company_name, company_context,
-                google_business_url, services, staff_names, specific_instructions, payment_id, finalEstablishmentId,
+                google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
                 estimated_duration_days, finalClientCities, data.zones || ''
             ]
@@ -115,7 +112,7 @@ export const artisanService = {
         const updateableFields = [
             'mission_name', 'company_name', 'company_context', 'sector', 'zones',
             'services', 'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
-            'staff_names', 'specific_instructions', 'establishment_id', 'city',
+            'staff_names', 'specific_instructions', 'city',
             // Anti-Detection Fields
             'sector_id', 'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
             'estimated_duration_days', 'client_cities'
@@ -129,11 +126,6 @@ export const artisanService = {
                 let value = data[field as keyof ReviewOrder];
                 if (field === 'client_cities' && typeof value === 'object') {
                     value = JSON.stringify(value);
-                }
-
-                // Handle empty string for foreign keys
-                if (field === 'establishment_id' && value === '') {
-                    value = null;
                 }
 
                 values.push(value);

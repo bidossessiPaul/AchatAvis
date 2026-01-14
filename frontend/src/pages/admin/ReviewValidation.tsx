@@ -270,7 +270,7 @@ export const ReviewValidation: React.FC = () => {
                                                         {submission.google_email}
                                                     </span>
                                                     {isOldReview(submission.submitted_at) && submission.status === 'pending' && (
-                                                        <span style={{ fontSize: '10px', color: 'var(--brand-red)', fontWeight: 600 }}>En retard</span>
+                                                        <span style={{ fontSize: '10px', color: 'var(--primary-orange)', fontWeight: 600 }}>En retard</span>
                                                     )}
                                                 </div>
                                             </td>

@@ -269,7 +269,7 @@ export const EstablishmentValidation: React.FC = () => {
                     height: 32px;
                     border-radius: 8px;
                     background: var(--primary-light, #fff1f2);
-                    color: var(--primary-color, #ff3b6a);
+                    color: var(--primary-color, #FF6B35);
                     display: flex;
                     align-items: center;
                     justify-content: center;

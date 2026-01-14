@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
-import { MapPin, RefreshCw, X } from 'lucide-react';
+import { MapPin, RefreshCw, X, Plus } from 'lucide-react';
 import { Button } from '../common/Button';
 import { showSuccess, showError } from '../../utils/Swal';
 
@@ -70,36 +70,13 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
 
     return (
         <div style={{ marginBottom: '2rem' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MapPin size={16} color="#0f172a" />
-                Zones de provenance des clients
-            </label>
-
             <div style={{
                 background: 'white',
                 border: '1px solid #e2e8f0',
                 borderRadius: '0.75rem',
-                padding: '1.25rem'
+                padding: window.innerWidth <= 640 ? '1rem' : '1.25rem'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', gap: '1rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', maxWidth: '60%' }}>
-                        Générez des villes via l'IA ou ajoutez-les manuellement (séparez par des virgules).
-                    </p>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={generateCities}
-                        isLoading={loading}
-                        disabled={!establishmentCity}
-                        style={{ flexShrink: 0 }}
-                    >
-                        <RefreshCw size={14} style={{ marginRight: '0.5rem' }} />
-                        Générer via IA (10)
-                    </Button>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', alignItems: 'center' }}>
                     <input
                         type="text"
                         className="form-input"
@@ -107,14 +84,28 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
                         value={manualInput}
                         onChange={(e) => setManualInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleManualAdd())}
-                        style={{ marginBottom: 0 }}
+                        style={{ marginBottom: 0, flex: 1 }}
                     />
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={generateCities}
+                        isLoading={loading}
+                        disabled={!establishmentCity}
+                        style={{ flexShrink: 0, height: '42px' }}
+                    >
+                        <RefreshCw size={14} />
+                        <span className="btn-text-mobile-hide" style={{ marginLeft: '0.5rem' }}>Générer</span>
+                    </Button>
                     <Button
                         type="button"
                         onClick={handleManualAdd}
                         disabled={!manualInput.trim()}
+                        style={{ height: '42px', flexShrink: 0 }}
                     >
-                        Ajouter
+                        <Plus size={16} />
+                        <span className="btn-text-mobile-hide" style={{ marginLeft: '0.5rem' }}>Ajouter</span>
                     </Button>
                 </div>
 

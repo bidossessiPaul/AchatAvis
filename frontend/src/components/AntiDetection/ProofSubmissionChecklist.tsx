@@ -94,7 +94,7 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
 
                         {isHardSector && (
                             <div style={{ background: '#fff1f2', padding: '1rem', borderRadius: '1rem', border: '1px solid #ffe4e6', marginBottom: '1.5rem', display: 'flex', gap: '0.75rem' }}>
-                                <AlertTriangle size={20} color="#e11d48" style={{ flexShrink: 0 }} />
+                                <AlertTriangle size={20} color="#OOO" style={{ flexShrink: 0 }} />
                                 <p style={{ margin: 0, fontSize: '0.75rem', color: '#9f1239', lineHeight: 1.5 }}>
                                     <b>Rappel Important :</b> Google est très strict sur ce secteur. Assurez-vous d'avoir respecté tous les protocoles de sécurité.
                                 </p>

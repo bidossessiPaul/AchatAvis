@@ -17,7 +17,6 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
     const [isLoadingPacks, setIsLoadingPacks] = useState(true);
 
     const [formData, setFormData] = useState({
-        establishment_id: initialData?.establishment_id || (fixedEstablishment as any)?.establishment_id || fixedEstablishment?.id || '',
         mission_name: initialData?.mission_name || '',
         company_name: initialData?.company_name || fixedEstablishment?.name || '',
         google_business_url: initialData?.google_business_url || fixedEstablishment?.google_business_url || fixedEstablishment?.platform_links?.google?.url || '',
@@ -251,10 +250,10 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
                     align-items: center;
                     justify-content: space-between;
                     padding: 0.875rem 1.25rem;
-                    background: #fff;
+                    background: #fff8e1;
                     border-radius: 1rem;
-                    border: 1px solid #ff3b6a;
-                    box-shadow: 0 4px 12px rgba(255, 59, 106, 0.1);
+                    border: 1px solid #FFE6A5;
+                    box-shadow: 0 2px 8px rgba(255, 230, 165, 0.2);
                 }
                 @media (max-width: 640px) {
                     .pack-recap-card {
@@ -267,21 +266,21 @@ export const Step1Initial: React.FC<Step1Props> = ({ initialData, onNext, onBack
                         justify-content: flex-end;
                     }
                 }
-                .pack-name { font-weight: 800; color: #1e293b; font-size: 0.925rem; }
+                .pack-name { font-weight: 800; color: #37352f; font-size: 0.925rem; }
                 .pack-stats {
                     display: flex;
                     gap: 8px;
                     align-items: center;
-                    color: var(--primary-brand);
+                    color: #FF991F;
                     font-weight: bold;
-                    background: #fff1f2;
+                    background: rgba(255, 255, 255, 0.5);
                     padding: 4px 12px;
                     border-radius: 2rem;
                     font-size: 0.8rem;
                     margin-top: 4px;
                 }
-                .pack-status { color: var(--brand-red); font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
-                .status-dot { width: 6px; height: 6px; background: var(--brand-red); border-radius: 50%; }
+                .pack-status { color: #FF991F; font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+                .status-dot { width: 6px; height: 6px; background: #FF991F; border-radius: 50%; }
             `}</style>
         </form>
     );

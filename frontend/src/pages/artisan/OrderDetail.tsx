@@ -36,7 +36,7 @@ const getTradeInfo = (trade: string) => {
     if (t.includes('paysag')) return { color: '#16a34a', bg: '#f0fdf4', icon: <Trees size={20} /> };
     if (t.includes('menag')) return { color: '#7c3aed', bg: '#f5f3ff', icon: <Brush size={20} /> };
     if (t.includes('demenag')) return { color: '#92400e', bg: '#fffaf0', icon: <Truck size={20} /> };
-    return { color: '#ff3b6a', bg: '#fff1f2', icon: <Briefcase size={20} /> };
+    return { color: '#FF6B35', bg: '#fff1f2', icon: <Briefcase size={20} /> };
 };
 
 export const OrderDetail: React.FC = () => {
@@ -100,7 +100,7 @@ export const OrderDetail: React.FC = () => {
         return (
             <DashboardLayout title="Erreur">
                 <div style={{ textAlign: 'center', padding: '3rem' }}>
-                    <AlertTriangle size={48} color="#ff3b6a" style={{ margin: '0 auto 1rem' }} />
+                    <AlertTriangle size={48} color="#FF6B35" style={{ margin: '0 auto 1rem' }} />
                     <h3>Commande introuvable</h3>
                     <button onClick={() => navigate('/artisan')} className="btn-back" style={{ marginTop: '1rem' }}>
                         Retour au tableau de bord
@@ -155,8 +155,8 @@ export const OrderDetail: React.FC = () => {
                 {error && (
                     <div style={{
                         backgroundColor: '#fff1f2',
-                        border: '1px solid #ff3b6a',
-                        color: '#ff3b6a',
+                        border: '1px solid #FF6B35',
+                        color: '#FF6B35',
                         padding: '1rem',
                         borderRadius: '0.75rem',
                         marginBottom: '1.5rem',

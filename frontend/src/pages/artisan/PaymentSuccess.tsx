@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import api from '../../services/api';
 import { useAuthStore } from '../../context/authStore';
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
@@ -68,10 +68,7 @@ export default function PaymentSuccess() {
 
             <div className="success-content">
                 <div className="auth-logo">
-                    <h1 className="auth-brand">
-                        <Sparkles className="brand-icon" size={32} />
-                        AchatAvis
-                    </h1>
+                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
                 </div>
 
                 <motion.div

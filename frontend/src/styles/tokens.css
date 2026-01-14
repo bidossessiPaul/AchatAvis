@@ -11,28 +11,28 @@
   --guide-primary: var(--primary-orange);
   --guide-primary-hover: var(--primary-orange-hover);
   --guide-gradient: linear-gradient(135deg, #FF991F, #FF6B35);
-  --artisan-primary: var(--primary-blue);
-  --artisan-primary-hover: var(--primary-blue-hover);
-  --artisan-gradient: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+  --artisan-primary: var(--primary-orange);
+  --artisan-primary-hover: var(--primary-orange-hover);
+  --artisan-gradient: linear-gradient(135deg, #FF991F, #FF6B35);
 
   /* Brand Accents (Preserved) */
-  --brand-red: #ff3b6a;
-  --brand-red-hover: #e0325b;
+  --brand-red: #FF6B35;
+  --brand-red-hover: #fa5e26;
 
   /* Colors - Accents */
   --accent-purple: #9B59B6;
   --accent-green: #00D084;
-  --accent-red: #FF5252;
-  --accent-lime: #c4ed1a;
-  --accent-lime-hover: #b0d618;
+  --accent-red: #FF6B35;
+  --accent-lime: #FFD700;
+  --accent-lime-hover: #ffcc00;
 
   /* Colors - Status */
   --success: #00D084;
   --success-dark: #059669;
   --warning: #f59e0b;
   --warning-dark: #d97706;
-  --error: #FF5252;
-  --error-dark: #dc2626;
+  --error: #FF6B35;
+  --error-dark: #fa5e26;
   --info: #2383E2;
   --info-dark: #1a73cc;
 

@@ -154,7 +154,7 @@ export const PaymentsList: React.FC = () => {
                                             </td>
                                             <td className="text-gray-500 font-mono" style={{ fontSize: '12px' }}>{request.google_email}</td>
                                             <td>
-                                                <div style={{ fontWeight: 700, color: '#059669' }}>
+                                                <div style={{ fontWeight: 700, color: '#FF991F' }}>
                                                     {Number(request.amount).toFixed(2)}€
                                                 </div>
                                             </td>

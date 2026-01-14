@@ -20,7 +20,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => {
                     <button className="mobile-menu-btn" onClick={onMenuClick}>
                         <Menu size={24} />
                     </button>
-                    <h2 className="page-title">{title || 'Dashboard'}</h2>
+                    <h2 className="page-title" style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)' }}>{title || 'Dashboard'}</h2>
                 </div>
 
                 <div className="topbar-actions">

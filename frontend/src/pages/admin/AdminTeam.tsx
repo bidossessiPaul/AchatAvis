@@ -149,7 +149,7 @@ export const AdminTeam = () => {
                             }}
                             className="btn-invite-member"
                         >
-                            <Plus size={20} className="text-blue-600" />
+                            <Plus size={20} style={{ color: '#FF991F' }} />
                             Inviter un membre
                         </button>
                     </div>
@@ -158,7 +158,7 @@ export const AdminTeam = () => {
                 {/* Team Grid */}
                 {loading ? (
                     <div className="loading-state">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
                         <p>Chargement de l'équipe...</p>
                     </div>
                 ) : (

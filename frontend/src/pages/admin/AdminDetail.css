@@ -32,8 +32,8 @@
 }
 
 .admin-dashboard.detail-page .back-btn:hover {
-    color: var(--primary-brand);
-    border-color: var(--primary-brand);
+    color: var(--artisan-primary);
+    border-color: var(--artisan-primary);
     transform: translateX(-4px);
     box-shadow: var(--shadow-md);
 }
@@ -41,13 +41,14 @@
 /* Premium Header */
 .detail-header-section {
     position: relative;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    background: #fff8e1;
+    border: 1px solid #FFE6A5;
     border-radius: var(--radius-2xl);
     padding: var(--space-10) var(--space-8);
     margin-bottom: var(--space-8);
     overflow: hidden;
-    color: white;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+    color: #37352f;
+    box-shadow: var(--shadow-sm);
 }
 
 .detail-header-section::before {
@@ -57,7 +58,7 @@
     right: -10%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(255, 59, 106, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 153, 31, 0.1) 0%, transparent 70%);
     pointer-events: none;
 }
 
@@ -80,13 +81,13 @@
     width: 80px;
     height: 80px;
     border-radius: var(--radius-2xl);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: white;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid #FFE6A5;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
     overflow: hidden;
 }
 
@@ -106,7 +107,7 @@
 }
 
 .header-icon-badge.purple {
-    color: #a78bfa;
+    color: #FF991F;
 }
 
 
@@ -114,12 +115,13 @@
     margin: 0;
     font-size: var(--text-3xl);
     font-weight: var(--font-bold);
+    color: #37352f;
     letter-spacing: -0.02em;
 }
 
 .header-subtitle {
     font-size: var(--text-base);
-    color: rgba(255, 255, 255, 0.6);
+    color: #64748b;
     margin-bottom: var(--space-2);
 }
 
@@ -180,7 +182,7 @@
 }
 
 .premium-card h3 svg {
-    color: var(--primary-brand);
+    color: var(--artisan-primary);
 }
 
 /* Info Items */
@@ -348,8 +350,8 @@
 }
 
 .premium-action-btn.activate {
-    background: #ecfdf5;
-    color: #059669;
+    background: #fff8e1;
+    color: #FF991F;
 }
 
 .premium-action-btn.warn {

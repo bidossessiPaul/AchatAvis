@@ -107,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
                 <Link to="/" className="sidebar-brand">
-                    Achat<span className={user?.role === 'guide' ? 'text-guide' : 'text-brand'}>Avis</span>
+                    <img src="/logo.png" alt="AchatAvis" style={{ width: '220px', height: '100px' }} className="sidebar-logo-img" />
                 </Link>
             </div>
 

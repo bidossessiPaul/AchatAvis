@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/auth/Login';
 import { RegisterArtisan } from './pages/auth/RegisterArtisan';
@@ -69,6 +70,7 @@ function App() {
     return (
         <BrowserRouter>
             <SuspensionBanner />
+            <Toaster position="top-right" reverseOrder={false} />
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Navigate to="/login" replace />} />

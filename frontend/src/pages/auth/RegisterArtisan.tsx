@@ -4,7 +4,7 @@ import api, { authApi } from '../../services/api';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
-import { Loader, Sparkles, Mail, User, Lock, Building, Smartphone, MapPin, Hash, Globe } from 'lucide-react';
+import { Loader, Mail, User, Lock, Building, Smartphone, MapPin, Hash, Globe } from 'lucide-react';
 import type { ArtisanRegistration } from '../../types';
 import { RegionBadge } from '../../components/common/RegionBadge';
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
@@ -99,14 +99,11 @@ export const RegisterArtisan: React.FC = () => {
     };
 
     return (
-        <div className="auth-container">
+        <div className="auth-container artisan-side">
             <ParticlesBackground />
             <div className="auth-content" style={{ maxWidth: '600px' }}>
                 <div className="auth-logo">
-                    <h1 className="auth-brand">
-                        <Sparkles className="brand-icon" size={32} />
-                        AchatAvis
-                    </h1>
+                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
                     <p className="auth-tagline">Inscription Artisan</p>
                 </div>
 

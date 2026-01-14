@@ -126,7 +126,7 @@ export const AdminMissions: React.FC = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Missions</span>
-                            <Briefcase size={20} color="var(--primary-red)" />
+                            <Briefcase size={20} color="var(--artisan-primary)" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.total}</span>
                     </div>
@@ -146,7 +146,7 @@ export const AdminMissions: React.FC = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>En cours</span>
-                            <CheckCircle2 size={20} color="#10b981" />
+                            <CheckCircle2 size={20} color="#FF991F" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.inProgress}</span>
                     </div>
@@ -156,7 +156,7 @@ export const AdminMissions: React.FC = () => {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Terminées</span>
-                            <CheckCircle2 size={20} color="#3b82f6" />
+                            <CheckCircle2 size={20} color="#FF6B35" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.completed}</span>
                     </div>
@@ -241,7 +241,7 @@ export const AdminMissions: React.FC = () => {
                                                         <span style={{ fontWeight: 600 }}>{Math.round((mission.reviews_received / mission.quantity) * 100)}%</span>
                                                     </div>
                                                     <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{ width: `${(mission.reviews_received / mission.quantity) * 100}%`, height: '100%', background: 'var(--primary-red)' }}></div>
+                                                        <div style={{ width: `${(mission.reviews_received / mission.quantity) * 100}%`, height: '100%', background: 'var(--artisan-gradient)' }}></div>
                                                     </div>
                                                 </div>
                                             </td>

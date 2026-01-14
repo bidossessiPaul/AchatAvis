@@ -102,7 +102,7 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
                         <div key={p.id} style={{ padding: '1.25rem', borderBottom: idx === proposals.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                 <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#000' }}>{p.author_name}</span>
-                                <span style={{ color: '#ff3b6a' }}>{'★'.repeat(p.rating)}</span>
+                                <span style={{ color: '#FF6B35' }}>{'★'.repeat(p.rating)}</span>
                             </div>
                             <p style={{ fontSize: '0.9375rem', color: '#1a1a1a', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>{p.content}</p>
                         </div>

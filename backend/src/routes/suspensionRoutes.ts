@@ -8,6 +8,21 @@ const router = Router();
 // ... existing routes ...
 
 /**
+ * GET /api/suspensions/config
+ * Get global suspension configuration (Admin)
+ */
+router.get('/config', authenticate, authorize('admin'), async (_req: any, res) => {
+    try {
+        const config = await suspensionService.getConfig();
+        return res.json({ success: true, data: config });
+    } catch (error: any) {
+        console.error('Error in GET /config:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+
+/**
  * PUT /api/suspensions/config
  * Update global suspension configuration (Admin)
  */
