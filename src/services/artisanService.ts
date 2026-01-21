@@ -7,7 +7,7 @@ export const artisanService = {
      * Create a new review order draft
      */
     async createOrderDraft(artisanId: string, data: Partial<ReviewOrder>) {
-        // 1. Check if artisan has mission slots available
+        // 1. Check if artisan has fiche slots available
         const profile: any = await this.getArtisanProfileByUserId(artisanId);
         if (!profile) throw new Error("Profile not found");
 
@@ -16,23 +16,23 @@ export const artisanService = {
 
         if (!payment_id) {
             console.warn("❌ Missing payment_id");
-            throw new Error("Veuillez sélectionner un pack pour cette mission.");
+            throw new Error("Veuillez sélectionner un pack pour cette fiche.");
         }
 
         const packs: any = await query(
-            'SELECT missions_quota, missions_used, amount FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
+            'SELECT fiches_quota, fiches_used, amount FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
             [payment_id, artisanId]
         );
 
         if (packs.length === 0) throw new Error("Pack non trouvé ou invalide.");
         const pack = packs[0];
 
-        if (pack.missions_used >= pack.missions_quota) {
+        if (pack.fiches_used >= pack.fiches_quota) {
             throw new Error("Ce pack est déjà entièrement utilisé. Veuillez en sélectionner un nouveau.");
         }
 
         const {
-            mission_name = '',
+            fiche_name = '',
             quantity = 1,
             company_name = '',
             company_context = '',
@@ -53,29 +53,29 @@ export const artisanService = {
 
         const finalClientCities = Array.isArray(client_cities) ? JSON.stringify(client_cities) : client_cities;
 
-        // Use the actual price paid for the pack (1 Pack = 1 Mission logic)
+        // Use the actual price paid for the pack (1 Pack = 1 fiche logic)
         const price = parseFloat(pack.amount);
 
         const orderId = uuidv4();
 
         await query(
             `INSERT INTO reviews_orders (
-                id, mission_name, artisan_id, quantity, price, status, company_name, company_context, 
+                id, fiche_name, artisan_id, quantity, price, status, company_name, company_context, 
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
                 estimated_duration_days, client_cities, zones
             ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                orderId, mission_name, artisanId, quantity, price, company_name, company_context,
+                orderId, fiche_name, artisanId, quantity, price, company_name, company_context,
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
                 estimated_duration_days, finalClientCities, data.zones || ''
             ]
         );
 
-        // Update missions_used in payments table (Mark pack as used)
+        // Update fiches_used in payments table (Mark pack as used)
         await query(
-            'UPDATE payments SET missions_used = missions_used + 1 WHERE id = ?',
+            'UPDATE payments SET fiches_used = fiches_used + 1 WHERE id = ?',
             [payment_id]
         );
 
@@ -110,7 +110,7 @@ export const artisanService = {
         }
 
         const updateableFields = [
-            'mission_name', 'company_name', 'company_context', 'sector', 'zones',
+            'fiche_name', 'company_name', 'company_context', 'sector', 'zones',
             'services', 'positioning', 'client_types', 'desired_tone', 'quantity', 'status', 'google_business_url',
             'staff_names', 'specific_instructions', 'city',
             // Anti-Detection Fields
@@ -144,19 +144,19 @@ export const artisanService = {
 
         // Send notifications if transitioning to 'submitted'
         if (shouldSendNotifications && artisanInfo && updatedOrder) {
-            const { sendMissionSubmittedArtisanEmail, sendMissionSubmittedAdminEmail } = await import('./emailService');
-            sendMissionSubmittedArtisanEmail(
+            const { sendficheSubmittedArtisanEmail, sendficheSubmittedAdminEmail } = await import('./emailService');
+            sendficheSubmittedArtisanEmail(
                 artisanInfo.email,
                 artisanInfo.full_name,
                 updatedOrder.company_name,
                 orderId
-            ).catch(err => console.error('Failed to send mission submission email to artisan:', err));
+            ).catch(err => console.error('Failed to send fiche submission email to artisan:', err));
 
-            sendMissionSubmittedAdminEmail(
+            sendficheSubmittedAdminEmail(
                 artisanInfo.full_name,
                 updatedOrder.company_name,
                 orderId
-            ).catch(err => console.error('Failed to send mission submission email to admin:', err));
+            ).catch(err => console.error('Failed to send fiche submission email to admin:', err));
         }
 
         return updatedOrder;
@@ -371,34 +371,37 @@ export const artisanService = {
     async getArtisanSubmissions(artisanId: string) {
         return query(`
             SELECT 
-                s.id,
-                s.status,
+                p.id as proposal_id,
+                p.content as proposal_content,
+                p.author_name as proposal_author,
+                p.rating,
+                p.status as proposal_status,
+                s.id as submission_id,
+                s.status as submission_status,
                 s.review_url,
                 s.submitted_at,
                 s.earnings,
                 s.rejection_reason,
-                p.content as proposal_content,
-                p.author_name as proposal_author,
-                p.rating,
-                o.mission_name,
-                o.id as mission_id,
+                o.fiche_name,
+                o.id as fiche_id,
                 o.company_name,
-                u.full_name as guide_name
-            FROM reviews_submissions s
-            JOIN review_proposals p ON s.proposal_id = p.id
+                u.full_name as guide_name,
+                p.created_at as proposal_date
+            FROM review_proposals p
             JOIN reviews_orders o ON p.order_id = o.id
-            JOIN users u ON s.guide_id = u.id
-            WHERE s.artisan_id = ?
-            ORDER BY s.submitted_at DESC
+            LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
+            LEFT JOIN users u ON s.guide_id = u.id
+            WHERE o.artisan_id = ?
+            ORDER BY COALESCE(s.submitted_at, p.created_at) DESC
         `, [artisanId]);
     },
 
     async deleteOrder(orderId: string) {
-        // Find if it was linked to a pack and restore missions_used?
-        // Usually, deleting a draft should restore the mission slot.
+        // Find if it was linked to a pack and restore fiches_used?
+        // Usually, deleting a draft should restore the fiche slot.
         const order: any = await query('SELECT payment_id FROM reviews_orders WHERE id = ?', [orderId]);
         if (order.length > 0 && order[0].payment_id) {
-            await query('UPDATE payments SET missions_used = GREATEST(0, missions_used - 1) WHERE id = ?', [order[0].payment_id]);
+            await query('UPDATE payments SET fiches_used = GREATEST(0, fiches_used - 1) WHERE id = ?', [order[0].payment_id]);
         }
 
         await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
@@ -406,11 +409,11 @@ export const artisanService = {
     },
 
     /**
-     * Get available mission packs (payments with remaining quota)
+     * Get available fiche packs (payments with remaining quota)
      */
     async getAvailablePacks(artisanId: string, includeId?: string) {
         const results = await query(
-            'SELECT id, description, missions_quota, missions_used, review_credits, created_at, type, status, amount FROM payments WHERE user_id = ? ORDER BY created_at ASC',
+            'SELECT id, description, fiches_quota, fiches_used, review_credits, created_at, type, status, amount FROM payments WHERE user_id = ? ORDER BY created_at ASC',
             [artisanId]
         );
         console.log(`📦 PAYMENTS FOUND for ${artisanId}:`, JSON.stringify(results, null, 2));
@@ -419,7 +422,7 @@ export const artisanService = {
         const packs = (results as any[]).filter(p =>
             p.type === "subscription" &&
             p.status === "completed" &&
-            (p.missions_used < p.missions_quota || p.id === includeId)
+            (p.fiches_used < p.fiches_quota || p.id === includeId)
         );
 
         // Fetch subscription definitions to map identities
@@ -492,10 +495,10 @@ export const artisanService = {
             GROUP BY name
         `, [artisanId]);
 
-        // 4. Global KPIs (Missions & Reviews)
-        const missionKpis: any = await query(`
+        // 4. Global KPIs (fiches & Reviews)
+        const ficheKpis: any = await query(`
             SELECT 
-                COUNT(DISTINCT id) as total_missions,
+                COUNT(DISTINCT id) as total_fiches,
                 SUM(quantity) as total_reviews_ordered,
                 SUM(reviews_received) as total_reviews_received
             FROM reviews_orders
@@ -518,7 +521,7 @@ export const artisanService = {
             })),
             sectorDistribution: sectorDist,
             kpis: {
-                ...(missionKpis[0] || { total_missions: 0, total_reviews_ordered: 0, total_reviews_received: 0 }),
+                ...(ficheKpis[0] || { total_fiches: 0, total_reviews_ordered: 0, total_reviews_received: 0 }),
                 total_investment: financialKpis[0]?.total_investment || 0
             }
         };

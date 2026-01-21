@@ -9,7 +9,7 @@ const openai = new OpenAI({
 
 interface GenerateReviewsParams {
     companyName: string;
-    missionName?: string;
+    ficheName?: string;
     trade: string;
     quantity: number;
     context?: string;
@@ -24,7 +24,7 @@ export const openAiService = {
     async generateReviews(params: GenerateReviewsParams) {
         const {
             companyName,
-            missionName,
+            ficheName,
             trade,
             quantity,
             context,
@@ -39,15 +39,15 @@ export const openAiService = {
             Tu es un système expert en rédaction d'avis clients. 
             Ton objectif est de générer des avis authentiques et crédibles adaptés à la localisation de l'entreprise.
             IMPORTANT : Utilise les "Zones d'intervention" fournies pour localiser certains avis de manière naturelle (ex: "Intervention rapide à [Ville]", "Très content du service sur [Ville]").
-            Génère ${quantity} avis positifs (4 ou 5 étoiles) pour la mission "${missionName || 'Campagne d\'avis'}" pour l'entreprise suivante :
+            Génère ${quantity} avis positifs (4 ou 5 étoiles) pour la fiche "${ficheName || 'Campagne d\'avis'}" pour l'entreprise suivante :
             Nom : ${companyName}
             Métier : ${trade}
             Secteur précis : ${sector || trade}
-            Contexte métier : ${context || 'Artisan de qualité'}
+            Contexte métier : ${context || 'Artisan professionnel qualifié'}
             Services principaux à mettre en avant : ${services || 'Tous les services standards du métier'}
             Zones d'intervention : ${zones || 'Locale'}
             Noms des collaborateurs (si fournis) : ${staffNames || 'Aucun spécifique'}
-            Instructions spécifiques : ${specificInstructions || 'Aucune'}
+            Instructions spécifiques : ${specificInstructions || 'Rédige des avis naturels, variés et crédibles.'}
 
             Consignes de rédaction :
             1. VARIÉTÉ DE TAILLE : Produis un mélange d'avis courts (1-2 phrases), moyens (3-4 phrases) et longs (paragraphe détaillé).

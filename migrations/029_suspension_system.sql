@@ -41,11 +41,11 @@ CREATE TABLE IF NOT EXISTS suspension_levels (
 
 -- Seed Levels
 INSERT INTO suspension_levels (level_number, level_name, level_code, duration_days, badge_color, icon_emoji, severity, consequences, requirements_to_lift, auto_lift_after_duration) VALUES
-(1, 'Avertissement Sérieux', 'WARNING_1', 1, 'yellow', '🟡', 'warning', '{"can_take_missions": false, "earnings_frozen": false, "withdrawals_blocked": false, "requires_quiz": false, "requires_admin_validation": false}', '{"wait_duration": true}', TRUE),
-(2, 'Suspension Modérée', 'SUSPEND_2', 3, 'orange', '🟠', 'danger', '{"can_take_missions": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": false, "requires_admin_validation": false}', '{"wait_duration": true}', TRUE),
-(3, 'Suspension Sévère', 'SUSPEND_3', 7, 'red', '🔴', 'critical', '{"can_take_missions": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": true, "requires_admin_validation": true}', '{"wait_duration": true, "pass_quiz": true, "contact_support": true, "admin_approval": true}', FALSE),
-(4, 'Dernière Chance', 'LAST_CHANCE_4', 14, 'red', '🔴', 'critical', '{"can_take_missions": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": true, "requires_admin_validation": true}', '{"wait_duration": true, "pass_quiz": true, "contact_support": true, "admin_approval": true}', FALSE),
-(5, 'Bannissement Définitif', 'BAN_PERMANENT', 99999, 'black', '⛔', 'critical', '{"can_take_missions": false, "earnings_frozen": true, "withdrawals_blocked": true}', '{"wait_duration": false}', FALSE);
+(1, 'Avertissement Sérieux', 'WARNING_1', 1, 'yellow', '🟡', 'warning', '{"can_take_fiches": false, "earnings_frozen": false, "withdrawals_blocked": false, "requires_quiz": false, "requires_admin_validation": false}', '{"wait_duration": true}', TRUE),
+(2, 'Suspension Modérée', 'SUSPEND_2', 3, 'orange', '🟠', 'danger', '{"can_take_fiches": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": false, "requires_admin_validation": false}', '{"wait_duration": true}', TRUE),
+(3, 'Suspension Sévère', 'SUSPEND_3', 7, 'red', '🔴', 'critical', '{"can_take_fiches": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": true, "requires_admin_validation": true}', '{"wait_duration": true, "pass_quiz": true, "contact_support": true, "admin_approval": true}', FALSE),
+(4, 'Dernière Chance', 'LAST_CHANCE_4', 14, 'red', '🔴', 'critical', '{"can_take_fiches": false, "earnings_frozen": true, "withdrawals_blocked": true, "requires_quiz": true, "requires_admin_validation": true}', '{"wait_duration": true, "pass_quiz": true, "contact_support": true, "admin_approval": true}', FALSE),
+(5, 'Bannissement Définitif', 'BAN_PERMANENT', 99999, 'black', '⛔', 'critical', '{"can_take_fiches": false, "earnings_frozen": true, "withdrawals_blocked": true}', '{"wait_duration": false}', FALSE);
 
 -- 3. Table: user_suspensions
 CREATE TABLE IF NOT EXISTS user_suspensions (

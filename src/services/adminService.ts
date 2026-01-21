@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendUserStatusUpdateEmail, sendMissionDecisionEmail, sendSubmissionDecisionEmail } from './emailService';
+import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail } from './emailService';
 import { notificationService } from './notificationService';
 
 /**
@@ -217,7 +217,7 @@ export const getGlobalStats = async () => {
             (SELECT COUNT(*) FROM users WHERE role = 'guide') as total_guides,
             (SELECT COUNT(*) FROM reviews_orders) as total_orders,
             (SELECT COUNT(*) FROM review_proposals WHERE status = 'draft') as pending_proposals,
-            (SELECT COUNT(*) FROM reviews_orders WHERE status = 'submitted') as pending_missions,
+            (SELECT COUNT(*) FROM reviews_orders WHERE status = 'submitted') as pending_fiches,
             (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as pending_payouts
     `);
 
@@ -362,7 +362,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                 notificationService.sendToUser(rows[0].guide_id, {
                     type: 'system',
                     title: status === 'validated' ? 'Avis Validé ! 🎉' : 'Avis Rejeté ❌',
-                    message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : 'Désolé, votre soumission n\'a pas été retenue.',
+                    message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : 'Désolé, votre soufiche n\'a pas été retenue.',
                     link: '/guide/dashboard'
                 });
 
@@ -412,8 +412,8 @@ export const getAllSubscriptions = async () => {
             COALESCE(sp.name, p.description) as pack_name,
             CAST(p.amount * 100 AS UNSIGNED) as price_cents,
             COALESCE(sp.color, 'standard') as pack_color,
-            p.missions_quota as total_quota,
-            p.missions_used as is_pack_used,
+            p.fiches_quota as total_quota,
+            p.fiches_used as is_pack_used,
             (
                 SELECT COALESCE(SUM(ro.reviews_received), 0)
                 FROM reviews_orders ro
@@ -530,11 +530,11 @@ export const getPacks = async () => {
  * Create a new subscription pack
  */
 export const createPack = async (pack: any) => {
-    const { id, name, price_cents, quantity, missions_quota, features, color, is_popular } = pack;
+    const { id, name, price_cents, quantity, fiches_quota, features, color, is_popular } = pack;
     return await query(
-        `INSERT INTO subscription_packs (id, name, price_cents, quantity, missions_quota, features, color, is_popular) 
+        `INSERT INTO subscription_packs (id, name, price_cents, quantity, fiches_quota, features, color, is_popular) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, name, price_cents, quantity, missions_quota || 1, JSON.stringify(features), color, is_popular]
+        [id, name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular]
     );
 };
 
@@ -542,12 +542,12 @@ export const createPack = async (pack: any) => {
  * Update an existing subscription pack
  */
 export const updatePack = async (id: string, pack: any) => {
-    const { name, price_cents, quantity, missions_quota, features, color, is_popular } = pack;
+    const { name, price_cents, quantity, fiches_quota, features, color, is_popular } = pack;
     return await query(
         `UPDATE subscription_packs 
-         SET name = ?, price_cents = ?, quantity = ?, missions_quota = ?, features = ?, color = ?, is_popular = ? 
+         SET name = ?, price_cents = ?, quantity = ?, fiches_quota = ?, features = ?, color = ?, is_popular = ? 
          WHERE id = ?`,
-        [name, price_cents, quantity, missions_quota || 1, JSON.stringify(features), color, is_popular, id]
+        [name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular, id]
     );
 };
 
@@ -559,9 +559,9 @@ export const deletePack = async (id: string) => {
 };
 
 /**
- * Get missions pending admin approval (status = 'submitted')
+ * Get fiches pending admin approval (status = 'submitted')
  */
-export const getPendingMissions = async () => {
+export const getPendingfiches = async () => {
     return await query(`
         SELECT o.*, u.full_name as artisan_name, ap.company_name
         FROM reviews_orders o
@@ -573,9 +573,9 @@ export const getPendingMissions = async () => {
 };
 
 /**
- * Approve a mission and make it available for guides
+ * Approve a fiche and make it available for guides
  */
-export const approveMission = async (orderId: string) => {
+export const approvefiche = async (orderId: string) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
@@ -604,18 +604,18 @@ export const approveMission = async (orderId: string) => {
             `, [orderId]);
 
             if (rows && rows.length > 0) {
-                await sendMissionDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress');
+                await sendficheDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress');
 
                 // SSE NOTIFICATION
                 notificationService.sendToUser(rows[0].artisan_id || rows[0].id, { // Fallback to id if needed
-                    type: 'new_mission',
-                    title: 'Mission Validée ! 🎈',
-                    message: 'Votre mission est maintenant visible par nos Guides Locaux.',
+                    type: 'new_fiche',
+                    title: 'fiche Validée ! 🎈',
+                    message: 'Votre fiche est maintenant visible par nos Guides Locaux.',
                     link: '/artisan/dashboard'
                 });
             }
         } catch (error) {
-            console.error('Error sending mission decision email:', error);
+            console.error('Error sending fiche decision email:', error);
         }
     } catch (error) {
         await connection.rollback();
@@ -625,9 +625,9 @@ export const approveMission = async (orderId: string) => {
     }
 };
 /**
- * Get all missions with artisan and company details
+ * Get all fiches with artisan and company details
  */
-export const getAllMissions = async () => {
+export const getAllfiches = async () => {
     return await query(`
         SELECT o.*, 
                COALESCE(pay.amount, o.price) as price,
@@ -642,13 +642,13 @@ export const getAllMissions = async () => {
 };
 
 /**
- * Get full mission details for admin editing
+ * Get full fiche details for admin editing
  */
-export const getAdminMissionDetail = async (orderId: string) => {
+export const getAdminficheDetail = async (orderId: string) => {
     const orders: any = await query(`
         SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
                COALESCE(sp.name, pay.description) as pack_name, 
-               pay.missions_quota, pay.missions_used as pack_missions_used,
+               pay.fiches_quota, pay.fiches_used as pack_fiches_used,
                pay.amount as payment_amount,
                o.payout_per_review
         FROM reviews_orders o
@@ -675,9 +675,9 @@ export const getAdminMissionDetail = async (orderId: string) => {
 };
 
 /**
- * Update any mission field (Admin CRUD)
+ * Update any fiche field (Admin CRUD)
  */
-export const updateMission = async (orderId: string, data: any) => {
+export const updatefiche = async (orderId: string, data: any) => {
     const fields = Object.keys(data);
     const values = Object.values(data);
 
@@ -705,9 +705,9 @@ export const updateMission = async (orderId: string, data: any) => {
 };
 
 /**
- * Delete a mission (Admin CRUD)
+ * Delete a fiche (Admin CRUD)
  */
-export const deleteMission = async (orderId: string) => {
+export const deletefiche = async (orderId: string) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
@@ -722,6 +722,97 @@ export const deleteMission = async (orderId: string) => {
         await connection.commit();
     } catch (error) {
         await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Manually activate a subscription pack for an artisan
+ * Used when payment is done offline
+ */
+export const activateArtisanPack = async (userId: string, packId: string) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Fetch pack details
+        const [packs]: any = await connection.query('SELECT * FROM subscription_packs WHERE id = ?', [packId]);
+        const pack = packs.length > 0 ? packs[0] : null;
+
+        if (!pack) throw new Error("Pack non trouvé");
+
+        const fichesQuota = pack.fiches_quota || 1;
+        const amount = pack.price_cents / 100;
+        const packName = pack.name;
+
+        // Calculate dates
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 1);
+
+        // 2. Update artisan profile
+        await connection.query(
+            `UPDATE artisans_profiles 
+             SET subscription_status = 'active',
+                 subscription_product_id = ?,
+                 subscription_start_date = ?,
+                 subscription_end_date = ?,
+                 last_payment_date = ?,
+                 fiches_allowed = fiches_allowed + ?
+             WHERE user_id = ?`,
+            [packId, startDate, endDate, startDate, fichesQuota, userId]
+        );
+
+        // 3. Ensure user account is active
+        await connection.query(
+            `UPDATE users SET status = 'active' WHERE id = ?`,
+            [userId]
+        );
+
+        // 4. Log manual payment
+        const paymentId = `admin_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        await connection.query(`
+            INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, fiches_quota, review_credits, processed_at)
+            VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, ?, NOW())
+        `, [
+            paymentId,
+            userId,
+            amount,
+            `MANUAL_${paymentId}`,
+            `Abonnement ${packName} (Activé par Admin)`,
+            fichesQuota,
+            pack.quantity || 0
+        ]);
+
+        await connection.commit();
+
+        // 5. Send notification email
+        try {
+            const { sendPackActivationEmail } = await import('./emailService');
+            const [user]: any = await connection.query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+            if (user && user.length > 0) {
+                await sendPackActivationEmail(user[0].email, user[0].full_name, packId, pack.quantity || 0);
+            }
+        } catch (emailError) {
+            console.error('Failed to send manual pack activation email:', emailError);
+        }
+
+        // 6. SSE Notification
+        notificationService.sendToUser(userId, {
+            type: 'system',
+            title: 'Pack Activé ! 🚀',
+            message: `Votre pack ${packName} a été activé manuellement par un administrateur.`,
+            link: '/artisan/dashboard'
+        });
+
+        return { success: true, message: `Pack ${packName} activé pour l'utilisateur.` };
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in activateArtisanPack:', error);
         throw error;
     } finally {
         connection.release();

@@ -1,5 +1,5 @@
--- Migration: Add mission locking columns to reviews_orders
--- To prevent multiple guides from working on the same mission simultaneously
+-- Migration: Add fiche locking columns to reviews_orders
+-- To prevent multiple guides from working on the same fiche simultaneously
 
 ALTER TABLE reviews_orders 
 ADD COLUMN IF NOT EXISTS locked_by VARCHAR(36) DEFAULT NULL,

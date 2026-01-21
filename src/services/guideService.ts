@@ -2,16 +2,17 @@ import { query } from '../config/database';
 import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
+import { TrustScoreEngine } from './trustScoreEngine';
 
 export const guideService = {
     /**
-     * Get missions available for a specific guide
-     * A mission is available if:
+     * Get fiches available for a specific guide
+     * A fiche is available if:
      * 1. The order status is not 'draft' or 'cancelled'
      * 2. The order is not yet fully completed (reviews_received < quantity)
      * 3. The guide hasn't already submitted a review for this order
      */
-    async getAvailableMissions(guideId: string) {
+    async getAvailablefiches(guideId: string) {
         // ✅ NOUVEAU : Vérifier si suspendu ou banni
         const user: any = await query('SELECT status, is_banned, role FROM users WHERE id = ?', [guideId]);
         if (user && user.length > 0) {
@@ -49,11 +50,30 @@ export const guideService = {
         `, [guideId]);
     },
 
-    async getMissionDetails(order_id: string, guide_id: string) {
+    async getficheDetails(order_id: string, guide_id: string) {
+        // 🎯 TRUST SCORE: Vérifier l'éligibilité du guide
+        const guideAccountResult: any = await query(`
+            SELECT gga.*, u.email
+            FROM users u
+            JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
+            WHERE u.id = ?
+            LIMIT 1
+        `, [guide_id]);
+
+        if (guideAccountResult && guideAccountResult.length > 0) {
+            const guideAccount = guideAccountResult[0];
+
+            // Vérifier si le compte est bloqué
+            if (guideAccount.is_blocked === true || guideAccount.trust_level === 'BLOCKED') {
+                throw new Error('TRUST_SCORE_BLOCKED: Votre compte est bloqué. Score Trust insuffisant. Contactez le support.');
+            }
+        }
+
         // Fetch order basic info
         const orderResult: any = await query(`
             SELECT o.*, a.company_name as artisan_company, a.city,
-                   sd.difficulty, sd.icon_emoji as sector_icon
+                   sd.difficulty, sd.icon_emoji as sector_icon, sd.sector_name,
+                   sd.required_gmail_level
             FROM reviews_orders o
             JOIN artisans_profiles a ON o.artisan_id = a.user_id
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
@@ -61,14 +81,27 @@ export const guideService = {
         `, [order_id]);
 
         if (!orderResult || orderResult.length === 0) {
-            throw new Error('Mission non trouvée');
+            throw new Error('fiche non trouvée');
         }
 
         const order = orderResult[0];
 
+        // 🎯 TRUST SCORE: Vérifier l'éligibilité basée sur le niveau
+        if (guideAccountResult && guideAccountResult.length > 0) {
+            const guideAccount = guideAccountResult[0];
+            const trustLevel = guideAccount.trust_level;
+
+            // fiches premium réservées aux GOLD et PLATINUM
+            if (order.required_gmail_level && order.required_gmail_level >= 4) {
+                if (!['GOLD', 'PLATINUM'].includes(trustLevel)) {
+                    throw new Error(`TRUST_LEVEL_INSUFFICIENT: Cette fiche premium requiert un niveau GOLD ou PLATINUM. Votre niveau: ${trustLevel}`);
+                }
+            }
+        }
+
         // 1. Quota Check (Total)
         if (order.reviews_received >= order.quantity) {
-            throw new Error('MISSION_FULL');
+            throw new Error('fiche_FULL');
         }
 
         // 2. Daily Quota Check
@@ -83,11 +116,11 @@ export const guideService = {
             throw new Error('DAILY_QUOTA_FULL');
         }
 
-        // 3. Mission Lock Check
+        // 3. fiche Lock Check
         if (order.locked_by && order.locked_by !== guide_id) {
             const lockedUntil = new Date(order.locked_until);
             if (lockedUntil > new Date()) {
-                throw new Error('MISSION_LOCKED');
+                throw new Error('fiche_LOCKED');
             }
         }
 
@@ -125,7 +158,7 @@ export const guideService = {
         };
     },
 
-    async releaseMissionLock(order_id: string, guide_id: string) {
+    async releaseficheLock(order_id: string, guide_id: string) {
         await query(`
             UPDATE reviews_orders 
             SET locked_by = NULL, 
@@ -159,11 +192,51 @@ export const guideService = {
         artisanId: string,
         gmailAccountId?: number
     }) {
-        // 0. VÉRIFICATION ANTI-DÉTECTION (si gmailAccountId est fourni)
+        // 0. 🎯 TRUST SCORE: Vérifier quota mensuel
+        const guideAccountResult: any = await query(`
+            SELECT gga.*, u.email
+            FROM users u
+            LEFT JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
+            WHERE u.id = ?
+            LIMIT 1
+        `, [guideId]);
+
+        if (guideAccountResult && guideAccountResult.length > 0) {
+            const guideAccount = guideAccountResult[0];
+
+            // Vérifier si bloqué
+            if (guideAccount.is_blocked === true) {
+                throw new Error('Votre compte est bloqué. Contactez le support.');
+            }
+
+            // Vérifier quota mensuel
+            const monthlySubmissions: any = await query(`
+                SELECT COUNT(*) as count
+                FROM reviews_submissions
+                WHERE guide_id = ?
+                AND MONTH(submitted_at) = MONTH(CURRENT_DATE())
+                AND YEAR(submitted_at) = YEAR(CURRENT_DATE())
+            `, [guideId]);
+
+            const maxReviewsPerMonth = guideAccount.max_reviews_per_month || 0;
+            const currentMonthSubmissions = monthlySubmissions[0]?.count || 0;
+
+            if (maxReviewsPerMonth > 0 && currentMonthSubmissions >= maxReviewsPerMonth) {
+                throw new Error(`Quota mensuel atteint (${maxReviewsPerMonth} avis/mois). Niveau: ${guideAccount.trust_level}. Améliorez votre Trust Score pour augmenter votre quota.`);
+            }
+        }
+
+        // 1. VÉRIFICATION ANTI-DÉTECTION (si gmailAccountId est fourni)
         let currentSectorSlug = '';
         let payoutAmount = 2.00; // Default value
         if (data.gmailAccountId) {
-            const compatibility = await antiDetectionService.canTakeMission(guideId, data.orderId, data.gmailAccountId);
+            // ✅ NOUVEAU : Vérifier si le compte Gmail spécifique est actif
+            const gmailAccount: any = await query('SELECT is_active FROM guide_gmail_accounts WHERE id = ?', [data.gmailAccountId]);
+            if (gmailAccount && gmailAccount.length > 0 && gmailAccount[0].is_active === 0) {
+                throw new Error('ce compte mail est bloqué par l\'administration et ne peut plus soumettre d\'avis.');
+            }
+
+            const compatibility = await antiDetectionService.canTakefiche(guideId, data.orderId, data.gmailAccountId);
             if (!compatibility.can_take) {
                 throw new Error(`Anti-Détection: ${compatibility.message}`);
             }
@@ -242,7 +315,7 @@ export const guideService = {
         notificationService.sendToUser(data.artisanId, {
             type: 'order_update',
             title: 'Nouvel avis reçu ! ✨',
-            message: 'Un guide vient de soumettre une preuve pour votre mission.',
+            message: 'Un guide vient de soumettre une preuve pour votre fiche.',
             link: '/artisan/dashboard'
         });
 
@@ -355,5 +428,10 @@ export const guideService = {
             statusDistribution: successRate,
             ...globalStats
         };
+    },
+
+    async getGmailQuotasForFiche(userId: string, ficheId: string) {
+        const { getGmailQuotasForFiche } = await import('./gmailQuotaService');
+        return getGmailQuotasForFiche(userId, ficheId);
     }
 };

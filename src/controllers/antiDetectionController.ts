@@ -70,7 +70,7 @@ SELECT * FROM sector_difficulty
         }
     },
 
-    async checkMissionCompatibility(req: Request, res: Response) {
+    async checkficheCompatibility(req: Request, res: Response) {
         try {
             const { campaign_id, gmail_account_id } = req.body;
             const user_id = req.user?.userId;
@@ -79,7 +79,7 @@ SELECT * FROM sector_difficulty
                 return res.status(400).json({ success: false, error: 'Missing parameters' });
             }
 
-            const result = await antiDetectionService.canTakeMission(user_id, campaign_id, gmail_account_id);
+            const result = await antiDetectionService.canTakefiche(user_id, campaign_id, gmail_account_id);
             return res.json({ success: true, data: result });
         } catch (error: any) {
             return res.status(500).json({ success: false, error: error.message });
@@ -186,7 +186,7 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                     rewards: passed ? {
                         badge_earned: "Guide Certifié Anti-Détection",
                         compliance_bonus: 10,
-                        unlocked_features: ["Secteurs difficiles", "Missions premium"]
+                        unlocked_features: ["Secteurs difficiles", "fiches premium"]
                     } : null
                 }
             });
@@ -200,41 +200,31 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
             const { email, mapsProfileUrl } = req.body;
             if (!email) return res.status(400).json({ success: false, error: 'Email requis' });
 
-            const { googleScraperService } = require('../services/googleScraperService');
+            const { TrustScoreEngine } = require('../services/trustScoreEngine');
 
-            let data: any = {};
-            if (mapsProfileUrl) {
-                // Validation regex pour s'assurer que c'est un lien Google Maps Contrib
-                const mapsRegex = /^https?:\/\/(www\.)?google\.(com|fr|be|ch)\/maps\/contrib\/[a-zA-Z0-9_-]+\/?.*$/;
-                if (!mapsRegex.test(mapsProfileUrl)) {
-                    return res.status(400).json({ success: false, error: 'Format de lien Google Maps invalide' });
-                }
-                data = await googleScraperService.fetchMapsProfileData(mapsProfileUrl, email);
-            } else {
-                const avatar = await googleScraperService.fetchProfilePictureByEmail(email);
-                data = { avatarUrl: avatar, localGuideLevel: 1, reviewCount: 0 };
-            }
+            // Utiliser le vrai moteur de calcul, même pour la preview
+            const result = await TrustScoreEngine.calculateTrustScore(
+                email,
+                mapsProfileUrl,
+                false // Phone not verified for preview
+            );
 
-            // Calculer le trust score pour l'aperçu
-            let trustScore = 15;
-            if (data.localGuideLevel > 1) trustScore += (data.localGuideLevel * 5);
-            if (data.reviewCount > 10) trustScore += 10;
-            if (data.avatarUrl) trustScore += 5;
-
-            let trustLevel = 'Nouveau';
-            if (trustScore >= 85) trustLevel = 'Gold';
-            else if (trustScore >= 60) trustLevel = 'Silver';
-            else if (trustScore >= 31) trustLevel = 'Bronze';
-
+            // Mapper les résultats pour la compatibilité frontend
             return res.json({
                 success: true,
                 data: {
-                    ...data,
-                    trustScore,
-                    trustLevel
+                    avatarUrl: result.details.mapsProfile?.data?.avatarUrl || null,
+                    localGuideLevel: result.details.mapsProfile?.data?.localGuideLevel || 1,
+                    reviewCount: result.details.mapsProfile?.data?.totalReviews || 0,
+                    trustScore: result.finalScore,
+                    trustLevel: result.trustLevel,
+                    isBlocked: result.isBlocked,
+                    maxReviewsPerMonth: result.maxReviewsPerMonth,
+                    recommendations: result.recommendations
                 }
             });
         } catch (error: any) {
+            console.error('Preview verification error:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     },
@@ -252,6 +242,18 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
             }
 
+            // ✅ Check global email uniqueness (across all users)
+            const existingEmail: any = await query(
+                'SELECT user_id FROM guide_gmail_accounts WHERE email = ? AND user_id != ?',
+                [email, user_id]
+            );
+            if (existingEmail && existingEmail.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Cet email est déjà utilisé par un autre guide.'
+                });
+            }
+
             // Check if maps_profile_url is already used by another user (if provided)
             if (maps_profile_url) {
                 const existing: any = await query(
@@ -266,35 +268,37 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 }
             }
 
-            // Calcul du trust score initial basé sur les données vérifiées
-            let trustScore = 15; // Base pour un compte déclaré
-            if (local_guide_level > 1) trustScore += (local_guide_level * 5);
-            if (total_reviews_google > 10) trustScore += 10;
-            if (avatar_url) trustScore += 5;
+            // Utiliser le vrai moteur de calcul pour la sauvegarde finale
+            const { TrustScoreEngine } = require('../services/trustScoreEngine');
+            const result = await TrustScoreEngine.calculateTrustScore(
+                email,
+                maps_profile_url,
+                false // Phone not verified yet
+            );
 
-            // Détermination du niveau
-            let level = 'nouveau';
-            if (trustScore >= 85) level = 'gold';
-            else if (trustScore >= 60) level = 'silver';
-            else if (trustScore >= 31) level = 'bronze';
+            const trustScoreValue = result.finalScore;
+            const trustLevel = result.trustLevel;
 
             await query(`
                 INSERT INTO guide_gmail_accounts
-                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, avatar_url, has_profile_picture, is_verified, verification_date)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
+                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
                 ON DUPLICATE KEY UPDATE
                 maps_profile_url = VALUES(maps_profile_url),
                 local_guide_level = VALUES(local_guide_level),
                 total_reviews_google = VALUES(total_reviews_google),
                 trust_score = VALUES(trust_score),
                 account_level = VALUES(account_level),
+                trust_score_value = VALUES(trust_score_value),
+                trust_level = VALUES(trust_level),
                 avatar_url = VALUES(avatar_url),
                 has_profile_picture = VALUES(has_profile_picture),
                 is_verified = TRUE,
                 verification_date = NOW()
             `, [
                 user_id, email, maps_profile_url, local_guide_level || 1,
-                total_reviews_google || 0, trustScore, level,
+                total_reviews_google || 0, trustScoreValue, trustLevel.toLowerCase(),
+                trustScoreValue, trustLevel.toUpperCase(),
                 avatar_url || null, avatar_url ? true : false
             ]);
 

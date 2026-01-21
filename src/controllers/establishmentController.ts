@@ -185,7 +185,7 @@ export const establishmentController = {
     },
 
     /**
-     * Get establishment by ID with ownership check and missions count
+     * Get establishment by ID with ownership check and fiches count
      */
     async getEstablishmentByIdWithOwnership(req: Request, res: Response) {
         try {

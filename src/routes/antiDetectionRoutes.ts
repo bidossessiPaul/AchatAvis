@@ -23,7 +23,7 @@ router.post('/gmail-accounts/add', authenticate, antiDetectionController.addGmai
 router.delete('/gmail-accounts/:accountId', authenticate, antiDetectionController.deleteGmailAccount);
 
 // Checks
-router.post('/can-take-mission', authenticate, antiDetectionController.checkMissionCompatibility);
+router.post('/can-take-fiche', authenticate, antiDetectionController.checkficheCompatibility);
 
 // Certification
 router.post('/quiz/submit', authenticate, antiDetectionController.submitQuiz);

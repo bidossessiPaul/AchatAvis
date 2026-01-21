@@ -26,13 +26,13 @@ async function cleanupUserData(email: string) {
         );
         console.log(`🗑️  Deleted ${proposals.affectedRows} review proposals`);
 
-        // 3. Delete submissions
-        const [submissions]: any = await connection.query('DELETE FROM reviews_submissions WHERE artisan_id = ?', [userId]);
-        console.log(`🗑️  Deleted ${submissions.affectedRows} submissions`);
+        // 3. Delete subfiches
+        const [subfiches]: any = await connection.query('DELETE FROM reviews_subfiches WHERE artisan_id = ?', [userId]);
+        console.log(`🗑️  Deleted ${subfiches.affectedRows} subfiches`);
 
-        // 4. Delete all missions
+        // 4. Delete all fiches
         const [orders]: any = await connection.query('DELETE FROM reviews_orders WHERE artisan_id = ?', [userId]);
-        console.log(`🗑️  Deleted ${orders.affectedRows} missions`);
+        console.log(`🗑️  Deleted ${orders.affectedRows} fiches`);
 
         // 5. Delete all payments/packs
         const [payments]: any = await connection.query('DELETE FROM payments WHERE user_id = ?', [userId]);
@@ -46,7 +46,7 @@ async function cleanupUserData(email: string) {
         await connection.query(`
             UPDATE artisans_profiles SET 
                 subscription_status = 'none',
-                missions_allowed = 0,
+                fiches_allowed = 0,
                 monthly_reviews_quota = 0,
                 current_month_reviews = 0,
                 subscription_start_date = NULL,

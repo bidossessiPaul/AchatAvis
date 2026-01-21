@@ -18,18 +18,17 @@ class AntiDetectionService {
 
         let score = 0;
 
-        // 1. Ancienneté (40 points max)
+        // 1. Ancienneté (20 points max - réduit pour favoriser l'activité)
         // Calculer l'âge réel dynamique (en jours)
         const createdAt = new Date(account.created_at);
         const now = new Date();
         const ageDays = Math.max(0, Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)));
 
-        // Formule ajustée : 1 point par jour pour les 30 premiers jours (boost démarrage), puis 0.5
-        // Score = min(40, age_days * 0.5) est l'ancienne, passons à plus généreux pour le début
+        // Formule ajustée : progression rapide au début, plafond à 20
         if (ageDays <= 30) {
-            score += Math.min(30, ageDays * 1); // 30 jours = 30 points
+            score += Math.min(15, ageDays * 0.5); // 30 jours = 15 points
         } else {
-            score += 30 + Math.min(10, (ageDays - 30) * 0.2); // Le reste plus lentement
+            score += 15 + Math.min(5, (ageDays - 30) * 0.1); // Le reste lentement
         }
 
         // 2. Bonus Vérification (BOOST DÉMARRAGE) (+15 points)
@@ -37,16 +36,16 @@ class AntiDetectionService {
             score += 15;
         }
 
-        // 3. Nombre avis validés (30 points max)
-        score += Math.min(30, (account.successful_reviews || 0) * 3);
+        // 3. Nombre avis validés (40 points max - augmenté pour favoriser la performance)
+        score += Math.min(40, (account.successful_reviews || 0) * 4);
 
-        // 4. Taux de réussite (15 points max)
+        // 4. Taux de réussite (20 points max - augmenté)
         if (account.total_reviews_posted > 0) {
             const rate = (account.successful_reviews / account.total_reviews_posted);
-            score += rate * 15;
+            score += rate * 20;
         } else {
             // Petit bonus de confiance par défaut si 0 avis (innocent jusqu'à preuve du contraire)
-            score += 5;
+            score += 10;
         }
 
         // 5. Diversité/Activité (Bonus divers)
@@ -60,16 +59,16 @@ class AntiDetectionService {
      * Déterminer le niveau d'un compte Gmail
      */
     determineGmailLevel(trustScore: number): 'nouveau' | 'bronze' | 'silver' | 'gold' {
-        if (trustScore >= 85) return 'gold';
-        if (trustScore >= 60) return 'silver';
-        if (trustScore >= 31) return 'bronze';
+        if (trustScore >= 71) return 'gold';
+        if (trustScore >= 46) return 'silver';
+        if (trustScore >= 21) return 'bronze';
         return 'nouveau';
     }
 
     /**
-     * Vérifier si un guide peut prendre une mission
+     * Vérifier si un guide peut prendre une fiche
      */
-    async canTakeMission(userId: string, campaignId: string, gmailAccountId: number): Promise<{
+    async canTakefiche(userId: string, campaignId: string, gmailAccountId: number): Promise<{
         can_take: boolean;
         reason?: string;
         message: string;
@@ -99,6 +98,38 @@ class AntiDetectionService {
         }
         const gmail = gmailResult[0];
 
+        // Handle monthly reset for global quota
+        const now = new Date();
+        const resetDate = gmail.monthly_reset_date ? new Date(gmail.monthly_reset_date) : null;
+
+        if (resetDate && (resetDate.getMonth() !== now.getMonth() || resetDate.getFullYear() !== now.getFullYear())) {
+            // New month - reset global counter
+            await query(`
+                UPDATE guide_gmail_accounts 
+                SET monthly_reviews_posted = 0, 
+                    monthly_reset_date = ?
+                WHERE id = ?
+            `, [now.toISOString().split('T')[0], gmailAccountId]);
+            gmail.monthly_reviews_posted = 0;
+        }
+
+        // Check global monthly quota
+        const monthlyLimit = gmail.monthly_quota_limit || 20;
+        const monthlyUsed = gmail.monthly_reviews_posted || 0;
+
+        if (monthlyUsed >= monthlyLimit) {
+            return {
+                can_take: false,
+                message: `Quota mensuel global atteint (${monthlyUsed}/${monthlyLimit} avis). Ce compte Gmail ne peut plus poster d'avis ce mois.`,
+                reason: 'GLOBAL_QUOTA_EXCEEDED',
+                details: {
+                    used: monthlyUsed,
+                    max: monthlyLimit,
+                    next_reset: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0]
+                }
+            };
+        }
+
         // 3. Récupérer score de conformité du guide
         let complianceResult: any = await query(`
             SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
@@ -125,20 +156,20 @@ class AntiDetectionService {
 
         // 4. VÉRIFICATIONS
 
-        // a) Niveau Gmail requis
-        const levels = ['nouveau', 'bronze', 'silver', 'gold'];
-        const currentLevelIdx = levels.indexOf(gmail.account_level);
-        const requiredLevelIdx = levels.indexOf(campaign.required_gmail_level || 'nouveau');
+        // a) Niveau Gmail requis - SUPPRIMÉ: tous les comptes peuvent accéder à tous les secteurs
+        // Les niveaux sont gardés uniquement pour les badges/affichage
+        // const levels = ['nouveau', 'bronze', 'silver', 'gold'];
+        // const currentLevelIdx = levels.indexOf(gmail.account_level);
+        // const requiredLevelIdx = levels.indexOf(campaign.required_gmail_level || 'nouveau');
+        // if (currentLevelIdx < requiredLevelIdx) {
+        //     return {
+        //         can_take: false,
+        //         message: `Cette fiche nécessite un compte Gmail de niveau ${campaign.required_gmail_level}.`,
+        //         reason: 'LEVEL_INSUFFICIENT'
+        //     };
+        // }
 
-        if (currentLevelIdx < requiredLevelIdx) {
-            return {
-                can_take: false,
-                message: `Cette mission nécessite un compte Gmail de niveau ${campaign.required_gmail_level}.`,
-                reason: 'LEVEL_INSUFFICIENT'
-            };
-        }
-
-        // b) Quota mensuel secteur
+        // b) Quota mensuel secteur (CRITIQUE - limite par secteur par mois)
         const activityLog = typeof gmail.sector_activity_log === 'string'
             ? JSON.parse(gmail.sector_activity_log)
             : gmail.sector_activity_log || {};
@@ -212,7 +243,7 @@ class AntiDetectionService {
 
         return {
             can_take: true,
-            message: 'Vous pouvez prendre cette mission',
+            message: 'Vous pouvez prendre cette fiche',
             details: {
                 used: sectorActivity.count_this_month,
                 max: campaign.max_reviews_per_month_per_email || 5
@@ -273,22 +304,35 @@ class AntiDetectionService {
 
         log[sectorSlug] = sectorLog;
 
+        // Handle Monthly Reset for the main table column
+        const checkAccount: any = await query('SELECT last_review_posted_at, monthly_reviews_posted FROM guide_gmail_accounts WHERE id = ?', [gmailAccountId]);
+        let monthlyReviewsPosted = (checkAccount[0]?.monthly_reviews_posted || 0);
+
+        if (checkAccount[0]?.last_review_posted_at) {
+            const lastDate = new Date(checkAccount[0].last_review_posted_at);
+            if (lastDate.getMonth() !== now.getMonth() || lastDate.getFullYear() !== now.getFullYear()) {
+                monthlyReviewsPosted = 0;
+            }
+        }
+
         await query(`
             UPDATE guide_gmail_accounts 
             SET sector_activity_log = ?, 
                 last_review_posted_at = NOW(),
-                total_reviews_posted = total_reviews_posted + 1
+                total_reviews_posted = total_reviews_posted + 1,
+                monthly_reviews_posted = ? + 1
             WHERE id = ?
-        `, [JSON.stringify(log), gmailAccountId]);
+        `, [JSON.stringify(log), monthlyReviewsPosted, gmailAccountId]);
     }
 
     /**
      * Récupérer le récapitulatif d'activité pour un guide
      */
     async getGuideActivityRecap(userId: string) {
-        // Fetch all Gmail accounts for this guide
+        // Fetch all Gmail accounts for this guide with global quota info
         const gmailAccounts: any = await query(`
-            SELECT id, email, account_level, sector_activity_log 
+            SELECT id, email, account_level, sector_activity_log,
+                   monthly_reviews_posted, monthly_quota_limit
             FROM guide_gmail_accounts 
             WHERE user_id = ?
         `, [userId]);
@@ -307,8 +351,8 @@ class AntiDetectionService {
                 sector_name: sector.sector_name,
                 icon: sector.icon_emoji,
                 difficulty: sector.difficulty,
-                max_per_month: sector.max_reviews_per_month_per_email,
-                cooldown_days: sector.min_days_between_reviews,
+                max_per_month: sector.max_reviews_per_month_per_email || (sector.difficulty === 'easy' ? 5 : (sector.difficulty === 'medium' ? 3 : 2)),
+                cooldown_days: sector.min_days_between_reviews || 7,
                 accounts: gmailAccounts.map((acc: any) => {
                     let log = {};
                     try {
@@ -349,13 +393,45 @@ class AntiDetectionService {
                         used_this_month: activity.count_this_month,
                         last_posted: activity.last_posted,
                         status,
-                        next_available
+                        next_available,
+                        global_quota: {
+                            used: acc.monthly_reviews_posted || 0,
+                            max: acc.monthly_quota_limit || 20
+                        }
                     };
                 })
             };
         }
 
-        return recap;
+        // Add a flattened list of accounts with global status and remaining quotas
+        const global_accounts = gmailAccounts.map((acc: any) => {
+            const used = acc.monthly_reviews_posted || 0;
+            const max = acc.monthly_quota_limit || 20;
+            const remaining = Math.max(0, max - used);
+
+            // Determine global status
+            let status = 'ready';
+            if (used >= max) {
+                status = 'limit_reached';
+            }
+
+            return {
+                id: acc.id,
+                email: acc.email,
+                account_level: acc.account_level,
+                global_quota: {
+                    used,
+                    max,
+                    remaining
+                },
+                status
+            };
+        });
+
+        return {
+            sectors: recap,
+            global_accounts
+        };
     }
 
     /**

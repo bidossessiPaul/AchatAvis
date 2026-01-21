@@ -117,14 +117,63 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
             [profileId, userId, data.googleEmail, 1, 0, data.phone, data.city]
         );
 
-        // Auto-provision registration email to guide_gmail_accounts (Requirement for Mission Detail pre-selection)
+        // Auto-provision registration email to guide_gmail_accounts (Requirement for fiche Detail pre-selection)
         await connection.execute(
-            `INSERT INTO guide_gmail_accounts (user_id, email, trust_score, account_level, is_active)
-             VALUES (?, ?, 10, 'nouveau', TRUE)`,
+            `INSERT INTO guide_gmail_accounts (user_id, email, trust_score_value, trust_level, account_level, is_active)
+             VALUES (?, ?, 10, 'BRONZE', 'nouveau', TRUE)`,
             [userId, data.email]
         );
 
         await connection.commit();
+
+        // \ud83c\udfaf TRUST SCORE: Calculer automatiquement le Trust Score apr\u00e8s l'inscription
+        try {
+            const { TrustScoreEngine } = await import('./trustScoreEngine');
+
+            // Calcul du Trust Score initial (email uniquement pour commencer)
+            const trustScoreResult = await TrustScoreEngine.calculateTrustScore(
+                data.email,
+                undefined, // Pas encore de profil Google Maps
+                false      // T\u00e9l\u00e9phone pas encore v\u00e9rifi\u00e9
+            );
+
+            // Mise \u00e0 jour avec le score calcul\u00e9
+            await connection.execute(
+                `UPDATE guide_gmail_accounts SET
+                    email_syntax_valid = ?,
+                    email_mx_valid = ?,
+                    email_is_disposable = ?,
+                    email_suspicious_pattern = ?,
+                    email_validation_score = ?,
+                    trust_score_value = ?,
+                    trust_level = ?,
+                    trust_badge = ?,
+                    max_reviews_per_month = ?,
+                    is_blocked = ?,
+                    trust_score_breakdown = ?,
+                    trust_last_calculated_at = NOW()
+                WHERE user_id = ?`,
+                [
+                    trustScoreResult.details.emailValidation.details.syntaxValid,
+                    trustScoreResult.details.emailValidation.details.mxRecordsValid,
+                    trustScoreResult.details.emailValidation.details.isDisposable,
+                    trustScoreResult.details.emailValidation.details.suspiciousPattern,
+                    trustScoreResult.details.emailValidation.score,
+                    trustScoreResult.finalScore,
+                    trustScoreResult.trustLevel,
+                    trustScoreResult.badge,
+                    trustScoreResult.maxReviewsPerMonth,
+                    trustScoreResult.isBlocked,
+                    JSON.stringify(trustScoreResult.breakdown),
+                    userId
+                ]
+            );
+
+            console.log(`\ud83c\udfaf Trust Score calcul\u00e9 pour ${data.email}: ${trustScoreResult.finalScore}/100 (${trustScoreResult.trustLevel})`);
+        } catch (trustScoreError) {
+            console.error('Erreur lors du calcul du Trust Score:', trustScoreError);
+            // Ne pas bloquer l'inscription si le calcul \u00e9choue
+        }
 
         // Fetch created user
         const [rows]: any = await connection.execute(
@@ -165,13 +214,13 @@ export const login = async (email: string, password: string) => {
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
                 ap.company_name, ap.siret, ap.trade, ap.google_business_url,
-                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
-                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
+                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
@@ -343,13 +392,13 @@ export const verify2FA = async (userId: string, token: string) => {
                 u.created_at, u.updated_at, u.last_login,
                 u.two_factor_enabled, u.two_factor_secret,
                 ap.company_name, ap.siret, ap.trade, ap.google_business_url,
-                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
-                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
+                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
@@ -399,13 +448,13 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
                 ap.company_name, ap.siret, ap.trade, ap.google_business_url,
-                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.missions_allowed,
+                ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
-                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as missions_used
+                (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
@@ -580,7 +629,7 @@ export const refreshToken = async (token: string) => {
             throw new Error('User not found');
         }
 
-        if (isSystemActive && user.role !== 'admin' && user.status !== 'active') {
+        if (isSystemActive && user.role !== 'admin' && !['active', 'pending'].includes(user.status)) {
             throw new Error(`User account is ${user.status}`);
         }
 

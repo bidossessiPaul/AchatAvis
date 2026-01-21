@@ -91,7 +91,7 @@ class SuspensionTriggers {
             await suspensionService.detectAndSuspend(
                 userId,
                 'identical_reviews',
-                'Tentative de soumission d\'une preuve déjà utilisée',
+                'Tentative de soufiche d\'une preuve déjà utilisée',
                 currentProofId
             );
         }

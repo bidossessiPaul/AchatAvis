@@ -15,6 +15,7 @@ import antiDetectionRoutes from './routes/antiDetectionRoutes';
 import suspensionRoutes from './routes/suspensionRoutes';
 import establishmentRoutes from './routes/establishment';
 import notificationRoutes from './routes/notifications';
+import trustScoreRoutes from './routes/trustScore';
 // Refreshing routes...
 
 // Load environment variables
@@ -25,14 +26,15 @@ const PORT = process.env.PORT || 5000;
 
 // 1. CORS Middleware - PERMISSIVE FOR DEBUG
 app.use((req: Request, res: Response, next: NextFunction) => {
-    // PERMISSIVE: Accept ALL origins (temporary for debugging)
-    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    const origin = req.headers.origin;
+    // Permissive for development: allow any origin or fallback to *
+    // BUT we must not use * with credentials, so we use the request origin if present
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cookie');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400'); // 24h
+    res.setHeader('Access-Control-Max-Age', '86400');
 
-    // Handle preflight
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
@@ -86,6 +88,7 @@ app.use('/api/anti-detection', antiDetectionRoutes);
 app.use('/api/suspensions', suspensionRoutes);
 app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/trust-score', trustScoreRoutes);
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

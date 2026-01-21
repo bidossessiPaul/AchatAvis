@@ -77,10 +77,10 @@ export const stripeService = {
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
 
-                    // Fetch pack definition to get correct missions_quota
-                    const packsData: any = await query('SELECT name, missions_quota FROM subscription_packs WHERE id = ?', [planId]);
+                    // Fetch pack definition to get correct fiches_quota
+                    const packsData: any = await query('SELECT name, fiches_quota FROM subscription_packs WHERE id = ?', [planId]);
                     const packName = packsData.length > 0 ? packsData[0].name : planId;
-                    const missionsQuota = packsData.length > 0 ? packsData[0].missions_quota : 1;
+                    const fichesQuota = packsData.length > 0 ? packsData[0].fiches_quota : 1;
 
                     // Calculate start/end dates
                     const startDate = new Date();
@@ -96,9 +96,9 @@ export const stripeService = {
                              subscription_start_date = ?,
                              subscription_end_date = ?,
                              last_payment_date = ?,
-                             missions_allowed = missions_allowed + ?
+                             fiches_allowed = fiches_allowed + ?
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, missionsQuota, userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, fichesQuota, userId]
                     );
 
                     await query(
@@ -111,7 +111,7 @@ export const stripeService = {
                     const amount = (session.amount_total || 0) / 100;
 
                     await query(`
-                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, review_credits, processed_at)
+                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, fiches_quota, review_credits, processed_at)
                         VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, ?, NOW())
                     `, [
                         paymentId,
@@ -119,7 +119,7 @@ export const stripeService = {
                         amount,
                         session.payment_intent as string || session.id,
                         `Abonnement ${packName}`,
-                        missionsQuota,
+                        fichesQuota,
                         quantity
                     ]);
 
@@ -133,7 +133,7 @@ export const stripeService = {
                         console.error('Failed to send pack activation email:', emailError);
                     }
 
-                    console.log(`Activated subscription for user ${userId} with ${quantity} missions`);
+                    console.log(`Activated subscription for user ${userId} with ${quantity} fiches`);
                 }
                 break;
             }

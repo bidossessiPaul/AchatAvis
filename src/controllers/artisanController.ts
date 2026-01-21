@@ -86,7 +86,7 @@ export const artisanController = {
 
             const generationParams = {
                 companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
-                missionName: order.mission_name,
+                ficheName: order.fiche_name,
                 trade: artisanProfile?.trade || 'Artisan',
                 quantity: order.quantity || 1,
                 context: order.company_context,
