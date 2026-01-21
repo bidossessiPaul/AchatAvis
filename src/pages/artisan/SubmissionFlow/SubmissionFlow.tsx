@@ -11,19 +11,16 @@ import './SubmissionFlow.css';
 // Steps components
 import { Step0PlatformSelection } from './Step0PlatformSelection';
 import { Step0AddEstablishment } from './Step0AddEstablishment';
-import { Step1Initial } from './Step1Initial';
 import { Step2Enrichment } from './Step2Enrichment';
 import { Step3AIGeneration } from './Step3AIGeneration';
 import { Step4Review } from './Step4Review';
 import { establishmentApi } from '../../../services/api';
-
 const STEPS = [
     { id: 1, label: 'Plateforme' },
     { id: 2, label: 'Fiche' },
-    { id: 3, label: 'Pack' },
-    { id: 4, label: 'Détails' },
-    { id: 5, label: 'Génération' },
-    { id: 6, label: 'Validation' }
+    { id: 3, label: 'Avis' },
+    { id: 4, label: 'Génération' },
+    { id: 5, label: 'Validation' }
 ];
 
 export const SubmissionFlow: React.FC = () => {
@@ -52,8 +49,8 @@ export const SubmissionFlow: React.FC = () => {
                 // 2. Double check specifically for available packs (unused)
                 const packs = await artisanService.getAvailablePacks();
 
-                // If we are editing an existing mission (orderId exists), we don't block even if 0 unused packs remain
-                // because this mission ALREADY used a pack.
+                // If we are editing an existing fiche (orderId exists), we don't block even if 0 unused packs remain
+                // because this fiche ALREADY used a pack.
                 if (orderId) {
                     setHasActivePacks(true);
                 } else {
@@ -82,9 +79,9 @@ export const SubmissionFlow: React.FC = () => {
             setOrder(data);
             setProposals(data.proposals);
 
-            // Security: If mission is already published or beyond, redirect out
+            // Security: If fiche is already published or beyond, redirect out
             if (['in_progress', 'completed', 'cancelled'].includes(data.status)) {
-                showError('Action impossible', "Cette mission est déjà publiée et ne peut plus être modifiée.");
+                showError('Action impossible', "Cette fiche est déjà publiée et ne peut plus être modifiée.");
                 navigate('/artisan');
                 return;
             }
@@ -92,12 +89,12 @@ export const SubmissionFlow: React.FC = () => {
             // If we are coming from the detail page, we stay at step 1 to allow full review
             if (data.status === 'draft') {
                 if (data.sector && data.desired_tone) {
-                    setCurrentStep(5);
-                } else {
                     setCurrentStep(4);
+                } else {
+                    setCurrentStep(3);
                 }
             } else {
-                setCurrentStep(3); // Start at Pack collection if already has orderId
+                setCurrentStep(2); // Start at Fiche collection if already has orderId
             }
 
             // Sync persistence states
@@ -153,6 +150,26 @@ export const SubmissionFlow: React.FC = () => {
 
             if (currentStep === 2) {
                 setTempEstablishment(data);
+
+                let updatedOrder;
+                if (!order?.id) {
+                    // Inject temp fiche data if available
+                    const ficheData = {
+                        ...data,
+                        // If we don't have a real establishment_id yet, we pass null
+                        establishment_id: (tempEstablishment?.id || tempEstablishment?.establishment_id || data.establishment_id) || null,
+                        company_name: tempEstablishment?.company_name || tempEstablishment?.name || data.name || data.company_name,
+                        city: tempEstablishment?.city || data.city,
+                        sector_slug: tempEstablishment?.sector_slug || data.sector_slug,
+                        google_business_url: tempEstablishment?.platform_links?.[selectedPlatform || '']?.url || data.platform_links?.[selectedPlatform || '']?.url || data.google_business_url
+                    };
+                    updatedOrder = await artisanService.createDraft(ficheData);
+                    navigate(`/artisan/submit/${updatedOrder.id}`, { replace: true });
+                } else {
+                    updatedOrder = await artisanService.updateDraft(order.id, data);
+                }
+
+                if (updatedOrder) setOrder(updatedOrder);
                 setCurrentStep(3);
                 setIsLoading(false);
                 return;
@@ -160,23 +177,6 @@ export const SubmissionFlow: React.FC = () => {
 
             let updatedOrder;
             if (currentStep === 3) {
-                if (!order?.id) {
-                    // Inject temp fiche data if available
-                    const missionData = {
-                        ...data,
-                        // If we don't have a real establishment_id yet, we pass null
-                        establishment_id: (tempEstablishment?.id || tempEstablishment?.establishment_id || data.establishment_id) || null,
-                        company_name: tempEstablishment?.company_name || tempEstablishment?.name || data.company_name,
-                        city: tempEstablishment?.city || data.city,
-                        sector_slug: tempEstablishment?.sector_slug || data.sector_slug,
-                        google_business_url: tempEstablishment?.platform_links?.[selectedPlatform || '']?.url || data.google_business_url
-                    };
-                    updatedOrder = await artisanService.createDraft(missionData);
-                    navigate(`/artisan/submit/${updatedOrder.id}`, { replace: true });
-                } else {
-                    updatedOrder = await artisanService.updateDraft(order.id, data);
-                }
-            } else if (currentStep === 4) {
                 updatedOrder = await artisanService.updateDraft(order!.id!, data);
             }
 
@@ -204,21 +204,19 @@ export const SubmissionFlow: React.FC = () => {
             case 1:
                 return <Step0PlatformSelection initialPlatform={selectedPlatform} onNext={handleNext} />;
             case 2:
-                return <Step0AddEstablishment initialData={tempEstablishment} platformId={selectedPlatform || 'google'} onNext={handleNext} onBack={handleBack} />;
+                return <Step0AddEstablishment initialData={tempEstablishment} orderInitialData={order} platformId={selectedPlatform || 'google'} onNext={handleNext} onBack={handleBack} />;
             case 3:
-                return <Step1Initial initialData={order} onNext={handleNext} fixedEstablishment={tempEstablishment} onBack={handleBack} />;
-            case 4:
                 return <Step2Enrichment initialData={order} onNext={handleNext} onBack={handleBack} />;
-            case 5:
+            case 4:
                 return <Step3AIGeneration
                     order={order as ReviewOrder}
                     proposals={proposals}
-                    onNext={() => setCurrentStep(6)}
+                    onNext={() => setCurrentStep(5)}
                     onBack={handleBack}
                     setProposals={setProposals}
                     onError={setError}
                 />;
-            case 6:
+            case 5:
                 return <Step4Review order={order as ReviewOrder} proposals={proposals} onBack={handleBack} />;
             default:
                 return null;
@@ -246,7 +244,7 @@ export const SubmissionFlow: React.FC = () => {
             <PremiumBlurOverlay
                 isActive={hasActivePacks || !!order?.payment_id}
                 title="Aucun pack disponible"
-                description="Vous avez déjà utilisé tous vos packs actifs ou votre compte n'est pas encore activé. Veuillez prendre un pack pour créer une mission."
+                description="Vous avez déjà utilisé tous vos packs actifs ou votre compte n'est pas encore activé. Veuillez prendre un pack pour créer une fiche."
             >
                 <div className="submission-flow-container">
                     <div className="submission-header">

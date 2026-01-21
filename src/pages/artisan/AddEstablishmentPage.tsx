@@ -191,7 +191,7 @@ const AddEstablishmentPage: React.FC = () => {
                                 <label>Contexte de l'entreprise / Description initiale *</label>
                                 <textarea
                                     className="custom-textarea"
-                                    placeholder="Décrivez votre activité, vos services phares et votre ton habituel. Ce texte servira de base pour vos futures missions."
+                                    placeholder="Décrivez votre activité, vos services phares et votre ton habituel. Ce texte servira de base pour vos futures fiches."
                                     value={manualData.company_context}
                                     onChange={(e) => setManualData({ ...manualData, company_context: e.target.value })}
                                     required

@@ -88,14 +88,14 @@
     margin: 0;
 }
 
-.missions-header {
+.fiches-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
 }
 
-.missions-header-title {
+.fiches-header-title {
     font-size: 1.125rem;
     font-weight: 700;
     color: #111827;
@@ -119,13 +119,13 @@
     color: var(--gray-900);
 }
 
-.missions-grid {
+.fiches-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1.5rem;
 }
 
-.mission-card {
+.fiche-card {
     background: white;
     border-radius: 1.25rem;
     border: 1px solid #f3f4f6;
@@ -136,16 +136,16 @@
     flex-direction: column;
 }
 
-.mission-card:hover {
+.fiche-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
 }
 
-.mission-card-content {
+.fiche-card-content {
     padding: 1.5rem;
 }
 
-.mission-card-header {
+.fiche-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -180,7 +180,7 @@
     white-space: nowrap;
 }
 
-.mission-company-name {
+.fiche-company-name {
     font-size: 1.1rem;
     font-weight: 700;
     color: #111827;
@@ -193,14 +193,14 @@
     overflow: hidden;
 }
 
-.mission-details-row {
+.fiche-details-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 1.25rem;
 }
 
-.mission-sector {
+.fiche-sector {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -208,7 +208,7 @@
     font-size: 0.875rem;
 }
 
-.mission-difficulty {
+.fiche-difficulty {
     font-size: 0.7rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -216,7 +216,7 @@
     border-radius: 0.5rem;
 }
 
-.mission-progress-container {
+.fiche-progress-container {
     background: #f9fafb;
     padding: 1rem;
     border-radius: 1rem;
@@ -270,7 +270,7 @@
     font-weight: 600;
 }
 
-.mission-action-btn {
+.fiche-action-btn {
     width: 100%;
     padding: 1rem;
     border-radius: 1rem;
@@ -288,12 +288,12 @@
     transition: all 0.2s;
 }
 
-.mission-action-btn:hover {
+.fiche-action-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(255, 153, 31, 0.3);
 }
 
-.mission-status-message {
+.fiche-status-message {
     width: 100%;
     padding: 1rem;
     border-radius: 1rem;

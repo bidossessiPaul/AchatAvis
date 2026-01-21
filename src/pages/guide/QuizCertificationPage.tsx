@@ -30,7 +30,7 @@ const QUESTIONS = [
         id: 2,
         question: "Quel comportement 'Organique' Google privilégie-t-il sur un compte Local Guide ?",
         options: [
-            { id: 'A', text: "Poster uniquement des avis sur des missions rémunérées" },
+            { id: 'A', text: "Poster uniquement des avis sur des fiches rémunérées" },
             { id: 'B', text: "Avoir une activité diversifiée (YouTube, Maps, recherches réelles)" },
             { id: 'C', text: "Créer un nouveau compte pour chaque avis posté" },
             { id: 'D', text: "Ne jamais utiliser les autres services Google" }
@@ -119,7 +119,7 @@ const QUESTIONS = [
         question: "Que signifie un score de conformité Guide inférieur à 50% ?",
         options: [
             { id: 'A', text: "Un simple avertissement sans conséquence" },
-            { id: 'B', text: "Une suspension probable des missions et des gains" },
+            { id: 'B', text: "Une suspension probable des fiches et des gains" },
             { id: 'C', text: "Un bonus de visibilité pour s'améliorer" },
             { id: 'D', text: "Une mise à jour automatique vers le niveau suivant" }
         ],
@@ -166,7 +166,7 @@ export const QuizCertificationPage: React.FC = () => {
                 setIsFinished(true);
             }
         } catch (error) {
-            showError('Erreur', "Erreur lors de la soumission du protocole");
+            showError('Erreur', "Erreur lors de la soufiche du protocole");
         } finally {
             setIsSubmitting(false);
         }
@@ -343,7 +343,7 @@ export const QuizCertificationPage: React.FC = () => {
                                         transition: 'all 0.2s ease'
                                     }}
                                 >
-                                    Accéder au Registre des Missions
+                                    Accéder au Registre des fiches
                                 </button>
                             </motion.div>
                         ) : (

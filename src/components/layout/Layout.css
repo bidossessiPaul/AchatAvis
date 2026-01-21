@@ -69,19 +69,12 @@
 
 .sidebar-link.active {
     color: #fff;
-    background: var(--primary-brand);
-    box-shadow: 0 4px 12px rgba(35, 131, 226, 0.2);
+    background: linear-gradient(135deg, var(--primary-blue), #1a73cc);
+    box-shadow: 0 4px 15px rgba(35, 131, 226, 0.3);
 }
 
-.theme-guide .sidebar-link.active {
-    background: var(--guide-gradient);
-    box-shadow: var(--shadow-guide);
-}
-
-.theme-artisan .sidebar-link.active {
-    background: var(--artisan-gradient);
-    box-shadow: var(--shadow-artisan);
-}
+/* Default active state is blue from .sidebar-link.active above */
+/* Removed theme-specific overrides that were making these orange/yellow */
 
 .sidebar-footer {
     padding: var(--space-4);
@@ -144,10 +137,8 @@
     font-weight: var(--font-bold);
 }
 
-.theme-guide .user-role {
-    color: var(--guide-primary);
-    background: rgba(255, 153, 31, 0.1);
-}
+/* Default user-role is blue from .user-role */
+
 
 .text-guide {
     background: var(--guide-gradient);

@@ -173,3 +173,59 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
 }
+
+.active-pack-alert {
+    background-color: #ecfdf5;
+    border: 1px solid #10b981;
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    margin-bottom: var(--space-8);
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    box-shadow: var(--shadow-md);
+}
+
+.active-pack-info h3 {
+    color: #065f46;
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    margin-bottom: var(--space-1);
+}
+
+.active-pack-info p {
+    color: #047857;
+    font-size: var(--text-base);
+}
+
+.btn-submit-mission {
+    background-color: #10b981;
+    color: white;
+    border: none;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-lg);
+    font-weight: var(--font-bold);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+}
+
+.btn-submit-mission:hover {
+    background-color: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+@media (max-width: 640px) {
+    .active-pack-alert {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .btn-submit-mission {
+        width: 100%;
+    }
+}

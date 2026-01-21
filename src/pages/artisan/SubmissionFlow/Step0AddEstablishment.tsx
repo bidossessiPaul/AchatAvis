@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
-import { ArrowLeft, HelpCircle } from 'lucide-react';
+import { artisanService } from '../../../services/artisanService';
+import { ArrowLeft, HelpCircle, Info } from 'lucide-react';
+import { format } from 'date-fns';
 import './SubmissionFlow.css';
 
 interface Step0AddEstProps {
@@ -8,10 +10,14 @@ interface Step0AddEstProps {
     onNext: (establishment: any) => void;
     onBack: () => void;
     initialData?: any;
+    orderInitialData?: any;
 }
 
-export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, onNext, onBack, initialData }) => {
+export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, onNext, onBack, initialData, orderInitialData }) => {
     const [sectors, setSectors] = useState<any[]>([]);
+    const [availablePacks, setAvailablePacks] = useState<any[]>([]);
+    const [isLoadingPacks, setIsLoadingPacks] = useState(true);
+
     const [formData, setFormData] = useState({
         name: initialData?.name || '',
         city: initialData?.city || '',
@@ -22,7 +28,10 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
             google: { url: initialData.google_business_url, verified: false }
         } : {
             [platformId || 'google']: { url: '', verified: false }
-        })
+        }),
+        // Pack data
+        payment_id: orderInitialData?.payment_id || '',
+        quantity: orderInitialData?.quantity || 10
     });
 
     // Deep persistence sync
@@ -30,10 +39,12 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
         if (initialData) {
             setFormData(prev => ({
                 ...prev,
-                ...initialData
+                ...initialData,
+                payment_id: prev.payment_id || orderInitialData?.payment_id || '',
+                quantity: prev.quantity || orderInitialData?.quantity || 10
             }));
         }
-    }, [initialData]);
+    }, [initialData, orderInitialData]);
 
     useEffect(() => {
         const fetchSectors = async () => {
@@ -49,8 +60,30 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                 console.error('Failed to fetch sectors', err);
             }
         };
+
+        const fetchPacks = async () => {
+            setIsLoadingPacks(true);
+            try {
+                const packs = await artisanService.getAvailablePacks(orderInitialData?.payment_id);
+                setAvailablePacks(packs);
+
+                if (packs.length > 0 && !formData.payment_id) {
+                    setFormData(prev => ({
+                        ...prev,
+                        payment_id: packs[0].id,
+                        quantity: packs[0].review_quantity || 10
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to fetch packs', err);
+            } finally {
+                setIsLoadingPacks(false);
+            }
+        };
+
         fetchSectors();
-    }, []);
+        fetchPacks();
+    }, [orderInitialData]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,9 +91,14 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
         // Find the selected sector to get full details
         const selectedSector = sectors.find(s => s.sector_slug === formData.sector_slug);
 
-        // Enrich formData with complete sector information
+        // Date Strategy: [Company Name] - DD/MM/YYYY
+        const today = format(new Date(), 'dd/MM/yyyy');
+        const generatedFicheName = `${formData.name} - ${today}`;
+
+        // Enrich formData with complete information
         const enrichedData = {
             ...formData,
+            fiche_name: generatedFicheName,
             sector_id: selectedSector?.id || null,
             sector_name: selectedSector?.sector_name || '',
             sector_difficulty: selectedSector?.difficulty || 'easy'
@@ -191,11 +229,75 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                         required
                     />
                 </div>
+
+                {/* Pack Selection Integration */}
+                <div className="form-group full-width" style={{ marginTop: '1rem' }}>
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <Info size={16} style={{ color: 'var(--primary-brand)' }} />
+                        Pack utilisé pour cette mission *
+                    </label>
+
+                    {isLoadingPacks ? (
+                        <div style={{ color: '#64748b', fontSize: '0.85rem' }}>Chargement de vos packs...</div>
+                    ) : availablePacks.length > 0 ? (
+                        <>
+                            {availablePacks.length > 1 && (
+                                <select
+                                    className="form-input"
+                                    style={{ marginBottom: '1rem' }}
+                                    value={formData.payment_id}
+                                    onChange={(e) => {
+                                        const pack = availablePacks.find(p => p.id === e.target.value);
+                                        setFormData({
+                                            ...formData,
+                                            payment_id: e.target.value,
+                                            quantity: pack?.review_quantity || 10
+                                        });
+                                    }}
+                                    required
+                                >
+                                    {availablePacks.map(pack => (
+                                        <option key={pack.id} value={pack.id}>
+                                            {pack.pack_name || pack.description} ({pack.fiches_used}/{pack.fiches_quota} mission{pack.fiches_quota > 1 ? 's' : ''})
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
+                            {formData.payment_id && (
+                                <div className="pack-recap-card">
+                                    <div className="pack-info">
+                                        <div className="pack-name" style={{ color: '#37352f' }}>
+                                            {availablePacks.find(p => p.id === formData.payment_id)?.pack_name || 'Pack Sélectionné'}
+                                        </div>
+                                        <div className="pack-stats">
+                                            <span>{formData.quantity} Avis</span>
+                                            <span className="divider">|</span>
+                                            <span>{availablePacks.find(p => p.id === formData.payment_id)?.amount} €</span>
+                                        </div>
+                                    </div>
+                                    <div className="pack-status">
+                                        <div className="status-dot"></div>
+                                        mission active
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>
+                            Aucun pack disponible. Veuillez en acheter un pour continuer.
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="submission-actions">
-                <button type="submit" className="btn-next">
-                    Suivant
+                <button
+                    type="submit"
+                    className="btn-next"
+                    disabled={!formData.name || !formData.sector_slug || !formData.city || !formData.platform_links[platformId]?.url || !formData.payment_id || isLoadingPacks}
+                >
+                    Suivant (Instruction des avis)
                 </button>
             </div>
 
@@ -238,6 +340,34 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                         grid-template-columns: 1fr;
                     }
                 }
+                
+                /* Pack recap styles copied from Step1Initial */
+                .pack-recap-card {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0.875rem 1.25rem;
+                    background: #fff8e1;
+                    border-radius: 1rem;
+                    border: 1px solid #FFE6A5;
+                    box-shadow: 0 2px 8px rgba(255, 230, 165, 0.2);
+                }
+                .pack-name { font-weight: 800; color: #37352f; font-size: 0.925rem; }
+                .pack-stats {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                    color: #FF991F;
+                    font-weight: bold;
+                    background: rgba(255, 255, 255, 0.5);
+                    padding: 4px 12px;
+                    border-radius: 2rem;
+                    font-size: 0.8rem;
+                    margin-top: 4px;
+                }
+                .pack-status { color: #FF991F; font-weight: 800; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+                .status-dot { width: 6px; height: 6px; background: #FF991F; border-radius: 50%; }
+                .divider { opacity: 0.3; }
             `}</style>
         </form>
     );

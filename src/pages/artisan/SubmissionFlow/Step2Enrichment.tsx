@@ -112,7 +112,7 @@ export const Step2Enrichment: React.FC<Step2Props> = ({ initialData, onNext, onB
             </div>
 
             <div className="form-group">
-                <label className="form-label">Noms des collaborateurs (Optionnel)</label>
+                <label className="form-label">Noms des membres de l'équipe à remercier (Optionnel)</label>
                 <input
                     type="text"
                     className="form-input"

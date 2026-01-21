@@ -8,13 +8,15 @@ interface PremiumBlurOverlayProps {
     isActive: boolean;
     title?: string;
     description?: string;
+    redirectBack?: string;
 }
 
 export const PremiumBlurOverlay: React.FC<PremiumBlurOverlayProps> = ({
     children,
     isActive,
     title = "Compte Inactif",
-    description = "Activez votre compte avec un pack pour accéder à cette fonctionnalité et booster votre visibilité."
+    description = "Activez votre compte avec un pack pour accéder à cette fonctionnalité et booster votre visibilité.",
+    redirectBack
 }) => {
     const navigate = useNavigate();
 
@@ -39,7 +41,7 @@ export const PremiumBlurOverlay: React.FC<PremiumBlurOverlayProps> = ({
 
                     <button
                         className="overlay-action-btn"
-                        onClick={() => navigate('/artisan/plan')}
+                        onClick={() => navigate(`/artisan/plan${redirectBack ? `?redirect_back=${encodeURIComponent(redirectBack)}` : ''}`)}
                     >
                         <Zap size={18} fill="currentColor" />
                         Voir les Packs

@@ -1,0 +1,92 @@
+.trust-score-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.trust-score-badge__icon {
+    position: relative;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+/* Sizes */
+.trust-score-badge--small .trust-score-badge__icon {
+    width: 40px;
+    height: 40px;
+}
+
+.trust-score-badge--medium .trust-score-badge__icon {
+    width: 56px;
+    height: 56px;
+}
+
+.trust-score-badge--large .trust-score-badge__icon {
+    width: 72px;
+    height: 72px;
+}
+
+.trust-score-badge__emoji {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 20px;
+}
+
+.trust-score-badge--small .trust-score-badge__emoji {
+    font-size: 16px;
+    top: -2px;
+    right: -2px;
+}
+
+.trust-score-badge--large .trust-score-badge__emoji {
+    font-size: 24px;
+    top: -6px;
+    right: -6px;
+}
+
+.trust-score-badge__score {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+.trust-score-badge--small .trust-score-badge__score {
+    font-size: 14px;
+}
+
+.trust-score-badge--large .trust-score-badge__score {
+    font-size: 24px;
+}
+
+.trust-score-badge__details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.trust-score-badge__level {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.trust-score-badge__progress {
+    width: 120px;
+    height: 8px;
+    background: var(--gray-200);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.trust-score-badge__progress-bar {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 999px;
+}

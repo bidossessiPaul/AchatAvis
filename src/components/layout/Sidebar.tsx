@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             case 'guide':
                 return [
                     { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },
-                    { label: 'Toutes les missions', path: '/guide/missions', icon: <MapPin size={20} /> },
+                    { label: 'Toutes les fiches', path: '/guide/fiches', icon: <MapPin size={20} /> },
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
@@ -76,9 +76,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Établissements', path: '/admin/establishments', icon: <Building2 size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
-                    { label: 'Missions', path: '/admin/missions', icon: <Briefcase size={20} />, permissions: ['can_manage_missions', 'can_validate_missions'] },
+                    { label: 'fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_users', 'super_admin'] },
+                    { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_view_stats'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['super_admin'] },
                     // { label: 'Logs & Système', path: '/admin/logs', icon: <Shield size={20} />, permissions: ['can_view_stats'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible

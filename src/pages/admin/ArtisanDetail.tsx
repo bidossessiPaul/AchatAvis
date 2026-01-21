@@ -14,12 +14,12 @@ import {
     CheckCircle,
     XCircle,
     Globe,
-    ExternalLink
+    ExternalLink,
+    Zap
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
-import { color } from 'framer-motion';
 
 interface Order {
     id: string;
@@ -28,6 +28,13 @@ interface Order {
     credits_purchased: number;
     created_at: string;
     validated_reviews_count: number;
+}
+
+interface Pack {
+    id: string;
+    name: string;
+    fiches_quota: number;
+    price_cents: number;
 }
 
 interface ArtisanDetailData {
@@ -59,9 +66,15 @@ export const ArtisanDetail: React.FC = () => {
     const navigate = useNavigate();
     const [data, setData] = useState<ArtisanDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [packs, setPacks] = useState<Pack[]>([]);
+    const [selectedPackId, setSelectedPackId] = useState<string>('');
+    const [isActivating, setIsActivating] = useState(false);
 
     useEffect(() => {
-        if (id) loadDetail();
+        if (id) {
+            loadDetail();
+            fetchPacks();
+        }
     }, [id]);
 
     const loadDetail = async () => {
@@ -73,6 +86,39 @@ export const ArtisanDetail: React.FC = () => {
             showError('Erreur', 'Erreur lors du chargement des détails');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchPacks = async () => {
+        try {
+            const availablePacks = await adminService.getPacks();
+            setPacks(availablePacks);
+        } catch (error) {
+            console.error('Error fetching packs:', error);
+        }
+    };
+
+    const handleActivatePack = async () => {
+        if (!selectedPackId || !data) return;
+
+        const pack = packs.find(p => p.id === selectedPackId);
+        const confirmResult = await showConfirm(
+            'Activation Manuelle',
+            `Voulez-vous vraiment activer le pack "${pack?.name}" pour ${data.profile.company_name} ? Cela simulera un paiement réussi.`
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        setIsActivating(true);
+        try {
+            await adminService.activateArtisanPack(id!, selectedPackId);
+            showSuccess('Succès', 'Le pack a été activé avec succès !');
+            loadDetail();
+            setSelectedPackId('');
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || "Erreur lors de l'activation du pack");
+        } finally {
+            setIsActivating(false);
         }
     };
 
@@ -92,7 +138,6 @@ export const ArtisanDetail: React.FC = () => {
 
             let finalReason = result.value;
 
-            // If "Autre" is selected, show an input for manual entry
             if (finalReason === 'OTHER') {
                 const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
                 if (!manualInput.isConfirmed || !manualInput.value) return;
@@ -166,7 +211,6 @@ export const ArtisanDetail: React.FC = () => {
                     Retour à la liste
                 </button>
 
-                {/* New Premium Header Section */}
                 <header className="detail-header-section">
                     <div className="header-content-flex">
                         <div className="header-main-info">
@@ -203,10 +247,7 @@ export const ArtisanDetail: React.FC = () => {
                 </header>
 
                 <div className="detail-content-layout">
-                    {/* Main Content Area */}
                     <div className="detail-main-columns">
-
-                        {/* Info Cards Grid */}
                         <div className="info-cards-masonry">
                             <div className="premium-card">
                                 <h3><Mail size={20} /> Contact & Localisation</h3>
@@ -265,7 +306,6 @@ export const ArtisanDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Recent Activity / Orders */}
                         <div className="premium-card table-card">
                             <h3><Briefcase size={20} /> Historique des Commandes</h3>
                             <div className="admin-table-wrapper">
@@ -303,7 +343,6 @@ export const ArtisanDetail: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar Stats & Actions */}
                     <div className="detail-sidebar-sticky">
                         <div className="premium-card">
                             <h3>Statistiques</h3>
@@ -316,6 +355,42 @@ export const ArtisanDetail: React.FC = () => {
                                     <span className="stat-p-value">{orders.reduce((acc, curr) => acc + Number(curr.amount), 0)}€</span>
                                     <span className="stat-p-label">Total Dépensé</span>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Manual Pack Activation Section */}
+                        <div className="premium-card highlight">
+                            <h3><Zap size={20} color="#f59e0b" /> Gestion du Pack</h3>
+                            <div style={{ padding: '0.5rem 0' }}>
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
+                                    Activez manuellement un pack pour cet artisan suite à un paiement hors-site.
+                                </p>
+                                <select
+                                    className="premium-select"
+                                    value={selectedPackId}
+                                    onChange={(e) => setSelectedPackId(e.target.value)}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '1rem', background: 'white' }}
+                                >
+                                    <option value="">Sélectionner un pack...</option>
+                                    {packs.map(pack => (
+                                        <option key={pack.id} value={pack.id}>
+                                            {pack.name} ({pack.fiches_quota} crédits)
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleActivatePack}
+                                    disabled={!selectedPackId || isActivating}
+                                    className="premium-action-btn primary"
+                                    style={{ width: '100%', background: '#0ea5e9', color: 'white' }}
+                                >
+                                    {isActivating ? <LoadingSpinner size="sm" /> : (
+                                        <>
+                                            <Zap size={18} />
+                                            Activer le Pack
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
 

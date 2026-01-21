@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import './GuideDashboard.css'; // Reuse existing styles
 
-export const AllMissions: React.FC = () => {
-    const [missions, setMissions] = useState<any[]>([]);
+export const AllFiches: React.FC = () => {
+    const [fiches, setfiches] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedSector, setSelectedSector] = useState<string>('all');
     const [onlyAvailable, setOnlyAvailable] = useState<boolean>(true); // Default to showing only available
@@ -18,15 +18,15 @@ export const AllMissions: React.FC = () => {
     const { user } = useAuthStore();
 
     useEffect(() => {
-        loadMissions();
+        loadfiches();
     }, []);
 
-    const loadMissions = async () => {
+    const loadfiches = async () => {
         try {
-            const data = await guideService.getAvailableMissions();
-            setMissions(data);
+            const data = await guideService.getAvailablefiches();
+            setfiches(data);
         } catch (error) {
-            console.error("Failed to load missions", error);
+            console.error("Failed to load fiches", error);
         } finally {
             setIsLoading(false);
         }
@@ -34,39 +34,39 @@ export const AllMissions: React.FC = () => {
 
     // Extract unique sectors
     const sectors = useMemo(() => {
-        const sectorSet = new Set(missions.map(m => m.sector).filter(Boolean));
+        const sectorSet = new Set(fiches.map(m => m.sector).filter(Boolean));
         return Array.from(sectorSet).sort();
-    }, [missions]);
+    }, [fiches]);
 
-    // Filter missions
-    const filteredMissions = useMemo(() => {
-        return missions.filter(mission => {
-            // Exclude completed or cancelled missions
-            if (mission.status === 'completed' || mission.status === 'cancelled') return false;
+    // Filter fiches
+    const filteredfiches = useMemo(() => {
+        return fiches.filter(fiche => {
+            // Exclude completed or cancelled fiches
+            if (fiche.status === 'completed' || fiche.status === 'cancelled') return false;
 
             // Sector Filter
-            if (selectedSector !== 'all' && mission.sector !== selectedSector) return false;
+            if (selectedSector !== 'all' && fiche.sector !== selectedSector) return false;
 
             // Search Filter
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
-                if (!mission.company_name?.toLowerCase().includes(query) &&
-                    !mission.city?.toLowerCase().includes(query)) {
+                if (!fiche.company_name?.toLowerCase().includes(query) &&
+                    !fiche.city?.toLowerCase().includes(query)) {
                     return false;
                 }
             }
 
             // Quota Filter
-            // If onlyAvailable is true, we HIDE missions where daily quota is reached
-            const isDailyQuotaFull = (mission.daily_submissions_count || 0) >= mission.reviews_per_day;
+            // If onlyAvailable is true, we HIDE fiches where daily quota is reached
+            const isDailyQuotaFull = (fiche.daily_submissions_count || 0) >= fiche.reviews_per_day;
             if (onlyAvailable && isDailyQuotaFull) return false;
 
             return true;
         });
-    }, [missions, selectedSector, searchQuery, onlyAvailable]);
+    }, [fiches, selectedSector, searchQuery, onlyAvailable]);
 
     return (
-        <DashboardLayout title="Toutes les Missions">
+        <DashboardLayout title="Toutes les fiches">
             <div className="filters-container" style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', marginBottom: '2rem', border: '1px solid #f3f4f6' }}>
                 <div className="filters-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
 
@@ -124,33 +124,33 @@ export const AllMissions: React.FC = () => {
                 </div>
             </div>
 
-            <div className="missions-header">
-                <h3 className="missions-header-title">
-                    {filteredMissions.length} mission{filteredMissions.length !== 1 ? 's' : ''} trouvée{filteredMissions.length !== 1 ? 's' : ''}
+            <div className="fiches-header">
+                <h3 className="fiches-header-title">
+                    {filteredfiches.length} fiche{filteredfiches.length !== 1 ? 's' : ''} trouvée{filteredfiches.length !== 1 ? 's' : ''}
                 </h3>
             </div>
 
             {isLoading ? (
                 <div style={{ padding: '80px 0' }}>
-                    <LoadingSpinner text="Chargement des missions..." size="lg" className="theme-guide" />
+                    <LoadingSpinner text="Chargement des fiches..." size="lg" className="theme-guide" />
                 </div>
-            ) : filteredMissions.length > 0 ? (
-                <div className="missions-grid">
-                    {filteredMissions.map((mission) => (
+            ) : filteredfiches.length > 0 ? (
+                <div className="fiches-grid">
+                    {filteredfiches.map((fiche) => (
                         <div
-                            key={mission.id}
-                            className="mission-card"
-                            onClick={() => navigate(`/guide/missions/${mission.id}`)}
+                            key={fiche.id}
+                            className="fiche-card"
+                            onClick={() => navigate(`/guide/fiches/${fiche.id}`)}
                         >
-                            <div className="mission-card-content">
-                                <div className="mission-card-header">
+                            <div className="fiche-card-content">
+                                <div className="fiche-card-header">
                                     <div className="payout-badge">
-                                        <DollarSign size={14} /> {Number(mission.payout_per_review || 1.50).toFixed(2)}€
+                                        <DollarSign size={14} /> {Number(fiche.payout_per_review || 1.50).toFixed(2)}€
                                     </div>
                                     <div className="time-badge">
                                         <Clock size={14} />
                                         {(() => {
-                                            const date = new Date(mission.published_at || mission.created_at);
+                                            const date = new Date(fiche.published_at || fiche.created_at);
                                             const diffMs = Date.now() - date.getTime();
                                             const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
                                             const diffMins = Math.floor(diffMs / (1000 * 60));
@@ -161,37 +161,37 @@ export const AllMissions: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <h4 className="mission-company-name">
-                                    {mission.company_name}
+                                <h4 className="fiche-company-name">
+                                    {fiche.company_name}
                                 </h4>
 
-                                <div className="mission-details-row">
-                                    <div className="mission-sector">
+                                <div className="fiche-details-row">
+                                    <div className="fiche-sector">
                                         <MapPin size={16} />
-                                        <span>{mission.sector || 'Secteur non précisé'}</span>
+                                        <span>{fiche.sector || 'Secteur non précisé'}</span>
                                     </div>
                                     <div
-                                        className="mission-difficulty"
+                                        className="fiche-difficulty"
                                         style={{
-                                            background: mission.difficulty === 'hard' ? '#fef2f2' : (mission.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
-                                            color: mission.difficulty === 'hard' ? '#ef4444' : (mission.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
-                                            border: `1px solid ${mission.difficulty === 'hard' ? '#fee2e2' : (mission.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
+                                            background: fiche.difficulty === 'hard' ? '#fef2f2' : (fiche.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
+                                            color: fiche.difficulty === 'hard' ? '#ef4444' : (fiche.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
+                                            border: `1px solid ${fiche.difficulty === 'hard' ? '#fee2e2' : (fiche.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
                                         }}
                                     >
-                                        {mission.difficulty === 'easy' ? 'Simple' : (mission.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                        {fiche.difficulty === 'easy' ? 'Simple' : (fiche.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
                                     </div>
                                 </div>
 
-                                <div className="mission-progress-container">
+                                <div className="fiche-progress-container">
                                     <div className="progress-header">
                                         <span>Progression Totale</span>
-                                        <span className="progress-value">{mission.reviews_received || 0} / {mission.quantity}</span>
+                                        <span className="progress-value">{fiche.reviews_received || 0} / {fiche.quantity}</span>
                                     </div>
                                     <div className="progress-bar-bg">
                                         <div
                                             className="progress-bar-fill"
                                             style={{
-                                                width: `${Math.min(100, ((mission.reviews_received || 0) / mission.quantity) * 100)}%`
+                                                width: `${Math.min(100, ((fiche.reviews_received || 0) / fiche.quantity) * 100)}%`
                                             }}
                                         ></div>
                                     </div>
@@ -201,34 +201,34 @@ export const AllMissions: React.FC = () => {
                                     </div>
                                     <div className="daily-goal-value">
                                         <Clock size={16} color="var(--guide-primary)" />
-                                        <span>{mission.daily_submissions_count || 0} / {mission.reviews_per_day} avis demandés</span>
+                                        <span>{fiche.daily_submissions_count || 0} / {fiche.reviews_per_day} avis demandés</span>
                                     </div>
                                 </div>
 
                                 {(() => {
-                                    const isLocked = mission.locked_by && new Date(mission.locked_until) > new Date();
-                                    const lockedByMe = mission.locked_by === user?.id;
-                                    const isDailyQuotaFull = (mission.daily_submissions_count || 0) >= mission.reviews_per_day;
+                                    const isLocked = fiche.locked_by && new Date(fiche.locked_until) > new Date();
+                                    const lockedByMe = fiche.locked_by === user?.id;
+                                    const isDailyQuotaFull = (fiche.daily_submissions_count || 0) >= fiche.reviews_per_day;
 
                                     if (isLocked && !lockedByMe) {
                                         return (
-                                            <div className="mission-status-message status-occupied">
-                                                <Shield size={18} /> Mission occupée
+                                            <div className="fiche-status-message status-occupied">
+                                                <Shield size={18} /> fiche occupée
                                             </div>
                                         );
                                     }
 
                                     if (isDailyQuotaFull) {
                                         return (
-                                            <div className="mission-status-message status-quota-full">
+                                            <div className="fiche-status-message status-quota-full">
                                                 <Clock size={18} /> Quota du jour atteint
                                             </div>
                                         );
                                     }
 
                                     return (
-                                        <button className="mission-action-btn">
-                                            {lockedByMe ? 'Reprendre la mission' : 'Démarrer la mission'} <ArrowRight size={18} />
+                                        <button className="fiche-action-btn">
+                                            {lockedByMe ? 'Reprendre la fiche' : 'Démarrer la fiche'} <ArrowRight size={18} />
                                         </button>
                                     );
                                 })()}
@@ -241,7 +241,7 @@ export const AllMissions: React.FC = () => {
                     <div className="empty-state-icon">
                         <Filter size={40} color="#9ca3af" />
                     </div>
-                    <h3 className="empty-state-title">Aucune mission trouvée</h3>
+                    <h3 className="empty-state-title">Aucune fiche trouvée</h3>
                     <p className="empty-state-text">
                         Essayez de modifier vos filtres pour voir plus de résultats.
                     </p>

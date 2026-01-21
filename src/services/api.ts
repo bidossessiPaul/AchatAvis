@@ -356,14 +356,14 @@ export const adminApi = {
         await api.patch(`/admin/submissions/${submissionId}/status`, data);
     },
 
-    // Mission Approval
-    getPendingMissions: async (): Promise<any[]> => {
-        const response = await api.get('/admin/missions/pending');
+    // fiche Approval
+    getPendingfiches: async (): Promise<any[]> => {
+        const response = await api.get('/admin/fiches/pending');
         return response.data;
     },
 
-    approveMission: async (orderId: string): Promise<void> => {
-        await api.post(`/admin/missions/${orderId}/approve`);
+    approvefiche: async (orderId: string): Promise<void> => {
+        await api.post(`/admin/fiches/${orderId}/approve`);
     },
 
     // Establishment Validation
@@ -371,22 +371,22 @@ export const adminApi = {
     verifyEstablishment: (id: string, data: { status: string, notes?: string }) =>
         api.post(`/establishments/admin/verify/${id}`, data).then(res => res.data),
 
-    getMissions: async (): Promise<any[]> => {
-        const response = await api.get('/admin/missions');
+    getfiches: async (): Promise<any[]> => {
+        const response = await api.get('/admin/fiches');
         return response.data;
     },
 
-    getAdminMissionDetail: async (orderId: string): Promise<any> => {
-        const response = await api.get(`/admin/missions/${orderId}`);
+    getAdminficheDetail: async (orderId: string): Promise<any> => {
+        const response = await api.get(`/admin/fiches/${orderId}`);
         return response.data;
     },
 
-    updateMission: async (orderId: string, data: any): Promise<void> => {
-        await api.put(`/admin/missions/${orderId}`, data);
+    updatefiche: async (orderId: string, data: any): Promise<void> => {
+        await api.put(`/admin/fiches/${orderId}`, data);
     },
 
-    deleteMission: async (orderId: string): Promise<void> => {
-        await api.delete(`/admin/missions/${orderId}`);
+    deletefiche: async (orderId: string): Promise<void> => {
+        await api.delete(`/admin/fiches/${orderId}`);
     },
 
     // Subscriptions

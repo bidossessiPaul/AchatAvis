@@ -9,7 +9,8 @@ import {
     ChevronUp,
     Zap,
     Mail,
-    X
+    X,
+    Clock
 } from 'lucide-react';
 import {
     MdRestaurant, MdPlumbing, MdElectricalServices, MdRealEstateAgent,
@@ -106,42 +107,208 @@ export const SecurityRadar: React.FC = () => {
 
     if (!guideRecap) return null;
 
-    const sectors = Object.entries(guideRecap);
+    const { sectors, global_accounts } = guideRecap;
+    const sectorEntries = Object.entries(sectors);
 
     return (
         <div style={{ marginBottom: '3rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Shield size={24} color="#0f172a" />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                        Radar de Sécurité & Quotas
-                    </h3>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-                    Mise à jour en temps réel
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '1rem',
+                        background: 'var(--guide-gradient)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(249, 115, 22, 0.2)',
+                        color: 'white'
+                    }}>
+                        <Shield size={24} />
+                    </div>
+                    <div>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+                            Gestion des Quotas & Anti-Détection
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', fontWeight: 500 }}>
+                            Optimisez vos publications en respectant les limites de sécurité Google
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            {/* Dynamic Table Layout - Scrollable Container */}
+            {/* Global Email Quotas Grid - The focus of the redesign */}
+            <div style={{ marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                    <Mail size={18} color="#6366f1" />
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                        État de vos Comptes Gmail
+                    </h4>
+                    <div style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 700, background: '#f5f3ff', color: '#6366f1', padding: '0.25rem 0.75rem', borderRadius: '2rem' }}>
+                        {global_accounts.length} Comptes actifs
+                    </div>
+                </div>
+
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                    gap: '1.25rem'
+                }}>
+                    {global_accounts.map((acc: any) => {
+                        const { used, max, remaining } = acc.global_quota;
+                        const progress = (used / max) * 100;
+                        const isLow = remaining <= 2;
+                        const isEmpty = remaining === 0;
+
+                        return (
+                            <motion.div
+                                key={acc.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                style={{
+                                    background: 'white',
+                                    padding: '1.5rem',
+                                    borderRadius: '1.5rem',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '1.25rem',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}
+                            >
+                                {isEmpty && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        right: 0,
+                                        background: '#fee2e2',
+                                        color: '#ef4444',
+                                        fontSize: '0.625rem',
+                                        fontWeight: 900,
+                                        padding: '0.25rem 0.75rem',
+                                        borderBottomLeftRadius: '0.75rem',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        Quota Atteint
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '50%',
+                                        background: isEmpty ? '#fee2e2' : (isLow ? '#fef3c7' : '#f0f9ff'),
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: isEmpty ? '#ef4444' : (isLow ? '#f59e0b' : '#0ea5e9')
+                                    }}>
+                                        <Mail size={18} />
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {acc.email}
+                                        </div>
+                                        <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+                                            Level {acc.account_level || 'Nouveau'}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span style={{ fontSize: '1.25rem', fontWeight: 900, color: isEmpty ? '#ef4444' : '#0f172a' }}>
+                                                {remaining}
+                                            </span>
+                                            <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                                                Avis restants
+                                            </span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#475569' }}>
+                                                {used} / {max}
+                                            </span>
+                                            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                                                Utilisé ce mois
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progress}%` }}
+                                            style={{
+                                                height: '100%',
+                                                background: isEmpty ? '#ef4444' : (isLow ? '#f59e0b' : '#0ea5e9'),
+                                                borderRadius: '4px'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isEmpty ? '#ef4444' : '#10b981' }}></div>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: isEmpty ? '#ef4444' : '#10b981', textTransform: 'uppercase' }}>
+                                            {isEmpty ? 'Dépassement' : 'Sécurisé'}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={(e) => handleOpenHistory(e, acc, null, 'Global')}
+                                        style={{
+                                            fontSize: '0.65rem',
+                                            fontWeight: 800,
+                                            color: '#6366f1',
+                                            background: '#f5f3ff',
+                                            border: '1px solid #ddd6fe',
+                                            padding: '0.25rem 0.6rem',
+                                            borderRadius: '0.5rem',
+                                            cursor: 'pointer',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    >
+                                        Historique
+                                    </button>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Detailed Sectors - Moved below */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                <Zap size={18} color="#f59e0b" />
+                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                    Capacité par Secteur d'Activité
+                </h4>
+            </div>
+
             <div style={{
                 background: 'white',
-                borderRadius: '1.25rem',
+                borderRadius: '1.5rem',
                 border: '1px solid #e2e8f0',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)',
                 overflow: 'hidden'
             }}>
-                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Secteur</th>
-                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Disponibilité Mails</th>
-                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Règles Anti-Détection</th>
-                                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', width: '10%', textAlign: 'center' }}>Action</th>
+                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', width: '35%' }}>Secteur</th>
+                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', width: '30%' }}>Disponibilité Directe</th>
+                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', width: '25%' }}>Repos Requis</th>
+                                <th style={{ padding: '1.25rem 1.5rem', fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', width: '10%', textAlign: 'center' }}></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {sectors.map(([slug, data]: [string, any]) => {
+                            {sectorEntries.map(([slug, data]: [string, any]) => {
                                 const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
                                 const totalAccounts = data.accounts.length;
                                 const readyPercentage = totalAccounts > 0 ? (availableAccounts / totalAccounts) * 100 : 0;
@@ -154,70 +321,72 @@ export const SecurityRadar: React.FC = () => {
                                             style={{
                                                 borderBottom: '1px solid #f1f5f9',
                                                 cursor: 'pointer',
-                                                transition: 'background 0.2s ease',
+                                                transition: 'all 0.2s ease',
                                                 background: isExpanded ? '#f8fafc' : 'transparent'
                                             }}
-                                            onMouseEnter={(e) => !isExpanded && (e.currentTarget.style.background = '#fcfdfe')}
-                                            onMouseLeave={(e) => !isExpanded && (e.currentTarget.style.background = 'transparent')}
                                         >
-                                            <td style={{ padding: '1.25rem 1.5rem' }}>
+                                            <td style={{ padding: '1.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                     <div style={{
-                                                        width: '40px',
-                                                        height: '40px',
-                                                        borderRadius: '0.75rem',
-                                                        background: '#f1f5f9',
+                                                        width: '44px',
+                                                        height: '44px',
+                                                        borderRadius: '1rem',
+                                                        background: isExpanded ? 'white' : '#f1f5f9',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
-                                                        color: readyPercentage > 0 ? '#6366f1' : '#94a3b8'
+                                                        color: readyPercentage > 0 ? '#6366f1' : '#94a3b8',
+                                                        boxShadow: isExpanded ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                                        transition: 'all 0.2s'
                                                     }}>
                                                         {getSectorIcon(slug)}
                                                     </div>
-                                                    <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.95rem' }}>
-                                                        {data.sector_name}
+                                                    <div>
+                                                        <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1rem' }}>
+                                                            {data.sector_name}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                                                            Max {data.max_per_month} avis / mois / email
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                            <td style={{ padding: '1.5rem' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                         <span style={{
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 800,
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 900,
                                                             color: availableAccounts > 0 ? '#10b981' : '#ef4444'
                                                         }}>
-                                                            {availableAccounts} / {totalAccounts} PRÊTS
+                                                            {availableAccounts} / {totalAccounts} EMAILS PRÊTS
                                                         </span>
-                                                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 800 }}>
                                                             {Math.round(readyPercentage)}%
                                                         </span>
                                                     </div>
-                                                    <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{
-                                                            width: `${readyPercentage}%`,
-                                                            height: '100%',
-                                                            background: availableAccounts > 0 ? '#10b981' : '#ef4444',
-                                                            transition: 'width 0.3s ease'
-                                                        }} />
+                                                    <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <motion.div
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${readyPercentage}%` }}
+                                                            style={{
+                                                                width: `${readyPercentage}%`,
+                                                                height: '100%',
+                                                                background: availableAccounts > 0 ? '#10b981' : '#ef4444',
+                                                                borderRadius: '4px'
+                                                            }} />
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1.25rem 1.5rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
-                                                        <Zap size={14} color="#f59e0b" />
-                                                        <span>Pause : {data.cooldown_days} jours</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#64748b', fontSize: '0.8rem' }}>
-                                                        <Shield size={14} color="#6366f1" />
-                                                        <span>Max : {data.max_per_month} avis/mois</span>
-                                                    </div>
+                                            <td style={{ padding: '1.5rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                    <Clock size={16} color="#f59e0b" />
+                                                    <span>{data.cooldown_days} jours</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '1.25rem 1.5rem', textAlign: 'center' }}>
-                                                <div style={{ color: '#94a3b8' }}>
-                                                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                            <td style={{ padding: '1.5rem', textAlign: 'center' }}>
+                                                <div style={{ color: '#94a3b8', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                                                    <ChevronDown size={20} />
                                                 </div>
                                             </td>
                                         </tr>
@@ -297,8 +466,15 @@ export const SecurityRadar: React.FC = () => {
                                                                                     {acc.status === 'ready' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                                                                                     {acc.status === 'ready' ? 'Disponible' : (acc.status === 'cooldown' ? 'Repos' : 'Quotas')}
                                                                                 </div>
-                                                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b' }}>
-                                                                                    {acc.used_this_month} / {data.max_per_month} par mois
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+                                                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                                                                                        Secteur : {acc.used_this_month} / {data.max_per_month}
+                                                                                    </div>
+                                                                                    {acc.global_quota && (
+                                                                                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8' }}>
+                                                                                            Total : {acc.global_quota.used} / {acc.global_quota.max}
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                             </div>
                                                                         </div>

@@ -57,12 +57,13 @@
 }
 
 .stat-pill.success {
-    background: #f0fdf4;
-    border-color: #bbf7d0;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: var(--primary-brand);
 }
 
 .stat-pill.success .count {
-    color: #166534;
+    color: var(--primary-brand);
 }
 
 .loading-centered {
@@ -101,15 +102,42 @@
 
 .filters-bar {
     display: flex;
-    gap: var(--space-2);
+    gap: var(--space-1);
     padding: var(--space-1);
-    background: var(--gray-50);
+    background: #f1f5f9;
     border-radius: var(--radius-lg);
     width: fit-content;
-    border: 1px solid var(--gray-100);
+    border: 1px solid var(--gray-200);
 }
 
-.mission-filter {
+.filter-btn {
+    border: none;
+    background: transparent;
+    padding: var(--space-2) var(--space-5);
+    border-radius: 0.6rem;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-btn:hover {
+    color: var(--gray-900);
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.filter-btn.active {
+    background: white;
+    color: var(--primary-brand);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.fiche-filter {
     display: flex;
     align-items: center;
     gap: var(--space-3);
@@ -120,13 +148,13 @@
     box-shadow: var(--shadow-sm);
 }
 
-.mission-filter label {
+.fiche-filter label {
     font-size: var(--text-sm);
     font-weight: 700;
     color: var(--gray-700);
 }
 
-.mission-select {
+.fiche-select {
     padding: var(--space-1) var(--space-2);
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
@@ -139,7 +167,7 @@
     transition: border-color 0.2s;
 }
 
-.mission-select:focus {
+.fiche-select:focus {
     border-color: var(--primary-brand);
 }
 
@@ -148,8 +176,9 @@
     background: white;
     border-radius: var(--radius-xl);
     border: 1px solid var(--gray-100);
-    overflow: hidden;
+    overflow-x: auto;
     box-shadow: var(--shadow-sm);
+    -webkit-overflow-scrolling: touch;
 }
 
 .reviews-table {
@@ -203,7 +232,7 @@
     color: var(--gray-400);
 }
 
-.mission-name-badge {
+.fiche-name-badge {
     display: inline-block;
     padding: var(--space-1) var(--space-3);
     background: #eff6ff;
@@ -237,24 +266,33 @@
     white-space: nowrap;
 }
 
-.status-badge-mini {
+.status-pill-premium {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
-    font-size: 11px;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
+    color: white;
 }
 
-.status-badge-mini.pending {
-    background: #fffbeb;
-    color: #92400e;
+.status-pill-premium.validated {
+    background: #065f46;
+    opacity: 0.9;
 }
 
-.status-badge-mini.validated {
-    background: #f0fdf4;
-    color: #166534;
+.status-pill-premium.pending {
+    background: #9a3412;
+}
+
+.status-pill-premium.not_submitted {
+    background: #064e3b;
+}
+
+.status-pill-premium.rejected {
+    background: #991b1b;
 }
 
 .status-badge-mini.rejected {
@@ -711,7 +749,7 @@
 }
 
 .view-link:hover {
-    color: #OOO;
+    color: #000;
     text-decoration: underline;
 }
 
@@ -739,6 +777,51 @@
     color: var(--gray-500);
     max-width: 400px;
     margin: 0 auto;
+}
+
+/* Pagination */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-6);
+    margin-top: var(--space-8);
+    padding: var(--space-4);
+}
+
+.pagination-btn {
+    padding: var(--space-2) var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    background: white;
+    color: var(--gray-700);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+    color: var(--primary-brand);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--gray-50);
+}
+
+.pagination-info {
+    font-size: var(--text-sm);
+    color: var(--gray-500);
+    font-weight: 500;
+}
+
+.pagination-info span {
+    color: var(--gray-900);
+    font-weight: 700;
 }
 
 @media (max-width: 768px) {

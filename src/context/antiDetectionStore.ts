@@ -49,7 +49,10 @@ interface AntiDetectionState {
     sectors: { easy: Sector[]; medium: Sector[]; hard: Sector[] };
     complianceData: ComplianceData | null;
     gmailAccounts: any[];
-    guideRecap: Record<string, any> | null;
+    guideRecap: {
+        sectors: Record<string, any>;
+        global_accounts: any[];
+    } | null;
     gmailHistory: Record<string, any[]>;
     loading: boolean;
     error: string | null;
@@ -64,7 +67,7 @@ interface AntiDetectionState {
     updateGmailActivity: (accountId: number, sectorSlug: string) => Promise<void>;
     addGmailAccount: (data: any) => Promise<any>;
     deleteGmailAccount: (accountId: number, userId: string) => Promise<any>;
-    checkMissionCompatibility: (campaignId: string, gmailId: number) => Promise<any>;
+    checkficheCompatibility: (campaignId: string, gmailId: number) => Promise<any>;
     submitQuiz: (userId: string, score: number) => Promise<any>;
 }
 
@@ -191,9 +194,9 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
         }
     },
 
-    checkMissionCompatibility: async (campaignId: string, gmailId: number) => {
+    checkficheCompatibility: async (campaignId: string, gmailId: number) => {
         try {
-            const response = await api.post('/anti-detection/can-take-mission', {
+            const response = await api.post('/anti-detection/can-take-fiche', {
                 campaign_id: campaignId,
                 gmail_account_id: gmailId
             });

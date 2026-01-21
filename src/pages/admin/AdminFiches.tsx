@@ -17,7 +17,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useNavigate } from 'react-router-dom';
 import './AdminLists.css';
 
-interface Mission {
+interface fiche {
     id: string;
     artisan_id: string;
     artisan_name: string;
@@ -34,24 +34,24 @@ interface Mission {
     google_business_url: string;
 }
 
-export const AdminMissions: React.FC = () => {
-    const [missions, setMissions] = useState<Mission[]>([]);
+export const AdminFiches: React.FC = () => {
+    const [fiches, setfiches] = useState<fiche[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const navigate = useNavigate();
 
     useEffect(() => {
-        loadMissions();
+        loadfiches();
     }, []);
 
-    const loadMissions = async () => {
+    const loadfiches = async () => {
         setIsLoading(true);
         try {
-            const data = await adminApi.getMissions();
-            setMissions(data);
+            const data = await adminApi.getfiches();
+            setfiches(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des missions');
+            showError('Erreur', 'Erreur lors du chargement des fiches');
         } finally {
             setIsLoading(false);
         }
@@ -59,29 +59,29 @@ export const AdminMissions: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         const result = await showConfirm(
-            'Supprimer cette mission ?',
+            'Supprimer cette fiche ?',
             'Cette action est irréversible et supprimera toutes les données associées.'
         );
 
         if (!result.isConfirmed) return;
 
         try {
-            await adminApi.deleteMission(id);
-            showSuccess('Succès', 'Mission supprimée');
-            loadMissions();
+            await adminApi.deletefiche(id);
+            showSuccess('Succès', 'fiche supprimée');
+            loadfiches();
         } catch (error) {
             showError('Erreur', 'Erreur lors de la suppression');
         }
     };
 
     const stats = {
-        total: missions.length,
-        submitted: missions.filter(m => m.status === 'submitted').length,
-        inProgress: missions.filter(m => m.status === 'in_progress').length,
-        completed: missions.filter(m => m.status === 'completed').length,
+        total: fiches.length,
+        submitted: fiches.filter(m => m.status === 'submitted').length,
+        inProgress: fiches.filter(m => m.status === 'in_progress').length,
+        completed: fiches.filter(m => m.status === 'completed').length,
     };
 
-    const filteredMissions = missions.filter(m => {
+    const filteredfiches = fiches.filter(m => {
         const matchesSearch =
             m.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             m.artisan_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,7 +116,7 @@ export const AdminMissions: React.FC = () => {
     };
 
     return (
-        <DashboardLayout title="Gestion des Missions">
+        <DashboardLayout title="Gestion des fiches">
             <div className="admin-dashboard revamped">
                 {/* Stats Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
@@ -125,7 +125,7 @@ export const AdminMissions: React.FC = () => {
                         onClick={() => setStatusFilter('all')}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total Missions</span>
+                            <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Total fiches</span>
                             <Briefcase size={20} color="var(--artisan-primary)" />
                         </div>
                         <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{stats.total}</span>
@@ -164,13 +164,13 @@ export const AdminMissions: React.FC = () => {
 
                 <div className="admin-main-card">
                     <div className="admin-card-header">
-                        <h2 className="card-title">Toutes les Missions</h2>
+                        <h2 className="card-title">Toutes les fiches</h2>
                         <div className="admin-controls">
                             <div className="search-box">
                                 <Search size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Rechercher une mission..."
+                                    placeholder="Rechercher une fiche..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
@@ -197,13 +197,13 @@ export const AdminMissions: React.FC = () => {
                     <div className="admin-table-container">
                         {isLoading ? (
                             <div className="admin-loading">
-                                <LoadingSpinner size="lg" text="Chargement des missions..." />
+                                <LoadingSpinner size="lg" text="Chargement des fiches..." />
                             </div>
                         ) : (
                             <table className="admin-modern-table">
                                 <thead>
                                     <tr>
-                                        <th>Mission / Artisan</th>
+                                        <th>fiche / Artisan</th>
                                         <th>Détails</th>
                                         <th>Progrès</th>
                                         <th>Statut</th>
@@ -212,47 +212,47 @@ export const AdminMissions: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredMissions.length > 0 ? filteredMissions.map((mission) => (
-                                        <tr key={mission.id} className={`tr-status-${mission.status}`}>
+                                    {filteredfiches.length > 0 ? filteredfiches.map((fiche) => (
+                                        <tr key={fiche.id} className={`tr-status-${fiche.status}`}>
                                             <td>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <span className="font-medium" style={{ color: 'var(--gray-900)' }}>
-                                                        {mission.company_name || mission.original_company_name}
+                                                        {fiche.company_name || fiche.original_company_name}
                                                     </span>
                                                     <span style={{ fontSize: '12px', color: 'var(--gray-50)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <Building2 size={12} /> {mission.artisan_name}
+                                                        <Building2 size={12} /> {fiche.artisan_name}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                                     <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                        <MapPin size={12} /> {mission.sector}
+                                                        <MapPin size={12} /> {fiche.sector}
                                                     </span>
                                                     <span style={{ fontSize: '11px', color: 'var(--gray-500)' }}>
-                                                        Tone: {mission.desired_tone}
+                                                        Tone: {fiche.desired_tone}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div style={{ width: '100px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                                                        <span style={{ fontWeight: 600 }}>{mission.reviews_received}/{mission.quantity}</span>
-                                                        <span style={{ fontWeight: 600 }}>{Math.round((mission.reviews_received / mission.quantity) * 100)}%</span>
+                                                        <span style={{ fontWeight: 600 }}>{fiche.reviews_received}/{fiche.quantity}</span>
+                                                        <span style={{ fontWeight: 600 }}>{Math.round((fiche.reviews_received / fiche.quantity) * 100)}%</span>
                                                     </div>
                                                     <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{ width: `${(mission.reviews_received / mission.quantity) * 100}%`, height: '100%', background: 'var(--artisan-gradient)' }}></div>
+                                                        <div style={{ width: `${(fiche.reviews_received / fiche.quantity) * 100}%`, height: '100%', background: 'var(--artisan-gradient)' }}></div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td>
-                                                <span className={`admin-badge ${getStatusBadgeClass(mission.status)}`}>
-                                                    {getStatusLabel(mission.status)}
+                                                <span className={`admin-badge ${getStatusBadgeClass(fiche.status)}`}>
+                                                    {getStatusLabel(fiche.status)}
                                                 </span>
                                             </td>
                                             <td>
                                                 <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>
-                                                    {new Date(mission.created_at).toLocaleDateString()}
+                                                    {new Date(fiche.created_at).toLocaleDateString()}
                                                 </span>
                                             </td>
                                             <td className="actions-cell">
@@ -260,14 +260,14 @@ export const AdminMissions: React.FC = () => {
                                                     <button
                                                         className="action-btn"
                                                         title="Voir détails / Modifier"
-                                                        onClick={() => navigate(`/admin/missions/${mission.id}`)}
+                                                        onClick={() => navigate(`/admin/fiches/${fiche.id}`)}
                                                     >
                                                         <Edit3 size={18} />
                                                     </button>
                                                     <button
                                                         className="action-btn block-btn"
                                                         title="Supprimer"
-                                                        onClick={() => handleDelete(mission.id)}
+                                                        onClick={() => handleDelete(fiche.id)}
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>
@@ -277,7 +277,7 @@ export const AdminMissions: React.FC = () => {
                                     )) : (
                                         <tr>
                                             <td colSpan={6} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
-                                                Aucune mission trouvée.
+                                                Aucune fiche trouvée.
                                             </td>
                                         </tr>
                                     )}

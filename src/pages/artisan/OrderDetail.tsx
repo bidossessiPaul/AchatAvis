@@ -63,14 +63,14 @@ export const OrderDetail: React.FC = () => {
             setOrder(data);
         } catch (err: any) {
             console.error("Failed to load order", err);
-            setError("Impossible de charger les détails de cette soumission.");
+            setError("Impossible de charger les détails de cette soufiche.");
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDelete = async () => {
-        if (!order || !window.confirm("Êtes-vous sûr de vouloir supprimer cette soumission ? Cette action est irréversible.")) {
+        if (!order || !window.confirm("Êtes-vous sûr de vouloir supprimer cette soufiche ? Cette action est irréversible.")) {
             return;
         }
 
@@ -80,7 +80,7 @@ export const OrderDetail: React.FC = () => {
             navigate('/artisan');
         } catch (err: any) {
             console.error("Failed to delete order", err);
-            setError("Erreur lors de la suppression de la soumission.");
+            setError("Erreur lors de la suppression de la soufiche.");
             setIsDeleting(false);
         }
     };
@@ -112,7 +112,7 @@ export const OrderDetail: React.FC = () => {
 
     return (
         <DashboardLayout title={`Détails : ${order.company_name || 'Sans nom'}`}>
-            <PremiumBlurOverlay isActive={(user?.missions_allowed || 0) > 0}>
+            <PremiumBlurOverlay isActive={(user?.fiches_allowed || 0) > 0}>
                 <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <button
                         onClick={() => navigate('/artisan')}
@@ -397,7 +397,7 @@ export const OrderDetail: React.FC = () => {
                         <div style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #ffe4e6' }}>
                             <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#991b1b', marginBottom: '1rem', textTransform: 'uppercase' }}>Zone de danger</h3>
                             <p style={{ fontSize: '0.8125rem', color: '#b91c1c', marginBottom: '1.25rem' }}>
-                                La suppression de cette soumission entraînera la suppression définitive de toutes les propositions d'avis associées.
+                                La suppression de cette soufiche entraînera la suppression définitive de toutes les propositions d'avis associées.
                             </p>
                             <button
                                 onClick={handleDelete}
@@ -427,7 +427,7 @@ export const OrderDetail: React.FC = () => {
                                     e.currentTarget.style.color = '#dc2626';
                                 }}
                             >
-                                <Trash2 size={16} /> {isDeleting ? 'Suppression...' : 'Supprimer la soumission'}
+                                <Trash2 size={16} /> {isDeleting ? 'Suppression...' : 'Supprimer la soufiche'}
                             </button>
                         </div>
                     </div>

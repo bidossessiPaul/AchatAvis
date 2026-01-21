@@ -392,16 +392,16 @@ export const SubscriptionsList: React.FC = () => {
                                                         {sub.is_pack_used > 0 && sub.order_id ? (
                                                             <button
                                                                 className="premium-icon-btn"
-                                                                title="Voir la mission liée"
+                                                                title="Voir la fiche liée"
                                                                 style={{ color: '#FF991F', borderColor: '#FFE6A5', background: '#fff8e1' }}
-                                                                onClick={() => window.location.href = `/admin/missions/${sub.order_id}`}
+                                                                onClick={() => window.location.href = `/admin/fiches/${sub.order_id}`}
                                                             >
                                                                 <FolderOpen size={16} />
                                                             </button>
                                                         ) : (
                                                             <button
                                                                 className="premium-icon-btn disabled"
-                                                                title="Aucune mission liée"
+                                                                title="Aucune fiche liée"
                                                                 style={{ opacity: 0.5, cursor: 'not-allowed', background: '#f8fafc' }}
                                                                 disabled
                                                             >

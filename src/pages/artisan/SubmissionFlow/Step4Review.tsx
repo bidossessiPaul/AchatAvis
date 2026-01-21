@@ -47,7 +47,7 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
                         <CheckCircle size={48} style={{ color: '#10b981' }} />
                     </div>
                 </div>
-                <h2 className="submission-card-title">Soumission réussie !</h2>
+                <h2 className="submission-card-title">Soufiche réussie !</h2>
                 <p style={{ color: '#1a1a1a', marginBottom: '2rem', fontWeight: 500 }}>
                     Vos {proposals.length} avis ont été envoyés à notre réseau de Local Guides. <br />
                     Vous recevrez une notification dès qu'ils seront publiés.
@@ -64,7 +64,7 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
 
     return (
         <div>
-            <h2 className="submission-card-title">Résumé de la soumission</h2>
+            <h2 className="submission-card-title">Résumé de la soufiche</h2>
 
             <div style={{ background: '#f9fafb', padding: '1.5rem', borderRadius: '0.75rem', marginBottom: '2rem' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>

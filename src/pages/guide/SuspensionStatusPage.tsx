@@ -190,7 +190,7 @@ export const SuspensionStatusPage: React.FC = () => {
                                     </h4>
                                     <ul style={{ padding: 0, margin: 0, listStyle: 'none', display: 'grid', gap: '0.75rem' }}>
                                         <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#92400e', fontSize: '0.875rem' }}>
-                                            <ChevronRight size={14} /> Participation aux missions bloquée
+                                            <ChevronRight size={14} /> Participation aux fiches bloquée
                                         </li>
                                         {suspension.consequences.earnings_frozen && (
                                             <li style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#92400e', fontSize: '0.875rem' }}>
@@ -228,7 +228,7 @@ export const SuspensionStatusPage: React.FC = () => {
                                     <ShieldAlert size={20} color="#166534" />
                                 </div>
                                 <h4 style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Conditions de Levée</h4>
-                                <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>Ce qu'il vous reste à faire pour retrouver l'accès aux missions.</p>
+                                <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.5rem' }}>Ce qu'il vous reste à faire pour retrouver l'accès aux fiches.</p>
                                 <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#166534', background: '#f0fdf4', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', display: 'inline-block' }}>
                                     {suspension.requirements_to_lift.wait_duration ? 'Attendre la fin du délai' : 'Action requise'}
                                 </div>
