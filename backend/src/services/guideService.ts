@@ -2,7 +2,6 @@ import { query } from '../config/database';
 import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
-import { TrustScoreEngine } from './trustScoreEngine';
 
 export const guideService = {
     /**
