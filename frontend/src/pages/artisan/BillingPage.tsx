@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { useAuthStore } from '../../context/authStore';
 import { artisanService } from '../../services/artisanService';
@@ -8,19 +9,20 @@ import {
     History,
     Package,
     ArrowUpRight,
-    CreditCard,
     Calendar,
     ChevronRight,
     Target
 } from 'lucide-react';
 import { SubscriptionPack } from '../../types';
-import { showError } from '../../utils/Swal';
+import { showError, showConfirm } from '../../utils/Swal';
 import './BillingPage.css';
 import '../artisan/PlanSelection.css';
 
 export const BillingPage: React.FC = () => {
+    const navigate = useNavigate();
     const { user } = useAuthStore();
     const [packs, setPacks] = useState<SubscriptionPack[]>([]);
+    const [availablePacks, setAvailablePacks] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(true);
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -28,12 +30,14 @@ export const BillingPage: React.FC = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const [packsData, historyData] = await Promise.all([
+                const [packsData, historyData, availablePacksData] = await Promise.all([
                     artisanService.getSubscriptionPacks(),
-                    artisanService.getPaymentHistory()
+                    artisanService.getPaymentHistory(),
+                    artisanService.getAvailablePacks()
                 ]);
                 setPacks(packsData);
                 setHistory(historyData);
+                setAvailablePacks(availablePacksData);
             } catch (error) {
                 console.error("Failed to load billing data", error);
                 showError('Erreur', "Erreur lors du chargement des données.");
@@ -45,6 +49,14 @@ export const BillingPage: React.FC = () => {
     }, []);
 
     const handleUpgrade = async (planId: string) => {
+        if (availablePacks.length > 0) {
+            const result = await showConfirm(
+                'Pack déjà actif',
+                `Vous avez encore des crédits disponibles. Voulez-vous vraiment acheter un nouveau pack ?`
+            );
+            if (!result.isConfirmed) return;
+        }
+
         setIsProcessing(planId);
         try {
             const { url } = await artisanService.createCheckoutSession(planId);
@@ -59,11 +71,11 @@ export const BillingPage: React.FC = () => {
     // Calculate stats purely from history
     const boughtPacks = history
         .filter(p => p.status === 'completed')
-        .reduce((acc, curr) => acc + (curr.missions_quota || 0), 0);
+        .reduce((acc, curr) => acc + (curr.fiches_quota || 0), 0);
 
     const usedPacks = history
         .filter(p => p.status === 'completed')
-        .reduce((acc, curr) => acc + (curr.missions_used || 0), 0);
+        .reduce((acc, curr) => acc + (curr.fiches_used || 0), 0);
 
     const remainingPacks = Math.max(0, boughtPacks - usedPacks);
     const progressPercentage = boughtPacks > 0 ? (usedPacks / boughtPacks) * 100 : 0;
@@ -88,7 +100,7 @@ export const BillingPage: React.FC = () => {
     return (
         <DashboardLayout title="Ma Facturation">
             <div className="billing-page-container">
-                {/* 1. Mission Inventory Section (Restored & Calculated from History) */}
+                {/* 1. fiche Inventory Section (Restored & Calculated from History) */}
                 <div className="inventory-section">
                     <div className="billing-glass-card inventory-card">
                         <div className="card-header">
@@ -96,7 +108,7 @@ export const BillingPage: React.FC = () => {
                                 <Package className="text-primary" />
                             </div>
                             <div>
-                                <h2>Stock de Missions</h2>
+                                <h2>Stock de fiches</h2>
                                 <p>Consommation totale de vos packs achetés</p>
                             </div>
                             <div className="status-badge-premium active">
@@ -164,15 +176,29 @@ export const BillingPage: React.FC = () => {
                                 <span className="info-value">{totalReviews} Avis cumulés</span>
                             </div>
                         </div>
-                    
+
                     </div>
                 </div>
 
                 {/* 2. Buy More Packs Section */}
                 <div className="upgrade-section">
+                    {availablePacks.length > 0 && (
+                        <div className="active-pack-alert" style={{ maxWidth: 'none', marginBottom: 'var(--space-6)' }}>
+                            <div className="active-pack-info">
+                                <h3>Vous avez déjà un pack actif non utilisé !</h3>
+                                <p>Il vous reste <strong>{availablePacks.reduce((acc, p) => acc + (p.review_quantity - p.fiches_used), 0)} avis</strong> disponibles à utiliser immédiatement.</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/artisan/submit')}
+                                className="btn-submit-mission"
+                            >
+                                Soumettre ma fiche
+                            </button>
+                        </div>
+                    )}
                     <div className="section-header">
                         <Zap className="text-yellow-500" />
-                        <h3>Besoin de plus de missions ?</h3>
+                        <h3>Besoin de plus de fiches ?</h3>
                     </div>
                     <div className="plans-grid">
                         {packs.map((plan) => (
@@ -226,7 +252,7 @@ export const BillingPage: React.FC = () => {
                                     </thead>
                                     <tbody>
                                         {history.map((payment) => {
-                                            const isUsed = payment.missions_used > 0;
+                                            const isUsed = payment.fiches_used > 0;
                                             const isPaid = payment.status === 'completed';
 
                                             return (

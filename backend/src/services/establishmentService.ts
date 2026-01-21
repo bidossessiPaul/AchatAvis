@@ -663,7 +663,7 @@ class EstablishmentService {
     }
 
     /**
-     * Delete an establishment (Artisan can delete their own if not linked to active missions)
+     * Delete an establishment (Artisan can delete their own if not linked to active fiches)
      */
     async deleteEstablishment(id: string, userId: string) {
         // Verify ownership
@@ -671,14 +671,14 @@ class EstablishmentService {
         if (!existing) throw new Error('Établissement introuvable');
         if (existing.user_id !== userId) throw new Error('Vous n\'êtes pas autorisé à supprimer cet établissement');
 
-        // Check if linked to active missions
-        const linkedMissions: any = await query(
+        // Check if linked to active fiches
+        const linkedfiches: any = await query(
             'SELECT COUNT(*) as count FROM reviews_orders WHERE establishment_id = ? AND status IN (?, ?)',
             [id, 'in_progress', 'submitted']
         );
 
-        if (linkedMissions[0].count > 0) {
-            throw new Error('Impossible de supprimer cet établissement car il est lié à des missions actives.');
+        if (linkedfiches[0].count > 0) {
+            throw new Error('Impossible de supprimer cet établissement car il est lié à des fiches actives.');
         }
 
         // Delete the establishment
@@ -697,15 +697,15 @@ class EstablishmentService {
         if (!establishment) throw new Error('Établissement introuvable');
         if (establishment.user_id !== userId) throw new Error('Accès non autorisé');
 
-        // Get linked missions count
-        const missionsCount: any = await query(
+        // Get linked fiches count
+        const fichesCount: any = await query(
             'SELECT COUNT(*) as count FROM reviews_orders WHERE establishment_id = ?',
             [id]
         );
 
         return {
             ...establishment,
-            missions_count: missionsCount[0].count
+            fiches_count: fichesCount[0].count
         };
     }
 }

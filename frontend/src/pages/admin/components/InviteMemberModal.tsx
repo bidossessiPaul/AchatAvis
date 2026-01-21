@@ -17,7 +17,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
     const [permissions, setPermissions] = useState({
         can_validate_profiles: false,
         can_validate_reviews: false,
-        can_validate_missions: false,
+        can_validate_fiches: false,
         can_view_payments: false,
         can_view_stats: false,
         can_manage_users: false
@@ -42,7 +42,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
             setPermissions({
                 can_validate_profiles: !!parsedPermissions.can_validate_profiles,
                 can_validate_reviews: !!parsedPermissions.can_validate_reviews,
-                can_validate_missions: !!parsedPermissions.can_validate_missions,
+                can_validate_fiches: !!parsedPermissions.can_validate_fiches,
                 can_view_payments: !!parsedPermissions.can_view_payments,
                 can_view_stats: !!parsedPermissions.can_view_stats,
                 can_manage_users: !!parsedPermissions.can_manage_users
@@ -53,7 +53,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
             setPermissions({
                 can_validate_profiles: false,
                 can_validate_reviews: false,
-                can_validate_missions: false,
+                can_validate_fiches: false,
                 can_view_payments: false,
                 can_view_stats: false,
                 can_manage_users: false
@@ -86,7 +86,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                 setPermissions({
                     can_validate_profiles: false,
                     can_validate_reviews: false,
-                    can_validate_missions: false,
+                    can_validate_fiches: false,
                     can_view_payments: false,
                     can_view_stats: false,
                     can_manage_users: false
@@ -101,8 +101,8 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
 
     const permissionConfig = [
         { key: 'can_validate_profiles', label: 'Validation des Profils', desc: 'Approuver ou rejeter les nouveaux artisans/guides' },
-        { key: 'can_validate_reviews', label: 'Validation des Avis', desc: 'Modérer les soumissions d\'avis des guides' },
-        { key: 'can_validate_missions', label: 'Validation des Missions', desc: 'Approuver les missions créées par les artisans' },
+        { key: 'can_validate_reviews', label: 'Validation des Avis', desc: 'Modérer les soufiches d\'avis des guides' },
+        { key: 'can_validate_fiches', label: 'Validation des fiches', desc: 'Approuver les fiches créées par les artisans' },
         { key: 'can_view_payments', label: 'Aperçu sur les Paiements', desc: 'Voir l\'historique des transactions Stripe' },
         { key: 'can_view_stats', label: 'Accès aux Statistiques', desc: 'Voir les graphiques et KPI globaux' },
         { key: 'can_manage_users', label: 'Liste des Utilisateurs', desc: 'Voir et rechercher dans la liste des utilisateurs' }

@@ -151,7 +151,7 @@ export const teamService = {
             [JSON.stringify(permissions), userId]
         );
 
-        await LogService.logAction(adminId, 'UPDATE_PERMISSIONS', 'USER', undefined, { targetUserId: userId, newPermissions: permissions });
+        await LogService.logAction(adminId, 'UPDATE_PERficheS', 'USER', undefined, { targetUserId: userId, newPermissions: permissions });
 
         return { message: "Permissions mises à jour." };
     },

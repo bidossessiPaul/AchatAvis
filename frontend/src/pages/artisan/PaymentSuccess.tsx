@@ -49,7 +49,13 @@ export default function PaymentSuccess() {
                 setTimeout(() => setStatus('success'), 500);
 
                 setTimeout(() => {
-                    navigate('/artisan/submit');
+                    const redirectAfterPayment = localStorage.getItem('redirect_after_payment');
+                    if (redirectAfterPayment) {
+                        localStorage.removeItem('redirect_after_payment');
+                        navigate(redirectAfterPayment);
+                    } else {
+                        navigate('/artisan/submit');
+                    }
                 }, 3500);
 
             } catch (error) {
@@ -113,7 +119,7 @@ export default function PaymentSuccess() {
                             <h2 className="success-title">Compte Activé !</h2>
                             <p className="success-description">
                                 Félicitations ! Votre compte est désormais actif.<br />
-                                Redirection vers votre espace mission...
+                                Redirection vers votre espace fiche...
                             </p>
                             <div className="progress-bar-container">
                                 <motion.div

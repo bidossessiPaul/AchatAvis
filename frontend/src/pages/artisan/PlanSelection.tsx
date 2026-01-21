@@ -1,17 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import './PlanSelection.css';
 
 import { artisanService } from '../../services/artisanService';
 import { SubscriptionPack } from '../../types';
-import { showError } from '../../utils/Swal';
+import { showError, showConfirm } from '../../utils/Swal';
 
 export const PlanSelection: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [packs, setPacks] = useState<SubscriptionPack[]>([]);
+    const [availablePacks, setAvailablePacks] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(true);
 
     useEffect(() => {
@@ -20,8 +22,12 @@ export const PlanSelection: React.FC = () => {
 
     const loadPacks = async () => {
         try {
-            const data = await artisanService.getSubscriptionPacks();
-            setPacks(data);
+            const [packsData, availablePacksData] = await Promise.all([
+                artisanService.getSubscriptionPacks(),
+                artisanService.getAvailablePacks()
+            ]);
+            setPacks(packsData);
+            setAvailablePacks(availablePacksData);
         } catch (error) {
             console.error("Failed to load packs", error);
         } finally {
@@ -30,6 +36,21 @@ export const PlanSelection: React.FC = () => {
     };
 
     const handleSubscribe = async (planId: string) => {
+        if (availablePacks.length > 0) {
+            const result = await showConfirm(
+                'Pack déjà actif',
+                `Vous avez encore des crédits disponibles. Voulez-vous vraiment acheter un nouveau pack ?`
+            );
+            if (!result.isConfirmed) return;
+        }
+
+        const redirectBack = searchParams.get('redirect_back');
+        if (redirectBack) {
+            localStorage.setItem('redirect_after_payment', redirectBack);
+        } else {
+            localStorage.removeItem('redirect_after_payment');
+        }
+
         setIsLoading(planId);
         try {
             const { url } = await artisanService.createCheckoutSession(planId);
@@ -52,6 +73,21 @@ export const PlanSelection: React.FC = () => {
                     Choisissez le plan qui correspond à vos besoins pour commencer à récolter des avis.
                 </p>
             </div>
+
+            {availablePacks.length > 0 && (
+                <div className="active-pack-alert">
+                    <div className="active-pack-info">
+                        <h3>Vous avez déjà un pack actif non utilisé !</h3>
+                        <p>Il vous reste <strong>{availablePacks.reduce((acc, p) => acc + (p.review_quantity - p.fiches_used), 0)} avis</strong> disponibles à utiliser immédiatement.</p>
+                    </div>
+                    <button
+                        onClick={() => navigate('/artisan/submit')}
+                        className="btn-submit-mission"
+                    >
+                        Soumettre ma fiche
+                    </button>
+                </div>
+            )}
 
             <div className="plans-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
                 {isFetching ? (

@@ -24,7 +24,7 @@ export const NotificationCenter: React.FC = () => {
     const getIcon = (type: AppNotification['type']) => {
         switch (type) {
             case 'order_update': return <ShoppingBag size={18} color="#3b82f6" />;
-            case 'new_mission': return <Target size={18} color="#f97316" />;
+            case 'new_fiche': return <Target size={18} color="#f97316" />;
             case 'payment_success': return <CreditCard size={18} color="#10b981" />;
             case 'system': return <Info size={18} color="#6b7280" />;
             default: return <Bell size={18} color="#6b7280" />;

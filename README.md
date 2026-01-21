@@ -99,7 +99,7 @@ Le frontend sera accessible sur **http://localhost:5173**
 ### 2. Local Guides (Fournisseurs)
 - Inscription avec compte Google Local Guide
 - Visualisation des entreprises disponibles
-- Soumission d'avis pour validation
+- Soufiche d'avis pour validation
 - 1€ par avis validé
 
 ### 3. Admins (AchatAvis)

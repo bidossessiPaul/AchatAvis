@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
 import { ReviewOrder } from '../../types';
-import { Clock, ArrowRight, Filter } from 'lucide-react';
+import { Clock, ArrowRight, Filter, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../context/authStore';
@@ -15,10 +15,25 @@ export const OrdersList: React.FC = () => {
     const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
     const navigate = useNavigate();
     const { user } = useAuthStore();
+    const [availablePacks, setAvailablePacks] = useState<any[]>([]);
+    const [isPacksLoading, setIsPacksLoading] = useState(true);
 
     useEffect(() => {
         loadOrders();
+        loadAvailablePacks();
     }, []);
+
+    const loadAvailablePacks = async () => {
+        setIsPacksLoading(true);
+        try {
+            const packs = await artisanService.getAvailablePacks();
+            setAvailablePacks(packs);
+        } catch (error) {
+            console.error("Failed to load available packs", error);
+        } finally {
+            setIsPacksLoading(false);
+        }
+    };
 
     const loadOrders = async () => {
         setIsLoading(true);
@@ -47,6 +62,8 @@ export const OrdersList: React.FC = () => {
         inProgress: orders.filter(o => o.status === 'in_progress').length,
         completed: orders.filter(o => o.status === 'completed').length,
     };
+
+    const totalRemaining = availablePacks.reduce((acc, p) => acc + (p.review_quantity - (p.fiches_used || 0)), 0);
 
     const TabButton: React.FC<{ status: FilterStatus; label: string; count: number }> = ({ status, label, count }) => (
         <button
@@ -80,9 +97,37 @@ export const OrdersList: React.FC = () => {
 
     return (
         <DashboardLayout title="Suivi des commandes">
-            <PremiumBlurOverlay isActive={(user?.missions_allowed || 0) > 0}>
-                <div style={{ marginBottom: '2rem' }}>
-                    <p style={{ color: '#6b7280' }}>Visualisez ici l'état de vos commandes d'avis et leur progression.</p>
+            <PremiumBlurOverlay
+                isActive={(user?.fiches_allowed || 0) > 0}
+                redirectBack="/artisan/orders"
+            >
+                <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <p style={{ color: '#6b7280', margin: 0 }}>Visualisez ici l'état de vos commandes d'avis et leur progression.</p>
+
+                    {!isPacksLoading && totalRemaining === 0 && (
+                        <button
+                            onClick={() => navigate('/artisan/plan?redirect_back=/artisan/orders')}
+                            style={{
+                                background: 'linear-gradient(135deg, var(--primary-brand) 0%, #a21caf 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                                transition: 'transform 0.2s'
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+                            onMouseOut={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+                        >
+                            <Zap size={18} fill="currentColor" />
+                            Renouveler mon pack
+                        </button>
+                    )}
                 </div>
 
                 {/* Tabs */}

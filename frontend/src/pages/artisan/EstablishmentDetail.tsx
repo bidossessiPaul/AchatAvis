@@ -212,9 +212,9 @@ export const EstablishmentDetail: React.FC = () => {
                     {/* Stats */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
                         <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem' }}>
-                            <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>Missions</div>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', fontWeight: 600 }}>fiches</div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginTop: '0.25rem' }}>
-                                {establishment.missions_count || 0}
+                                {establishment.fiches_count || 0}
                             </div>
                         </div>
                         <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.75rem' }}>

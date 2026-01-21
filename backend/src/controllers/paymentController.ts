@@ -100,11 +100,11 @@ export const paymentController = {
                     subscription_status = 'active',
                     monthly_reviews_quota = ?,
                     current_month_reviews = 0,
-                    missions_allowed = COALESCE(missions_allowed, 0) + ?,
+                    fiches_allowed = COALESCE(fiches_allowed, 0) + ?,
                     subscription_start_date = NOW(),
                     subscription_end_date = DATE_ADD(NOW(), INTERVAL 30 DAY)
                 WHERE user_id = ?
-            `, [planId, quota, plan.missions_quota || 1, userId]);
+            `, [planId, quota, plan.fiches_quota || 1, userId]);
 
             // Activer user
             await connection.execute('UPDATE users SET status = ? WHERE id = ?', ['active', userId]);
@@ -113,9 +113,9 @@ export const paymentController = {
             // Logger paiement
             const paymentId = uuidv4();
             await connection.execute(`
-                INSERT INTO payments (id, user_id, type, amount, status, description, missions_quota, review_credits, processed_at)
+                INSERT INTO payments (id, user_id, type, amount, status, description, fiches_quota, review_credits, processed_at)
                 VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, NOW())
-            `, [paymentId, userId, price, `Abonnement ${plan.name}`, plan.missions_quota || 1, quota]);
+            `, [paymentId, userId, price, `Abonnement ${plan.name}`, plan.fiches_quota || 1, quota]);
 
             console.log('✅ Paiement enregistré');
 
@@ -185,9 +185,9 @@ export const paymentController = {
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
 
-                    // Fetch pack definition to get correct missions_quota
-                    const [packs]: any = await query('SELECT missions_quota FROM subscription_packs WHERE id = ?', [planId]);
-                    const missionsQuota = packs.length > 0 ? packs[0].missions_quota : 1;
+                    // Fetch pack definition to get correct fiches_quota
+                    const [packs]: any = await query('SELECT fiches_quota FROM subscription_packs WHERE id = ?', [planId]);
+                    const fichesQuota = packs.length > 0 ? packs[0].fiches_quota : 1;
 
                     // Update artisan profile in DB with FULL details
                     const startDate = new Date();
@@ -203,9 +203,9 @@ export const paymentController = {
                              subscription_start_date = ?,
                              subscription_end_date = ?,
                              last_payment_date = ?,
-                             missions_allowed = missions_allowed + ?
+                             fiches_allowed = fiches_allowed + ?
                          WHERE user_id = ?`,
-                        [customerId, subscriptionId, planId, startDate, endDate, startDate, missionsQuota, userId]
+                        [customerId, subscriptionId, planId, startDate, endDate, startDate, fichesQuota, userId]
                     );
 
                     // Also update user status
@@ -219,7 +219,7 @@ export const paymentController = {
                     const amount = (session.amount_total || 0) / 100;
 
                     await query(`
-                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, missions_quota, review_credits, processed_at)
+                        INSERT INTO payments (id, user_id, type, amount, status, stripe_payment_id, description, fiches_quota, review_credits, processed_at)
                         VALUES (?, ?, 'subscription', ?, 'completed', ?, ?, ?, ?, NOW())
                     `, [
                         paymentId,
@@ -227,7 +227,7 @@ export const paymentController = {
                         amount,
                         session.payment_intent as string || session.id,
                         `Abonnement ${planId}`,
-                        missionsQuota,
+                        fichesQuota,
                         quantity
                     ]);
 

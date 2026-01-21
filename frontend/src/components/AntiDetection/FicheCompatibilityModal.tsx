@@ -21,7 +21,7 @@ interface Props {
     onSelectOtherGmail?: () => void;
 }
 
-export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, result }) => {
+export const FicheCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, result }) => {
     if (!isOpen || !result) return null;
 
     const getIcon = () => {
@@ -60,7 +60,7 @@ export const MissionCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, re
                 </div>
 
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '0.75rem' }}>
-                    {result.can_take ? 'Mission Compatible !' : 'Action Requise'}
+                    {result.can_take ? 'fiche Compatible !' : 'Action Requise'}
                 </h3>
 
                 <p style={{ color: '#4b5563', lineHeight: 1.5, marginBottom: '2rem' }}>

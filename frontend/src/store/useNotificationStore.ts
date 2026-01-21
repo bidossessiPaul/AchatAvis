@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 export interface AppNotification {
     id: string;
-    type: 'order_update' | 'new_mission' | 'payment_success' | 'system' | 'connected';
+    type: 'order_update' | 'new_fiche' | 'payment_success' | 'system' | 'connected';
     title: string;
     message: string;
     timestamp: number;

@@ -30,8 +30,8 @@ export interface User {
     monthly_reviews_quota?: number;
     current_month_reviews?: number;
     subscription_start_date?: Date;
-    missions_allowed?: number;
-    missions_used?: number;
+    fiches_allowed?: number;
+    fiches_used?: number;
 }
 
 export interface AdminLog {
@@ -68,7 +68,7 @@ export interface ArtisanProfile {
     subscription_end_date?: Date;
     subscription_start_date?: Date;
     last_payment_date?: Date;
-    missions_allowed: number;
+    fiches_allowed: number;
     stripe_customer_id?: string;
     stripe_subscription_id?: string;
     subscription_product_id?: string;
@@ -102,7 +102,7 @@ export interface AdminProfile {
 
 export interface ReviewOrder {
     id: string;
-    mission_name?: string;
+    fiche_name?: string;
     artisan_id: string;
     quantity: number;
     price: number;

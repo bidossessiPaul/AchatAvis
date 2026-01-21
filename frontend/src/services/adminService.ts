@@ -76,5 +76,21 @@ export const adminService = {
     getSuspensionReasons: async () => {
         const response = await api.get('/admin/reasons');
         return response.data;
+    },
+
+    /**
+     * Manually activate a pack for an artisan
+     */
+    activateArtisanPack: async (userId: string, packId: string) => {
+        const response = await api.post(`/admin/artisans/${userId}/activate-pack`, { packId });
+        return response.data;
+    },
+
+    /**
+     * Get all available subscription packs
+     */
+    getPacks: async () => {
+        const response = await api.get('/admin/packs');
+        return response.data;
     }
 };

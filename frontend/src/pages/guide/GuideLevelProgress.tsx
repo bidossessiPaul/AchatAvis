@@ -21,11 +21,11 @@ export const GuideLevelProgress: React.FC = () => {
     const getLevelData = (level: number) => {
         switch (level) {
             case 1:
-                return { nextLevelXP: 10, title: 'Guide Novice', nextBenefit: 'Accès aux missions Bronzes' };
+                return { nextLevelXP: 10, title: 'Guide Novice', nextBenefit: 'Accès aux fiches Bronzes' };
             case 2:
                 return { nextLevelXP: 50, title: 'Guide Confirmé', nextBenefit: 'Bonus de +0.10€ par avis' };
             case 3:
-                return { nextLevelXP: 100, title: 'Guide Expert', nextBenefit: 'Accès prioritaire aux missions' };
+                return { nextLevelXP: 100, title: 'Guide Expert', nextBenefit: 'Accès prioritaire aux fiches' };
             default:
                 return { nextLevelXP: 1000, title: 'Maître Guide', nextBenefit: 'Statut Élite' };
         }

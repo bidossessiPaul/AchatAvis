@@ -1,8 +1,8 @@
--- Fix: Recalculate missions_allowed to be the COUNT of packs properly purchased.
--- This aligns with the "1 Pack = 1 Mission" logic.
+-- Fix: Recalculate fiches_allowed to be the COUNT of packs properly purchased.
+-- This aligns with the "1 Pack = 1 fiche" logic.
 
 UPDATE artisans_profiles ap
-SET missions_allowed = (
+SET fiches_allowed = (
     SELECT COUNT(*) 
     FROM payments p 
     WHERE p.user_id = ap.user_id 

@@ -75,8 +75,8 @@ export const ArtisanOverview: React.FC = () => {
     const handleDeleteOrder = async (orderId: string, companyName: string = 'Sans nom') => {
         const Swal = (await import('sweetalert2')).default;
         const result = await Swal.fire({
-            title: 'Supprimer cette mission ?',
-            html: `Êtes-vous sûr de vouloir supprimer la mission <strong>${companyName}</strong> ?<br/><small>Le crédit de votre pack sera restauré.</small>`,
+            title: 'Supprimer cette fiche ?',
+            html: `Êtes-vous sûr de vouloir supprimer la fiche <strong>${companyName}</strong> ?<br/><small>Le crédit de votre pack sera restauré.</small>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#FF991F',
@@ -88,11 +88,11 @@ export const ArtisanOverview: React.FC = () => {
         if (result.isConfirmed) {
             try {
                 await artisanService.deleteOrder(orderId);
-                await Swal.fire('Supprimé !', 'La mission a été supprimée.', 'success');
+                await Swal.fire('Supprimé !', 'La fiche a été supprimée.', 'success');
                 loadDashboardData();
             } catch (error) {
                 console.error('Delete error:', error);
-                await Swal.fire('Erreur', 'Impossible de supprimer cette mission.', 'error');
+                await Swal.fire('Erreur', 'Impossible de supprimer cette fiche.', 'error');
             }
         }
     };
@@ -105,11 +105,18 @@ export const ArtisanOverview: React.FC = () => {
                     <div className="artisan-dashboard-hero-content">
                         <div className="artisan-dashboard-hero-text">
                             <h2 className="artisan-dashboard-hero-title">Boostez votre visibilité sur Google !</h2>
-                            <p className="artisan-dashboard-hero-subtitle">
-                                Gérez vos missions, suivez vos avis et développez votre présence en ligne.
+                            <p className="artisan-dashboard-hero-subtitle" >
+                                Gérez vos fiches, suivez vos avis et développez votre présence en ligne.
                             </p>
                         </div>
                         <Star className="artisan-dashboard-hero-icon" />
+                        <button
+                            onClick={() => navigate('/artisan/submit')}
+                            className="artisan-submit-btn"
+                        >
+                            <PlusCircle size={18} />
+                            SOUMETTRE UNE FICHE
+                        </button>
                     </div>
                 </div>
 
@@ -245,7 +252,7 @@ export const ArtisanOverview: React.FC = () => {
                                 : 0}%
                         </span>
                         <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                            Missions en cours : {stats?.statusBreakdown?.find((s: any) => s.status === 'in_progress')?.count || 0}
+                            fiches en cours : {stats?.statusBreakdown?.find((s: any) => s.status === 'in_progress')?.count || 0}
                         </div>
                     </motion.div>
                 </div>
@@ -263,7 +270,7 @@ export const ArtisanOverview: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827' }}>Soumissions Récentes</h2>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827' }}>Soufiches Récentes</h2>
                     <button
                         onClick={() => navigate('/artisan/submit')}
                         className="artisan-submit-btn"
@@ -364,7 +371,7 @@ export const ArtisanOverview: React.FC = () => {
                             <div style={{ background: '#f3f4f6', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                                 <AlertCircle size={32} color="#9ca3af" />
                             </div>
-                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Aucune soumission</h3>
+                            <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', marginBottom: '0.5rem' }}>Aucune soufiche</h3>
                             <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>Vous n'avez pas encore soumis de fiche pour récolter des avis.</p>
                             <button
                                 onClick={() => navigate('/artisan/submit')}

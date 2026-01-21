@@ -121,7 +121,7 @@ export const Submissions: React.FC = () => {
                             className="browse-btn"
                             style={{ padding: '0.6rem 1.2rem', borderRadius: '0.75rem', fontSize: '0.875rem' }}
                         >
-                            Nouvelle Mission
+                            Nouvelle fiche
                         </button>
                     </div>
 
@@ -140,7 +140,7 @@ export const Submissions: React.FC = () => {
                             <Star size={48} className="empty-icon" />
                             <p className="empty-text">Vous n'avez pas encore posté d'avis.</p>
                             <button onClick={() => navigate('/guide')} className="browse-btn">
-                                Voir les missions disponibles
+                                Voir les fiches disponibles
                             </button>
                         </div>
                     ) : (

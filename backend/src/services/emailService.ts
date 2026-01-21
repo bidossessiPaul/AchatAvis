@@ -237,7 +237,7 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
 /**
  * Send email when a pack is activated
  */
-export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, missionsQuota: number) => {
+export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, fichesQuota: number) => {
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
 
@@ -278,8 +278,8 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
                         
                         <div class="stats-grid">
                             <div class="stat-item">
-                                <div class="stat-value">${missionsQuota}</div>
-                                <div class="stat-label">Missions incluses</div>
+                                <div class="stat-value">${fichesQuota}</div>
+                                <div class="stat-label">fiches incluses</div>
                             </div>
                         </div>
                         
@@ -372,9 +372,9 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
 };
 
 /**
- * Send email to artisan when a mission is approved by admin
+ * Send email to artisan when a fiche is approved by admin
  */
-export const sendMissionDecisionEmail = async (email: string, fullName: string, orderId: string, status: string) => {
+export const sendficheDecisionEmail = async (email: string, fullName: string, orderId: string, status: string) => {
     if (status !== 'in_progress') return;
 
     const brandRed = '#ff3b6a';
@@ -383,7 +383,7 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `🎯 Votre mission a été validée ! - AchatAvis`,
+        subject: `🎯 Votre fiche a été validée ! - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -403,10 +403,10 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
                 <div class="container">
                     <div class="card">
                         <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Mission validée</h2>
+                        <h2 class="title">fiche validée</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
-                            Excellente nouvelle ! Votre mission a été validée par notre équipe technique. Elle est désormais visible par nos Local Guides.
+                            Excellente nouvelle ! Votre fiche a été validée par notre équipe technique. Elle est désormais visible par nos Local Guides.
                         </p>
                         <div class="button-container">
                             <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Suivre l'avancement</a>
@@ -421,7 +421,7 @@ export const sendMissionDecisionEmail = async (email: string, fullName: string, 
     try {
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error(`Error sending mission decision email:`, error);
+        console.error(`Error sending fiche decision email:`, error);
     }
 };
 
@@ -436,11 +436,11 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
     let color = brandBlack;
 
     if (status === 'validated') {
-        title = "Soumission Validée";
+        title = "Soufiche Validée";
         message = "Félicitations ! Votre avis a été validé. Vos gains ont été crédités.";
         color = brandBlack;
     } else if (status === 'rejected') {
-        title = "Soumission Refusée";
+        title = "Soufiche Refusée";
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
         color = brandRed;
     } else {
@@ -450,7 +450,7 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `Décision sur votre soumission - AchatAvis`,
+        subject: `Décision sur votre soufiche - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -499,7 +499,7 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
     const permissionLabels: Record<string, string> = {
         can_validate_profiles: "Validation des Profils",
         can_validate_reviews: "Validation des Avis",
-        can_validate_missions: "Gestion des Missions",
+        can_validate_fiches: "Gestion des fiches",
         can_view_payments: "Accès aux Paiements",
         can_view_stats: "Voir les Statistiques",
         can_manage_users: "Gestion des Utilisateurs"
@@ -855,16 +855,16 @@ export const sendWarningEmail = async (email: string, fullName: string, reason: 
 };
 
 /**
- * Send email to artisan when a mission is submitted for review
+ * Send email to artisan when a fiche is submitted for review
  */
-export const sendMissionSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string) => {
+export const sendficheSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string) => {
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
 
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `📝 Mission " ${companyName} " en attente de validation - AchatAvis`,
+        subject: `📝 fiche " ${companyName} " en attente de validation - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -884,15 +884,15 @@ export const sendMissionSubmittedArtisanEmail = async (email: string, fullName: 
                 <div class="container">
                     <div class="card">
                         <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Mission reçue</h2>
+                        <h2 class="title">fiche reçue</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
-                            Votre mission pour <strong>${companyName}</strong> a bien été transmise à nos équipes. 
+                            Votre fiche pour <strong>${companyName}</strong> a bien été transmise à nos équipes. 
                             Elle est actuellement en cours de vérification technique.<br><br>
                             Dès qu'elle sera validée, vous recevrez une confirmation et elle deviendra active pour nos Local Guides.
                         </p>
                         <div class="button-container">
-                            <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Voir ma mission</a>
+                            <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Voir ma fiche</a>
                         </div>
                     </div>
                 </div>
@@ -904,31 +904,31 @@ export const sendMissionSubmittedArtisanEmail = async (email: string, fullName: 
     try {
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error(`Error sending mission submitted artisan email:`, error);
+        console.error(`Error sending fiche submitted artisan email:`, error);
     }
 };
 
 /**
- * Send alert to admin when a new mission is submitted
+ * Send alert to admin when a new fiche is submitted
  */
-export const sendMissionSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string) => {
+export const sendficheSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string) => {
     const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
     const brandRed = '#ff3b6a';
 
     const mailOptions = {
         from: emailConfig.from,
         to: adminEmail,
-        subject: `🚨 [Nouveau] Mission à valider : ${companyName}`,
+        subject: `🚨 [Nouveau] fiche à valider : ${companyName}`,
         html: `
             <div style="font-family: 'Segoe UI', sans-serif; padding: 32px; color: #111827; background-color: #f9fafb;">
-                <h2 style="color: ${brandRed}; text-transform: uppercase; letter-spacing: 0.05em;">Nouvelle Mission Soumise</h2>
+                <h2 style="color: ${brandRed}; text-transform: uppercase; letter-spacing: 0.05em;">Nouvelle fiche Soumise</h2>
                 <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb; margin-top: 24px;">
                     <p style="margin-top: 0;"><strong>Artisan :</strong> ${artisanName}</p>
                     <p><strong>Entreprise :</strong> ${companyName}</p>
-                    <p><strong>ID Mission :</strong> ${orderId}</p>
+                    <p><strong>ID fiche :</strong> ${orderId}</p>
                     
                     <div style="margin-top: 32px;">
-                        <a href="${emailConfig.frontendUrl}/admin/missions" 
+                        <a href="${emailConfig.frontendUrl}/admin/fiches" 
                            style="background-color: ${brandRed}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                            Accéder au Dashboard Admin
                         </a>
@@ -941,6 +941,6 @@ export const sendMissionSubmittedAdminEmail = async (artisanName: string, compan
     try {
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error(`Error sending mission submitted admin email:`, error);
+        console.error(`Error sending fiche submitted admin email:`, error);
     }
 };

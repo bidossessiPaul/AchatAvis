@@ -30,6 +30,7 @@ router.get('/reasons', adminController.getSuspensionReasons); // Alias for testi
 
 router.get('/artisans', adminController.getArtisans);
 router.get('/artisans/:userId', adminController.getArtisanDetail);
+router.post('/artisans/:userId/activate-pack', adminController.activateArtisanPack);
 router.get('/guides', adminController.getGuides);
 router.get('/guides/:userId', adminController.getGuideDetail);
 router.get('/subscriptions', adminController.getAllSubscriptions);
@@ -41,13 +42,13 @@ router.post('/users/:userId/warning', adminController.issueWarning);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 
-// Mission management
-router.get('/missions', adminController.getMissions);
-router.get('/missions/pending', adminController.getPendingMissions);
-router.get('/missions/:orderId', adminController.getAdminMissionDetail);
-router.post('/missions/:orderId/approve', adminController.approveMission);
-router.put('/missions/:orderId', adminController.updateMission);
-router.delete('/missions/:orderId', adminController.deleteMission);
+// fiche management
+router.get('/fiches', adminController.getfiches);
+router.get('/fiches/pending', adminController.getPendingfiches);
+router.get('/fiches/:orderId', adminController.getAdminficheDetail);
+router.post('/fiches/:orderId/approve', adminController.approvefiche);
+router.put('/fiches/:orderId', adminController.updatefiche);
+router.delete('/fiches/:orderId', adminController.deletefiche);
 
 // Pack management
 router.get('/packs', adminController.getPacks);

@@ -2,20 +2,20 @@ import api from './api';
 
 export const guideService = {
     /**
-     * Get missions available for the current guide
+     * Get fiches available for the current guide
      */
-    async getAvailableMissions(): Promise<any[]> {
-        const response = await api.get('/guide/missions/available');
+    async getAvailablefiches(): Promise<any[]> {
+        const response = await api.get('/guide/fiches/available');
         return response.data;
     },
 
-    async getMissionDetails(orderId: string): Promise<any> {
-        const response = await api.get(`/guide/missions/${orderId}`);
+    async getficheDetails(orderId: string): Promise<any> {
+        const response = await api.get(`/guide/fiches/${orderId}`);
         return response.data;
     },
 
     async releaseLock(orderId: string): Promise<void> {
-        await api.post(`/guide/missions/${orderId}/release-lock`);
+        await api.post(`/guide/fiches/${orderId}/release-lock`);
     },
 
     async submitProof(data: {

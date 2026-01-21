@@ -8,7 +8,6 @@ import {
     MessageCircle,
     User,
     CheckCircle2,
-    XCircle,
     Clock,
     Sparkles,
     Copy,
@@ -21,32 +20,35 @@ import { useAuthStore } from '../../context/authStore';
 import './ReceivedReviews.css';
 
 interface Submission {
-    id: string;
-    status: 'pending' | 'validated' | 'rejected';
-    review_url: string;
-    submitted_at: string;
-    earnings: number;
-    rejection_reason?: string;
+    proposal_id: string;
     proposal_content: string;
     proposal_author: string;
     rating: number;
-    mission_name: string;
-    mission_id: string;
+    proposal_status: string;
+    submission_id?: string;
+    submission_status?: 'pending' | 'validated' | 'rejected';
+    review_url?: string;
+    submitted_at?: string;
+    earnings?: number;
+    rejection_reason?: string;
+    fiche_name: string;
+    fiche_id: string;
     company_name: string;
-    guide_name: string;
+    guide_name?: string;
+    proposal_date?: string;
 }
 
-interface Mission {
+interface fiche {
     id: string;
-    mission_name: string;
+    fiche_name: string;
 }
 
 export const ReceivedReviews: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
-    const [missions, setMissions] = useState<Mission[]>([]);
+    const [fiches, setfiches] = useState<fiche[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'validated'>('all');
-    const [selectedMissionId, setSelectedMissionId] = useState<string>('all');
+    const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'scheduled' | 'validated'>('all');
+    const [selectedficheId, setSelectedficheId] = useState<string>('all');
 
     // AI Response Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,6 +56,10 @@ export const ReceivedReviews: React.FC = () => {
     const [generatedResponse, setGeneratedResponse] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
+
+    // Pagination States
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const { user } = useAuthStore();
 
@@ -70,12 +76,12 @@ export const ReceivedReviews: React.FC = () => {
             ]);
             setSubmissions(submissionsData);
 
-            // Extract unique missions from submissions or from orders
-            const uniqueMissions = ordersData.map((o: any) => ({
+            // Extract unique fiches from submissions or from orders
+            const uniquefiches = ordersData.map((o: any) => ({
                 id: o.id,
-                mission_name: o.mission_name
+                fiche_name: o.fiche_name
             }));
-            setMissions(uniqueMissions);
+            setfiches(uniquefiches);
         } catch (error) {
             console.error('Error loading data:', error);
             showError('Erreur', 'Erreur lors du chargement des données');
@@ -114,31 +120,50 @@ export const ReceivedReviews: React.FC = () => {
         showSuccess('Copié !', 'La réponse a été copiée dans le presse-papier.');
     };
 
-    const getStatusIcon = (status: string) => {
+    const getStatusIcon = (review: Submission) => {
+        const status = review.submission_status || 'not_submitted';
         switch (status) {
-            case 'validated': return <CheckCircle2 size={16} className="status-success" />;
-            case 'rejected': return <XCircle size={16} className="status-error" />;
-            default: return <Clock size={16} className="status-warning" />;
+            case 'validated': return <span>✓</span>;
+            case 'pending': return <span>●</span>;
+            default: return <Clock size={12} />;
         }
     };
 
-    const getStatusLabel = (status: string) => {
+    const getStatusLabel = (review: Submission) => {
+        const status = review.submission_status || 'not_submitted';
         switch (status) {
-            case 'validated': return 'Validé';
+            case 'validated': return 'Publié Google';
+            case 'pending': return 'Vérification AchatAvis';
             case 'rejected': return 'Rejeté';
-            default: return 'En attente';
+            default: return 'Programmé';
         }
     };
 
     const filteredSubmissions = submissions.filter(s => {
-        const matchesStatus = activeFilter === 'all' || s.status === activeFilter;
-        const matchesMission = selectedMissionId === 'all' || s.mission_id === selectedMissionId;
-        return matchesStatus && matchesMission;
+        const status = s.submission_status || 'not_submitted';
+        const matchesStatus =
+            activeFilter === 'all' ||
+            (activeFilter === 'pending' && status === 'pending') ||
+            (activeFilter === 'scheduled' && status === 'not_submitted') ||
+            (activeFilter === 'validated' && status === 'validated');
+        const matchesfiche = selectedficheId === 'all' || s.fiche_id === selectedficheId;
+        return matchesStatus && matchesfiche;
     });
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeFilter, selectedficheId]);
+
+    const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
+    const paginatedSubmissions = filteredSubmissions.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     return (
         <DashboardLayout title="Avis Reçus">
-            <PremiumBlurOverlay isActive={(user?.missions_allowed || 0) > 0}>
+            <PremiumBlurOverlay isActive={(user?.fiches_allowed || 0) > 0}>
                 <div className="artisan-reviews-container revamped">
                     <div className="reviews-header-card">
                         <div className="header-info">
@@ -151,8 +176,8 @@ export const ReceivedReviews: React.FC = () => {
                                 <span className="label">Total</span>
                             </div>
                             <div className="stat-pill success">
-                                <span className="count">{submissions.filter(s => s.status === 'validated').length}</span>
-                                <span className="label">Validés</span>
+                                <span className="count">{submissions.filter(s => s.submission_status === 'validated').length}</span>
+                                <span className="label">Publiés</span>
                             </div>
                         </div>
                     </div>
@@ -169,27 +194,33 @@ export const ReceivedReviews: React.FC = () => {
                                 className={`filter-btn ${activeFilter === 'pending' ? 'active' : ''}`}
                                 onClick={() => setActiveFilter('pending')}
                             >
-                                <Clock size={16} /> En attente
+                                <Clock size={16} /> Vérification
+                            </button>
+                            <button
+                                className={`filter-btn ${activeFilter === 'scheduled' ? 'active' : ''}`}
+                                onClick={() => setActiveFilter('scheduled')}
+                            >
+                                <Clock size={16} /> Programmé
                             </button>
                             <button
                                 className={`filter-btn ${activeFilter === 'validated' ? 'active' : ''}`}
                                 onClick={() => setActiveFilter('validated')}
                             >
-                                <CheckCircle2 size={16} /> Validés
+                                <CheckCircle2 size={16} /> Publiés
                             </button>
                         </div>
 
-                        <div className="mission-filter">
-                            <label htmlFor="mission-select">Mission :</label>
+                        <div className="fiche-filter">
+                            <label htmlFor="fiche-select">fiche :</label>
                             <select
-                                id="mission-select"
-                                value={selectedMissionId}
-                                onChange={(e) => setSelectedMissionId(e.target.value)}
-                                className="mission-select"
+                                id="fiche-select"
+                                value={selectedficheId}
+                                onChange={(e) => setSelectedficheId(e.target.value)}
+                                className="fiche-select"
                             >
-                                <option value="all">Toutes les missions</option>
-                                {missions.map(m => (
-                                    <option key={m.id} value={m.id}>{m.mission_name}</option>
+                                <option value="all">Toutes les fiches</option>
+                                {fiches.map(m => (
+                                    <option key={m.id} value={m.id}>{m.fiche_name}</option>
                                 ))}
                             </select>
                         </div>
@@ -200,83 +231,114 @@ export const ReceivedReviews: React.FC = () => {
                             <LoadingSpinner size="lg" text="Chargement de vos avis..." />
                         </div>
                     ) : filteredSubmissions.length > 0 ? (
-                        <div className="reviews-table-wrapper">
-                            <table className="reviews-table">
-                                <thead>
-                                    <tr>
-                                        <th>Guide</th>
-                                        <th>Mission</th>
-                                        <th>Avis</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredSubmissions.map((review) => (
-                                        <tr key={review.id} className={`review-row ${review.status}`}>
-                                            <td>
-                                                <div className="guide-cell">
-                                                    <div className="avatar">
-                                                        <User size={14} />
-                                                    </div>
-                                                    <span>{review.guide_name || 'Local Guide'}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className="mission-name-badge">{review.mission_name}</span>
-                                            </td>
-                                            <td className="content-cell">
-                                                <div className="review-content-summary">
+                        <>
+                            <div className="reviews-table-wrapper">
+                                <table className="reviews-table">
+                                    <thead>
+                                        <tr>
+                                            <th>fiche</th>
+                                            <th>NOTE & AVIS</th>
+                                            <th>STATUT</th>
+                                            <th>SOUMIS LE</th>
+                                            <th>PUBLICATION PRÉVUE</th>
+                                            <th>ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {paginatedSubmissions.map((review) => (
+                                            <tr key={review.proposal_id} className={`review-row ${review.submission_status || 'pending'}`}>
+                                                <td>
+                                                    <span className="fiche-name-badge">{review.fiche_name}</span>
+                                                </td>
+                                                <td className="content-cell">
                                                     <div className="rating-stars">
                                                         {[...Array(5)].map((_, i) => (
                                                             <Star
                                                                 key={i}
-                                                                size={12}
-                                                                fill={i < review.rating ? "var(--primary-brand)" : "none"}
-                                                                color={i < review.rating ? "var(--primary-brand)" : "var(--gray-300)"}
+                                                                size={14}
+                                                                fill={i < review.rating ? "#facc15" : "none"}
+                                                                color={i < review.rating ? "#facc15" : "#d1d5db"}
                                                             />
                                                         ))}
                                                     </div>
-                                                    <p className="summary-text truncate">{review.proposal_content}</p>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="date-cell">
-                                                    {new Date(review.submitted_at).toLocaleDateString('fr-FR')}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className={`status-badge-mini ${review.status}`}>
-                                                    {getStatusIcon(review.status)}
-                                                    <span>{getStatusLabel(review.status)}</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div className="actions-cell">
-                                                    <button
-                                                        className="action-btn ai-btn"
-                                                        onClick={() => handleOpenModal(review)}
-                                                        title="Générer une réponse IA"
-                                                    >
-                                                        <Sparkles size={16} />
-                                                    </button>
-                                                    <a
-                                                        href={review.review_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="action-btn-link"
-                                                        title="Voir sur Google Maps"
-                                                    >
-                                                        <ExternalLink size={16} />
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                                    <p className="summary-text truncate" title={review.proposal_content}>
+                                                        {review.proposal_content}
+                                                    </p>
+                                                </td>
+                                                <td>
+                                                    <div className={`status-pill-premium ${review.submission_status || 'not_submitted'}`}>
+                                                        {getStatusIcon(review)}
+                                                        <span>{getStatusLabel(review)}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="date-cell">
+                                                        {review.submitted_at ? new Date(review.submitted_at).toLocaleDateString('fr-FR') : '—'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="date-cell">
+                                                        {review.submitted_at || review.proposal_date ?
+                                                            new Date(new Date(review.submitted_at || review.proposal_date!).getTime() + 86400000).toLocaleDateString('fr-FR') :
+                                                            '—'}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div className="actions-cell">
+                                                        <button
+                                                            className="action-btn ai-btn"
+                                                            onClick={() => handleOpenModal(review)}
+                                                            title="Générer une réponse IA"
+                                                            disabled={review.submission_status !== 'validated'}
+                                                            style={review.submission_status !== 'validated' ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                                                        >
+                                                            <Sparkles size={16} />
+                                                        </button>
+                                                        {review.review_url ? (
+                                                            <a
+                                                                href={review.review_url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="action-btn-link"
+                                                                title="Voir sur Google Maps"
+                                                            >
+                                                                <ExternalLink size={16} />
+                                                            </a>
+                                                        ) : (
+                                                            <span className="action-btn-link disabled" title="Avis non publié" style={{ opacity: 0.4, cursor: 'not-allowed' }}>
+                                                                <ExternalLink size={16} />
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {filteredSubmissions.length > 0 && (
+                                <div className="pagination-container">
+                                    <button
+                                        className="pagination-btn"
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        Précédent
+                                    </button>
+                                    <div className="pagination-info">
+                                        Page <span>{currentPage}</span> sur {Math.max(1, totalPages)}
+                                    </div>
+                                    <button
+                                        className="pagination-btn"
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages || totalPages === 0}
+                                    >
+                                        Suivant
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="empty-reviews">
                             <MessageCircle size={48} className="empty-icon" />

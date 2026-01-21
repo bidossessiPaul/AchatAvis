@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { Trash2, Shield, ExternalLink, Mail, Award, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Trash2, Mail } from 'lucide-react';
 import { Button } from '../common/Button';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 
@@ -71,52 +71,18 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
                                         <Mail size={20} color="#94a3b8" />
                                     </div>
                                 )}
-                                {account.is_verified && (
-                                    <div style={{ position: 'absolute', bottom: -2, right: -2, background: 'white', borderRadius: '50%', padding: '2px' }}>
-                                        <CheckCircle2 size={14} color="#10b981" fill="#fff" />
-                                    </div>
-                                )}
                             </div>
 
                             <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
                                     <span style={{ fontWeight: 600, color: '#0f172a' }}>{account.email}</span>
-                                    <span style={{
-                                        fontSize: '0.65rem',
-                                        fontWeight: 800,
-                                        textTransform: 'uppercase',
-                                        padding: '0.125rem 0.5rem',
-                                        borderRadius: '4px',
-                                        background: account.account_level === 'gold' ? '#fef3c7' : (account.account_level === 'silver' ? '#f1f5f9' : '#ecfdf5'),
-                                        color: account.account_level === 'gold' ? '#92400e' : (account.account_level === 'silver' ? '#475569' : '#065f46')
-                                    }}>
-                                        {account.account_level}
-                                    </span>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <Shield size={12} /> Trust Score: <b>{account.trust_score}%</b>
-                                    </span>
-                                    {account.local_guide_level > 1 && (
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                            <Award size={12} /> Local Guide Niv. {account.local_guide_level}
-                                        </span>
-                                    )}
+                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                    Compte actif • Prêt pour les avis
                                 </div>
                             </div>
 
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                {account.maps_profile_url && (
-                                    <a
-                                        href={account.maps_profile_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{ color: '#94a3b8', padding: '0.5rem', borderRadius: '0.5rem' }}
-                                        title="Voir le profil Maps"
-                                    >
-                                        <ExternalLink size={18} />
-                                    </a>
-                                )}
                                 <button
                                     onClick={() => handleDelete(account.id)}
                                     style={{ color: '#ef4444', padding: '0.5rem', borderRadius: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer' }}
@@ -129,13 +95,6 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
                     ))}
                 </div>
             )}
-
-            <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fffbeb', borderRadius: '0.75rem', border: '1px solid #fef3c7', display: 'flex', gap: '1rem' }}>
-                <AlertCircle size={20} color="#d97706" style={{ flexShrink: 0 }} />
-                <p style={{ margin: 0, fontSize: '0.8rem', color: '#92400e', lineHeight: 1.5 }}>
-                    <b>Important :</b> Plus vos comptes Gmail sont anciens et actifs sur Google Maps (avis réels, photos), plus votre "Trust Score" sera élevé, vous ouvrant l'accès à des missions mieux rémunérées.
-                </p>
-            </div>
         </div>
     );
 };

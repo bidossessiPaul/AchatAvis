@@ -35,7 +35,7 @@ interface Submission {
     proposal_content: string;
 }
 
-interface PendingMission {
+interface Pendingfiche {
     id: string;
     artisan_id: string;
     artisan_name: string;
@@ -50,9 +50,9 @@ interface PendingMission {
 
 export const ReviewValidation: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
-    const [pendingMissions, setPendingMissions] = useState<PendingMission[]>([]);
+    const [pendingfiches, setPendingfiches] = useState<Pendingfiche[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'submissions' | 'missions'>('submissions');
+    const [activeTab, setActiveTab] = useState<'submissions' | 'fiches'>('submissions');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showOnlyOld, setShowOnlyOld] = useState(false);
@@ -70,12 +70,12 @@ export const ReviewValidation: React.FC = () => {
     const fetchData = async (silent = false) => {
         if (!silent) setIsLoading(true);
         try {
-            const [subs, missions] = await Promise.all([
+            const [subs, fiches] = await Promise.all([
                 adminApi.getAllSubmissions(),
-                adminApi.getPendingMissions()
+                adminApi.getPendingfiches()
             ]);
             setSubmissions(subs);
-            setPendingMissions(missions);
+            setPendingfiches(fiches);
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement des données');
         } finally {
@@ -99,11 +99,11 @@ export const ReviewValidation: React.FC = () => {
         }
     };
 
-    const handleApproveMission = async (orderId: string) => {
+    const handleApprovefiche = async (orderId: string) => {
         setIsActionLoading(true);
         try {
-            await adminApi.approveMission(orderId);
-            showSuccess('Succès', 'Mission publiée !');
+            await adminApi.approvefiche(orderId);
+            showSuccess('Succès', 'fiche publiée !');
             fetchData(true);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la publication');
@@ -164,26 +164,26 @@ export const ReviewValidation: React.FC = () => {
                                 Avis à valider ({submissions.filter(s => s.status === 'pending').length})
                             </button>
                             <button
-                                className={`tab-btn ${activeTab === 'missions' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('missions')}
+                                className={`tab-btn ${activeTab === 'fiches' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('fiches')}
                                 style={{
                                     padding: '0.75rem 0',
                                     fontWeight: 700,
                                     fontSize: '0.9375rem',
-                                    color: activeTab === 'missions' ? 'var(--primary-brand)' : 'var(--gray-500)',
-                                    borderBottom: activeTab === 'missions' ? '2px solid var(--primary-brand)' : 'none',
+                                    color: activeTab === 'fiches' ? 'var(--primary-brand)' : 'var(--gray-500)',
+                                    borderBottom: activeTab === 'fiches' ? '2px solid var(--primary-brand)' : 'none',
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer'
                                 }}
                             >
-                                Missions à publier ({pendingMissions.length})
+                                fiches à publier ({pendingfiches.length})
                             </button>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                             <h2 className="card-title">
-                                {activeTab === 'submissions' ? 'Validation des Avis' : 'Approbation des Missions'}
+                                {activeTab === 'submissions' ? 'Validation des Avis' : 'Approbation des fiches'}
                             </h2>
                             <div className="admin-controls">
                                 <div className="search-box">
@@ -344,13 +344,13 @@ export const ReviewValidation: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pendingMissions.length > 0 ? pendingMissions.map((mission) => (
-                                        <tr key={mission.id}>
-                                            <td className="font-medium">{mission.artisan_name}</td>
-                                            <td>{mission.company_name}</td>
+                                    {pendingfiches.length > 0 ? pendingfiches.map((fiche) => (
+                                        <tr key={fiche.id}>
+                                            <td className="font-medium">{fiche.artisan_name}</td>
+                                            <td>{fiche.company_name}</td>
                                             <td>
                                                 <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
-                                                    <strong>{mission.quantity} avis</strong> • {mission.sector}
+                                                    <strong>{fiche.quantity} avis</strong> • {fiche.sector}
                                                 </div>
                                             </td>
                                             <td>
@@ -360,7 +360,7 @@ export const ReviewValidation: React.FC = () => {
                                                 <button
                                                     className="btn-next"
                                                     style={{ padding: '6px 12px', fontSize: '12px', width: 'auto' }}
-                                                    onClick={() => handleApproveMission(mission.id)}
+                                                    onClick={() => handleApprovefiche(fiche.id)}
                                                     disabled={isActionLoading}
                                                 >
                                                     <CheckCircle2 size={16} /> Publier
@@ -370,7 +370,7 @@ export const ReviewValidation: React.FC = () => {
                                     )) : (
                                         <tr>
                                             <td colSpan={5} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
-                                                Aucune mission en attente de publication.
+                                                Aucune fiche en attente de publication.
                                             </td>
                                         </tr>
                                     )}

@@ -15,7 +15,7 @@ import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
-interface MissionDetail {
+interface FicheDetailData {
     id: string;
     artisan_id: string;
     artisan_name: string;
@@ -33,31 +33,31 @@ interface MissionDetail {
     reviews_received: number;
     proposals: any[];
     pack_name?: string;
-    missions_quota?: number;
-    pack_missions_used?: number;
+    fiches_quota?: number;
+    pack_fiches_used?: number;
 }
 
-export const AdminMissionDetail: React.FC = () => {
+export const AdminFicheDetail: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
-    const [mission, setMission] = useState<MissionDetail | null>(null);
+    const [fiche, setFiche] = useState<FicheDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<any>({});
 
     useEffect(() => {
-        if (orderId) loadMission(orderId);
+        if (orderId) loadfiche(orderId);
     }, [orderId]);
 
-    const loadMission = async (id: string) => {
+    const loadfiche = async (id: string) => {
         setIsLoading(true);
         try {
-            const data = await adminApi.getAdminMissionDetail(id);
-            setMission(data);
+            const data = await adminApi.getAdminficheDetail(id);
+            setFiche(data);
             setFormData(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement de la mission');
-            navigate('/admin/missions');
+            showError('Erreur', 'Erreur lors du chargement de la fiche');
+            navigate('/admin/fiches');
         } finally {
             setIsLoading(false);
         }
@@ -71,14 +71,14 @@ export const AdminMissionDetail: React.FC = () => {
             const {
                 id, artisan_id, artisan_name, artisan_email, artisan_company,
                 proposals, created_at, published_at, reviews_received,
-                pack_name, missions_quota, pack_missions_used,
+                pack_name, fiches_quota, pack_fiches_used,
                 price, quantity, payment_amount, // User asked not to modify these via UI
                 ...updateData
             } = formData;
 
-            await adminApi.updateMission(orderId, updateData);
-            showSuccess('Succès', 'Mission mise à jour');
-            loadMission(orderId);
+            await adminApi.updatefiche(orderId, updateData);
+            showSuccess('Succès', 'fiche mise à jour');
+            loadfiche(orderId);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la mise à jour');
         } finally {
@@ -91,9 +91,9 @@ export const AdminMissionDetail: React.FC = () => {
         const result = await showConfirm('Confirmation', 'Confirmer la suppression ?');
         if (!result.isConfirmed) return;
         try {
-            await adminApi.deleteMission(orderId);
-            showSuccess('Succès', 'Mission supprimée');
-            navigate('/admin/missions');
+            await adminApi.deletefiche(orderId);
+            showSuccess('Succès', 'fiche supprimée');
+            navigate('/admin/fiches');
         } catch (error) {
             showError('Erreur', 'Erreur lors de la suppression');
         }
@@ -102,35 +102,35 @@ export const AdminMissionDetail: React.FC = () => {
     const handleApprove = async () => {
         if (!orderId) return;
         try {
-            await adminApi.approveMission(orderId);
-            showSuccess('Succès', 'Mission publiée !');
-            loadMission(orderId);
+            await adminApi.approvefiche(orderId);
+            showSuccess('Succès', 'fiche publiée !');
+            loadfiche(orderId);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la publication');
         }
     };
 
     if (isLoading) return (
-        <DashboardLayout title="Détail Mission">
+        <DashboardLayout title="Détail fiche">
             <div className="admin-loading"><LoadingSpinner /></div>
         </DashboardLayout>
     );
 
-    if (!mission) return null;
+    if (!fiche) return null;
 
     return (
-        <DashboardLayout title={`Mission #${mission.id.slice(0, 8)}`}>
+        <DashboardLayout title={`fiche #${fiche.id.slice(0, 8)}`}>
             <div className="admin-dashboard revamped">
                 <div className="admin-card-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button onClick={() => navigate('/admin/missions')} className="action-btn">
+                        <button onClick={() => navigate('/admin/fiches')} className="action-btn">
                             <ArrowLeft size={20} />
                         </button>
-                        <h2 className="card-title" style={{ margin: 0 }}>Détails de la Mission</h2>
+                        <h2 className="card-title" style={{ margin: 0 }}>Détails de la fiche</h2>
                     </div>
 
                     <div className="admin-controls">
-                        {mission.status === 'submitted' && (
+                        {fiche.status === 'submitted' && (
                             <button
                                 className="btn-next"
                                 onClick={handleApprove}
@@ -158,7 +158,7 @@ export const AdminMissionDetail: React.FC = () => {
                     {/* Main Info */}
                     <div className="admin-main-card" style={{ padding: 0 }}>
                         <div className="admin-card-header" style={{ padding: '1.5rem 1.5rem 0' }}>
-                            <h3 className="card-title">Paramètres de la Mission</h3>
+                            <h3 className="card-title">Paramètres de la fiche</h3>
                         </div>
                         <div className="admin-form-grid">
                             <div className="form-group">
@@ -200,13 +200,13 @@ export const AdminMissionDetail: React.FC = () => {
                             <div className="form-group">
                                 <label>Quantité d'avis</label>
                                 <div className="admin-input" style={{ background: '#f9fafb', color: '#6b7280' }}>
-                                    {mission.quantity} avis
+                                    {fiche.quantity} avis
                                 </div>
                             </div>
                             <div className="form-group">
                                 <label>Prix Global (Payé par l'Artisan)</label>
                                 <div className="admin-input" style={{ background: '#f9fafb', color: '#6b7280' }}>
-                                    {Number(mission.price || 0).toFixed(2)} €
+                                    {Number(fiche.price || 0).toFixed(2)} €
                                 </div>
                             </div>
                             <div className="form-group">
@@ -240,7 +240,7 @@ export const AdminMissionDetail: React.FC = () => {
                         </div>
 
                         <div className="admin-card-header" style={{ borderTop: '1px solid #f3f4f6', marginTop: '1rem' }}>
-                            <h3 className="card-title">Propositions Générées ({mission.proposals.length})</h3>
+                            <h3 className="card-title">Propositions Générées ({fiche.proposals.length})</h3>
                         </div>
                         <div className="admin-table-container" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                             <table className="admin-modern-table">
@@ -251,7 +251,7 @@ export const AdminMissionDetail: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {mission.proposals.map((p: any) => (
+                                    {fiche.proposals.map((p: any) => (
                                         <tr key={p.id}>
                                             <td style={{ fontSize: '13px' }}>{p.content}</td>
                                             <td>
@@ -268,18 +268,18 @@ export const AdminMissionDetail: React.FC = () => {
 
                     {/* Sidebar Info */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        {mission.pack_name && (
+                        {fiche.pack_name && (
                             <div className="admin-main-card" style={{ background: '#fff8e1', borderColor: '#FFE6A5' }}>
                                 <div className="admin-card-header">
                                     <h3 className="card-title" style={{ color: 'var(--artisan-primary)' }}>Pack Actif</h3>
                                 </div>
                                 <div style={{ padding: '0 1.5rem 1.5rem' }}>
-                                    <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '0.5rem', color: '#1f2937' }}>{mission.pack_name}</div>
+                                    <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '0.5rem', color: '#1f2937' }}>{fiche.pack_name}</div>
                                     <div className="admin-badge active" style={{ marginBottom: '1rem' }}>
-                                        {mission.pack_missions_used} / {mission.missions_quota} Missions utilisées
+                                        {fiche.pack_fiches_used} / {fiche.fiches_quota} fiches utilisées
                                     </div>
                                     <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                                        Cette mission consomme 1 crédit sur le quota de ce pack.
+                                        Cette fiche consomme 1 crédit sur le quota de ce pack.
                                     </div>
                                 </div>
                             </div>
@@ -293,15 +293,15 @@ export const AdminMissionDetail: React.FC = () => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
                                     <Building2 size={24} color="var(--artisan-primary)" />
                                     <div>
-                                        <div style={{ fontWeight: 700 }}>{mission.artisan_name}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{mission.artisan_email}</div>
+                                        <div style={{ fontWeight: 700 }}>{fiche.artisan_name}</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{fiche.artisan_email}</div>
                                     </div>
                                 </div>
                                 <div style={{ fontSize: '13px', color: 'var(--gray-700)' }}>
-                                    <strong>Société:</strong> {mission.artisan_company}
+                                    <strong>Société:</strong> {fiche.artisan_company}
                                 </div>
                                 <button
-                                    onClick={() => navigate(`/admin/artisans/${mission.artisan_id}`)}
+                                    onClick={() => navigate(`/admin/artisans/${fiche.artisan_id}`)}
                                     className="review-link-simple"
                                     style={{ marginTop: '1rem', width: '100%', border: '1px solid #f3f4f6', padding: '0.5rem', borderRadius: '0.5rem' }}
                                 >
@@ -319,15 +319,15 @@ export const AdminMissionDetail: React.FC = () => {
                                     <Clock size={20} color="var(--gray-400)" />
                                     <div>
                                         <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--gray-400)' }}>Créée le</div>
-                                        <div style={{ fontSize: '13px' }}>{new Date(mission.created_at).toLocaleString()}</div>
+                                        <div style={{ fontSize: '13px' }}>{new Date(fiche.created_at).toLocaleString()}</div>
                                     </div>
                                 </div>
-                                {mission.published_at && (
+                                {fiche.published_at && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         <CheckCircle2 size={20} color="#FF991F" />
                                         <div>
                                             <div style={{ fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--gray-400)' }}>Publiée le</div>
-                                            <div style={{ fontSize: '13px' }}>{new Date(mission.published_at).toLocaleString()}</div>
+                                            <div style={{ fontSize: '13px' }}>{new Date(fiche.published_at).toLocaleString()}</div>
                                         </div>
                                     </div>
                                 )}
@@ -339,7 +339,7 @@ export const AdminMissionDetail: React.FC = () => {
                                 <h3 className="card-title">Visibilité</h3>
                             </div>
                             <div style={{ padding: '1.5rem' }}>
-                                <a href={mission.google_business_url} target="_blank" rel="noopener noreferrer" className="review-link-simple" style={{ gap: '0.5rem' }}>
+                                <a href={fiche.google_business_url} target="_blank" rel="noopener noreferrer" className="review-link-simple" style={{ gap: '0.5rem' }}>
                                     Voir sur Google Maps <ExternalLink size={16} />
                                 </a>
                             </div>

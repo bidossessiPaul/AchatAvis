@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
+import apiClient from '../../services/api';
 import { showSuccess, showError } from '../../utils/Swal';
 import { ReviewOrder, ReviewProposal, ReviewSubmission } from '../../types';
 import {
@@ -17,14 +18,14 @@ import {
 } from 'lucide-react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { MissionCompatibilityModal } from '../../components/AntiDetection/MissionCompatibilityModal';
+import { FicheCompatibilityModal } from '../../components/AntiDetection/FicheCompatibilityModal';
 import { ProofSubmissionChecklist } from '../../components/AntiDetection/ProofSubmissionChecklist';
-import './MissionDetail.css';
+import './FicheDetail.css';
 
-export const MissionDetail: React.FC = () => {
+export const FicheDetail: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
-    const [mission, setMission] = useState<ReviewOrder & {
+    const [fiche, setfiche] = useState<ReviewOrder & {
         proposals: ReviewProposal[],
         submissions: ReviewSubmission[],
         artisan_company: string,
@@ -41,15 +42,17 @@ export const MissionDetail: React.FC = () => {
     const [lockedByOther, setLockedByOther] = useState(false);
     const [isFull, setIsFull] = useState(false);
     const [isDailyFull, setIsDailyFull] = useState(false);
+    const [isChecklistValidated, setIsChecklistValidated] = useState(false);
 
     const { user } = useAuthStore();
-    const { gmailAccounts, complianceData, fetchGmailAccounts, fetchComplianceData, checkMissionCompatibility } = useAntiDetectionStore();
+    const { gmailAccounts, fetchGmailAccounts, fetchComplianceData, checkficheCompatibility } = useAntiDetectionStore();
     const [isChecklistOpen, setIsChecklistOpen] = useState(false);
     const [pendingProposalId, setPendingProposalId] = useState<string | null>(null);
+    const [quotaData, setQuotaData] = useState<any>(null);
 
     useEffect(() => {
         if (orderId) {
-            loadMissionDetails(orderId);
+            loadficheDetails(orderId);
         }
         if (user) {
             fetchGmailAccounts(user.id);
@@ -70,29 +73,29 @@ export const MissionDetail: React.FC = () => {
         }
     }, [gmailAccounts, selectedGmailId]);
 
-    const loadMissionDetails = async (id: string) => {
+    const loadficheDetails = async (id: string) => {
         setIsLoading(true);
         setError(null);
         setLockedByOther(false);
         setIsFull(false);
         setIsDailyFull(false);
         try {
-            const data = await guideService.getMissionDetails(id);
-            setMission(data);
+            const data = await guideService.getficheDetails(id);
+            setfiche(data);
         } catch (err: any) {
-            console.error("Failed to load mission details", err);
+            console.error("Failed to load fiche details", err);
             const message = err.response?.data?.message || err.message;
-            if (message === 'MISSION_FULL') {
+            if (message === 'fiche_FULL') {
                 setIsFull(true);
-                setError("Désolé, cette mission a déjà atteint son quota d'avis.");
+                setError("Désolé, cette fiche a déjà atteint son quota d'avis.");
             } else if (message === 'DAILY_QUOTA_FULL') {
                 setIsDailyFull(true);
-                setError("Le quota journalier pour cette mission a été atteint. Revenez demain !");
-            } else if (message === 'MISSION_LOCKED') {
+                setError("Le quota journalier pour cette fiche a été atteint. Revenez demain !");
+            } else if (message === 'fiche_LOCKED') {
                 setLockedByOther(true);
-                setError("Un autre guide est déjà en train de traiter cette mission. Veuillez réessayer dans quelques minutes.");
+                setError("Un autre guide est déjà en train de traiter cette fiche. Veuillez réessayer dans quelques minutes.");
             } else {
-                setError("Impossible de charger les détails de la mission.");
+                setError("Impossible de charger les détails de la fiche.");
             }
         } finally {
             setIsLoading(false);
@@ -107,19 +110,53 @@ export const MissionDetail: React.FC = () => {
     const handleCheckCompatibility = async (gmailId: number) => {
         if (!orderId) return;
         try {
-            const result = await checkMissionCompatibility(orderId, gmailId);
+            const result = await checkficheCompatibility(orderId, gmailId);
             setCompatibilityResult(result);
-            setIsCompModalOpen(true);
+
             if (result.can_take) {
-                setSelectedGmailId(gmailId);
-                const account = gmailAccounts.find(a => a.id === gmailId);
-                if (account) {
-                    // Pre-fill email
-                    setGoogleEmails(prev => ({ ...prev, current: account.email }));
-                }
+                setIsCompModalOpen(false); // Hide the status modal
+                setIsChecklistOpen(true); // Show the checklist
+                handleGmailSelect(gmailId); // Fetch quotas immediately
+            } else {
+                setIsCompModalOpen(true); // Show the error modal
             }
         } catch (error) {
             showError('Erreur', "Erreur lors de la vérification de compatibilité");
+        }
+    };
+
+    // Handle Gmail Selection and fetch quotas
+    const handleGmailSelect = async (gmailId: number) => {
+        if (!gmailId) return;
+
+        setSelectedGmailId(gmailId);
+        setQuotaData(null); // Reset while loading
+
+        // Find account and sync current email for submission
+        const account = gmailAccounts.find(a => a.id === gmailId);
+        if (account) {
+            setGoogleEmails(prev => ({ ...prev, current: account.email }));
+        }
+
+        const targetId = orderId || (fiche as any)?.id;
+        if (targetId) {
+            try {
+                const response = await apiClient.get(`/guide/fiches/${targetId}/gmail-quotas`);
+                const gmailData = response.data.gmailAccounts.find((g: any) => g.id === gmailId);
+
+                if (gmailData) {
+                    setQuotaData({
+                        sectorUsed: gmailData.quotaSector.used,
+                        sectorMax: gmailData.quotaSector.max,
+                        sectorRemaining: gmailData.quotaSector.remaining,
+                        globalUsed: gmailData.quotaGlobal.used,
+                        globalMax: gmailData.quotaGlobal.max,
+                        globalRemaining: gmailData.quotaGlobal.remaining
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching quota data:', error);
+            }
         }
     };
 
@@ -144,30 +181,36 @@ export const MissionDetail: React.FC = () => {
 
         // Open checklist before final submission
         setPendingProposalId(proposalId);
-        setIsChecklistOpen(true);
+        if (isChecklistValidated) {
+            // Already validated to see the text, can submit directly now
+            confirmSubmission();
+        } else {
+            setIsChecklistOpen(true);
+        }
     };
 
     const confirmSubmission = async () => {
+        setIsChecklistValidated(true);
+        setIsChecklistOpen(false);
         if (!pendingProposalId) return;
 
         const proposalId = pendingProposalId;
         const url = proofUrls[proposalId];
         const email = googleEmails[proposalId] || googleEmails['current'];
 
-        setIsChecklistOpen(false);
         setSubmittingId(proposalId);
 
         try {
             await guideService.submitProof({
-                orderId: mission!.id,
+                orderId: fiche!.id,
                 proposalId,
                 reviewUrl: url,
                 googleEmail: email,
-                artisanId: mission!.artisan_id,
+                artisanId: fiche!.artisan_id,
                 gmailAccountId: selectedGmailId || undefined
             });
             showSuccess('Succès', "Preuve soumise avec succès ! Elle sera validée par un administrateur.");
-            loadMissionDetails(orderId!);
+            loadficheDetails(orderId!);
             setProofUrls(prev => {
                 const next = { ...prev };
                 delete next[proposalId];
@@ -181,7 +224,7 @@ export const MissionDetail: React.FC = () => {
             setPendingProposalId(null);
         } catch (err: any) {
             console.error("Failed to submit proof", err);
-            const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soumission de la preuve.";
+            const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soufiche de la preuve.";
             showError('Erreur', errorMessage);
         } finally {
             setSubmittingId(null);
@@ -198,9 +241,9 @@ export const MissionDetail: React.FC = () => {
         );
     }
 
-    if (error || !mission) {
+    if (error || !fiche) {
         return (
-            <DashboardLayout title="Mission indisponible">
+            <DashboardLayout title="fiche indisponible">
                 <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <div className={`status-icon-wrapper ${isFull || isDailyFull ? 'warning' : 'locked'}`}>
                         {isFull || isDailyFull ? (
@@ -210,7 +253,7 @@ export const MissionDetail: React.FC = () => {
                         )}
                     </div>
                     <h2 className="error-title">
-                        {isFull ? 'Quota Atteint' : isDailyFull ? 'Quota Journalier Atteint' : lockedByOther ? 'Mission en cours' : 'Erreur'}
+                        {isFull ? 'Quota Atteint' : isDailyFull ? 'Quota Journalier Atteint' : lockedByOther ? 'fiche en cours' : 'Erreur'}
                     </h2>
                     <p className="error-text">
                         {error}
@@ -219,7 +262,7 @@ export const MissionDetail: React.FC = () => {
                         onClick={() => navigate('/guide')}
                         className="btn-back-error"
                     >
-                        Retour aux missions
+                        Retour aux fiches
                     </button>
 
                     {lockedByOther && (
@@ -234,17 +277,17 @@ export const MissionDetail: React.FC = () => {
     }
 
     // Filter proposals into pending and published
-    const publishedProposalIds = mission.submissions.map(s => s.proposal_id);
-    const totalRemaining = Math.max(0, mission.quantity - mission.submissions.length);
+    const publishedProposalIds = fiche.submissions.map(s => s.proposal_id);
+    const totalRemaining = Math.max(0, fiche.quantity - fiche.submissions.length);
 
-    // Filter and cap the pending proposals to match the mission quantity
-    const pendingProposals = mission.proposals
+    // Filter and cap the pending proposals to match the fiche quantity
+    const pendingProposals = fiche.proposals
         .filter(p => !publishedProposalIds.includes(p.id))
         .slice(0, totalRemaining);
 
-    // Map over SUBMISSIONS to allow showing all reviews (even if multiple guides did the same one)
-    const publishedProposals = mission.submissions.map(submission => {
-        const proposal = mission.proposals.find(p => p.id === submission.proposal_id);
+    // Map over SUBficheS to allow showing all reviews (even if multiple guides did the same one)
+    const publishedProposals = fiche.submissions.map(submission => {
+        const proposal = fiche.proposals.find(p => p.id === submission.proposal_id);
         return {
             ...proposal, // Spread existing proposal data
             // Defaults for display
@@ -258,44 +301,44 @@ export const MissionDetail: React.FC = () => {
 
 
     return (
-        <DashboardLayout title="Détails de la Mission">
-            <div className="mission-detail-container">
-                <button onClick={() => navigate('/guide')} className="mission-back-button">
-                    <ChevronLeft size={20} /> Retour aux missions
+        <DashboardLayout title="Détails de la fiche">
+            <div className="fiche-detail-container">
+                <button onClick={() => navigate('/guide')} className="fiche-back-button">
+                    <ChevronLeft size={20} /> Retour aux fiches
                 </button>
 
-                <div className="mission-grid">
+                <div className="fiche-grid">
                     {/* Main Content - Pending Reviews (Col 8) */}
-                    <div className="mission-content-area">
-                        <div className="mission-main-card">
-                            <div className="mission-main-header">
+                    <div className="fiche-content-area">
+                        <div className="fiche-main-card">
+                            <div className="fiche-main-header">
                                 <div>
-                                    <h2 className="mission-company-name">
-                                        {mission.artisan_company}
+                                    <h2 className="fiche-company-name">
+                                        {fiche.artisan_company}
                                     </h2>
-                                    <p className="mission-location">
+                                    <p className="fiche-location">
                                         <span className="location-item">
-                                            <MapPin size={18} /> {mission.city || 'Ville non spécifiée'}
+                                            <MapPin size={18} /> {fiche.city || 'Ville non spécifiée'}
                                         </span>
                                         <span className="location-separator">
                                             |
                                         </span>
                                         <span className="location-item">
-                                            <span style={{ fontSize: '1.2rem' }}>{(mission as any).sector_icon}</span>
-                                            <span className={`difficulty-badge ${(mission as any).difficulty}`}>
-                                                {(mission as any).difficulty === 'easy' ? 'Simple' : ((mission as any).difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                            <span style={{ fontSize: '1.2rem' }}>{(fiche as any).sector_icon}</span>
+                                            <span className={`difficulty-badge ${(fiche as any).difficulty}`}>
+                                                {(fiche as any).difficulty === 'easy' ? 'Simple' : ((fiche as any).difficulty === 'medium' ? 'Modéré' : 'Difficile')}
                                             </span>
                                         </span>
                                     </p>
                                 </div>
-                                <div className="mission-badge">
-                                    {mission.submissions.length} / {mission.quantity} avis soumis
+                                <div className="fiche-badge">
+                                    {fiche.submissions.length} / {fiche.quantity} avis soumis
                                 </div>
                             </div>
 
-                            {mission.google_business_url && (
+                            {fiche.google_business_url && (
                                 <a
-                                    href={mission.google_business_url}
+                                    href={fiche.google_business_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="maps-link-btn"
@@ -324,14 +367,14 @@ export const MissionDetail: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                <p className="review-content">
+                                                <p className={`review-content ${!isChecklistValidated ? 'blurred' : ''}`}>
                                                     {proposal.content}
                                                 </p>
 
                                                 <div className="review-actions">
                                                     <button
-                                                        onClick={() => handleCopy(proposal.content)}
-                                                        className="copy-btn"
+                                                        onClick={() => isChecklistValidated ? handleCopy(proposal.content) : showError('Action requise', "Veuillez d'abord valider les consignes de sécurité.")}
+                                                        className={`copy-btn ${!isChecklistValidated ? 'disabled' : ''}`}
                                                     >
                                                         <Copy size={18} /> Copier le texte
                                                     </button>
@@ -389,7 +432,7 @@ export const MissionDetail: React.FC = () => {
                                             </div>
                                         ))}
                                     </div>
-                                ) : mission.proposals.length > 0 ? (
+                                ) : fiche.proposals.length > 0 ? (
                                     <div className="empty-state success">
                                         <p className="empty-state-text">Tous les avis disponibles ont été postés ! 🎉</p>
                                     </div>
@@ -406,7 +449,7 @@ export const MissionDetail: React.FC = () => {
                     </div>
 
                     {/* Sidebar - Instructions & Published (Col 4) */}
-                    <aside className="mission-sidebar">
+                    <aside className="fiche-sidebar">
                         <div className="info-card">
                             <h3 className="info-card-title">Instructions</h3>
 
@@ -417,7 +460,7 @@ export const MissionDetail: React.FC = () => {
                                 <div>
                                     <p className="instruction-label">Rythme conseillé</p>
                                     <p className="instruction-value">
-                                        {mission.publication_pace || '1 avis par jour'}
+                                        {fiche.publication_pace || '1 avis par jour'}
                                     </p>
                                 </div>
                             </div>
@@ -429,7 +472,7 @@ export const MissionDetail: React.FC = () => {
                                 <div>
                                     <p className="instruction-label">Rémunération</p>
                                     <p className="instruction-value price">
-                                        {Number(mission.payout_per_review || 1.50).toFixed(2)} €
+                                        {Number(fiche.payout_per_review || 1.50).toFixed(2)} €
                                     </p>
                                     <p className="instruction-value" style={{ fontSize: 'var(--text-xs)' }}>par avis validé</p>
                                 </div>
@@ -479,7 +522,7 @@ export const MissionDetail: React.FC = () => {
 
                         {/* Published Reviews Section - Moved to sidebar */}
                         {publishedProposals.length > 0 && (
-                            <div className="mission-published-card sidebar-card mt-4">
+                            <div className="fiche-published-card sidebar-card mt-4">
                                 <h3 className="section-header small-header">
                                     <CheckCircle2 size={20} color="var(--guide-primary)" /> Avis déjà publiés ({publishedProposals.length})
                                 </h3>
@@ -528,7 +571,7 @@ export const MissionDetail: React.FC = () => {
                 </div>
             </div>
 
-            <MissionCompatibilityModal
+            <FicheCompatibilityModal
                 isOpen={isCompModalOpen}
                 onClose={() => setIsCompModalOpen(false)}
                 result={compatibilityResult}
@@ -536,12 +579,19 @@ export const MissionDetail: React.FC = () => {
 
             <ProofSubmissionChecklist
                 isOpen={isChecklistOpen}
-                onClose={() => setIsChecklistOpen(false)}
+                onClose={() => {
+                    setIsChecklistOpen(false);
+                    setPendingProposalId(null);
+                    navigate('/guide/fiches'); // Redirect to fiches list
+                }}
                 onConfirm={confirmSubmission}
-                sectorName={mission.sector || 'Général'}
-                isHardSector={mission.sector_difficulty === 'hard'}
-                gmailAccount={gmailAccounts.find(a => a.id === selectedGmailId)}
-                complianceScore={complianceData?.compliance_score || 0}
+                sectorName={fiche.sector || 'Général'}
+                isHardSector={fiche.sector_difficulty === 'hard'}
+                gmailAccounts={gmailAccounts}
+                selectedGmailId={selectedGmailId}
+                onGmailSelect={handleGmailSelect}
+                quotaData={quotaData}
+                submitLabel={pendingProposalId ? "Valider et soumettre" : "Accéder au texte de l'avis"}
             />
         </DashboardLayout>
     );

@@ -17,8 +17,8 @@ export interface User {
     subscription_tier?: string;
     subscription_start_date?: string;
     two_factor_enabled: boolean;
-    missions_allowed?: number;
-    missions_used?: number;
+    fiches_allowed?: number;
+    fiches_used?: number;
     permissions?: Record<string, boolean>; // For admin team members
     last_detected_country?: string;
     // Artisan Profile Fields
@@ -52,7 +52,7 @@ export interface ArtisanProfile {
     current_month_reviews: number;
     total_reviews_received: number;
     subscription_tier?: string;
-    missions_allowed: number;
+    fiches_allowed: number;
     created_at: string;
 }
 
@@ -125,7 +125,7 @@ export interface ReviewOrder {
     price: number;
     status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
     reviews_received: number;
-    mission_name?: string;
+    fiche_name?: string;
     company_name?: string;
     google_business_url?: string;
     company_context?: string;

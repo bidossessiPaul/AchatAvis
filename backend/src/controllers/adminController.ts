@@ -245,92 +245,92 @@ export const deletePack = async (req: Request, res: Response) => {
 };
 
 /**
- * Get missions pending approval
- * GET /api/admin/missions/pending
+ * Get fiches pending approval
+ * GET /api/admin/fiches/pending
  */
-export const getPendingMissions = async (_req: Request, res: Response) => {
+export const getPendingfiches = async (_req: Request, res: Response) => {
     try {
-        const missions = await adminService.getPendingMissions();
-        res.json(missions);
+        const fiches = await adminService.getPendingfiches();
+        res.json(fiches);
     } catch (error) {
-        console.error('Get pending missions error:', error);
+        console.error('Get pending fiches error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 /**
- * Approve a mission
- * POST /api/admin/missions/:orderId/approve
+ * Approve a fiche
+ * POST /api/admin/fiches/:orderId/approve
  */
-export const approveMission = async (req: Request, res: Response) => {
+export const approvefiche = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     try {
-        await adminService.approveMission(orderId);
-        res.json({ message: 'Mission approved successfully' });
+        await adminService.approvefiche(orderId);
+        res.json({ message: 'fiche approved successfully' });
     } catch (error) {
-        console.error('Approve mission error:', error);
+        console.error('Approve fiche error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 /**
- * Get all missions
- * GET /api/admin/missions
+ * Get all fiches
+ * GET /api/admin/fiches
  */
-export const getMissions = async (_req: Request, res: Response) => {
+export const getfiches = async (_req: Request, res: Response) => {
     try {
-        const missions = await adminService.getAllMissions();
-        return res.json(missions);
+        const fiches = await adminService.getAllfiches();
+        return res.json(fiches);
     } catch (error) {
-        console.error('Get missions error:', error);
+        console.error('Get fiches error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 /**
- * Get single mission detail for admin
- * GET /api/admin/missions/:orderId
+ * Get single fiche detail for admin
+ * GET /api/admin/fiches/:orderId
  */
-export const getAdminMissionDetail = async (req: Request, res: Response) => {
+export const getAdminficheDetail = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     try {
-        const mission = await adminService.getAdminMissionDetail(orderId);
-        if (!mission) {
-            return res.status(404).json({ error: 'Mission not found' });
+        const fiche = await adminService.getAdminficheDetail(orderId);
+        if (!fiche) {
+            return res.status(404).json({ error: 'fiche not found' });
         }
-        return res.json(mission);
+        return res.json(fiche);
     } catch (error) {
-        console.error('Get mission detail error:', error);
+        console.error('Get fiche detail error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 /**
- * Update mission (Admin CRUD)
- * PUT /api/admin/missions/:orderId
+ * Update fiche (Admin CRUD)
+ * PUT /api/admin/fiches/:orderId
  */
-export const updateMission = async (req: Request, res: Response) => {
+export const updatefiche = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     const updateData = req.body;
     try {
-        await adminService.updateMission(orderId, updateData);
-        return res.json({ message: 'Mission updated successfully' });
+        await adminService.updatefiche(orderId, updateData);
+        return res.json({ message: 'fiche updated successfully' });
     } catch (error) {
-        console.error('Update mission error:', error);
+        console.error('Update fiche error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 /**
- * Delete mission (Admin CRUD)
- * DELETE /api/admin/missions/:orderId
+ * Delete fiche (Admin CRUD)
+ * DELETE /api/admin/fiches/:orderId
  */
-export const deleteMission = async (req: Request, res: Response) => {
+export const deletefiche = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     try {
-        await adminService.deleteMission(orderId);
-        return res.json({ message: 'Mission deleted successfully' });
+        await adminService.deletefiche(orderId);
+        return res.json({ message: 'fiche deleted successfully' });
     } catch (error) {
-        console.error('Delete mission error:', error);
+        console.error('Delete fiche error:', error);
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -371,4 +371,25 @@ export const getSuspensionReasons = async (_req: Request, res: Response) => {
         warnings: WARNING_REASONS,
         suspensions: SUSPENSION_REASONS
     });
+};
+
+/**
+ * Manually activate a pack for an artisan
+ * POST /api/admin/artisans/:userId/activate-pack
+ */
+export const activateArtisanPack = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { packId } = req.body;
+
+    if (!packId) {
+        return res.status(400).json({ error: 'Pack ID is required' });
+    }
+
+    try {
+        const result = await adminService.activateArtisanPack(userId, packId);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Activate artisan pack error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
 };

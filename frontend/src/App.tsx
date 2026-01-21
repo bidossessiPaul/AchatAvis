@@ -19,8 +19,8 @@ import { ArtisanOverview } from './pages/artisan/ArtisanOverview';
 import { SubmissionFlow } from './pages/artisan/SubmissionFlow/SubmissionFlow';
 import { OrderDetail } from './pages/artisan/OrderDetail';
 import { GuideDashboard } from './pages/guide/GuideDashboard';
-import { AllMissions } from './pages/guide/AllMissions';
-import { MissionDetail } from './pages/guide/MissionDetail';
+import { AllFiches } from './pages/guide/AllFiches';
+import { FicheDetail } from './pages/guide/FicheDetail';
 import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
 import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
@@ -38,14 +38,15 @@ import { ArtisanDetail } from './pages/admin/ArtisanDetail';
 import { GuideDetail } from './pages/admin/GuideDetail';
 import { ReviewValidation } from './pages/admin/ReviewValidation';
 import { EstablishmentValidation } from './pages/admin/EstablishmentValidation';
-import { AdminMissions } from './pages/admin/AdminMissions';
-import { AdminMissionDetail } from './pages/admin/AdminMissionDetail';
+import { AdminFiches } from './pages/admin/AdminFiches';
+import { AdminFicheDetail } from './pages/admin/AdminFicheDetail';
 import { SubscriptionsList } from './pages/admin/SubscriptionsList';
 import { PacksManagement } from './pages/admin/PacksManagement';
 // import { AdminLogs } from './pages/admin/AdminLogs';
 import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 import { SuspensionAdminPage } from './pages/admin/SuspensionAdminPage';
+import { TrustScoreManagement } from './pages/admin/TrustScoreManagement';
 import { Profile } from './pages/Profile';
 import { NotFound } from './pages/NotFound';
 import SuspendedPage from './pages/SuspendedPage';
@@ -208,14 +209,14 @@ function App() {
                         <GuideDashboard />
                     </ProtectedRoute>
                 } />
-                <Route path="/guide/missions" element={
+                <Route path="/guide/fiches" element={
                     <ProtectedRoute allowedRoles={['guide']}>
-                        <AllMissions />
+                        <AllFiches />
                     </ProtectedRoute>
                 } />
-                <Route path="/guide/missions/:orderId" element={
+                <Route path="/guide/fiches/:orderId" element={
                     <ProtectedRoute allowedRoles={['guide']}>
-                        <MissionDetail />
+                        <FicheDetail />
                     </ProtectedRoute>
                 } />
                 <Route path="/guide/submissions" element={
@@ -322,17 +323,17 @@ function App() {
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
-                <Route path="/admin/missions" element={
+                <Route path="/admin/fiches" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission={['can_manage_missions', 'can_validate_missions']}>
-                            <AdminMissions />
+                        <PermissionGuard requiredPermission={['can_manage_fiches', 'can_validate_fiches']}>
+                            <AdminFiches />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
-                <Route path="/admin/missions/:orderId" element={
+                <Route path="/admin/fiches/:orderId" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission={['can_manage_missions', 'can_validate_missions']}>
-                            <AdminMissionDetail />
+                        <PermissionGuard requiredPermission={['can_manage_fiches', 'can_validate_fiches']}>
+                            <AdminFicheDetail />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
@@ -355,6 +356,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission="super_admin">
                             <SuspensionAdminPage />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/trust-scores" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_view_stats']}>
+                            <TrustScoreManagement />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />

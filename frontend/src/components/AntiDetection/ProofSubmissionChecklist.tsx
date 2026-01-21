@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, CheckCircle2, AlertTriangle, X, Send, ShieldCheck, Mail, History } from 'lucide-react';
+import { AlertTriangle, X, Send, ShieldCheck } from 'lucide-react';
 
 interface ProofSubmissionChecklistProps {
     isOpen: boolean;
@@ -8,8 +8,11 @@ interface ProofSubmissionChecklistProps {
     onConfirm: () => void;
     sectorName: string;
     isHardSector: boolean;
-    gmailAccount: any;
-    complianceScore: number;
+    gmailAccounts: any[]; // Now an array
+    selectedGmailId: number | null;
+    onGmailSelect: (gmailId: number) => void;
+    quotaData: any; // Quota information from API
+    submitLabel?: string;
 }
 
 export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> = ({
@@ -18,16 +21,25 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
     onConfirm,
     sectorName,
     isHardSector,
-    gmailAccount,
-    complianceScore
+    gmailAccounts,
+    selectedGmailId,
+    onGmailSelect,
+    quotaData,
+    submitLabel = "Valider et soumettre"
 }) => {
     const [checks, setChecks] = useState({
         navigation: false,
-        age: false,
         connection: false,
         limit: false,
         cooldown: !isHardSector
     });
+
+    // Auto-fetch quotas when modal opens if Gmail already selected
+    useEffect(() => {
+        if (isOpen && selectedGmailId) {
+            onGmailSelect(selectedGmailId);
+        }
+    }, [isOpen, selectedGmailId]);
 
     const allChecked = Object.values(checks).every(v => v);
 
@@ -63,10 +75,10 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                     }}
                 >
                     {/* Header */}
-                    <div style={{ background: '#0f172a', padding: '1.5rem', color: 'white', position: 'relative' }}>
-                        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <ShieldCheck size={24} color="var(--guide-primary)" /> Validation avant envoi
-                        </h3>
+                    <div style={{ background: '#0a0f1d', padding: '1.5rem', color: 'white', position: 'relative' }}>
+                        <div style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#ffffff' }}>
+                            <ShieldCheck size={24} color="#f97316" /> Validation avant envoi
+                        </div>
                         <p style={{ margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.875rem' }}>
                             Secteur : {sectorName} {isHardSector && <span style={{ color: '#ef4444' }}>(🔴 Difficile)</span>}
                         </p>
@@ -76,20 +88,54 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                     </div>
 
                     <div style={{ padding: '1.5rem' }}>
-                        {/* Summary Info */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
-                                <div style={{ fontSize: '0.625rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.25rem' }}>Email utilisé</div>
-                                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <Mail size={14} /> {gmailAccount?.email || 'N/A'}
+                        {/* Gmail Selector with Quotas */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ fontSize: '0.625rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.5rem', display: 'block' }}>Email utilisé</label>
+                            <select
+                                value={selectedGmailId || ''}
+                                onChange={(e) => onGmailSelect(Number(e.target.value))}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '0.75rem',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="">Sélectionnez un compte Gmail</option>
+                                {gmailAccounts?.map((gmail: any) => (
+                                    <option key={gmail.id} value={gmail.id}>
+                                        {gmail.email}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* Quota Display */}
+                            {selectedGmailId && !quotaData && (
+                                <div style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2px solid #e2e8f0', borderTopColor: '#0ea5e9', animation: 'spin 1s linear infinite' }}></div>
+                                    Chargement des quotas...
                                 </div>
-                            </div>
-                            <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '1rem', border: '1px solid #dcfce7' }}>
-                                <div style={{ fontSize: '0.625rem', color: '#10b981', textTransform: 'uppercase', fontWeight: 800, marginBottom: '0.25rem' }}>Score Confiance</div>
-                                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <Shield size={14} /> {complianceScore}% (Bon ✅)
+                            )}
+
+                            {selectedGmailId && quotaData && (
+                                <div style={{ marginTop: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                    <div style={{ background: '#fef3c7', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #fde68a' }}>
+                                        <div style={{ fontSize: '0.625rem', color: '#92400e', fontWeight: 800, textTransform: 'uppercase' }}>Secteur {sectorName}</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#92400e', marginTop: '0.25rem' }}>
+                                            {quotaData.sectorRemaining}/{quotaData.sectorMax} restants
+                                        </div>
+                                    </div>
+                                    <div style={{ background: '#dbeafe', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #bfdbfe' }}>
+                                        <div style={{ fontSize: '0.625rem', color: '#1e40af', fontWeight: 800, textTransform: 'uppercase' }}>Global/Mois</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e40af', marginTop: '0.25rem' }}>
+                                            {quotaData.globalRemaining}/{quotaData.globalMax} restants
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {isHardSector && (
@@ -103,39 +149,35 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
 
                         {/* Checklist */}
                         <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '2rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.navigation ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.navigation ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.navigation} onChange={() => setChecks({ ...checks, navigation: !checks.navigation })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
-                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>J'ai navigué 3+ minutes sur la fiche avant</span>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.navigation ? '#f8fafc' : '#ffffff', borderRadius: '1rem', border: `1.5px solid ${checks.navigation ? '#e2e8f0' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                <input type="checkbox" checked={checks.navigation} onChange={() => setChecks({ ...checks, navigation: !checks.navigation })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#0a0f1d' }} />
+                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Je vais naviguer 3+ minutes sur la fiche avant de poster</span>
                             </label>
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.age ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.age ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.age} onChange={() => setChecks({ ...checks, age: !checks.age })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
-                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Mon compte Gmail a +60 jours d'ancienneté</span>
+
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.connection ? '#f8fafc' : '#ffffff', borderRadius: '1rem', border: `1.5px solid ${checks.connection ? '#e2e8f0' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                <input type="checkbox" checked={checks.connection} onChange={() => setChecks({ ...checks, connection: !checks.connection })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#0a0f1d' }} />
+                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Je vais poster depuis une connexion 4G/5G</span>
                             </label>
 
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.connection ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.connection ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.connection} onChange={() => setChecks({ ...checks, connection: !checks.connection })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
-                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>J'ai posté depuis une connexion 4G/5G</span>
-                            </label>
-
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.limit ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.limit ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                <input type="checkbox" checked={checks.limit} onChange={() => setChecks({ ...checks, limit: !checks.limit })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
-                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Je n'ai pas posté d'autre avis aujourd'hui</span>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.limit ? '#f8fafc' : '#ffffff', borderRadius: '1rem', border: `1.5px solid ${checks.limit ? '#e2e8f0' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                <input type="checkbox" checked={checks.limit} onChange={() => setChecks({ ...checks, limit: !checks.limit })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#0a0f1d' }} />
+                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Je n'ai pas posté d'autre avis aujourd'hui en dehors de la plateforme</span>
                             </label>
 
                             {isHardSector && (
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.cooldown ? '#f0fdf4' : '#f8fafc', borderRadius: '1rem', border: `1.5px solid ${checks.cooldown ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s' }}>
-                                    <input type="checkbox" checked={checks.cooldown} onChange={() => setChecks({ ...checks, cooldown: !checks.cooldown })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--guide-primary)' }} />
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: checks.cooldown ? '#f8fafc' : '#ffffff', borderRadius: '1rem', border: `1.5px solid ${checks.cooldown ? '#e2e8f0' : '#e2e8f0'}`, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                                    <input type="checkbox" checked={checks.cooldown} onChange={() => setChecks({ ...checks, cooldown: !checks.cooldown })} style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#0a0f1d' }} />
                                     <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155' }}>Mon dernier avis "{sectorName}" date de +15 jours</span>
                                 </label>
                             )}
                         </div>
 
                         {/* Buttons */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
                             <button
                                 onClick={onClose}
-                                style={{ padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: 700, cursor: 'pointer' }}
+                                style={{ padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', color: '#64748b', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}
                             >
                                 Annuler
                             </button>
@@ -146,18 +188,19 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                                     padding: '1rem',
                                     borderRadius: '1rem',
                                     border: 'none',
-                                    background: allChecked ? 'var(--guide-gradient)' : '#f1f5f9',
+                                    background: allChecked ? '#0ea5e9' : '#f1f5f9',
                                     color: allChecked ? 'white' : '#94a3b8',
                                     fontWeight: 800,
                                     cursor: allChecked ? 'pointer' : 'not-allowed',
-                                    boxShadow: allChecked ? 'var(--shadow-guide)' : 'none',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '0.5rem'
+                                    gap: '0.5rem',
+                                    transition: 'all 0.2s',
+                                    boxShadow: allChecked ? '0 10px 15px -3px rgba(14, 165, 233, 0.3)' : 'none'
                                 }}
                             >
-                                <Send size={18} /> Valider et soumettre
+                                <Send size={18} /> {submitLabel}
                             </button>
                         </div>
                     </div>

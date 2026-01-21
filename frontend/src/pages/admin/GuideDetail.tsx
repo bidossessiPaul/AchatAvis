@@ -409,7 +409,7 @@ export const GuideDetail: React.FC = () => {
                                                                 {!gmailHistory[account.id] ? (
                                                                     <tr><td colSpan={4} className="text-center">Chargement...</td></tr>
                                                                 ) : gmailHistory[account.id].length === 0 ? (
-                                                                    <tr><td colSpan={4} className="text-center">Aucune mission pour ce compte</td></tr>
+                                                                    <tr><td colSpan={4} className="text-center">Aucune fiche pour ce compte</td></tr>
                                                                 ) : gmailHistory[account.id].map((h: any) => (
                                                                     <tr key={h.id}>
                                                                         <td>{new Date(h.submitted_at).toLocaleDateString()}</td>

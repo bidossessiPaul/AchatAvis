@@ -17,14 +17,14 @@ async function migrate() {
     } catch (e) { console.log('payment_id might already exist'); }
 
     try {
-        console.log('Adding missions_quota to payments...');
-        await connection.query('ALTER TABLE payments ADD COLUMN missions_quota INT DEFAULT 0');
-    } catch (e) { console.log('missions_quota might already exist'); }
+        console.log('Adding fiches_quota to payments...');
+        await connection.query('ALTER TABLE payments ADD COLUMN fiches_quota INT DEFAULT 0');
+    } catch (e) { console.log('fiches_quota might already exist'); }
 
     try {
-        console.log('Adding missions_used to payments...');
-        await connection.query('ALTER TABLE payments ADD COLUMN missions_used INT DEFAULT 0');
-    } catch (e) { console.log('missions_used might already exist'); }
+        console.log('Adding fiches_used to payments...');
+        await connection.query('ALTER TABLE payments ADD COLUMN fiches_used INT DEFAULT 0');
+    } catch (e) { console.log('fiches_used might already exist'); }
 
     try {
         console.log('Adding fk_order_payment constraint...');

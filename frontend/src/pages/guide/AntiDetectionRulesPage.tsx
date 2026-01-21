@@ -15,7 +15,6 @@ import {
 
 import { AntiDetectionIntro } from '../../components/AntiDetection/AntiDetectionIntro';
 import { SectorDifficultyList } from '../../components/AntiDetection/SectorDifficultyList';
-import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { SecurityRadar } from '../../components/AntiDetection/SecurityRadar';
 import {
     User,
@@ -51,7 +50,6 @@ export const AntiDetectionRulesPage: React.FC = () => {
         rules,
         complianceData,
         fetchAntiDetectionRules,
-        fetchComplianceData,
         loading
     } = useAntiDetectionStore();
 
@@ -59,10 +57,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
 
     useEffect(() => {
         fetchAntiDetectionRules();
-        if (user) {
-            fetchComplianceData(user.id);
-        }
-    }, [fetchAntiDetectionRules, fetchComplianceData, user]);
+    }, [fetchAntiDetectionRules]);
 
     const toggleRule = (id: number) => {
         setExpandedRule(expandedRule === id ? null : id);
@@ -82,7 +77,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
         <DashboardLayout title="Protocoles de Sécurité">
             <SecurityRadar />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem', alignItems: 'start', marginBottom: '3rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'start', marginBottom: '3rem' }}>
                 <div id="rules-section">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -203,32 +198,10 @@ export const AntiDetectionRulesPage: React.FC = () => {
                         ))}
                     </div>
                 </div>
-
-                <div style={{ position: 'sticky', top: '2rem' }}>
-                    <ComplianceWidget data={complianceData} />
-
-                    <div style={{ marginTop: '1.25rem', padding: '1.25rem', background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
-                        <h5 style={{ fontWeight: 700, fontSize: '0.75rem', marginBottom: '1rem', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pratiques Recommandées</h5>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.875rem' }}>
-                            <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#2383e2', marginTop: '6px', flexShrink: 0 }}></div>
-                                Interactions communautaires régulières.
-                            </li>
-                            <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#2383e2', marginTop: '6px', flexShrink: 0 }}></div>
-                                Documentation photographique authentique.
-                            </li>
-                            <li style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.6rem' }}>
-                                <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#1e73c8', marginTop: '6px', flexShrink: 0 }}></div>
-                                Rédaction sémantique diversifiée.
-                            </li>
-                        </ul>
-                    </div>
-                </div>
             </div>
 
             <SectorDifficultyList />
-        </DashboardLayout>
+        </DashboardLayout >
     );
 };
 

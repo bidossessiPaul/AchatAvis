@@ -2,33 +2,33 @@ import { Request, Response } from 'express';
 import { guideService } from '../services/guideService';
 
 export const guideController = {
-    async getAvailableMissions(req: Request, res: Response) {
+    async getAvailablefiches(req: Request, res: Response) {
         try {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-            const missions = await guideService.getAvailableMissions(user.userId);
-            return res.json(missions);
+            const fiches = await guideService.getAvailablefiches(user.userId);
+            return res.json(fiches);
         } catch (error: any) {
             return res.status(500).json({
-                error: 'Failed to fetch missions',
+                error: 'Failed to fetch fiches',
                 message: error.message
             });
         }
     },
 
-    async getMissionDetails(req: Request, res: Response) {
+    async getficheDetails(req: Request, res: Response) {
         try {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
             const { id } = req.params;
-            const mission = await guideService.getMissionDetails(id, user.userId);
-            return res.json(mission);
+            const fiche = await guideService.getficheDetails(id, user.userId);
+            return res.json(fiche);
         } catch (error: any) {
-            console.error('Error fetching mission details:', error);
-            return res.status(error.message === 'Mission non trouvée' ? 404 : 500).json({
-                error: 'Failed to fetch mission details',
+            console.error('Error fetching fiche details:', error);
+            return res.status(error.message === 'fiche non trouvée' ? 404 : 500).json({
+                error: 'Failed to fetch fiche details',
                 message: error.message
             });
         }
@@ -86,7 +86,7 @@ export const guideController = {
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
             const { id } = req.params;
-            const result = await guideService.releaseMissionLock(id, user.userId);
+            const result = await guideService.releaseficheLock(id, user.userId);
             return res.json(result);
         } catch (error: any) {
             console.error('Error releasing lock:', error);
@@ -108,6 +108,23 @@ export const guideController = {
             console.error('Error fetching guide stats:', error);
             return res.status(500).json({
                 error: 'Failed to fetch guide stats',
+                message: error.message
+            });
+        }
+    },
+
+    async getGmailQuotasForFiche(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { ficheId } = req.params;
+            const quotas = await guideService.getGmailQuotasForFiche(user.userId, ficheId);
+            return res.json(quotas);
+        } catch (error: any) {
+            console.error('Error fetching gmail quotas:', error);
+            return res.status(500).json({
+                error: 'Failed to fetch gmail quotas',
                 message: error.message
             });
         }

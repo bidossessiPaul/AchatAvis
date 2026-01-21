@@ -68,7 +68,7 @@ const debugUsage = async () => {
         // Check Artisan Profile Stats
         console.log('\n--- ARTISAN PROFILE STATS ---');
         const profile: any = await query(`
-            SELECT current_month_reviews, total_reviews_received, missions_allowed 
+            SELECT current_month_reviews, total_reviews_received, fiches_allowed 
             FROM artisans_profiles 
             WHERE user_id = ?
         `, [user.id]);

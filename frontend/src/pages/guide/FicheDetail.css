@@ -1,10 +1,10 @@
-/* Mission Detail Page - Modern & Responsive Refactor */
+/* fiche Detail Page - Modern & Responsive Refactor */
 
-.mission-detail-container {
+.fiche-detail-container {
     animation: fadeIn 0.4s ease-out;
 }
 
-.mission-back-button {
+.fiche-back-button {
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -19,12 +19,12 @@
     transition: all var(--transition-fast);
 }
 
-.mission-back-button:hover {
+.fiche-back-button:hover {
     color: var(--artisan-primary);
     background-color: var(--gray-100);
 }
 
-.mission-grid {
+.fiche-grid {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     gap: var(--space-8);
@@ -32,18 +32,18 @@
     margin-bottom: var(--space-8);
 }
 
-.mission-content-area {
+.fiche-content-area {
     grid-column: span 8;
 }
 
-.mission-sidebar {
+.fiche-sidebar {
     grid-column: span 4;
 }
 
 /* Bottom Area (Col 12) - Removed */
 
 /* Sidebar Info Card */
-.mission-sidebar {
+.fiche-sidebar {
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
@@ -118,8 +118,8 @@
     line-height: 1.6;
 }
 
-/* Main Mission Cards */
-.mission-main-card {
+/* Main fiche Cards */
+.fiche-main-card {
     background: white;
     padding: var(--space-8);
     border-radius: var(--radius-xl);
@@ -128,7 +128,7 @@
     margin-bottom: var(--space-8);
 }
 
-.mission-main-header {
+.fiche-main-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -136,14 +136,14 @@
     margin-bottom: var(--space-6);
 }
 
-.mission-company-name {
+.fiche-company-name {
     font-size: 1.1rem;
     font-weight: var(--font-bold);
     color: var(--gray-900);
     margin: 0;
 }
 
-.mission-location {
+.fiche-location {
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -152,7 +152,7 @@
     font-size: var(--text-base);
 }
 
-.mission-badge {
+.fiche-badge {
     background-color: rgba(245, 158, 11, 0.1);
     color: var(--warning-dark);
     padding: var(--space-2) var(--space-4);
@@ -447,7 +447,7 @@
 }
 
 /* Footer Action */
-.mission-footer {
+.fiche-footer {
     margin-top: var(--space-12);
     text-align: center;
     padding: var(--space-10);
@@ -465,7 +465,7 @@
     border: 1px solid #FFE6A5;
 }
 
-.complete-mission-btn {
+.complete-fiche-btn {
     background: var(--artisan-gradient);
     color: white;
     border: none;
@@ -481,35 +481,35 @@
     transition: all var(--transition-base);
 }
 
-.complete-mission-btn:hover {
+.complete-fiche-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 15px 25px -10px var(--success);
 }
 
 /* Breakpoints */
 @media (max-width: 1024px) {
-    .mission-grid {
+    .fiche-grid {
         grid-template-columns: 1fr;
     }
 
-    .mission-content-area,
-    .mission-sidebar {
+    .fiche-content-area,
+    .fiche-sidebar {
         grid-column: span 12;
     }
 
 }
 
 @media (max-width: 768px) {
-    .mission-main-card {
+    .fiche-main-card {
         padding: var(--space-6);
     }
 
-    .mission-main-header {
+    .fiche-main-header {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .mission-company-name {
+    .fiche-company-name {
         font-size: var(--text-2xl);
     }
 
@@ -524,7 +524,7 @@
 }
 
 @media (max-width: 480px) {
-    .mission-main-card {
+    .fiche-main-card {
         padding: var(--space-4);
     }
 
@@ -770,4 +770,25 @@
 
 .account-info {
     font-size: 0.65rem;
+}
+
+/* State management for checklist */
+.review-content.blurred {
+    filter: blur(5px);
+    user-select: none;
+    pointer-events: none;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+}
+
+.copy-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.5);
+    box-shadow: none;
+}
+
+.copy-btn.disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
