@@ -1,4 +1,5 @@
 import { query } from '../config/database';
+import { TrustScoreEngine, TrustLevel } from './trustScoreEngine';
 
 /**
  * Service centralisé pour toute la logique anti-détection
@@ -10,59 +11,32 @@ class AntiDetectionService {
      */
     async calculateGmailTrustScore(gmailAccountId: number): Promise<number> {
         const accountResult: any = await query(`
-            SELECT * FROM guide_gmail_accounts WHERE id = ?
+            SELECT email, COALESCE(google_maps_profile_url, maps_profile_url) as google_maps_profile_url, phone_verified 
+            FROM guide_gmail_accounts 
+            WHERE id = ?
         `, [gmailAccountId]);
 
         if (!accountResult || accountResult.length === 0) return 0;
         const account = accountResult[0];
 
-        let score = 0;
+        const result = await TrustScoreEngine.calculateTrustScore(
+            account.email,
+            account.google_maps_profile_url,
+            account.phone_verified || false
+        );
 
-        // 1. Ancienneté (20 points max - réduit pour favoriser l'activité)
-        // Calculer l'âge réel dynamique (en jours)
-        const createdAt = new Date(account.created_at);
-        const now = new Date();
-        const ageDays = Math.max(0, Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)));
-
-        // Formule ajustée : progression rapide au début, plafond à 20
-        if (ageDays <= 30) {
-            score += Math.min(15, ageDays * 0.5); // 30 jours = 15 points
-        } else {
-            score += 15 + Math.min(5, (ageDays - 30) * 0.1); // Le reste lentement
-        }
-
-        // 2. Bonus Vérification (BOOST DÉMARRAGE) (+15 points)
-        if (account.is_verified) {
-            score += 15;
-        }
-
-        // 3. Nombre avis validés (40 points max - augmenté pour favoriser la performance)
-        score += Math.min(40, (account.successful_reviews || 0) * 4);
-
-        // 4. Taux de réussite (20 points max - augmenté)
-        if (account.total_reviews_posted > 0) {
-            const rate = (account.successful_reviews / account.total_reviews_posted);
-            score += rate * 20;
-        } else {
-            // Petit bonus de confiance par défaut si 0 avis (innocent jusqu'à preuve du contraire)
-            score += 10;
-        }
-
-        // 5. Diversité/Activité (Bonus divers)
-        if (account.has_profile_picture) score += 5;
-
-        // Plafond à 100
-        return Math.min(100, Math.round(score));
+        return result.finalScore;
     }
 
     /**
      * Déterminer le niveau d'un compte Gmail
      */
-    determineGmailLevel(trustScore: number): 'nouveau' | 'bronze' | 'silver' | 'gold' {
-        if (trustScore >= 71) return 'gold';
-        if (trustScore >= 46) return 'silver';
-        if (trustScore >= 21) return 'bronze';
-        return 'nouveau';
+    determineGmailLevel(trustScore: number): string {
+        if (trustScore >= 91) return 'PLATINUM';
+        if (trustScore >= 71) return 'GOLD';
+        if (trustScore >= 41) return 'SILVER';
+        if (trustScore >= 21) return 'BRONZE';
+        return 'BLOCKED';
     }
 
     /**

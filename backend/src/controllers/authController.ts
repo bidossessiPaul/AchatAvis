@@ -570,3 +570,22 @@ export const resetPassword = async (req: Request, res: Response) => {
         return res.status(400).json({ error: error.message || 'Erreur lors de la réinitialisation' });
     }
 };
+
+/**
+ * Verify Email
+ * GET /api/auth/verify-email
+ */
+export const verifyEmail = async (req: Request, res: Response) => {
+    try {
+        const { token } = req.query;
+        if (!token) {
+            return res.status(400).json({ error: 'Token requis' });
+        }
+
+        const result = await authService.verifyEmail(token as string);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Verify email error:', error);
+        return res.status(400).json({ error: error.message });
+    }
+};
