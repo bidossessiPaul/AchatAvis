@@ -13,7 +13,8 @@ export const SuspensionBanner: React.FC = () => {
         const checkSuspension = async () => {
             if (!user) return;
             try {
-                const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/suspensions/user/${user.id}`);
+                const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+                const response = await axios.get(`${baseURL}/suspensions/user/${user.id}`);
                 if (response.data && response.data.data && response.data.data.is_suspended) {
                     setSuspension(response.data.data.active_suspension);
                 } else {
