@@ -4,8 +4,8 @@ import { teamService } from '../services/teamService';
 export const teamController = {
     inviteMember: async (req: Request, res: Response) => {
         try {
-            // @ts-ignore
-            const adminId = Number(req.user.userId);
+            // Use req.user.userId directly as a string (UUID)
+            const adminId = (req as any).user.userId;
             const { email, permissions } = req.body;
             if (!email) {
                 return res.status(400).json({ error: "Email requis" });
@@ -20,8 +20,7 @@ export const teamController = {
 
     getTeamMembers: async (req: Request, res: Response) => {
         try {
-            // @ts-ignore - userId added by auth middleware
-            const currentUserId = req.user.userId;
+            const currentUserId = (req as any).user.userId;
             const members = await teamService.getTeamMembers(currentUserId);
             return res.json(members);
         } catch (error: any) {
@@ -44,9 +43,7 @@ export const teamController = {
 
     updatePermissions: async (req: Request, res: Response) => {
         try {
-            // @ts-ignore
-            // @ts-ignore
-            const adminId = Number(req.user.userId);
+            const adminId = (req as any).user.userId;
             const { userId } = req.params;
             const { permissions } = req.body;
             const result = await teamService.updatePermissions(userId, permissions, adminId);
@@ -58,9 +55,7 @@ export const teamController = {
 
     deleteMember: async (req: Request, res: Response) => {
         try {
-            // @ts-ignore
-            // @ts-ignore
-            const adminId = Number(req.user.userId);
+            const adminId = (req as any).user.userId;
             const { id } = req.params;
             const { type } = req.query; // 'active' or 'pending'
             if (!type || (type !== 'active' && type !== 'pending')) {
