@@ -238,14 +238,7 @@ export class TrustScoreController {
 
             // Auto-update score if level matches
             if (trustLevel && trustScore === undefined) {
-                let autoScore = 0;
-                switch (trustLevel) {
-                    case 'PLATINUM': autoScore = 90; break;
-                    case 'GOLD': autoScore = 75; break;
-                    case 'SILVER': autoScore = 50; break;
-                    case 'BRONZE': autoScore = 30; break;
-                    case 'BLOCKED': autoScore = 0; break;
-                }
+                const autoScore = TrustScoreEngine.getDefaultScoreForLevel(trustLevel as any);
                 updates.push('trust_score_value = ?');
                 values.push(autoScore);
             } else if (trustScore !== undefined) {
@@ -309,6 +302,10 @@ export class TrustScoreController {
                     COALESCE(google_maps_profile_url, maps_profile_url) as google_maps_profile_url,
                     phone_verified, 
                     is_active,
+                    monthly_reviews_posted,
+                    monthly_quota_limit,
+                    max_reviews_per_month,
+                    sector_activity_log,
                     trust_last_calculated_at
                 FROM guide_gmail_accounts
             `;
@@ -411,9 +408,11 @@ export class TrustScoreController {
                 
                 trust_score_value = ?,
                 trust_level = ?,
+                account_level = ?,
                 trust_badge = ?,
                 is_blocked = ?,
                 max_reviews_per_month = ?,
+                monthly_quota_limit = ?,
                 trust_score_breakdown = ?,
                 trust_last_calculated_at = NOW()
                 
@@ -442,12 +441,14 @@ export class TrustScoreController {
                 mapsProfile?.suspiciousPatterns.noPublicReviews || false,
                 mapsProfile?.suspiciousPatterns.recentBurst || false,
 
-                // Trust Score (19-24)
+                // Trust Score (19-26)
                 result.finalScore,
                 result.trustLevel,
+                result.trustLevel, // account_level synchro
                 result.badge,
                 result.isBlocked,
                 result.maxReviewsPerMonth,
+                result.maxReviewsPerMonth, // monthly_quota_limit synchro
                 JSON.stringify(result.breakdown),
 
                 // Where clause (25)

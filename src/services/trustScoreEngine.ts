@@ -9,10 +9,10 @@ import { GoogleMapsProfileScraper } from './googleMapsProfileScraper';
 
 export enum TrustLevel {
     BLOCKED = 'BLOCKED',    // 0-20%
-    BRONZE = 'BRONZE',      // 21-40%
-    SILVER = 'SILVER',      // 41-65%
-    GOLD = 'GOLD',          // 66-85%
-    PLATINUM = 'PLATINUM'   // 86-100%
+    BRONZE = 'BRONZE',      // 21-40% (30 default)
+    SILVER = 'SILVER',      // 41-70% (60 default)
+    GOLD = 'GOLD',          // 71-90% (80 default)
+    PLATINUM = 'PLATINUM'   // 91-100% (95 default)
 }
 
 export interface TrustScoreResult {
@@ -48,8 +48,9 @@ export class TrustScoreEngine {
     ): Promise<TrustScoreResult> {
 
         // 1️⃣ Validation Email (30 points max)
+        // Base: Un email valide = 30 points.
         const emailValidation = await EmailValidator.validate(email);
-        const emailScore = Math.max(0, emailValidation.score);
+        const emailScore = emailValidation.isValid ? 30 : 0;
 
         // 2️⃣ Profil Google Maps (60 points max)
         let mapsProfile: any = null;
@@ -58,38 +59,28 @@ export class TrustScoreEngine {
         if (googleMapsProfileUrl) {
             try {
                 mapsProfile = await GoogleMapsProfileScraper.extractProfile(googleMapsProfileUrl);
-                mapsScore = Math.max(0, mapsProfile.score);
+
+                if (mapsProfile?.isValid) {
+                    // 30 points pour la présence du profil
+                    mapsScore += 30;
+
+                    // 30 points pour l'activité réelle (Niveau Local Guide > 1)
+                    if (mapsProfile.data.localGuideLevel > 1) {
+                        mapsScore += 30;
+                    }
+                }
             } catch (error) {
                 console.error('Erreur lors du scraping Google Maps:', error);
-                // Si erreur, on continue sans le profil Maps
                 mapsScore = 0;
             }
-        } else {
-            // Pas de pénalité si pas de profil - score de 0
-            mapsScore = 0;
         }
 
         // 3️⃣ Bonus Vérification (10 points max)
         let verificationBonus = 0;
-        if (phoneVerified) verificationBonus += 5;
-        if (googleMapsProfileUrl && mapsProfile?.isValid) verificationBonus += 5;
+        if (phoneVerified) verificationBonus += 10;
 
-        // 4️⃣ Calcul pénalités cumulées (Désactivées pour le modèle additif)
-        let penalties = 0;
-
-        /*
-        if (emailValidation.details.isDisposable) penalties += 50;
-        if (emailValidation.details.suspiciousPattern) penalties += 10;
-        if (mapsProfile?.suspiciousPatterns.allFiveStars) penalties += 20;
-        if (mapsProfile?.suspiciousPatterns.noPublicReviews) penalties += 30;
-        if (mapsProfile?.suspiciousPatterns.recentBurst) penalties += 10;
-        */
-
-        // 5️⃣ Score Final (sur 100)
-        // Modèle Additif: Le score Maps peut seulement ajouter des points, jamais en enlever.
-        // On s'assure que le score est au moins égal au score de l'email de base.
-        const rawScore = emailScore + mapsScore + verificationBonus;
-        const finalScore = Math.max(emailScore, Math.min(100, rawScore));
+        // 4️⃣ Score Final (sur 100)
+        const finalScore = Math.min(100, emailScore + mapsScore + verificationBonus);
 
         // 6️⃣ Attribution Niveau de Confiance
         const trustLevel = this.getTrustLevel(finalScore);
@@ -133,10 +124,10 @@ export class TrustScoreEngine {
      * 🏆 Attribution niveau de confiance
      */
     private static getTrustLevel(score: number): TrustLevel {
-        if (score >= 86) return TrustLevel.PLATINUM;
-        if (score >= 66) return TrustLevel.GOLD;
+        if (score >= 91) return TrustLevel.PLATINUM;
+        if (score >= 71) return TrustLevel.GOLD;
         if (score >= 41) return TrustLevel.SILVER;
-        if (score >= 5) return TrustLevel.BRONZE; // Très bas pour ne bloquer personne avec un email valide
+        if (score >= 21) return TrustLevel.BRONZE;
         return TrustLevel.BLOCKED;
     }
 
@@ -196,12 +187,26 @@ export class TrustScoreEngine {
     private static getMaxReviewsPerMonth(level: TrustLevel): number {
         const limits = {
             [TrustLevel.BLOCKED]: 0,
-            [TrustLevel.BRONZE]: 2,
-            [TrustLevel.SILVER]: 5,
-            [TrustLevel.GOLD]: 10,
+            [TrustLevel.BRONZE]: 5,
+            [TrustLevel.SILVER]: 15,
+            [TrustLevel.GOLD]: 30,
             [TrustLevel.PLATINUM]: 999
         };
         return limits[level];
+    }
+
+    /**
+     * ⚖️ Score par défaut selon le niveau
+     */
+    static getDefaultScoreForLevel(level: TrustLevel): number {
+        const scores = {
+            [TrustLevel.BLOCKED]: 0,
+            [TrustLevel.BRONZE]: 30,
+            [TrustLevel.SILVER]: 60,
+            [TrustLevel.GOLD]: 80,
+            [TrustLevel.PLATINUM]: 95
+        };
+        return scores[level] || 0;
     }
 
     /**

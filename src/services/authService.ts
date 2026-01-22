@@ -7,7 +7,7 @@ import qrcode from 'qrcode';
 import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/validator';
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
-import { sendResetPasswordEmail, sendVerificationEmail } from './emailService';
+import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail } from './emailService';
 import { suspensionService } from './suspensionService';
 
 
@@ -147,8 +147,10 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
                     email_validation_score = ?,
                     trust_score_value = ?,
                     trust_level = ?,
+                    account_level = ?,
                     trust_badge = ?,
                     max_reviews_per_month = ?,
+                    monthly_quota_limit = ?,
                     is_blocked = ?,
                     trust_score_breakdown = ?,
                     trust_last_calculated_at = NOW()
@@ -161,8 +163,10 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
                     trustScoreResult.details.emailValidation.score,
                     trustScoreResult.finalScore,
                     trustScoreResult.trustLevel,
+                    trustScoreResult.trustLevel, // account_level synchro
                     trustScoreResult.badge,
                     trustScoreResult.maxReviewsPerMonth,
+                    trustScoreResult.maxReviewsPerMonth, // monthly_quota_limit synchro
                     trustScoreResult.isBlocked,
                     JSON.stringify(trustScoreResult.breakdown),
                     userId
@@ -701,4 +705,45 @@ export const resetPassword = async (token: string, newPassword: string) => {
         'UPDATE users SET password_hash = ?, reset_password_token = NULL, reset_password_expires = NULL WHERE id = ?',
         [hashedPassword, userId]
     );
+};
+
+/**
+ * Verify email address
+ */
+export const verifyEmail = async (token: string) => {
+    const { verifySpecialToken } = await import('../utils/token');
+
+    try {
+        const payload = verifySpecialToken(token);
+        if (payload.type !== 'email_verification') {
+            throw new Error('Token de vérification invalide');
+        }
+
+        const userId = payload.userId;
+
+        // 1. Check if user exists and is not already verified
+        const users: any = await query('SELECT id, email, full_name, role, email_verified FROM users WHERE id = ?', [userId]);
+        if (users.length === 0) {
+            throw new Error('Utilisateur non trouvé');
+        }
+
+        const user = users[0];
+        if (user.email_verified) {
+            return { message: 'Email déjà vérifié' };
+        }
+
+        // 2. Mark as verified
+        await query('UPDATE users SET email_verified = TRUE WHERE id = ?', [userId]);
+
+        // 3. Send welcome email
+        try {
+            await sendWelcomeEmail(user.email, user.full_name, user.role);
+        } catch (error) {
+            console.error('Failed to send welcome email after verification:', error);
+        }
+
+        return { message: 'Email vérifié avec succès' };
+    } catch (error: any) {
+        throw new Error(error.message || 'Token invalide ou expiré');
+    }
 };
