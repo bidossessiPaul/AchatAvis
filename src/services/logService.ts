@@ -8,10 +8,10 @@ export class LogService {
      * Create a new audit log entry
      */
     static async logAction(
-        adminId: number,
+        adminId: string | number,
         action: string,
         targetType: string,
-        targetId?: number,
+        targetId?: string | number,
         details?: any,
         ipAddress?: string
     ): Promise<void> {
