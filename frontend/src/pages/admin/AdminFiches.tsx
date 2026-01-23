@@ -184,38 +184,56 @@ export const AdminFiches: React.FC = () => {
                 <div className="admin-main-card" style={{ border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', borderRadius: '24px' }}>
                     <div className="admin-card-header" style={{ padding: '0.5rem 0 1.5rem 0' }}>
                         <h2 className="card-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Liste des fiches</h2>
-                        <div className="admin-controls">
-                            <div className="search-box">
-                                <Search size={18} />
+                        <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div className="search-box-premium" style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
                                 <input
                                     type="text"
                                     placeholder="Rechercher par entreprise, artisan..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    style={{ borderRadius: '14px', border: '1px solid #e5e7eb', padding: '0.75rem 1rem 0.75rem 2.75rem' }}
+                                    style={{
+                                        padding: '0.75rem 1rem 0.75rem 2.5rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--gray-200)',
+                                        width: '320px',
+                                        fontSize: '0.875rem'
+                                    }}
                                 />
                             </div>
 
-                            <div className="filter-select-wrapper">
-                                <Filter size={16} />
-                                <select
-                                    className="admin-select"
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    style={{ borderRadius: '14px', border: '1px solid #e5e7eb', height: '100%' }}
-                                >
-                                    <option value="all">Tous les statuts</option>
-                                    <option value="draft">Brouillons</option>
-                                    <option value="submitted">À valider</option>
-                                    <option value="in_progress">En cours</option>
-                                    <option value="completed">Terminées</option>
-                                    <option value="cancelled">Annulées</option>
-                                </select>
+                            <div className="filter-group-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--gray-50)', padding: '4px', borderRadius: '14px', border: '1px solid var(--gray-200)' }}>
+                                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)' }} />
+                                    <select
+                                        className="admin-select-premium"
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        style={{
+                                            padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: 'white',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            color: 'var(--gray-700)',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}
+                                    >
+                                        <option value="all">Tous les statuts</option>
+                                        <option value="draft">Brouillons</option>
+                                        <option value="submitted">À valider</option>
+                                        <option value="in_progress">En cours</option>
+                                        <option value="completed">Terminées</option>
+                                        <option value="cancelled">Annulées</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="admin-table-container">
+                    <div className="admin-table-container" style={{ background: 'transparent', border: 'none', boxShadow: 'none' }}>
                         {isLoading ? (
                             <div className="admin-loading">
                                 <LoadingSpinner size="lg" text="Chargement des fiches..." />
