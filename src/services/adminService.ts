@@ -848,6 +848,7 @@ export const createArtisan = async (data: {
     postalCode?: string;
     googleBusinessUrl?: string;
     packId?: string;
+    password?: string;
 }) => {
     const connection = await pool.getConnection();
 
@@ -864,13 +865,14 @@ export const createArtisan = async (data: {
             throw new Error('Un compte avec cet email existe déjà');
         }
 
-        // 2. Generate UUID and default password
+        // 2. Generate UUID and handle password
         const { v4: uuidv4 } = await import('uuid');
         const userId = uuidv4();
         const profileId = uuidv4();
 
-        // Generate a temporary password (will be sent by email)
-        const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+        // Use provided password or generate a temporary one
+        const manualPassword = data.password;
+        const tempPassword = manualPassword || (Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8));
         const { hashPassword } = await import('../utils/password');
         const hashedPassword = await hashPassword(tempPassword);
 
