@@ -941,3 +941,53 @@ export const createArtisan = async (data: {
         connection.release();
     }
 };
+
+/**
+ * Update artisan profile and user info
+ */
+export const updateArtisanProfile = async (userId: string, data: any) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Update users table (full_name, email)
+        await connection.query(
+            'UPDATE users SET full_name = ?, email = ? WHERE id = ?',
+            [data.full_name, data.email, userId]
+        );
+
+        // 2. Update artisans_profiles table
+        await connection.query(
+            `UPDATE artisans_profiles SET 
+                company_name = ?, 
+                siret = ?, 
+                trade = ?, 
+                phone = ?, 
+                address = ?, 
+                city = ?, 
+                postal_code = ?, 
+                google_business_url = ?
+             WHERE user_id = ?`,
+            [
+                data.company_name,
+                data.siret,
+                data.trade,
+                data.phone,
+                data.address,
+                data.city,
+                data.postal_code,
+                data.google_business_url,
+                userId
+            ]
+        );
+
+        await connection.commit();
+        return { success: true, message: 'Profil mis à jour' };
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in updateArtisanProfile:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};

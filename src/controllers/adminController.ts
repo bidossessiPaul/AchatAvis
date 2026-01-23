@@ -434,3 +434,18 @@ export const createArtisan = async (req: Request, res: Response) => {
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+
+/**
+ * Update artisan profile
+ * PATCH /api/admin/artisans/:userId
+ */
+export const updateArtisan = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    try {
+        const result = await adminService.updateArtisanProfile(userId, req.body);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Update artisan error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
