@@ -153,7 +153,8 @@ export const guideService = {
         return {
             ...order,
             proposals,
-            submissions
+            submissions,
+            daily_submissions_count: dailyCount
         };
     },
 
@@ -192,37 +193,28 @@ export const guideService = {
         gmailAccountId?: number,
         baseUrl?: string
     }) {
-        // 0. 🎯 TRUST SCORE: Vérifier quota mensuel
-        const guideAccountResult: any = await query(`
-            SELECT gga.*, u.email
-            FROM users u
-            LEFT JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
-            WHERE u.id = ?
-            LIMIT 1
-        `, [guideId]);
+        // 0. 🎯 TRUST SCORE: Vérifier quota mensuel du compte Gmail sélectionné
+        if (data.gmailAccountId) {
+            const gmailAccountResult: any = await query(`
+                SELECT * FROM guide_gmail_accounts 
+                WHERE id = ? AND user_id = ?
+            `, [data.gmailAccountId, guideId]);
 
-        if (guideAccountResult && guideAccountResult.length > 0) {
-            const guideAccount = guideAccountResult[0];
+            if (gmailAccountResult && gmailAccountResult.length > 0) {
+                const gmailAccount = gmailAccountResult[0];
 
-            // Vérifier si bloqué
-            if (guideAccount.is_blocked === true) {
-                throw new Error('Votre compte est bloqué. Contactez le support.');
-            }
+                // Vérifier si bloqué
+                if (gmailAccount.is_blocked === true) {
+                    throw new Error('ce compte mail est bloqué par l\'administration.');
+                }
 
-            // Vérifier quota mensuel
-            const monthlySubmissions: any = await query(`
-                SELECT COUNT(*) as count
-                FROM reviews_submissions
-                WHERE guide_id = ?
-                AND MONTH(submitted_at) = MONTH(CURRENT_DATE())
-                AND YEAR(submitted_at) = YEAR(CURRENT_DATE())
-            `, [guideId]);
+                // Vérifier quota mensuel (Min 20)
+                const monthlyLimit = Math.max(20, gmailAccount.monthly_quota_limit || 0);
+                const monthlyUsed = gmailAccount.monthly_reviews_posted || 0;
 
-            const maxReviewsPerMonth = guideAccount.max_reviews_per_month || 0;
-            const currentMonthSubmissions = monthlySubmissions[0]?.count || 0;
-
-            if (maxReviewsPerMonth > 0 && currentMonthSubmissions >= maxReviewsPerMonth) {
-                throw new Error(`Quota mensuel atteint (${maxReviewsPerMonth} avis/mois). Niveau: ${guideAccount.trust_level}. Améliorez votre Trust Score pour augmenter votre quota.`);
+                if (monthlyUsed >= monthlyLimit) {
+                    throw new Error(`Quota mensuel atteint pour ce mail (${monthlyUsed}/${monthlyLimit} avis).`);
+                }
             }
         }
 

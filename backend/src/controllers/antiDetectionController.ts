@@ -278,11 +278,12 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
 
             const trustScoreValue = result.finalScore;
             const trustLevel = result.trustLevel;
+            const maxReviewsPerMonth = result.maxReviewsPerMonth;
 
             await query(`
                 INSERT INTO guide_gmail_accounts
-                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW())
+                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date, monthly_quota_limit)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), ?)
                 ON DUPLICATE KEY UPDATE
                 maps_profile_url = VALUES(maps_profile_url),
                 local_guide_level = VALUES(local_guide_level),
@@ -293,13 +294,15 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 trust_level = VALUES(trust_level),
                 avatar_url = VALUES(avatar_url),
                 has_profile_picture = VALUES(has_profile_picture),
+                monthly_quota_limit = VALUES(monthly_quota_limit),
                 is_verified = TRUE,
                 verification_date = NOW()
             `, [
                 user_id, email, maps_profile_url, local_guide_level || 1,
                 total_reviews_google || 0, trustScoreValue, trustLevel.toLowerCase(),
                 trustScoreValue, trustLevel.toUpperCase(),
-                avatar_url || null, avatar_url ? true : false
+                avatar_url || null, avatar_url ? true : false,
+                maxReviewsPerMonth
             ]);
 
             return res.json({ success: true, message: 'Compte Gmail ajouté avec succès' });

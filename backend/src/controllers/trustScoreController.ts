@@ -249,6 +249,11 @@ export class TrustScoreController {
             if (trustLevel) {
                 updates.push('trust_level = ?');
                 values.push(trustLevel);
+
+                // Sync quota limit with level
+                const newQuota = TrustScoreEngine.getMaxReviewsPerMonth(trustLevel as any);
+                updates.push('monthly_quota_limit = ?');
+                values.push(newQuota);
             }
 
             if (adminNotes) {
@@ -303,7 +308,7 @@ export class TrustScoreController {
                     phone_verified, 
                     is_active,
                     monthly_reviews_posted,
-                    monthly_quota_limit,
+                    GREATEST(20, COALESCE(monthly_quota_limit, 0)) as monthly_quota_limit,
                     max_reviews_per_month,
                     sector_activity_log,
                     trust_last_calculated_at

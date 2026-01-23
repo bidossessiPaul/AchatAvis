@@ -157,23 +157,23 @@ export class TrustScoreEngine {
                 'Contactez le support pour déblocage'
             ],
             [TrustLevel.BRONZE]: [
-                'Maximum 5 avis par mois',
+                'Maximum 20 avis par mois',
                 'Uniquement entreprises vérifiées',
                 'Paiement après validation admin'
             ],
             [TrustLevel.SILVER]: [
-                'Maximum 15 avis par mois',
+                'Maximum 20 avis par mois',
                 'Accès fiches standard',
                 'Paiement sous 48h'
             ],
             [TrustLevel.GOLD]: [
-                'Maximum 30 avis par mois',
+                'Maximum 20 avis par mois',
                 'Accès fiches premium',
                 'Paiement immédiat',
                 'Bonus fiches récurrentes'
             ],
             [TrustLevel.PLATINUM]: [
-                'Aucune limite mensuelle',
+                'Maximum 20 avis par mois',
                 'Accès toutes fiches',
                 'Paiement prioritaire',
                 'Programme VIP exclusif'
@@ -185,15 +185,9 @@ export class TrustScoreEngine {
     /**
      * 📊 Limite avis/mois
      */
-    private static getMaxReviewsPerMonth(level: TrustLevel): number {
-        const limits = {
-            [TrustLevel.BLOCKED]: 0,
-            [TrustLevel.BRONZE]: 5,
-            [TrustLevel.SILVER]: 15,
-            [TrustLevel.GOLD]: 30,
-            [TrustLevel.PLATINUM]: 999
-        };
-        return limits[level];
+    public static getMaxReviewsPerMonth(level: TrustLevel): number {
+        if (level === TrustLevel.BLOCKED) return 0;
+        return 20; // Default flat quota for all accounts as per user request
     }
 
     /**
@@ -257,13 +251,13 @@ export class TrustScoreEngine {
 
         // Objectifs selon niveau
         if (currentLevel === TrustLevel.BLOCKED) {
-            tips.push('🎯 OBJECTIF: Atteignez 21 points pour débloquer BRONZE');
+            tips.push('🎯 OBJECTIF: Atteignez 21 points pour débloquer BRONZE (20 avis/mois)');
         } else if (currentLevel === TrustLevel.BRONZE) {
-            tips.push('🎯 OBJECTIF: Atteignez 41 points pour ARGENT (x3 avis/mois)');
+            tips.push('🎯 OBJECTIF: Atteignez 41 points pour ARGENT (Paiement plus rapide)');
         } else if (currentLevel === TrustLevel.SILVER) {
-            tips.push('🎯 OBJECTIF: Atteignez 66 points pour OR (paiement immédiat)');
+            tips.push('🎯 OBJECTIF: Atteignez 66 points pour OR (Paiement immédiat)');
         } else if (currentLevel === TrustLevel.GOLD) {
-            tips.push('🎯 OBJECTIF: Atteignez 86 points pour PLATINE (illimité)');
+            tips.push('🎯 OBJECTIF: Atteignez 86 points pour PLATINE (Accès prioritaire)');
         }
 
         return tips;

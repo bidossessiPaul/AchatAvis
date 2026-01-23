@@ -72,7 +72,14 @@ class AntiDetectionService {
         }
         const gmail = gmailResult[0];
 
-        // Handle monthly reset for global quota
+        // 🎯 SECURITY: Check if account is active and not blocked
+        if (gmail.is_active === 0 || gmail.is_blocked === 1 || gmail.is_blocked === true || gmail.trust_level === 'BLOCKED') {
+            return {
+                can_take: false,
+                message: 'ce compte mail est bloqué ou désactivé par l\'administration.',
+                reason: 'GMAIL_BLOCKED'
+            };
+        }
         const now = new Date();
         const resetDate = gmail.monthly_reset_date ? new Date(gmail.monthly_reset_date) : null;
 
@@ -87,8 +94,8 @@ class AntiDetectionService {
             gmail.monthly_reviews_posted = 0;
         }
 
-        // Check global monthly quota
-        const monthlyLimit = gmail.monthly_quota_limit || 20;
+        // Check global monthly quota (Min 20 as per user request)
+        const monthlyLimit = Math.max(20, gmail.monthly_quota_limit || 0);
         const monthlyUsed = gmail.monthly_reviews_posted || 0;
 
         if (monthlyUsed >= monthlyLimit) {
@@ -131,17 +138,7 @@ class AntiDetectionService {
         // 4. VÉRIFICATIONS
 
         // a) Niveau Gmail requis - SUPPRIMÉ: tous les comptes peuvent accéder à tous les secteurs
-        // Les niveaux sont gardés uniquement pour les badges/affichage
-        // const levels = ['nouveau', 'bronze', 'silver', 'gold'];
-        // const currentLevelIdx = levels.indexOf(gmail.account_level);
-        // const requiredLevelIdx = levels.indexOf(campaign.required_gmail_level || 'nouveau');
-        // if (currentLevelIdx < requiredLevelIdx) {
-        //     return {
-        //         can_take: false,
-        //         message: `Cette fiche nécessite un compte Gmail de niveau ${campaign.required_gmail_level}.`,
-        //         reason: 'LEVEL_INSUFFICIENT'
-        //     };
-        // }
+        // Les niveaux sont gardés uniquement pour les badges/affichage et quotas mensuels globaux.
 
         // b) Quota mensuel secteur (CRITIQUE - limite par secteur par mois)
         const activityLog = typeof gmail.sector_activity_log === 'string'
@@ -183,7 +180,7 @@ class AntiDetectionService {
             }
 
             const diffDays = Math.ceil((now.getTime() - lastPosted.getTime()) / (1000 * 3600 * 24));
-            const minDays = campaign.min_days_between_reviews || 3;
+            const minDays = campaign.min_days_between_reviews || 2;
 
             if (diffDays < minDays) {
                 const nextDate = new Date(lastPosted.getTime() + minDays * 24 * 3600 * 1000);
@@ -199,20 +196,6 @@ class AntiDetectionService {
                     }
                 };
             }
-        }
-
-        // d) Limite quotidienne globale (max 10 avis)
-        const todaySubmissions: any = await query(`
-            SELECT COUNT(*) as count FROM reviews_submissions 
-            WHERE guide_id = ? AND DATE(submitted_at) = CURDATE()
-        `, [userId]);
-
-        if (todaySubmissions[0].count >= 10) {
-            return {
-                can_take: false,
-                message: 'Limite de 10 avis par jour atteinte. Revenez demain !',
-                reason: 'DAILY_LIMIT_REACHED'
-            };
         }
 
         return {
@@ -326,7 +309,7 @@ class AntiDetectionService {
                 icon: sector.icon_emoji,
                 difficulty: sector.difficulty,
                 max_per_month: sector.max_reviews_per_month_per_email || (sector.difficulty === 'easy' ? 5 : (sector.difficulty === 'medium' ? 3 : 2)),
-                cooldown_days: sector.min_days_between_reviews || 7,
+                cooldown_days: sector.min_days_between_reviews || 2,
                 accounts: gmailAccounts.map((acc: any) => {
                     let log = {};
                     try {
@@ -370,7 +353,7 @@ class AntiDetectionService {
                         next_available,
                         global_quota: {
                             used: acc.monthly_reviews_posted || 0,
-                            max: acc.monthly_quota_limit || 20
+                            max: Math.max(20, acc.monthly_quota_limit || 0)
                         }
                     };
                 })
@@ -380,7 +363,7 @@ class AntiDetectionService {
         // Add a flattened list of accounts with global status and remaining quotas
         const global_accounts = gmailAccounts.map((acc: any) => {
             const used = acc.monthly_reviews_posted || 0;
-            const max = acc.monthly_quota_limit || 20;
+            const max = Math.max(20, acc.monthly_quota_limit || 0);
             const remaining = Math.max(0, max - used);
 
             // Determine global status

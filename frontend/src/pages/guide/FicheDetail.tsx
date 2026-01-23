@@ -459,8 +459,13 @@ export const FicheDetail: React.FC = () => {
                                 </div>
                                 <div>
                                     <p className="instruction-label">Rythme conseillé</p>
-                                    <p className="instruction-value">
-                                        {fiche.publication_pace || '1 avis par jour'}
+                                    <p className="instruction-value" style={{ color: (fiche.daily_submissions_count || 0) >= (fiche.reviews_per_day || 1) ? 'var(--gray-400)' : 'var(--guide-primary)' }}>
+                                        {fiche.reviews_per_day || 1} par jour
+                                    </p>
+                                    <p className="instruction-value" style={{ fontSize: '0.75rem', marginTop: '4px', fontWeight: 600 }}>
+                                        <span style={{ color: (fiche.daily_submissions_count || 0) >= (fiche.reviews_per_day || 1) ? '#ef4444' : '#10b981' }}>
+                                            {fiche.daily_submissions_count || 0} / {fiche.reviews_per_day || 1}
+                                        </span> avis demandés aujourd'hui
                                     </p>
                                 </div>
                             </div>
@@ -480,7 +485,7 @@ export const FicheDetail: React.FC = () => {
 
                             <div className="instruction-warning-box">
                                 <p className="instruction-warning-text">
-                                    <strong>Rythme :</strong> Ne publiez qu'un seul avis à la fois en respectant le temps d'attente conseillé.
+                                    <strong>Rythme :</strong> Ne publiez qu'un seul avis à la fois. Respectez la limite de {fiche.reviews_per_day || 1} avis par jour pour cette fiche.
                                 </p>
                             </div>
 
@@ -575,6 +580,9 @@ export const FicheDetail: React.FC = () => {
                 isOpen={isCompModalOpen}
                 onClose={() => setIsCompModalOpen(false)}
                 result={compatibilityResult}
+                gmailAccounts={gmailAccounts}
+                selectedGmailId={selectedGmailId}
+                onSelectGmail={handleCheckCompatibility}
             />
 
             <ProofSubmissionChecklist

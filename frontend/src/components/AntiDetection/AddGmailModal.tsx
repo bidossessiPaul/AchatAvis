@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Info } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Input } from '../common/Input';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
@@ -15,16 +15,13 @@ interface AddGmailModalProps {
 
 export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, onSuccess }) => {
     const { user } = useAuthStore();
-    const { verifyGmailPreview, addGmailAccount } = useAntiDetectionStore();
+    const { addGmailAccount } = useAntiDetectionStore();
 
     const [formData, setFormData] = useState({
         email: '',
         mapsProfileUrl: ''
     });
 
-    const [previewData, setPreviewData] = useState<any>(null);
-    const [trustScoreData, setTrustScoreData] = useState<any>(null);
-    const [isVerifying, setIsVerifying] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -39,10 +36,8 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
                 maps_profile_url: formData.mapsProfileUrl,
                 local_guide_level: 1,
                 total_reviews_google: 0,
-                trust_score_value: 100, // Default to 100 as we don't verify anymore
+                // These will be auto-calculated or set to default in the backend
                 trust_level: 'BRONZE',
-                trust_badge: '🛡️ BRONZE',
-                max_reviews_per_month: 20, // Default safe quota
                 is_blocked: false
             });
 
@@ -66,7 +61,7 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={onClose}
-                style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)' }}
+                style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)' }}
             />
 
             <motion.div
@@ -75,60 +70,66 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
                 style={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: '500px',
+                    maxWidth: '460px',
                     background: 'white',
-                    borderRadius: '1.5rem',
+                    borderRadius: '2rem',
                     boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    padding: '2.5rem'
                 }}
             >
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>Ajouter un compte Gmail</h3>
-                    <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={24} /></button>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                    <div style={{ padding: '1rem', background: '#f0f9ff', borderRadius: '1.25rem', color: '#0ea5e9' }}>
+                        <Mail size={32} />
+                    </div>
                 </div>
 
-                <form onSubmit={handleSubmit} style={{ padding: '1.5rem' }} className="light-theme-form">
-                    <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>Nouveau Compte Gmail</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                        Ajoutez un compte pour augmenter vos quotas mensuels.
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    <div style={{ display: 'grid', gap: '1.25rem', marginBottom: '2rem' }}>
                         <Input
                             label="Adresse Gmail"
                             type="email"
-                            placeholder="exemple@gmail.com"
+                            placeholder="votre.nom@gmail.com"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             required
                         />
 
-                        <div style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <label className="input-label" style={{ margin: 0 }}>Lien Profil Local Guide Google (Optionnel)</label>
-                                <div
-                                    style={{ position: 'relative', display: 'flex', alignItems: 'center', cursor: 'help' }}
-                                    className="info-bubble-trigger"
-                                >
-                                    <Info size={16} color="#0ea5e9" />
-                                    <div className="info-bubble-content">
-                                        <div style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'white', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.25rem' }}>Où trouver ce lien ?</div>
-                                        <ol style={{ paddingLeft: '1.25rem', margin: 0, color: '#f1f5f9', listStyleType: 'decimal' }}>
-                                            <li>Ouvrez <b>Google Maps</b></li>
-                                            <li>Cliquez sur votre <b>Avatar</b></li>
-                                            <li>Allez dans <b>"Vos contributions"</b></li>
-                                            <li>Cliquez sur <b>"Afficher votre profil"</b></li>
-                                            <li>Copiez l'URL de cette page</li>
-                                        </ol>
-                                    </div>
-                                </div>
-                            </div>
-                            <Input
-                                placeholder="https://www.google.com/maps/contrib/..."
-                                value={formData.mapsProfileUrl}
-                                onChange={(e) => setFormData({ ...formData, mapsProfileUrl: e.target.value })}
-                            />
-                        </div>
+                        <Input
+                            label="Lien Profil Google Maps (Optionnel)"
+                            placeholder="https://www.google.com/maps/contrib/..."
+                            value={formData.mapsProfileUrl}
+                            onChange={(e) => setFormData({ ...formData, mapsProfileUrl: e.target.value })}
+                        />
                     </div>
 
-                    <Button type="submit" variant="primary" fullWidth isLoading={isSubmitting}>
-                        Enregistrer le compte
-                    </Button>
+                    <div style={{ display: 'grid', gap: '0.75rem' }}>
+                        <Button type="submit" variant="primary" fullWidth isLoading={isSubmitting} style={{ padding: '1.25rem', borderRadius: '1.25rem', fontSize: '1rem', fontWeight: 800 }}>
+                            Enregistrer le compte
+                        </Button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#94a3b8',
+                                fontWeight: 700,
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                padding: '0.5rem'
+                            }}
+                        >
+                            Annuler
+                        </button>
+                    </div>
                 </form>
             </motion.div>
         </div>
