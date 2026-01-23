@@ -54,7 +54,8 @@ export const ArtisansList: React.FC = () => {
         postalCode: '',
         googleBusinessUrl: '',
         packId: '',
-        sector_slug: ''
+        sector_slug: '',
+        password: ''
     });
 
     useEffect(() => {
@@ -96,7 +97,7 @@ export const ArtisansList: React.FC = () => {
                 ...formData,
                 siret: `TEMP_${Date.now()}` // Pass temporary SIRET as it's often required in schema/backend
             });
-            showSuccess('Succès', `Artisan créé avec succès. Mot de passe temporaire: ${result.tempPassword}`);
+            showSuccess('Succès', `Compte Artisan créé avec succès.`);
             setShowCreateModal(false);
             // Reset form
             setFormData({
@@ -110,7 +111,8 @@ export const ArtisansList: React.FC = () => {
                 postalCode: '',
                 googleBusinessUrl: '',
                 packId: '',
-                sector_slug: ''
+                sector_slug: '',
+                password: ''
             });
             loadArtisans(true);
         } catch (error: any) {
@@ -272,23 +274,6 @@ export const ArtisansList: React.FC = () => {
                                                         >
                                                             <Eye size={18} />
                                                         </button>
-                                                        {artisan.status === 'active' ? (
-                                                            <button
-                                                                onClick={() => handleStatusUpdate(artisan.id, 'suspended')}
-                                                                className="action-btn block-btn"
-                                                                title="Suspendre le compte"
-                                                            >
-                                                                <PauseCircle size={18} />
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => handleStatusUpdate(artisan.id, 'active')}
-                                                                className="action-btn active-btn"
-                                                                title="Réactiver le compte"
-                                                            >
-                                                                <CheckCircle size={18} />
-                                                            </button>
-                                                        )}
                                                     </>
                                                     <button
                                                         onClick={() => handleIssueWarning(artisan)}
@@ -405,6 +390,17 @@ export const ArtisansList: React.FC = () => {
                                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                                     className="form-input-premium"
                                                     placeholder="06..."
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">Mot de passe de connexion *</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.password}
+                                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="Définir un mot de passe"
                                                     required
                                                 />
                                             </div>
