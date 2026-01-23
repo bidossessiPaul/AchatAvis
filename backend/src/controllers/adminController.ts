@@ -407,7 +407,7 @@ export const activateArtisanPack = async (req: Request, res: Response) => {
  * POST /api/admin/artisans/create
  */
 export const createArtisan = async (req: Request, res: Response) => {
-    const { email, fullName, companyName, siret, trade, phone, address, city, postalCode, googleBusinessUrl, packId } = req.body;
+    const { email, fullName, companyName, siret, trade, phone, address, city, postalCode, googleBusinessUrl, packId, password } = req.body;
 
     // Validate required fields
     if (!email || !fullName || !companyName || !siret || !trade || !phone || !city) {
@@ -426,7 +426,8 @@ export const createArtisan = async (req: Request, res: Response) => {
             city,
             postalCode,
             googleBusinessUrl,
-            packId
+            packId,
+            password
         });
         return res.status(201).json(result);
     } catch (error: any) {
