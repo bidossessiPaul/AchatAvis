@@ -818,3 +818,111 @@ export const activateArtisanPack = async (userId: string, packId: string) => {
         connection.release();
     }
 };
+
+/**
+ * Create a new artisan account from admin panel
+ * Optionally activate a pack and send welcome email
+ */
+export const createArtisan = async (data: {
+    email: string;
+    fullName: string;
+    companyName: string;
+    siret: string;
+    trade: string;
+    phone: string;
+    address?: string;
+    city: string;
+    postalCode?: string;
+    googleBusinessUrl?: string;
+    packId?: string;
+}) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Check if email already exists
+        const [existingUsers]: any = await connection.query(
+            'SELECT id FROM users WHERE email = ?',
+            [data.email]
+        );
+
+        if (existingUsers && existingUsers.length > 0) {
+            throw new Error('Un compte avec cet email existe déjà');
+        }
+
+        // 2. Generate UUID and default password
+        const { v4: uuidv4 } = await import('uuid');
+        const userId = uuidv4();
+        const profileId = uuidv4();
+
+        // Generate a temporary password (will be sent by email)
+        const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+        const { hashPassword } = await import('../utils/password');
+        const hashedPassword = await hashPassword(tempPassword);
+
+        // 3. Create user
+        await connection.query(
+            `INSERT INTO users (id, email, full_name, password_hash, role, status, email_verified)
+             VALUES (?, ?, ?, ?, 'artisan', 'active', TRUE)`,
+            [userId, data.email, data.fullName, hashedPassword]
+        );
+
+        // 4. Create artisan profile
+        await connection.query(
+            `INSERT INTO artisans_profiles 
+             (id, user_id, company_name, siret, trade, phone, address, city, postal_code, google_business_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                profileId,
+                userId,
+                data.companyName,
+                data.siret,
+                data.trade,
+                data.phone,
+                data.address || '',
+                data.city,
+                data.postalCode || '',
+                data.googleBusinessUrl || null
+            ]
+        );
+
+        await connection.commit();
+
+        // 5. Activate pack if provided
+        if (data.packId) {
+            try {
+                await activateArtisanPack(userId, data.packId);
+            } catch (packError) {
+                console.error('Error activating pack:', packError);
+                // Continue even if pack activation fails
+            }
+        }
+
+        // 6. Send welcome email with temp password
+        try {
+            const { sendWelcomeEmail } = await import('./emailService');
+            await sendWelcomeEmail(data.email, data.fullName, 'artisan');
+
+            // TODO: Send email with temporary password
+            // For now, we'll just log it
+            console.log(`Temporary password for ${data.email}: ${tempPassword}`);
+        } catch (emailError) {
+            console.error('Error sending welcome email:', emailError);
+        }
+
+        return {
+            success: true,
+            message: `Artisan créé avec succès`,
+            userId,
+            tempPassword // Return this so admin can communicate it
+        };
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in createArtisan:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
