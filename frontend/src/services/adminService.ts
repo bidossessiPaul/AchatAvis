@@ -87,6 +87,26 @@ export const adminService = {
     },
 
     /**
+     * Create a new artisan from admin panel
+     */
+    createArtisan: async (data: {
+        email: string;
+        fullName: string;
+        companyName: string;
+        siret: string;
+        trade: string;
+        phone: string;
+        address?: string;
+        city: string;
+        postalCode?: string;
+        googleBusinessUrl?: string;
+        packId?: string;
+    }) => {
+        const response = await api.post('/admin/artisans/create', data);
+        return response.data;
+    },
+
+    /**
      * Get all available subscription packs
      */
     getPacks: async () => {

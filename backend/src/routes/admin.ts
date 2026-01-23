@@ -30,6 +30,7 @@ router.get('/reasons', adminController.getSuspensionReasons); // Alias for testi
 
 router.get('/artisans', adminController.getArtisans);
 router.get('/artisans/:userId', adminController.getArtisanDetail);
+router.post('/artisans/create', adminController.createArtisan);
 router.post('/artisans/:userId/activate-pack', adminController.activateArtisanPack);
 router.get('/guides', adminController.getGuides);
 router.get('/guides/:userId', adminController.getGuideDetail);

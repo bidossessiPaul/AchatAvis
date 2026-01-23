@@ -393,3 +393,36 @@ export const activateArtisanPack = async (req: Request, res: Response) => {
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+
+/**
+ * Create a new artisan from admin panel
+ * POST /api/admin/artisans/create
+ */
+export const createArtisan = async (req: Request, res: Response) => {
+    const { email, fullName, companyName, siret, trade, phone, address, city, postalCode, googleBusinessUrl, packId } = req.body;
+
+    // Validate required fields
+    if (!email || !fullName || !companyName || !siret || !trade || !phone || !city) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const result = await adminService.createArtisan({
+            email,
+            fullName,
+            companyName,
+            siret,
+            trade,
+            phone,
+            address,
+            city,
+            postalCode,
+            googleBusinessUrl,
+            packId
+        });
+        return res.status(201).json(result);
+    } catch (error: any) {
+        console.error('Create artisan error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
