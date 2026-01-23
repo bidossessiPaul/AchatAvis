@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
-import { NotificationCenter } from '../Notifications/NotificationCenter';
+// import { NotificationCenter } from '../Notifications/NotificationCenter';
 import './Layout.css';
 
 interface TopBarProps {
@@ -24,7 +24,7 @@ export const TopBar: React.FC<TopBarProps> = ({ title, onMenuClick }) => {
                 </div>
 
                 <div className="topbar-actions">
-                    <NotificationCenter />
+                    {/* <NotificationCenter /> */}
                     <Link to="/profile" className="user-avatar-wrapper" title="Mon Profil">
                         {user?.avatar_url ? (
                             <img src={user.avatar_url} alt={user.full_name} className="topbar-avatar" />
