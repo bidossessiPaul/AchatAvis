@@ -429,14 +429,35 @@ export const ArtisanDetail: React.FC = () => {
                                                     className="premium-select"
                                                     style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}
                                                 >
-                                                    <option value="plombier">Plombier</option>
-                                                    <option value="electricien">Électricien</option>
-                                                    <option value="chauffagiste">Chauffagiste</option>
+                                                    <option value="animalerie">Services Animaux</option>
+                                                    <option value="automobile">Garage & Automobile</option>
+                                                    <option value="batiment">Bâtiment & Rénovation</option>
+                                                    <option value="boulangerie">Boulangerie & Pâtisserie</option>
+                                                    <option value="boutique">Boutique & Commerce</option>
+                                                    <option value="chauffage-climo">Chauffage & Climatisation</option>
+                                                    <option value="coiffure">Coiffure & Beauté</option>
                                                     <option value="couvreur">Couvreur</option>
-                                                    <option value="vitrier">Vitrier</option>
-                                                    <option value="paysagiste">Paysagiste</option>
-                                                    <option value="menage">Ménage</option>
-                                                    <option value="demenageur">Déménageur</option>
+                                                    <option value="demenagement">Déménagement</option>
+                                                    <option value="dentiste">Dentiste & Santé</option>
+                                                    <option value="electricite">Électricité</option>
+                                                    <option value="expert-comptable">Expert Comptable</option>
+                                                    <option value="fleuriste">Fleuriste</option>
+                                                    <option value="immobilier">Agence Immobilière</option>
+                                                    <option value="informatique">Informatique & Réparation</option>
+                                                    <option value="jardinage-paysage">Jardin & Paysage</option>
+                                                    <option value="juridique">Services Juridiques</option>
+                                                    <option value="loisirs">Loisirs & Divertissement</option>
+                                                    <option value="maconnerie">Maçonnerie</option>
+                                                    <option value="menuiserie">Menuiserie</option>
+                                                    <option value="nettoyage-menage">Nettoyage & Ménage</option>
+                                                    <option value="peinture-decoration">Peinture & Décoration</option>
+                                                    <option value="photographe">Photographie</option>
+                                                    <option value="plomberie">Plomberie & Assainissement</option>
+                                                    <option value="restaurant">Restaurant & Café</option>
+                                                    <option value="serrurerie">Serrurerie (Urgence)</option>
+                                                    <option value="toiture-couverture">Toiture & Couverture</option>
+                                                    <option value="vitrier">Vitrerie</option>
+                                                    <option value="vtc">Transport & VTC</option>
                                                 </select>
                                             ) : (
                                                 <span className="info-value" style={{ textTransform: 'capitalize' }}>{profile.trade}</span>
