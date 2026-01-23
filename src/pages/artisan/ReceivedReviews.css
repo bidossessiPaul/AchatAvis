@@ -275,24 +275,26 @@
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
-    color: white;
 }
 
 .status-pill-premium.validated {
-    background: #065f46;
-    opacity: 0.9;
+    background: #dcfce7;
+    color: #166534;
 }
 
 .status-pill-premium.pending {
-    background: #9a3412;
+    background: #fef3c7;
+    color: #92400e;
 }
 
 .status-pill-premium.not_submitted {
-    background: #064e3b;
+    background: #eff6ff;
+    color: #1e40af;
 }
 
 .status-pill-premium.rejected {
-    background: #991b1b;
+    background: #fee2e2;
+    color: #991b1b;
 }
 
 .status-badge-mini.rejected {
