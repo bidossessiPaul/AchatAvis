@@ -74,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
-                    { label: 'fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
+                    { label: 'Fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_users', 'super_admin'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_view_stats'] },
