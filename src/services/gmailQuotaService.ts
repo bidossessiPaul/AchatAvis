@@ -42,7 +42,7 @@ export async function getGmailQuotasForFiche(userId: string, ficheId: string) {
             monthlyUsed = 0; // Would be reset on next check
         }
 
-        const monthlyLimit = gmail.monthly_quota_limit || 20;
+        const monthlyLimit = Math.max(20, gmail.monthly_quota_limit || 0);
         const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
 
         // Parse sector activity

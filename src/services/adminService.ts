@@ -169,7 +169,7 @@ export const getGuideDetail = async (userId: string) => {
     `, [userId]);
 
     const gmailAccounts = await query(`
-        SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
+        SELECT *, GREATEST(20, COALESCE(monthly_quota_limit, 0)) as monthly_quota_limit FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
     `, [userId]);
 
     return {
