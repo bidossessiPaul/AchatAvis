@@ -64,7 +64,7 @@ const createTransporter = () => {
 export const transporter = createTransporter();
 
 // Verify connection configuration
-transporter.verify(function (error) {
+transporter.verify(function (error: any) {
     if (error) {
         console.error('❌ Email Service Configuration Error:', error.message);
         // We log but don't crash, as the app might work without email for some features
