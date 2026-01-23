@@ -10,7 +10,12 @@ export const teamController = {
             if (!email) {
                 return res.status(400).json({ error: "Email requis" });
             }
-            const result = await teamService.inviteMember(email, permissions || {}, adminId);
+
+            // Extract base URL from request origin
+            const origin = req.get('origin') || req.get('referer');
+            const baseUrl = origin ? new URL(origin).origin : undefined;
+
+            const result = await teamService.inviteMember(email, permissions || {}, adminId, baseUrl);
             return res.json(result);
         } catch (error: any) {
             console.error('Invite Member Error:', error);

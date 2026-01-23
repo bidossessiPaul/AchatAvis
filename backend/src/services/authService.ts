@@ -14,7 +14,7 @@ import { suspensionService } from './suspensionService';
 /**
  * Register a new artisan
  */
-export const registerArtisan = async (data: ArtisanRegistrationInput) => {
+export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: string) => {
     const hashedPassword = await hashPassword(data.password);
     const userId = uuidv4();
     const profileId = uuidv4();
@@ -64,7 +64,7 @@ export const registerArtisan = async (data: ArtisanRegistrationInput) => {
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
 
         // Send verification email
-        await sendVerificationEmail(user.email, user.full_name, verificationToken);
+        await sendVerificationEmail(user.email, user.full_name, verificationToken, baseUrl);
 
         return {
             user,
@@ -92,7 +92,7 @@ export const registerArtisan = async (data: ArtisanRegistrationInput) => {
 /**
  * Register a new local guide
  */
-export const registerGuide = async (data: GuideRegistrationInput) => {
+export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: string) => {
     const hashedPassword = await hashPassword(data.password);
     const userId = uuidv4();
     const profileId = uuidv4();
@@ -190,7 +190,7 @@ export const registerGuide = async (data: GuideRegistrationInput) => {
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
 
         // Send verification email
-        await sendVerificationEmail(user.email, user.full_name, verificationToken);
+        await sendVerificationEmail(user.email, user.full_name, verificationToken, baseUrl);
 
         return {
             user,
@@ -661,7 +661,7 @@ export const refreshToken = async (token: string) => {
 /**
  * Forgot password - Generate token and send email
  */
-export const forgotPassword = async (email: string) => {
+export const forgotPassword = async (email: string, baseUrl?: string) => {
     // Check if user exists
     const rows: any = await query('SELECT id FROM users WHERE email = ?', [email]);
     if (rows.length === 0) {
@@ -680,7 +680,7 @@ export const forgotPassword = async (email: string) => {
     );
 
     // Send email
-    await sendResetPasswordEmail(email, token);
+    await sendResetPasswordEmail(email, token, baseUrl);
 };
 
 /**

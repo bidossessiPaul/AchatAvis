@@ -54,7 +54,11 @@ export const registerArtisan = async (req: Request, res: Response) => {
             });
         }
 
-        const result = await authService.registerArtisan(validatedData);
+        // Extract base URL from request
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+
+        const result = await authService.registerArtisan(validatedData, baseUrl);
 
         return res.status(201).json({
             message: 'Artisan account created successfully. Awaiting admin approval.',
@@ -103,7 +107,11 @@ export const registerGuide = async (req: Request, res: Response) => {
             });
         }
 
-        const result = await authService.registerGuide(validatedData);
+        // Extract base URL from request
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+
+        const result = await authService.registerGuide(validatedData, baseUrl);
 
         return res.status(201).json({
             message: 'Guide account created successfully',
@@ -528,7 +536,12 @@ export const refreshToken = async (req: Request, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
     try {
         const validatedData = forgotPasswordSchema.parse(req.body);
-        await authService.forgotPassword(validatedData.email);
+
+        // Extract base URL from request
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+
+        await authService.forgotPassword(validatedData.email, baseUrl);
 
         return res.json({
             message: 'Si cet email correspond à un compte, un lien de réinitialisation a été envoyé.'

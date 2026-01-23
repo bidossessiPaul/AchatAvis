@@ -8,7 +8,7 @@ export const teamService = {
     /**
      * Invite a new team member
      */
-    async inviteMember(email: string, permissions: any, adminId: number) {
+    async inviteMember(email: string, permissions: any, adminId: number, baseUrl?: string) {
         // 1. Check if user already exists
         const existingUsers: any = await query('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUsers.length > 0) {
@@ -29,7 +29,7 @@ export const teamService = {
                 [token, JSON.stringify(permissions), expiresAt, email]
             );
 
-            await sendTeamInvitationEmail(email, token, permissions);
+            await sendTeamInvitationEmail(email, token, permissions, baseUrl);
             await LogService.logAction(adminId, 'INVITE_MEMBER', 'USER', undefined, { email, status: 'reinvited' });
             return { message: "Invitation renvoyée avec succès." };
         }
@@ -62,7 +62,7 @@ export const teamService = {
         );
 
         // 4. Send email
-        await sendTeamInvitationEmail(email, token, permissions);
+        await sendTeamInvitationEmail(email, token, permissions, baseUrl);
 
         // Log action (target_id null because UUID vs INT mismatch, saving email in details)
         await LogService.logAction(adminId, 'INVITE_MEMBER', 'INVITATION', undefined, { email, invitationId: id });
