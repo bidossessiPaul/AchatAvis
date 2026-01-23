@@ -47,6 +47,14 @@ export const adminService = {
     },
 
     /**
+     * Update guide profile
+     */
+    updateGuide: async (userId: string, data: any) => {
+        const response = await api.patch(`/admin/guides/${userId}`, data);
+        return response.data;
+    },
+
+    /**
      * Update user status (block/unblock)
      */
     updateUserStatus: async (userId: string, status: string, reason?: string) => {

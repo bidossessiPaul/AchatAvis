@@ -95,7 +95,8 @@ export const ArtisanDetail: React.FC = () => {
                 address: result.profile.address,
                 city: result.profile.city,
                 postal_code: result.profile.postal_code,
-                google_business_url: result.profile.google_business_url
+                google_business_url: result.profile.google_business_url,
+                password: ''
             });
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement des détails');
@@ -481,6 +482,33 @@ export const ArtisanDetail: React.FC = () => {
                                                     Voir la fiche <ExternalLink size={12} />
                                                 </a>
                                             )}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="premium-card">
+                                    <h3><ShieldAlert size={20} /> Sécurité</h3>
+                                    <div className="premium-info-list">
+                                        <div className="premium-info-item">
+                                            <div className="info-icon-box"><ShieldAlert size={16} /></div>
+                                            <div className="info-content">
+                                                <span className="info-label">Mot de passe</span>
+                                                {isEditing ? (
+                                                    <div style={{ width: '100%' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData.password}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                                                            className="form-input-premium"
+                                                            placeholder="Nouveau mot de passe (laisser vide pour ne pas changer)"
+                                                        />
+                                                        <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                                                            Sera mis à jour uniquement si vous saisissez une valeur.
+                                                        </small>
+                                                    </div>
+                                                ) : (
+                                                    <span className="info-value">••••••••••••</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
