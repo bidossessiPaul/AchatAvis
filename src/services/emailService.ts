@@ -30,8 +30,9 @@ export const parseUserAgent = (ua: string | null) => {
 /**
  * Send password reset email
  */
-export const sendResetPasswordEmail = async (email: string, token: string) => {
-    const resetUrl = `${emailConfig.frontendUrl}/reset-password?token=${token}`;
+export const sendResetPasswordEmail = async (email: string, token: string, baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -108,8 +109,9 @@ export const sendResetPasswordEmail = async (email: string, token: string) => {
 /**
  * Send email verification link
  */
-export const sendVerificationEmail = async (email: string, fullName: string, token: string) => {
-    const verificationUrl = `${emailConfig.frontendUrl}/verify-email?token=${token}`;
+export const sendVerificationEmail = async (email: string, fullName: string, token: string, baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     // Determine user role based on token payload if needed, but for now we keep it generic or assume passed info
     // Actually, we can just make a generic verification email
@@ -490,8 +492,9 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
 /**
  * Send invitation email to new team member
  */
-export const sendTeamInvitationEmail = async (email: string, token: string, permissions: any) => {
-    const inviteUrl = `${emailConfig.frontendUrl}/admin/accept-invite?token=${token}`;
+export const sendTeamInvitationEmail = async (email: string, token: string, permissions: any, baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const inviteUrl = `${frontendUrl}/admin/accept-invite?token=${token}`;
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
 
