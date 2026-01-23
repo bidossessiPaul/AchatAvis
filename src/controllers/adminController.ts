@@ -40,9 +40,7 @@ export const updateUserStatus = async (req: Request, res: Response) => {
 
     try {
         console.log(`[ADMIN] Attempting to update status for user ${userId} to ${status}`);
-        const origin = req.get('origin') || req.get('referer');
-        const baseUrl = origin ? new URL(origin).origin : undefined;
-        await adminService.updateUserStatus(userId, status, reason, baseUrl);
+        await adminService.updateUserStatus(userId, status, reason);
         res.json({ message: `User status updated to ${status}` });
     } catch (error: any) {
         console.error(`[ADMIN] Update user status error for ${userId}:`, error);
@@ -160,9 +158,7 @@ export const updateSubmissionStatus = async (req: Request, res: Response) => {
     const { status, rejectionReason } = req.body;
 
     try {
-        const origin = req.get('origin') || req.get('referer');
-        const baseUrl = origin ? new URL(origin).origin : undefined;
-        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason, baseUrl);
+        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason);
         res.json({ message: `Submission status updated to ${status}` });
     } catch (error) {
         console.error('Update submission status error:', error);
@@ -458,6 +454,20 @@ export const updateArtisan = async (req: Request, res: Response) => {
         return res.json(result);
     } catch (error: any) {
         console.error('Update artisan error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Update guide profile
+ */
+export const updateGuide = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    try {
+        const result = await adminService.updateGuideProfile(userId, req.body);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Update guide error:', error);
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
