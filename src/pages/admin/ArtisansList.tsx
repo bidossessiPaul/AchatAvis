@@ -316,180 +316,182 @@ export const ArtisansList: React.FC = () => {
                 {/* Create Artisan Modal */}
                 {showCreateModal && (
                     <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '90vh' }}>
                             <div className="modal-header">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                                    <div style={{ padding: 'var(--space-2)', background: 'rgba(255, 153, 31, 0.1)', borderRadius: 'var(--radius-lg)', color: 'var(--artisan-primary)' }}>
-                                        <Plus size={24} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                    <div style={{ width: '40px', height: '40px', background: 'var(--artisan-gradient)', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+                                        <Plus size={24} strokeWidth={3} />
                                     </div>
                                     <div>
-                                        <h2 style={{ margin: 0 }}>Créer un nouvel Artisan</h2>
-                                        <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--gray-500)' }}>Ajoutez un artisan manuellement au système</p>
+                                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Nouvel Artisan</h2>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)' }}>Ajouter manuellement une entreprise au réseau</p>
                                     </div>
                                 </div>
-                                <button onClick={() => setShowCreateModal(false)} className="modal-close">
-                                    <X size={20} />
+                                <button onClick={() => setShowCreateModal(false)} className="modal-close" style={{ background: 'var(--gray-50)', border: 'none', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', display: 'flex' }}>
+                                    <X size={20} color="var(--gray-400)" />
                                 </button>
                             </div>
 
-                            <div className="modal-body" style={{ padding: 'var(--space-8)' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                            <Building2 size={16} /> Informations Entreprise
-                                        </h3>
-                                    </div>
+                            <div className="modal-body" style={{ padding: '2.5rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                                    <div>
-                                        <label className="form-label-premium">Nom de l'entreprise *</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <input
-                                                type="text"
-                                                value={formData.companyName}
-                                                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                                className="form-input-premium"
-                                                placeholder="Ex: Plomberie Martin"
-                                                required
-                                            />
+                                    {/* SECTION 1: SECTEUR & NOM */}
+                                    <div className="modal-section">
+                                        <h3 className="modal-section-title">
+                                            <Building2 size={16} /> Identité de l'entreprise
+                                        </h3>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+                                            <div style={{ gridColumn: 'span 2' }}>
+                                                <SectorSelect
+                                                    selectedSectorSlug={formData.sector_slug}
+                                                    onSectorChange={(sector) => setFormData({
+                                                        ...formData,
+                                                        trade: sector.sector_name,
+                                                        sector_slug: sector.sector_slug
+                                                    })}
+                                                />
+                                            </div>
+
+                                            <div style={{ gridColumn: 'span 2' }}>
+                                                <label className="form-label-premium">Nom de l'entreprise *</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.companyName}
+                                                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="Dénomination commerciale"
+                                                    required
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <SectorSelect
-                                            selectedSectorSlug={formData.sector_slug}
-                                            onSectorChange={(sector) => setFormData({
-                                                ...formData,
-                                                trade: sector.sector_name,
-                                                sector_slug: sector.sector_slug
-                                            })}
-                                        />
-                                    </div>
-
-                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
-
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                            <User size={16} /> Contact & Compte
+                                    {/* SECTION 2: CONTACT */}
+                                    <div className="modal-section">
+                                        <h3 className="modal-section-title">
+                                            <User size={16} /> Contact Référent
                                         </h3>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+                                            <div>
+                                                <label className="form-label-premium">Nom & Prénom *</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.fullName}
+                                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="Gérant ou responsable"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">Email de contact *</label>
+                                                <input
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="pro@email.com"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">Téléphone Mobile *</label>
+                                                <input
+                                                    type="tel"
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="06..."
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">URL Google Business</label>
+                                                <input
+                                                    type="url"
+                                                    value={formData.googleBusinessUrl}
+                                                    onChange={(e) => setFormData({ ...formData, googleBusinessUrl: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="https://g.page/..."
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="form-label-premium">Nom complet de l'artisan *</label>
-                                        <input
-                                            type="text"
-                                            value={formData.fullName}
-                                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="Ex: Jean Martin"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label-premium">Email professionnel *</label>
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="jean.martin@example.com"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label-premium">Numéro de téléphone *</label>
-                                        <input
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="06 00 00 00 00"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
-
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                            <MapPin size={16} /> Localisation
+                                    {/* SECTION 3: LOCALISATION */}
+                                    <div className="modal-section">
+                                        <h3 className="modal-section-title">
+                                            <MapPin size={16} /> Siège Social
                                         </h3>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+                                            <div style={{ gridColumn: 'span 1' }}>
+                                                <label className="form-label-premium">Adresse</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.address}
+                                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="N° et nom de rue"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">Ville *</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.city}
+                                                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="Ex: Paris"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label-premium">Code Postal</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.postalCode}
+                                                    onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="75000"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <label className="form-label-premium">Adresse complète</label>
-                                        <input
-                                            type="text"
-                                            value={formData.address}
-                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="123 rue de la Paix"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label-premium">Ville *</label>
-                                        <input
-                                            type="text"
-                                            value={formData.city}
-                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="Paris"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="form-label-premium">Code Postal</label>
-                                        <input
-                                            type="text"
-                                            value={formData.postalCode}
-                                            onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="75001"
-                                        />
-                                    </div>
-
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <label className="form-label-premium">URL Google Business (Optionnel)</label>
-                                        <input
-                                            type="url"
-                                            value={formData.googleBusinessUrl}
-                                            onChange={(e) => setFormData({ ...formData, googleBusinessUrl: e.target.value })}
-                                            className="form-input-premium"
-                                            placeholder="https://g.page/..."
-                                        />
-                                    </div>
-
-                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
-
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                                            <Plus size={16} /> Offre & Activation
+                                    {/* SECTION 4: PACK */}
+                                    <div className="modal-section" style={{ background: 'var(--gray-50)', padding: '1.5rem', borderRadius: 'var(--radius-xl)', border: '1px dashed var(--gray-200)' }}>
+                                        <h3 className="modal-section-title" style={{ border: 'none', marginBottom: '1rem' }}>
+                                            <Plus size={16} /> Offre de Bienvenue
                                         </h3>
+
+                                        <div>
+                                            <label className="form-label-premium">Sélectionner un pack (Optionnel)</label>
+                                            <select
+                                                value={formData.packId}
+                                                onChange={(e) => setFormData({ ...formData, packId: e.target.value })}
+                                                className="form-input-premium"
+                                                style={{ appearance: 'auto' }}
+                                            >
+                                                <option value="">-- Sans pack pour le moment --</option>
+                                                {packs.map(pack => (
+                                                    <option key={pack.id} value={pack.id}>
+                                                        {pack.name} — {(pack.price_cents / 100).toFixed(2)}€ ({pack.fiches_quota} fiches)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.5rem' }}>
+                                                L'activation d'un pack créditera directement le compte de l'artisan.
+                                            </p>
+                                        </div>
                                     </div>
 
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <label className="form-label-premium">Pack de démarrage</label>
-                                        <select
-                                            value={formData.packId}
-                                            onChange={(e) => setFormData({ ...formData, packId: e.target.value })}
-                                            className="form-input-premium"
-                                            style={{ appearance: 'auto' }}
-                                        >
-                                            <option value="">-- Aucun pack (activation ultérieure) --</option>
-                                            {packs.map(pack => (
-                                                <option key={pack.id} value={pack.id}>
-                                                    {pack.name} — {(pack.price_cents / 100).toFixed(2)}€ ({pack.fiches_quota} fiches)
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
                                 </div>
                             </div>
 
-                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-4)' }}>
+                            <div className="modal-footer">
                                 <button
                                     onClick={() => setShowCreateModal(false)}
                                     className="btn-secondary"
@@ -500,9 +502,9 @@ export const ArtisansList: React.FC = () => {
                                 <button
                                     onClick={handleCreateArtisan}
                                     className="admin-btn-primary"
-                                    style={{ padding: '0.75rem 2rem' }}
+                                    style={{ padding: '0.75rem 2.5rem', fontSize: '1rem' }}
                                 >
-                                    Finaliser la création
+                                    Créer le compte Artisan
                                 </button>
                             </div>
                         </div>

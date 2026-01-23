@@ -72,12 +72,15 @@ export const SectorSelect: React.FC<SectorSelectProps> = ({ selectedSectorSlug, 
             </label>
 
             <select
-                className="form-select"
+                className="form-input-premium"
                 value={selectedSector?.sector_slug || ''}
                 onChange={handleChange}
                 style={{
-                    height: '3rem',
-                    fontSize: '1rem',
+                    height: '3.5rem',
+                    fontSize: '0.95rem',
+                    fontWeight: 500,
+                    appearance: 'auto',
+                    cursor: 'pointer',
                     ...(disabled ? {
                         backgroundColor: '#f8fafc',
                         cursor: 'not-allowed',
