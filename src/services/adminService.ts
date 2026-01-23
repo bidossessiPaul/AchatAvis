@@ -77,7 +77,20 @@ export const updateUserStatus = async (userId: string, status: string, reason?: 
  * Delete a user and their associated profile
  */
 export const deleteUser = async (userId: string) => {
-    return await query(`DELETE FROM users WHERE id = ?`, [userId]);
+    console.log(`[ADMIN] Attempting to delete user ${userId}`);
+
+    // We rely on ON DELETE CASCADE for most tables, but let's be explicit for security/profiles
+    // if needed. Most are already handled by CASCADE in schema.
+
+    const result = await query(`DELETE FROM users WHERE id = ?`, [userId]);
+
+    // REAL-TIME BROADCAST (optional, to update other admin dashboards)
+    notificationService.broadcast({
+        type: 'user_deleted',
+        userId: userId
+    });
+
+    return result;
 };
 
 /**

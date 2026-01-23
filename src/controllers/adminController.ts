@@ -39,11 +39,15 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     const { status, reason } = req.body;
 
     try {
+        console.log(`[ADMIN] Attempting to update status for user ${userId} to ${status}`);
         await adminService.updateUserStatus(userId, status, reason);
         res.json({ message: `User status updated to ${status}` });
-    } catch (error) {
-        console.error('Update user status error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (error: any) {
+        console.error(`[ADMIN] Update user status error for ${userId}:`, error);
+        res.status(500).json({
+            error: 'Erreur lors de la mise à jour du statut',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
@@ -55,11 +59,15 @@ export const deleteUser = async (req: Request, res: Response) => {
     const { userId } = req.params;
 
     try {
+        console.log(`[ADMIN] Request to delete user ${userId}`);
         await adminService.deleteUser(userId);
         res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        console.error('Delete user error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (error: any) {
+        console.error(`[ADMIN] Delete user error for ${userId}:`, error);
+        res.status(500).json({
+            error: 'Erreur lors de la suppression du compte',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
 
