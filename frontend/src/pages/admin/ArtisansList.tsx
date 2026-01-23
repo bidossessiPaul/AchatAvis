@@ -42,6 +42,7 @@ export const ArtisansList: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
     const [packs, setPacks] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         email: '',
@@ -91,6 +92,7 @@ export const ArtisansList: React.FC = () => {
             return;
         }
 
+        setIsCreating(true);
         try {
             // Include a dummy siret or handle it in backend
             const result = await adminService.createArtisan({
@@ -117,6 +119,8 @@ export const ArtisansList: React.FC = () => {
             loadArtisans(true);
         } catch (error: any) {
             showError('Erreur', error.response?.data?.error || 'Erreur lors de la création');
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -499,9 +503,17 @@ export const ArtisansList: React.FC = () => {
                                 <button
                                     onClick={handleCreateArtisan}
                                     className="admin-btn-primary"
-                                    style={{ padding: '0.75rem 2.5rem', fontSize: '1rem' }}
+                                    style={{ padding: '0.75rem 2.5rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    disabled={isCreating}
                                 >
-                                    Créer le compte Artisan
+                                    {isCreating ? (
+                                        <>
+                                            <LoadingSpinner size="sm" />
+                                            Création en cours...
+                                        </>
+                                    ) : (
+                                        'Créer le compte Artisan'
+                                    )}
                                 </button>
                             </div>
                         </div>
