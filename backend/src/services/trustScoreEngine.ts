@@ -157,17 +157,17 @@ export class TrustScoreEngine {
                 'Contactez le support pour déblocage'
             ],
             [TrustLevel.BRONZE]: [
-                'Maximum 2 avis par mois',
+                'Maximum 5 avis par mois',
                 'Uniquement entreprises vérifiées',
                 'Paiement après validation admin'
             ],
             [TrustLevel.SILVER]: [
-                'Maximum 5 avis par mois',
+                'Maximum 15 avis par mois',
                 'Accès fiches standard',
                 'Paiement sous 48h'
             ],
             [TrustLevel.GOLD]: [
-                'Maximum 10 avis par mois',
+                'Maximum 30 avis par mois',
                 'Accès fiches premium',
                 'Paiement immédiat',
                 'Bonus fiches récurrentes'
@@ -259,7 +259,7 @@ export class TrustScoreEngine {
         if (currentLevel === TrustLevel.BLOCKED) {
             tips.push('🎯 OBJECTIF: Atteignez 21 points pour débloquer BRONZE');
         } else if (currentLevel === TrustLevel.BRONZE) {
-            tips.push('🎯 OBJECTIF: Atteignez 41 points pour ARGENT (x2.5 avis/mois)');
+            tips.push('🎯 OBJECTIF: Atteignez 41 points pour ARGENT (x3 avis/mois)');
         } else if (currentLevel === TrustLevel.SILVER) {
             tips.push('🎯 OBJECTIF: Atteignez 66 points pour OR (paiement immédiat)');
         } else if (currentLevel === TrustLevel.GOLD) {
