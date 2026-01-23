@@ -31,6 +31,14 @@ export const adminService = {
     },
 
     /**
+     * Update artisan profile
+     */
+    updateArtisan: async (userId: string, data: any) => {
+        const response = await api.patch(`/admin/artisans/${userId}`, data);
+        return response.data;
+    },
+
+    /**
      * Get detailed guide info
      */
     getGuideDetail: async (userId: string) => {
