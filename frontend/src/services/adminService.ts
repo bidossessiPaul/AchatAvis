@@ -101,6 +101,7 @@ export const adminService = {
         postalCode?: string;
         googleBusinessUrl?: string;
         packId?: string;
+        password?: string;
     }) => {
         const response = await api.post('/admin/artisans/create', data);
         return response.data;
