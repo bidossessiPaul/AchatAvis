@@ -90,34 +90,59 @@ export const PaymentsList: React.FC = () => {
         <DashboardLayout title="Gestion des Paiements">
             <div className="admin-dashboard revamped">
                 <div className="admin-main-card">
-                    <div className="admin-card-header">
-                        <div>
-                            <h2 className="card-title">Demandes de Retrait Guides</h2>
-                            <p className="admin-p-subtitle">Gérez et validez les transferts de fonds pour les guides.</p>
-                        </div>
-                        <div className="admin-controls">
-                            <div className="search-box">
-                                <Search size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Rechercher guide (nom, email)..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
+                    <div className="admin-card-header" style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '1.5rem' }}>
+                            <div>
+                                <h2 className="card-title" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Demandes de Retrait Guides</h2>
+                                <p style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginTop: '4px' }}>
+                                    Gérez et validez les transferts de fonds pour les guides.
+                                </p>
                             </div>
-                            <div className="filter-select-wrapper">
-                                <Filter size={16} />
-                                <select
-                                    className="admin-select"
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                >
-                                    <option value="all">Tous les statuts</option>
-                                    <option value="pending">En attente</option>
-                                    <option value="in_revision">En révision</option>
-                                    <option value="paid">Payés</option>
-                                    <option value="refused">Refusés</option>
-                                </select>
+                            <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <div className="search-box-premium" style={{ position: 'relative' }}>
+                                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Rechercher guide (nom, email)..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{
+                                            padding: '0.75rem 1rem 0.75rem 2.5rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--gray-200)',
+                                            width: '280px',
+                                            fontSize: '0.875rem'
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="filter-group-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--gray-50)', padding: '4px', borderRadius: '14px', border: '1px solid var(--gray-200)' }}>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)' }} />
+                                        <select
+                                            className="admin-select-premium"
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            style={{
+                                                padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                                borderRadius: '10px',
+                                                border: 'none',
+                                                background: 'white',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: 'var(--gray-700)',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                            }}
+                                        >
+                                            <option value="all">Tous les Statuts</option>
+                                            <option value="pending">En attente</option>
+                                            <option value="in_revision">En révision</option>
+                                            <option value="paid">Payés</option>
+                                            <option value="refused">Refusés</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -128,21 +153,21 @@ export const PaymentsList: React.FC = () => {
                                 <LoadingSpinner size="lg" text="Chargement des paiements..." />
                             </div>
                         ) : (
-                            <table className="admin-modern-table">
+                            <table className="admin-modern-table" style={{ borderCollapse: 'separate', borderSpacing: '0 10px' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Guide</th>
-                                        <th>Compte Google</th>
-                                        <th>Montant</th>
-                                        <th>Date</th>
-                                        <th>Statut</th>
-                                        <th className="text-center">Actions</th>
+                                    <tr style={{ background: 'transparent' }}>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Guide</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Compte Google</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Montant</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }} className="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredRequests.length > 0 ? filteredRequests.map(request => (
-                                        <tr key={request.id}>
-                                            <td className="font-medium">
+                                        <tr key={request.id} style={{ backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', borderRadius: '16px', overflow: 'hidden' }}>
+                                            <td className="font-medium" style={{ padding: '1.25rem 1.5rem', border: 'none', borderRadius: '16px 0 0 16px' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                         <UserIcon size={14} className="text-gray-400" /> {request.guide_name}
@@ -152,23 +177,29 @@ export const PaymentsList: React.FC = () => {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="text-gray-500 font-mono" style={{ fontSize: '12px' }}>{request.google_email}</td>
-                                            <td>
+                                            <td className="text-gray-500 font-mono" style={{ fontSize: '12px', border: 'none' }}>{request.google_email}</td>
+                                            <td style={{ border: 'none' }}>
                                                 <div style={{ fontWeight: 700, color: '#FF991F' }}>
                                                     {Number(request.amount).toFixed(2)}€
                                                 </div>
                                             </td>
-                                            <td style={{ fontSize: '12px', color: '#64748b' }}>
+                                            <td style={{ fontSize: '12px', color: '#64748b', border: 'none' }}>
                                                 {new Date(request.requested_at).toLocaleDateString()}
                                             </td>
-                                            <td>
-                                                <span className={`admin-badge ${request.status}`}>
+                                            <td style={{ border: 'none' }}>
+                                                <span className={`admin-badge ${request.status}`} style={{
+                                                    padding: '0.4rem 0.8rem',
+                                                    borderRadius: '10px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase'
+                                                }}>
                                                     {request.status === 'pending' && <RotateCcw size={12} style={{ marginRight: '4px' }} />}
                                                     {request.status === 'paid' && <CheckCircle size={12} style={{ marginRight: '4px' }} />}
                                                     {request.status}
                                                 </span>
                                             </td>
-                                            <td className="actions-cell">
+                                            <td className="actions-cell" style={{ border: 'none', borderRadius: '0 16px 16px 0' }}>
                                                 <div className="action-buttons">
                                                     {request.status !== 'paid' && request.status !== 'refused' ? (
                                                         <>
