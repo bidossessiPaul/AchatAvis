@@ -437,8 +437,34 @@ export const createArtisan = async (req: Request, res: Response) => {
 };
 
 /**
+ * Create a new guide from admin panel
+ * POST /api/admin/guides/create
+ */
+export const createGuide = async (req: Request, res: Response) => {
+    const { email, fullName, googleEmail, phone, city, password } = req.body;
+
+    if (!email || !fullName || !googleEmail || !phone || !city) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        const result = await adminService.createGuide({
+            email,
+            fullName,
+            googleEmail,
+            phone,
+            city,
+            password
+        });
+        return res.status(201).json(result);
+    } catch (error: any) {
+        console.error('Create guide error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Update artisan profile
- * PATCH /api/admin/artisans/:userId
  */
 export const updateArtisan = async (req: Request, res: Response) => {
     const { userId } = req.params;
