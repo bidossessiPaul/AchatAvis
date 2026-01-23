@@ -18,10 +18,19 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     result: CompatibilityResult | null;
-    onSelectOtherGmail?: () => void;
+    gmailAccounts: any[];
+    selectedGmailId: number | null;
+    onSelectGmail: (gmailId: number) => void;
 }
 
-export const FicheCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, result }) => {
+export const FicheCompatibilityModal: React.FC<Props> = ({
+    isOpen,
+    onClose,
+    result,
+    gmailAccounts,
+    selectedGmailId,
+    onSelectGmail
+}) => {
     if (!isOpen || !result) return null;
 
     const getIcon = () => {
@@ -34,139 +43,177 @@ export const FicheCompatibilityModal: React.FC<Props> = ({ isOpen, onClose, resu
         <div style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 100,
+            zIndex: 1000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1rem',
-            background: 'rgba(0,0,0,0.5)',
-            backdropFilter: 'blur(4px)'
+            background: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)'
         }}>
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
                 style={{
                     background: 'white',
                     width: '100%',
-                    maxWidth: '450px',
-                    borderRadius: '1.5rem',
-                    padding: '2rem',
+                    maxWidth: '480px',
+                    borderRadius: '2rem',
+                    padding: '2.5rem',
                     textAlign: 'center',
-                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}
             >
-                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-                    {getIcon()}
-                </div>
+                {/* Decorative background element */}
+                <div style={{
+                    position: 'absolute',
+                    top: '-50px',
+                    right: '-50px',
+                    width: '150px',
+                    height: '150px',
+                    background: result.can_take ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
+                    borderRadius: '50%',
+                    zIndex: 0
+                }} />
 
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#111827', marginBottom: '0.75rem' }}>
-                    {result.can_take ? 'fiche Compatible !' : 'Action Requise'}
-                </h3>
-
-                <p style={{ color: '#4b5563', lineHeight: 1.5, marginBottom: '2rem' }}>
-                    {result.message}
-                </p>
-
-                {(result.details?.used !== undefined && result.details?.max !== undefined) && (
-                    <div style={{
-                        marginBottom: '1.5rem',
-                        padding: '1rem',
-                        background: '#f8fafc',
-                        borderRadius: '0.75rem',
-                        border: '1px solid #e2e8f0',
-                        textAlign: 'left'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Quota Secteur (Mois)</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: result.details.used >= result.details.max ? '#ef4444' : '#10b981' }}>
-                                {result.details.used} / {result.details.max}
-                            </span>
-                        </div>
-                        <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(result.details.used / result.details.max) * 100}%` }}
-                                style={{
-                                    height: '100%',
-                                    background: result.details.used >= result.details.max ? '#ef4444' : '#10b981'
-                                }}
-                            />
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                        <div style={{
+                            padding: '1.5rem',
+                            borderRadius: '2rem',
+                            background: result.can_take ? '#f0fdf4' : (result.reason === 'SECTOR_COOLDOWN' ? '#fff7ed' : '#fef2f2'),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            {getIcon()}
                         </div>
                     </div>
-                )}
 
-                {result.details?.next_available_date && (
-                    <div style={{
-                        background: '#fff7ed',
-                        padding: '1rem',
-                        borderRadius: '0.75rem',
-                        marginBottom: '1.5rem',
-                        border: '1px solid #ffedd5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        textAlign: 'left'
-                    }}>
-                        <Clock size={20} color="#f59e0b" />
-                        <div>
-                            <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9a3412', textTransform: 'uppercase' }}>Repos requis (Secteur)</p>
-                            <p style={{ fontWeight: 600, color: '#c2410c', fontSize: '0.875rem' }}>Disponible le {result.details.next_available_date}</p>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
+                        {result.can_take ? 'Fiche Compatible !' : 'Action Requise'}
+                    </h3>
+
+                    <p style={{ color: '#64748b', lineHeight: 1.6, marginBottom: '2rem', fontSize: '1rem', fontWeight: 500 }}>
+                        {result.message}
+                    </p>
+
+                    {(result.details?.used !== undefined && result.details?.max !== undefined) && (
+                        <div style={{
+                            marginBottom: '1.5rem',
+                            padding: '1.25rem',
+                            background: '#f8fafc',
+                            borderRadius: '1.25rem',
+                            border: '1px solid #e2e8f0',
+                            textAlign: 'left'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Quota Secteur (Mois)</span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 900, color: result.details.used >= result.details.max ? '#ef4444' : '#10b981' }}>
+                                    {result.details.used} / {result.details.max}
+                                </span>
+                            </div>
+                            <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${Math.min(100, (result.details.used / result.details.max) * 100)}%` }}
+                                    style={{
+                                        height: '100%',
+                                        background: result.details.used >= result.details.max ? 'linear-gradient(90deg, #ef4444, #f87171)' : 'linear-gradient(90deg, #10b981, #34d399)'
+                                    }}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {result.can_take && (
-                    <div style={{
-                        padding: '1rem',
-                        borderRadius: '0.75rem',
-                        background: '#f0fdf4',
-                        border: '1px solid #dcfce7',
-                        color: '#166534',
-                        fontSize: '0.8125rem',
-                        textAlign: 'left',
-                        marginBottom: '2rem',
-                        display: 'flex',
-                        gap: '0.5rem'
-                    }}>
-                        <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <span>Compte sécurisé pour ce secteur. Vous pouvez publier cet avis en toute confiance.</span>
-                    </div>
-                )}
+                    {result.details?.next_available_date && (
+                        <div style={{
+                            background: '#fff7ed',
+                            padding: '1.25rem',
+                            borderRadius: '1.25rem',
+                            marginBottom: '2rem',
+                            border: '1px solid #ffedd5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            textAlign: 'left'
+                        }}>
+                            <div style={{ background: '#f59e0b', padding: '0.5rem', borderRadius: '0.75rem', color: 'white' }}>
+                                <Clock size={20} />
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Repos requis (Secteur)</p>
+                                <p style={{ fontWeight: 800, color: '#c2410c', fontSize: '1rem' }}>Disponible le {result.details.next_available_date}</p>
+                            </div>
+                        </div>
+                    )}
 
-                <div style={{ display: 'grid', gap: '0.75rem' }}>
-                    {result.can_take ? (
+                    {/* Quick Gmail Switcher if NOT compatible */}
+                    {!result.can_take && gmailAccounts.length > 1 && (
+                        <div style={{ marginBottom: '2rem', textAlign: 'left' }}>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>
+                                Essayer avec un autre compte
+                            </p>
+                            <div style={{ display: 'grid', gap: '0.5rem' }}>
+                                {gmailAccounts.filter(a => a.id !== selectedGmailId).map(account => (
+                                    <button
+                                        key={account.id}
+                                        onClick={() => onSelectGmail(account.id)}
+                                        style={{
+                                            padding: '0.75rem 1rem',
+                                            borderRadius: '1rem',
+                                            border: '1px solid #e2e8f0',
+                                            background: '#fff',
+                                            textAlign: 'left',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            color: '#1e293b',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.75rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = '#0ea5e9';
+                                            e.currentTarget.style.background = '#f0f9ff';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.background = '#fff';
+                                        }}
+                                    >
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0ea5e9' }} />
+                                        {account.email}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'grid', gap: '1rem' }}>
                         <button
                             onClick={onClose}
                             style={{
-                                padding: '1rem',
-                                borderRadius: '0.75rem',
+                                padding: '1.25rem',
+                                borderRadius: '1.25rem',
                                 border: 'none',
-                                background: '#111827',
+                                background: result.can_take ? '#111827' : '#ef4444',
                                 color: 'white',
-                                fontWeight: 700,
-                                cursor: 'pointer'
+                                fontWeight: 800,
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                boxShadow: result.can_take ? '0 10px 15px -3px rgba(17, 24, 39, 0.4)' : '0 10px 15px -3px rgba(239, 68, 68, 0.4)',
+                                transition: 'transform 0.2s'
                             }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                         >
-                            Démarrer la publication
+                            {result.can_take ? 'Démarrer la publication' : 'Compris'}
                         </button>
-                    ) : (
-                        <>
-                            <button
-                                onClick={onClose}
-                                style={{
-                                    padding: '1rem',
-                                    borderRadius: '0.75rem',
-                                    border: 'none',
-                                    background: '#ef4444',
-                                    color: 'white',
-                                    fontWeight: 700,
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Compris
-                            </button>
-                        </>
-                    )}
+                    </div>
                 </div>
             </motion.div>
         </div>

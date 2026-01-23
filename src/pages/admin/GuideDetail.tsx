@@ -58,6 +58,7 @@ interface GmailAccount {
     total_reviews_posted: number;
     successful_reviews: number;
     last_review_posted_at: string | null;
+    monthly_quota_limit?: number;
 }
 
 interface GuideStats {
@@ -493,10 +494,12 @@ export const GuideDetail: React.FC = () => {
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '1rem' }}>{account.email}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', gap: '0.5rem', marginTop: '0.2rem' }}>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.2rem' }}>
                                                         <span>Trust: <strong>{account.trust_score}%</strong></span>
                                                         <span>•</span>
                                                         <span>Lvl: <strong>{account.account_level}</strong></span>
+                                                        <span>•</span>
+                                                        <span>Quota: <strong>{account.monthly_quota_limit || 20}</strong>/mois</span>
                                                     </div>
                                                 </div>
                                             </div>
