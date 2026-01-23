@@ -33,6 +33,7 @@ interface Submission {
     guide_name: string;
     guide_avatar?: string;
     artisan_name: string;
+    fiche_name: string;
     proposal_content: string;
 }
 
@@ -198,7 +199,7 @@ export const ReviewValidation: React.FC = () => {
                                 <thead>
                                     <tr style={{ background: 'transparent' }}>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Guide</th>
-                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Artisan</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Fiche</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date & Email</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Preuve</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
@@ -221,7 +222,8 @@ export const ReviewValidation: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <div style={{ border: 'none', color: '#374151', fontWeight: 500 }}>{submission.artisan_name}</div>
+                                                <div style={{ border: 'none', color: '#374151', fontWeight: 600 }}>{submission.fiche_name}</div>
+                                                <div style={{ border: 'none', color: '#6b7280', fontSize: '11px' }}>{submission.artisan_name}</div>
                                             </td>
                                             <td style={{ border: 'none' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -365,6 +367,6 @@ export const ReviewValidation: React.FC = () => {
                     </div>
                 )}
             </div>
-        </DashboardLayout>
+        </DashboardLayout >
     );
 };

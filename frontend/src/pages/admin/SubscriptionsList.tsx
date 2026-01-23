@@ -265,33 +265,53 @@ export const SubscriptionsList: React.FC = () => {
                         </div>
 
                         <div className="admin-main-card glass">
-                            <div className="admin-card-header">
+                            <div className="admin-card-header" style={{ padding: '0.5rem 0 1.5rem 0' }}>
                                 <div>
                                     <h2 className="card-title">Liste des Abonnés</h2>
                                     <p className="admin-p-subtitle">Gérez les accès et surveillez les dates de renouvellement.</p>
                                 </div>
-                                <div className="admin-controls">
-                                    <div className="search-box">
-                                        <Search size={18} />
+                                <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                    <div className="search-box-premium" style={{ position: 'relative' }}>
+                                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
                                         <input
                                             type="text"
                                             placeholder="Rechercher un abonné..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
+                                            style={{
+                                                padding: '0.75rem 1rem 0.75rem 2.5rem',
+                                                borderRadius: '12px',
+                                                border: '1px solid var(--gray-200)',
+                                                width: '280px',
+                                                fontSize: '0.875rem'
+                                            }}
                                         />
                                     </div>
-                                    <div className="filter-select-wrapper">
-                                        <Filter size={16} />
-                                        <select
-                                            className="admin-select"
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value)}
-                                        >
-                                            <option value="all">Tous</option>
-                                            <option value="active">Actifs</option>
-                                            <option value="cancelled">Annulés</option>
-                                            <option value="past_due">Impayés</option>
-                                        </select>
+                                    <div className="filter-group-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--gray-50)', padding: '4px', borderRadius: '14px', border: '1px solid var(--gray-200)' }}>
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                            <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)' }} />
+                                            <select
+                                                className="admin-select-premium"
+                                                value={statusFilter}
+                                                onChange={(e) => setStatusFilter(e.target.value)}
+                                                style={{
+                                                    padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                                    borderRadius: '10px',
+                                                    border: 'none',
+                                                    background: 'white',
+                                                    fontSize: '0.875rem',
+                                                    fontWeight: 600,
+                                                    color: 'var(--gray-700)',
+                                                    cursor: 'pointer',
+                                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                                }}
+                                            >
+                                                <option value="all">Tous les Statuts</option>
+                                                <option value="active">Actifs</option>
+                                                <option value="cancelled">Annulés</option>
+                                                <option value="past_due">Impayés</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -189,7 +189,8 @@ export const guideService = {
         reviewUrl: string,
         googleEmail: string,
         artisanId: string,
-        gmailAccountId?: number
+        gmailAccountId?: number,
+        baseUrl?: string
     }) {
         // 0. 🎯 TRUST SCORE: Vérifier quota mensuel
         const guideAccountResult: any = await query(`
@@ -304,10 +305,10 @@ export const guideService = {
 
         // 6. NOUVEAU : Déclencheurs automatiques de suspension
         const { suspensionTriggers } = await import('./suspensionTriggers');
-        await suspensionTriggers.checkSpamSubmissions(guideId, submissionId);
-        await suspensionTriggers.checkIdenticalReviews(guideId, data.reviewUrl, submissionId);
+        await suspensionTriggers.checkSpamSubmissions(guideId, submissionId, data.baseUrl);
+        await suspensionTriggers.checkIdenticalReviews(guideId, data.reviewUrl, submissionId, data.baseUrl);
         if (data.gmailAccountId && currentSectorSlug) {
-            await suspensionTriggers.checkSectorCooldown(guideId, data.gmailAccountId, currentSectorSlug, submissionId);
+            await suspensionTriggers.checkSectorCooldown(guideId, data.gmailAccountId, currentSectorSlug, submissionId, data.baseUrl);
         }
 
         // 7. Notify Artisan

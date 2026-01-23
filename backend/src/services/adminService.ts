@@ -35,7 +35,7 @@ export const getGuides = async () => {
 /**
  * Update user status (active, pending, suspended, rejected)
  */
-export const updateUserStatus = async (userId: string, status: string, reason?: string) => {
+export const updateUserStatus = async (userId: string, status: string, reason?: string, baseUrl?: string) => {
     // If status is suspended, we use the suspension service to trigger the full flow
     if (status === 'suspended') {
         const { suspensionService } = await import('./suspensionService');
@@ -56,7 +56,7 @@ export const updateUserStatus = async (userId: string, status: string, reason?: 
     try {
         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
         if (user && user.length > 0) {
-            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, status);
+            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, status, baseUrl);
         }
     } catch (error) {
         console.error('Error sending user status update email:', error);
@@ -275,12 +275,14 @@ export const getAllSubmissions = async () => {
                u.full_name as guide_name, u.avatar_url as guide_avatar,
                gp.google_email,
                ap.company_name as artisan_name,
+               ro.company_name as fiche_name,
                p.content as proposal_content
         FROM reviews_submissions s
         JOIN users u ON s.guide_id = u.id
         JOIN guides_profiles gp ON u.id = gp.user_id
         JOIN artisans_profiles ap ON s.artisan_id = ap.user_id
         JOIN review_proposals p ON s.proposal_id = p.id
+        JOIN reviews_orders ro ON s.order_id = ro.id
         ORDER BY s.submitted_at DESC
     `);
 };
@@ -288,7 +290,7 @@ export const getAllSubmissions = async () => {
 /**
  * Update review submission status (validate/reject)
  */
-export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, baseUrl?: string) => {
     const connection = await pool.getConnection();
 
     try {
@@ -363,7 +365,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             `, { submissionId });
 
             if (rows && rows.length > 0) {
-                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
+                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, baseUrl);
 
                 // NOUVEAU : Vérifier rejets répététés si statut = rejected
                 if (status === 'rejected') {
@@ -588,7 +590,7 @@ export const getPendingfiches = async () => {
 /**
  * Approve a fiche and make it available for guides
  */
-export const approvefiche = async (orderId: string) => {
+export const approvefiche = async (orderId: string, baseUrl?: string) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
@@ -617,7 +619,7 @@ export const approvefiche = async (orderId: string) => {
             `, [orderId]);
 
             if (rows && rows.length > 0) {
-                await sendficheDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress');
+                await sendficheDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress', baseUrl);
 
                 // SSE NOTIFICATION
                 notificationService.sendToUser(rows[0].artisan_id || rows[0].id, { // Fallback to id if needed
@@ -745,7 +747,7 @@ export const deletefiche = async (orderId: string) => {
  * Manually activate a subscription pack for an artisan
  * Used when payment is done offline
  */
-export const activateArtisanPack = async (userId: string, packId: string) => {
+export const activateArtisanPack = async (userId: string, packId: string, baseUrl?: string) => {
     const connection = await pool.getConnection();
 
     try {
@@ -807,7 +809,7 @@ export const activateArtisanPack = async (userId: string, packId: string) => {
             const { sendPackActivationEmail } = await import('./emailService');
             const [user]: any = await connection.query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
             if (user && user.length > 0) {
-                await sendPackActivationEmail(user[0].email, user[0].full_name, packId, pack.quantity || 0);
+                await sendPackActivationEmail(user[0].email, user[0].full_name, packId, pack.quantity || 0, baseUrl);
             }
         } catch (emailError) {
             console.error('Failed to send manual pack activation email:', emailError);
@@ -849,6 +851,7 @@ export const createArtisan = async (data: {
     googleBusinessUrl?: string;
     packId?: string;
     password?: string;
+    baseUrl?: string;
 }) => {
     const connection = await pool.getConnection();
 
@@ -917,7 +920,7 @@ export const createArtisan = async (data: {
         // 6. Send welcome email with temp password
         try {
             const { sendWelcomeEmail } = await import('./emailService');
-            await sendWelcomeEmail(data.email, data.fullName, 'artisan');
+            await sendWelcomeEmail(data.email, data.fullName, 'artisan', data.baseUrl);
 
             // TODO: Send email with temporary password
             // For now, we'll just log it
@@ -952,6 +955,7 @@ export const createGuide = async (data: {
     phone: string;
     city: string;
     password?: string;
+    baseUrl?: string;
 }) => {
     const connection = await pool.getConnection();
 
@@ -1005,7 +1009,7 @@ export const createGuide = async (data: {
         // 6. Send welcome email (optional)
         try {
             const { sendWelcomeEmail } = await import('./emailService');
-            await sendWelcomeEmail(data.email, data.fullName, 'guide');
+            await sendWelcomeEmail(data.email, data.fullName, 'guide', data.baseUrl);
             console.log(`Temporary password for guide ${data.email}: ${tempPassword}`);
         } catch (emailError) {
             console.error('Error sending welcome email to guide:', emailError);

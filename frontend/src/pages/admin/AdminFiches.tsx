@@ -242,8 +242,8 @@ export const AdminFiches: React.FC = () => {
                             <table className="admin-modern-table" style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                                 <thead>
                                     <tr style={{ background: 'transparent' }}>
-                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>fiche / Artisan</th>
-                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Détails</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Artisan</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Fiche</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Progrès</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date</th>
@@ -254,22 +254,22 @@ export const AdminFiches: React.FC = () => {
                                     {filteredfiches.length > 0 ? filteredfiches.map((fiche) => (
                                         <tr key={fiche.id} style={{ backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', borderRadius: '16px', overflow: 'hidden' }}>
                                             <td style={{ padding: '1.25rem 1.5rem', border: 'none', borderRadius: '16px 0 0 16px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255, 153, 31, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <Building2 size={16} color="var(--artisan-primary)" />
+                                                    </div>
                                                     <span className="font-medium" style={{ color: '#111827', fontWeight: 600 }}>
-                                                        {fiche.company_name || fiche.original_company_name}
-                                                    </span>
-                                                    <span style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                                                        <Building2 size={12} color="var(--artisan-primary)" /> {fiche.artisan_name}
+                                                        {fiche.artisan_name}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    <span style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', color: '#374151' }}>
-                                                        <span style={{ color: 'var(--artisan-primary)' }}>•</span> {fiche.sector}
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ color: '#374151', fontWeight: 500, fontSize: '14px' }}>
+                                                        {fiche.company_name || fiche.original_company_name}
                                                     </span>
-                                                    <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 500 }}>
-                                                        Ton: {fiche.desired_tone}
+                                                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                                        ID: {fiche.id.split('-')[0]}...
                                                     </span>
                                                 </div>
                                             </td>

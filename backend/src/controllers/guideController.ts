@@ -39,19 +39,18 @@ export const guideController = {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-            const { orderId, proposalId, reviewUrl, googleEmail, artisanId, gmailAccountId } = req.body;
+            const { orderId } = req.body;
 
-            if (!orderId || !proposalId || !reviewUrl || !googleEmail || !artisanId) {
-                return res.status(400).json({ error: 'Tous les champs sont requis, y compris l\'email Google' });
+            if (!orderId) {
+                return res.status(400).json({ error: 'orderId est requis' });
             }
 
+            const origin = req.get('origin') || req.get('referer');
+            const baseUrl = origin ? new URL(origin).origin : undefined;
+
             const result = await guideService.submitReviewProof(user.userId, {
-                orderId,
-                proposalId,
-                reviewUrl,
-                googleEmail,
-                artisanId,
-                gmailAccountId
+                ...req.body,
+                baseUrl
             });
 
             return res.json(result);

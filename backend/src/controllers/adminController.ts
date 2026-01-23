@@ -40,7 +40,9 @@ export const updateUserStatus = async (req: Request, res: Response) => {
 
     try {
         console.log(`[ADMIN] Attempting to update status for user ${userId} to ${status}`);
-        await adminService.updateUserStatus(userId, status, reason);
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+        await adminService.updateUserStatus(userId, status, reason, baseUrl);
         res.json({ message: `User status updated to ${status}` });
     } catch (error: any) {
         console.error(`[ADMIN] Update user status error for ${userId}:`, error);
@@ -158,7 +160,9 @@ export const updateSubmissionStatus = async (req: Request, res: Response) => {
     const { status, rejectionReason } = req.body;
 
     try {
-        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason);
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason, baseUrl);
         res.json({ message: `Submission status updated to ${status}` });
     } catch (error) {
         console.error('Update submission status error:', error);
@@ -273,7 +277,9 @@ export const getPendingfiches = async (_req: Request, res: Response) => {
 export const approvefiche = async (req: Request, res: Response) => {
     const { orderId } = req.params;
     try {
-        await adminService.approvefiche(orderId);
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+        await adminService.approvefiche(orderId, baseUrl);
         res.json({ message: 'fiche approved successfully' });
     } catch (error) {
         console.error('Approve fiche error:', error);
@@ -394,7 +400,9 @@ export const activateArtisanPack = async (req: Request, res: Response) => {
     }
 
     try {
-        const result = await adminService.activateArtisanPack(userId, packId);
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+        const result = await adminService.activateArtisanPack(userId, packId, baseUrl);
         return res.json(result);
     } catch (error: any) {
         console.error('Activate artisan pack error:', error);
@@ -407,27 +415,12 @@ export const activateArtisanPack = async (req: Request, res: Response) => {
  * POST /api/admin/artisans/create
  */
 export const createArtisan = async (req: Request, res: Response) => {
-    const { email, fullName, companyName, siret, trade, phone, address, city, postalCode, googleBusinessUrl, packId, password } = req.body;
-
-    // Validate required fields
-    if (!email || !fullName || !companyName || !siret || !trade || !phone || !city) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
     try {
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
         const result = await adminService.createArtisan({
-            email,
-            fullName,
-            companyName,
-            siret,
-            trade,
-            phone,
-            address,
-            city,
-            postalCode,
-            googleBusinessUrl,
-            packId,
-            password
+            ...req.body,
+            baseUrl
         });
         return res.status(201).json(result);
     } catch (error: any) {
@@ -441,20 +434,12 @@ export const createArtisan = async (req: Request, res: Response) => {
  * POST /api/admin/guides/create
  */
 export const createGuide = async (req: Request, res: Response) => {
-    const { email, fullName, googleEmail, phone, city, password } = req.body;
-
-    if (!email || !fullName || !googleEmail || !phone || !city) {
-        return res.status(400).json({ error: 'Missing required fields' });
-    }
-
     try {
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
         const result = await adminService.createGuide({
-            email,
-            fullName,
-            googleEmail,
-            phone,
-            city,
-            password
+            ...req.body,
+            baseUrl
         });
         return res.status(201).json(result);
     } catch (error: any) {

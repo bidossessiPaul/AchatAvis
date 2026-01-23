@@ -45,6 +45,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // 2. Security & Parsers
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: false // Disable CSP for local dev to avoid SSE issues
 }));
 
@@ -55,6 +56,8 @@ app.use(cookieParser());
 // Serve static files - fallback to backend/public if running from root
 app.use('/public', express.static(path.join(process.cwd(), 'backend', 'public')));
 app.use('/public', express.static(path.join(process.cwd(), 'public')));
+app.use('/api/public', express.static(path.join(process.cwd(), 'backend', 'public')));
+app.use('/api/public', express.static(path.join(process.cwd(), 'public')));
 
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {

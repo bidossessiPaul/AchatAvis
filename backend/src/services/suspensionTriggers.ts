@@ -5,7 +5,7 @@ class SuspensionTriggers {
     /**
      * TRIGGER 1: Spam Submissions (3+ in 1 hour)
      */
-    async checkSpamSubmissions(userId: string, currentProofId: string): Promise<void> {
+    async checkSpamSubmissions(userId: string, currentProofId: string, baseUrl?: string): Promise<void> {
         const recent: any = await query(
             'SELECT COUNT(*) as count FROM reviews_submissions WHERE guide_id = ? AND submitted_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)',
             [userId]
@@ -16,7 +16,8 @@ class SuspensionTriggers {
                 userId,
                 'spam_submissions',
                 `${recent[0].count} avis soumis en moins d'une heure`,
-                currentProofId
+                currentProofId,
+                baseUrl
             );
         }
     }
@@ -24,7 +25,7 @@ class SuspensionTriggers {
     /**
      * TRIGGER 2: Sector Cooldown Violation
      */
-    async checkSectorCooldown(userId: string, gmailAccountId: number, sectorSlug: string, currentProofId: string): Promise<void> {
+    async checkSectorCooldown(userId: string, gmailAccountId: number, sectorSlug: string, currentProofId: string, baseUrl?: string): Promise<void> {
         const sector: any = await query('SELECT min_days_between_reviews FROM sector_difficulty WHERE sector_slug = ?', [sectorSlug]);
         if (!sector || sector.length === 0) return;
 
@@ -47,7 +48,8 @@ class SuspensionTriggers {
                     userId,
                     'sector_cooldown_violation',
                     `Non-respect du délai secteur (${Math.floor(days)}j/${minDays}j)`,
-                    currentProofId
+                    currentProofId,
+                    baseUrl
                 );
             }
         }
@@ -56,7 +58,7 @@ class SuspensionTriggers {
     /**
      * TRIGGER 3: Repeated Rejections (3 out of last 5)
      */
-    async checkRepeatedRejections(userId: string, currentProofId: string): Promise<void> {
+    async checkRepeatedRejections(userId: string, currentProofId: string, baseUrl?: string): Promise<void> {
         const lastFive: any = await query(
             'SELECT status FROM reviews_submissions WHERE guide_id = ? ORDER BY submitted_at DESC LIMIT 5',
             [userId]
@@ -69,7 +71,8 @@ class SuspensionTriggers {
                     userId,
                     'invalid_proofs_repeated',
                     `${rejectedCount}/5 dernières preuves rejetées`,
-                    currentProofId
+                    currentProofId,
+                    baseUrl
                 );
             }
         }
@@ -78,7 +81,7 @@ class SuspensionTriggers {
     /**
      * TRIGGER 4: Identical Reviews
      */
-    async checkIdenticalReviews(userId: string, reviewUrl: string, currentProofId: string): Promise<void> {
+    async checkIdenticalReviews(userId: string, reviewUrl: string, currentProofId: string, baseUrl?: string): Promise<void> {
         // This is a placeholder for real similarity check. 
         // Usually we would compare review_text if we stored it, but we only have review_url here.
         // Assuming if the SAME URL is used twice by the same user.
@@ -92,7 +95,8 @@ class SuspensionTriggers {
                 userId,
                 'identical_reviews',
                 'Tentative de soufiche d\'une preuve déjà utilisée',
-                currentProofId
+                currentProofId,
+                baseUrl
             );
         }
     }

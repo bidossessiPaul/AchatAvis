@@ -710,7 +710,7 @@ export const resetPassword = async (token: string, newPassword: string) => {
 /**
  * Verify email address
  */
-export const verifyEmail = async (token: string) => {
+export const verifyEmail = async (token: string, baseUrl?: string) => {
     const { verifySpecialToken } = await import('../utils/token');
 
     try {
@@ -737,7 +737,7 @@ export const verifyEmail = async (token: string) => {
 
         // 3. Send welcome email
         try {
-            await sendWelcomeEmail(user.email, user.full_name, user.role);
+            await sendWelcomeEmail(user.email, user.full_name, user.role, baseUrl);
         } catch (error) {
             console.error('Failed to send welcome email after verification:', error);
         }
