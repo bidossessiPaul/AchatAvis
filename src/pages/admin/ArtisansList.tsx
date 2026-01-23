@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminService } from '../../services/adminService';
+import { SectorSelect } from '../../components/Campaign/SectorSelect';
 import {
     Search,
     Trash2,
@@ -8,7 +9,15 @@ import {
     XCircle,
     Bell,
     Eye,
-    Briefcase
+    Briefcase,
+    Plus,
+    X,
+    Building2,
+    Mail,
+    User,
+    Phone,
+    MapPin,
+    Globe
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -31,9 +40,25 @@ export const ArtisansList: React.FC = () => {
     const [artisans, setArtisans] = useState<Artisan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [packs, setPacks] = useState<any[]>([]);
+    const [formData, setFormData] = useState({
+        email: '',
+        fullName: '',
+        companyName: '',
+        trade: '', // This will be the sector name
+        phone: '',
+        address: '',
+        city: '',
+        postalCode: '',
+        googleBusinessUrl: '',
+        packId: '',
+        sector_slug: ''
+    });
 
     useEffect(() => {
         loadArtisans();
+        loadPacks();
     }, []);
 
     const loadArtisans = async (silent = false) => {
@@ -45,6 +70,50 @@ export const ArtisansList: React.FC = () => {
             showError('Erreur', 'Erreur lors du chargement des artisans');
         } finally {
             if (!silent) setIsLoading(false);
+        }
+    };
+
+    const loadPacks = async () => {
+        try {
+            const data = await adminService.getPacks();
+            setPacks(data);
+        } catch (error) {
+            console.error('Error loading packs:', error);
+        }
+    };
+
+    const handleCreateArtisan = async () => {
+        // Validate required fields
+        if (!formData.email || !formData.fullName || !formData.companyName || !formData.trade || !formData.phone || !formData.city) {
+            showError('Erreur', 'Tous les champs obligatoires (*) doivent être remplis');
+            return;
+        }
+
+        try {
+            // Include a dummy siret or handle it in backend
+            const result = await adminService.createArtisan({
+                ...formData,
+                siret: `TEMP_${Date.now()}` // Pass temporary SIRET as it's often required in schema/backend
+            });
+            showSuccess('Succès', `Artisan créé avec succès. Mot de passe temporaire: ${result.tempPassword}`);
+            setShowCreateModal(false);
+            // Reset form
+            setFormData({
+                email: '',
+                fullName: '',
+                companyName: '',
+                trade: '',
+                phone: '',
+                address: '',
+                city: '',
+                postalCode: '',
+                googleBusinessUrl: '',
+                packId: '',
+                sector_slug: ''
+            });
+            loadArtisans(true);
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la création');
         }
     };
 
@@ -117,6 +186,14 @@ export const ArtisansList: React.FC = () => {
                     <div className="admin-card-header">
                         <h2 className="card-title">Liste des Artisans</h2>
                         <div className="admin-controls">
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="admin-btn-primary"
+                                style={{ marginRight: 'var(--space-4)' }}
+                            >
+                                <Plus size={18} />
+                                Créer Artisan
+                            </button>
                             <div className="search-box">
                                 <Search size={18} />
                                 <input
@@ -235,6 +312,202 @@ export const ArtisansList: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Create Artisan Modal */}
+                {showCreateModal && (
+                    <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+                            <div className="modal-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                    <div style={{ padding: 'var(--space-2)', background: 'rgba(255, 153, 31, 0.1)', borderRadius: 'var(--radius-lg)', color: 'var(--artisan-primary)' }}>
+                                        <Plus size={24} />
+                                    </div>
+                                    <div>
+                                        <h2 style={{ margin: 0 }}>Créer un nouvel Artisan</h2>
+                                        <p style={{ margin: 0, fontSize: 'var(--text-xs)', color: 'var(--gray-500)' }}>Ajoutez un artisan manuellement au système</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowCreateModal(false)} className="modal-close">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="modal-body" style={{ padding: 'var(--space-8)' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                            <Building2 size={16} /> Informations Entreprise
+                                        </h3>
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Nom de l'entreprise *</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                type="text"
+                                                value={formData.companyName}
+                                                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                                                className="form-input-premium"
+                                                placeholder="Ex: Plomberie Martin"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <SectorSelect
+                                            selectedSectorSlug={formData.sector_slug}
+                                            onSectorChange={(sector) => setFormData({
+                                                ...formData,
+                                                trade: sector.sector_name,
+                                                sector_slug: sector.sector_slug
+                                            })}
+                                        />
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                            <User size={16} /> Contact & Compte
+                                        </h3>
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Nom complet de l'artisan *</label>
+                                        <input
+                                            type="text"
+                                            value={formData.fullName}
+                                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="Ex: Jean Martin"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Email professionnel *</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="jean.martin@example.com"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Numéro de téléphone *</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="06 00 00 00 00"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                            <MapPin size={16} /> Localisation
+                                        </h3>
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label className="form-label-premium">Adresse complète</label>
+                                        <input
+                                            type="text"
+                                            value={formData.address}
+                                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="123 rue de la Paix"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Ville *</label>
+                                        <input
+                                            type="text"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="Paris"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label-premium">Code Postal</label>
+                                        <input
+                                            type="text"
+                                            value={formData.postalCode}
+                                            onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="75001"
+                                        />
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label className="form-label-premium">URL Google Business (Optionnel)</label>
+                                        <input
+                                            type="url"
+                                            value={formData.googleBusinessUrl}
+                                            onChange={(e) => setFormData({ ...formData, googleBusinessUrl: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="https://g.page/..."
+                                        />
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1', height: '1px', background: 'var(--gray-100)', margin: 'var(--space-2) 0' }}></div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--gray-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                                            <Plus size={16} /> Offre & Activation
+                                        </h3>
+                                    </div>
+
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label className="form-label-premium">Pack de démarrage</label>
+                                        <select
+                                            value={formData.packId}
+                                            onChange={(e) => setFormData({ ...formData, packId: e.target.value })}
+                                            className="form-input-premium"
+                                            style={{ appearance: 'auto' }}
+                                        >
+                                            <option value="">-- Aucun pack (activation ultérieure) --</option>
+                                            {packs.map(pack => (
+                                                <option key={pack.id} value={pack.id}>
+                                                    {pack.name} — {(pack.price_cents / 100).toFixed(2)}€ ({pack.fiches_quota} fiches)
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-4)' }}>
+                                <button
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="btn-secondary"
+                                    style={{ padding: '0.75rem 1.5rem', borderRadius: 'var(--radius-lg)', fontWeight: 600 }}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    onClick={handleCreateArtisan}
+                                    className="admin-btn-primary"
+                                    style={{ padding: '0.75rem 2rem' }}
+                                >
+                                    Finaliser la création
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );
