@@ -9,7 +9,8 @@ import {
     ExternalLink,
     Clock,
     User,
-    RotateCcw
+    RotateCcw,
+    Building2
 } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -35,24 +36,10 @@ interface Submission {
     proposal_content: string;
 }
 
-interface Pendingfiche {
-    id: string;
-    artisan_id: string;
-    artisan_name: string;
-    company_name: string;
-    quantity: number;
-    price: number;
-    status: string;
-    created_at: string;
-    sector: string;
-    desired_tone: string;
-}
 
 export const ReviewValidation: React.FC = () => {
     const [submissions, setSubmissions] = useState<Submission[]>([]);
-    const [pendingfiches, setPendingfiches] = useState<Pendingfiche[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'submissions' | 'fiches'>('submissions');
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showOnlyOld, setShowOnlyOld] = useState(false);
@@ -70,12 +57,8 @@ export const ReviewValidation: React.FC = () => {
     const fetchData = async (silent = false) => {
         if (!silent) setIsLoading(true);
         try {
-            const [subs, fiches] = await Promise.all([
-                adminApi.getAllSubmissions(),
-                adminApi.getPendingfiches()
-            ]);
+            const subs = await adminApi.getAllSubmissions();
             setSubmissions(subs);
-            setPendingfiches(fiches);
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement des données');
         } finally {
@@ -94,19 +77,6 @@ export const ReviewValidation: React.FC = () => {
             fetchData(true);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la mise à jour');
-        } finally {
-            setIsActionLoading(false);
-        }
-    };
-
-    const handleApprovefiche = async (orderId: string) => {
-        setIsActionLoading(true);
-        try {
-            await adminApi.approvefiche(orderId);
-            showSuccess('Succès', 'fiche publiée !');
-            fetchData(true);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors de la publication');
         } finally {
             setIsActionLoading(false);
         }
@@ -132,96 +102,88 @@ export const ReviewValidation: React.FC = () => {
         return matchesSearch && matchesStatus && matchesAge;
     });
 
-    const getStatusBadgeClass = (status: string) => {
-        switch (status) {
-            case 'validated': return 'active';
-            case 'rejected': return 'suspended'; // Red styling
-            case 'pending': return 'warning'; // Or customized pending
-            default: return 'inactive';
-        }
-    };
 
     return (
         <DashboardLayout title="Validation Avis">
             <div className="admin-dashboard revamped">
                 <div className="admin-main-card">
-                    <div className="admin-card-header">
-                        <div className="tabs-container" style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--gray-200)' }}>
-                            <button
-                                className={`tab-btn ${activeTab === 'submissions' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('submissions')}
-                                style={{
-                                    padding: '0.75rem 0',
-                                    fontWeight: 700,
-                                    fontSize: '0.9375rem',
-                                    color: activeTab === 'submissions' ? 'var(--primary-brand)' : 'var(--gray-500)',
-                                    borderBottom: activeTab === 'submissions' ? '2px solid var(--primary-brand)' : 'none',
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Avis à valider ({submissions.filter(s => s.status === 'pending').length})
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'fiches' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('fiches')}
-                                style={{
-                                    padding: '0.75rem 0',
-                                    fontWeight: 700,
-                                    fontSize: '0.9375rem',
-                                    color: activeTab === 'fiches' ? 'var(--primary-brand)' : 'var(--gray-500)',
-                                    borderBottom: activeTab === 'fiches' ? '2px solid var(--primary-brand)' : 'none',
-                                    background: 'none',
-                                    border: 'none',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                fiches à publier ({pendingfiches.length})
-                            </button>
-                        </div>
+                    <div className="admin-card-header" style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '1.5rem' }}>
+                            <div>
+                                <h2 className="card-title" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Validation des Avis</h2>
+                                <p style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginTop: '4px' }}>
+                                    {submissions.filter(s => s.status === 'pending').length} avis en attente de vérification
+                                </p>
+                            </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                            <h2 className="card-title">
-                                {activeTab === 'submissions' ? 'Validation des Avis' : 'Approbation des fiches'}
-                            </h2>
-                            <div className="admin-controls">
-                                <div className="search-box">
-                                    <Search size={18} />
+                            <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <div className="search-box-premium" style={{ position: 'relative' }}>
+                                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
                                     <input
                                         type="text"
                                         placeholder="Guide, artisan, email..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{
+                                            padding: '0.75rem 1rem 0.75rem 2.5rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--gray-200)',
+                                            width: '280px',
+                                            fontSize: '0.875rem'
+                                        }}
                                     />
                                 </div>
 
-                                {activeTab === 'submissions' && (
-                                    <>
-                                        <div className="filter-select-wrapper">
-                                            <Filter size={16} />
-                                            <select
-                                                className="admin-select"
-                                                value={statusFilter}
-                                                onChange={(e) => setStatusFilter(e.target.value)}
-                                            >
-                                                <option value="all">Tous</option>
-                                                <option value="pending">En attente</option>
-                                                <option value="validated">Validés</option>
-                                                <option value="rejected">Rejetés</option>
-                                            </select>
-                                        </div>
-
-                                        <button
-                                            className={`age-filter-btn ${showOnlyOld ? 'active' : ''}`}
-                                            onClick={() => setShowOnlyOld(!showOnlyOld)}
-                                            title="Afficher uniquement les avis de plus de 7 jours"
+                                <div className="filter-group-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--gray-50)', padding: '4px', borderRadius: '14px', border: '1px solid var(--gray-200)' }}>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)' }} />
+                                        <select
+                                            className="admin-select-premium"
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value)}
+                                            style={{
+                                                padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                                borderRadius: '10px',
+                                                border: 'none',
+                                                background: 'white',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                color: 'var(--gray-700)',
+                                                cursor: 'pointer',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                            }}
                                         >
-                                            <Clock size={16} />
-                                            <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
-                                        </button>
-                                    </>
-                                )}
+                                            <option value="all">Tous les Statuts</option>
+                                            <option value="pending">En attente</option>
+                                            <option value="validated">Validés</option>
+                                            <option value="rejected">Rejetés</option>
+                                        </select>
+                                    </div>
+
+                                    <button
+                                        className={`age-filter-btn-premium ${showOnlyOld ? 'active' : ''}`}
+                                        onClick={() => setShowOnlyOld(!showOnlyOld)}
+                                        title="Afficher uniquement les avis de plus de 7 jours"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            padding: '0.6rem 1rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: showOnlyOld ? '#fff1f2' : 'white',
+                                            color: showOnlyOld ? '#e11d48' : 'var(--gray-600)',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}
+                                    >
+                                        <Clock size={16} />
+                                        <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -231,66 +193,96 @@ export const ReviewValidation: React.FC = () => {
                             <div className="admin-loading">
                                 <LoadingSpinner size="lg" text="Chargement..." />
                             </div>
-                        ) : activeTab === 'submissions' ? (
-                            <table className="admin-modern-table">
+                        ) : (
+                            <table className="admin-modern-table" style={{ borderCollapse: 'separate', borderSpacing: '0 10px' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Guide</th>
-                                        <th>Artisan</th>
-                                        <th>Date & Email</th>
-                                        <th>Preuve</th>
-                                        <th>Statut</th>
-                                        <th className="text-center">Actions</th>
+                                    <tr style={{ background: 'transparent' }}>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Guide</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Artisan</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date & Email</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Preuve</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }} className="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredSubmissions.length > 0 ? filteredSubmissions.map((submission) => (
-                                        <tr key={submission.id}>
-                                            <td className="font-medium">
+                                        <tr key={submission.id} style={{ backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', borderRadius: '16px', overflow: 'hidden' }}>
+                                            <td className="font-medium" style={{ padding: '1.25rem 1.5rem', border: 'none', borderRadius: '16px 0 0 16px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                                                     {submission.guide_avatar ? (
-                                                        <img src={submission.guide_avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+                                                        <img src={submission.guide_avatar} alt="" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
                                                     ) : (
-                                                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
-                                                            <User size={16} />
+                                                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
+                                                            <User size={18} />
                                                         </div>
                                                     )}
-                                                    {submission.guide_name}
+                                                    <span style={{ fontWeight: 600, color: '#111827' }}>{submission.guide_name}</span>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <div className="text-gray-900 font-medium">{submission.artisan_name}</div>
+                                            <td style={{ border: 'none' }}>
+                                                <div style={{ border: 'none', color: '#374151', fontWeight: 500 }}>{submission.artisan_name}</div>
                                             </td>
-                                            <td>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                    <span style={{ fontSize: '13px', color: 'var(--gray-700)' }}>
-                                                        {new Date(submission.submitted_at).toLocaleDateString()}
+                                            <td style={{ border: 'none' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>
+                                                        {new Date(submission.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                                                     </span>
-                                                    <span style={{ fontSize: '11px', color: 'var(--gray-500)' }}>
+                                                    <span style={{ fontSize: '11px', color: '#6b7280' }}>
                                                         {submission.google_email}
                                                     </span>
                                                     {isOldReview(submission.submitted_at) && submission.status === 'pending' && (
-                                                        <span style={{ fontSize: '10px', color: 'var(--primary-orange)', fontWeight: 600 }}>En retard</span>
+                                                        <span style={{ fontSize: '10px', color: '#e11d48', fontWeight: 700, textTransform: 'uppercase' }}>En retard</span>
                                                     )}
                                                 </div>
                                             </td>
-                                            <td>
-                                                <a href={submission.review_url} target="_blank" rel="noopener noreferrer" className="review-link-simple">
-                                                    Voir <ExternalLink size={12} />
+                                            <td style={{ border: 'none' }}>
+                                                <a href={submission.review_url} target="_blank" rel="noopener noreferrer" className="review-link-premium" style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '0.4rem 0.8rem',
+                                                    backgroundColor: '#f8fafc',
+                                                    borderRadius: '8px',
+                                                    color: 'var(--primary-brand)',
+                                                    textDecoration: 'none',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                    Voir la preuve <ExternalLink size={14} />
                                                 </a>
                                             </td>
-                                            <td>
-                                                <span className={`admin-badge ${getStatusBadgeClass(submission.status)}`}>
+                                            <td style={{ border: 'none' }}>
+                                                <span
+                                                    className={`admin-badge`}
+                                                    style={{
+                                                        padding: '0.4rem 0.8rem',
+                                                        borderRadius: '10px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 700,
+                                                        textTransform: 'uppercase',
+                                                        backgroundColor:
+                                                            submission.status === 'validated' ? '#dcfce7' :
+                                                                submission.status === 'rejected' ? '#fee2e2' :
+                                                                    submission.status === 'pending' ? '#fef3c7' : '#f3f4f6',
+                                                        color:
+                                                            submission.status === 'validated' ? '#166534' :
+                                                                submission.status === 'rejected' ? '#991b1b' :
+                                                                    submission.status === 'pending' ? '#92400e' : '#4b5563'
+                                                    }}
+                                                >
                                                     {submission.status === 'pending' ? 'En attente' :
                                                         submission.status === 'validated' ? 'Validé' : 'Rejeté'}
                                                 </span>
                                             </td>
-                                            <td className="actions-cell">
+                                            <td className="actions-cell" style={{ border: 'none', borderRadius: '0 16px 16px 0' }}>
                                                 <div className="action-buttons">
                                                     {submission.status === 'pending' && (
                                                         <>
                                                             <button
                                                                 className="action-btn active-btn"
+                                                                style={{ backgroundColor: '#f0fdf4', borderRadius: '10px', color: '#16a34a' }}
                                                                 title="Valider"
                                                                 onClick={() => handleUpdateStatus(submission.id, 'validated')}
                                                                 disabled={isActionLoading}
@@ -299,6 +291,7 @@ export const ReviewValidation: React.FC = () => {
                                                             </button>
                                                             <button
                                                                 className="action-btn block-btn"
+                                                                style={{ backgroundColor: '#fff1f2', borderRadius: '10px', color: '#e11d48' }}
                                                                 title="Rejeter"
                                                                 onClick={() => {
                                                                     setSelectedSubmissionId(submission.id);
@@ -313,6 +306,7 @@ export const ReviewValidation: React.FC = () => {
                                                     {submission.status !== 'pending' && (
                                                         <button
                                                             className="action-btn"
+                                                            style={{ backgroundColor: '#f3f4f6', borderRadius: '10px', color: '#4b5563' }}
                                                             title="Remettre en attente"
                                                             onClick={() => handleUpdateStatus(submission.id, 'pending')}
                                                             disabled={isActionLoading}
@@ -325,52 +319,11 @@ export const ReviewValidation: React.FC = () => {
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
-                                                Aucun avis trouvé.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        ) : (
-                            <table className="admin-modern-table">
-                                <thead>
-                                    <tr>
-                                        <th>Artisan</th>
-                                        <th>Société</th>
-                                        <th>Détails</th>
-                                        <th>Statut</th>
-                                        <th className="text-center">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pendingfiches.length > 0 ? pendingfiches.map((fiche) => (
-                                        <tr key={fiche.id}>
-                                            <td className="font-medium">{fiche.artisan_name}</td>
-                                            <td>{fiche.company_name}</td>
-                                            <td>
-                                                <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>
-                                                    <strong>{fiche.quantity} avis</strong> • {fiche.sector}
+                                            <td colSpan={6} className="text-center" style={{ padding: '60px', color: '#9ca3af' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                                    <Search size={48} style={{ opacity: 0.2 }} />
+                                                    <p style={{ fontSize: '1.125rem', fontWeight: 500 }}>Aucun avis trouvé.</p>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <span className="admin-badge warning">À valider</span>
-                                            </td>
-                                            <td className="actions-cell">
-                                                <button
-                                                    className="btn-next"
-                                                    style={{ padding: '6px 12px', fontSize: '12px', width: 'auto' }}
-                                                    onClick={() => handleApprovefiche(fiche.id)}
-                                                    disabled={isActionLoading}
-                                                >
-                                                    <CheckCircle2 size={16} /> Publier
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan={5} className="text-center" style={{ padding: '40px', color: 'var(--gray-500)' }}>
-                                                Aucune fiche en attente de publication.
                                             </td>
                                         </tr>
                                     )}
