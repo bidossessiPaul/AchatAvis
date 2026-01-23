@@ -69,6 +69,9 @@ export const ArtisanDetail: React.FC = () => {
     const [packs, setPacks] = useState<Pack[]>([]);
     const [selectedPackId, setSelectedPackId] = useState<string>('');
     const [isActivating, setIsActivating] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [editFormData, setEditFormData] = useState<any>(null);
 
     useEffect(() => {
         if (id) {
@@ -82,10 +85,37 @@ export const ArtisanDetail: React.FC = () => {
         try {
             const result = await adminService.getArtisanDetail(id!);
             setData(result);
+            setEditFormData({
+                full_name: result.profile.full_name,
+                email: result.profile.email,
+                company_name: result.profile.company_name,
+                siret: result.profile.siret,
+                trade: result.profile.trade,
+                phone: result.profile.phone,
+                address: result.profile.address,
+                city: result.profile.city,
+                postal_code: result.profile.postal_code,
+                google_business_url: result.profile.google_business_url
+            });
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement des détails');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!id || !editFormData) return;
+        setIsSaving(true);
+        try {
+            await adminService.updateArtisan(id, editFormData);
+            showSuccess('Succès', 'Profil mis à jour avec succès');
+            setIsEditing(false);
+            loadDetail();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -224,8 +254,30 @@ export const ArtisanDetail: React.FC = () => {
                                 )}
                             </div>
                             <div className="header-titles">
-                                <span className="header-subtitle" title={profile.full_name}>{profile.full_name}</span>
-                                <h2>{profile.company_name}</h2>
+                                {isEditing ? (
+                                    <>
+                                        <input
+                                            type="text"
+                                            value={editFormData.full_name}
+                                            onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="Nom complet"
+                                            style={{ marginBottom: '0.5rem' }}
+                                        />
+                                        <input
+                                            type="text"
+                                            value={editFormData.company_name}
+                                            onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
+                                            className="form-input-premium h2-style"
+                                            placeholder="Nom de l'entreprise"
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="header-subtitle" title={profile.full_name}>{profile.full_name}</span>
+                                        <h2>{profile.company_name}</h2>
+                                    </>
+                                )}
                                 <div className="status-row">
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}
@@ -243,6 +295,30 @@ export const ArtisanDetail: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+
+                        <div className="header-actions">
+                            {isEditing ? (
+                                <div className="button-group">
+                                    <button
+                                        className="premium-action-btn primary"
+                                        onClick={handleSave}
+                                        disabled={isSaving}
+                                    >
+                                        {isSaving ? <LoadingSpinner size="sm" /> : <>Enregistrer</>}
+                                    </button>
+                                    <button
+                                        className="premium-action-btn"
+                                        onClick={() => setIsEditing(false)}
+                                    >
+                                        Annuler
+                                    </button>
+                                </div>
+                            ) : (
+                                <button className="premium-action-btn" onClick={() => setIsEditing(true)}>
+                                    Modifier
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </header>
 
@@ -256,21 +332,68 @@ export const ArtisanDetail: React.FC = () => {
                                         <div className="info-icon-box"><Mail size={16} /></div>
                                         <div className="info-content">
                                             <span className="info-label">Email</span>
-                                            <span className="info-value">{profile.email}</span>
+                                            {isEditing ? (
+                                                <input
+                                                    type="email"
+                                                    value={editFormData.email}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                                    className="form-input-premium"
+                                                />
+                                            ) : (
+                                                <span className="info-value">{profile.email}</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="premium-info-item">
                                         <div className="info-icon-box"><Phone size={16} /></div>
                                         <div className="info-content">
                                             <span className="info-label">Téléphone</span>
-                                            <span className="info-value">{profile.phone || 'Non renseigné'}</span>
+                                            {isEditing ? (
+                                                <input
+                                                    type="tel"
+                                                    value={editFormData.phone}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                                    className="form-input-premium"
+                                                />
+                                            ) : (
+                                                <span className="info-value">{profile.phone || 'Non renseigné'}</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="premium-info-item">
                                         <div className="info-icon-box"><MapPin size={16} /></div>
                                         <div className="info-content">
-                                            <span className="info-label">Adresse</span>
-                                            <span className="info-value">{`${profile.address || ''} ${profile.city || ''} (${profile.postal_code || ''})`}</span>
+                                            <span className="info-label">Localisation</span>
+                                            {isEditing ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.address}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                                                        className="form-input-premium"
+                                                        placeholder="Adresse"
+                                                    />
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData.city}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                                                            className="form-input-premium"
+                                                            placeholder="Ville"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={editFormData.postal_code}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, postal_code: e.target.value })}
+                                                            className="form-input-premium"
+                                                            placeholder="Code Postal"
+                                                            style={{ width: '80px' }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="info-value">{`${profile.address || ''} ${profile.city || ''} (${profile.postal_code || ''})`}</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -283,23 +406,60 @@ export const ArtisanDetail: React.FC = () => {
                                         <div className="info-icon-box"><ShieldAlert size={16} /></div>
                                         <div className="info-content">
                                             <span className="info-label">SIRET</span>
-                                            <span className="info-value">{profile.siret}</span>
+                                            {isEditing ? (
+                                                <input
+                                                    type="text"
+                                                    value={editFormData.siret}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, siret: e.target.value })}
+                                                    className="form-input-premium"
+                                                />
+                                            ) : (
+                                                <span className="info-value">{profile.siret}</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="premium-info-item">
-                                        <div className="info-icon-box"><Calendar size={16} /></div>
+                                        <div className="info-icon-box"><Briefcase size={16} /></div>
                                         <div className="info-content">
-                                            <span className="info-label">Inscrit le</span>
-                                            <span className="info-value">{new Date(profile.created_at).toLocaleDateString()}</span>
+                                            <span className="info-label">Corps de métier</span>
+                                            {isEditing ? (
+                                                <select
+                                                    value={editFormData.trade}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, trade: e.target.value })}
+                                                    className="premium-select"
+                                                    style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                                                >
+                                                    <option value="plombier">Plombier</option>
+                                                    <option value="electricien">Électricien</option>
+                                                    <option value="chauffagiste">Chauffagiste</option>
+                                                    <option value="couvreur">Couvreur</option>
+                                                    <option value="vitrier">Vitrier</option>
+                                                    <option value="paysagiste">Paysagiste</option>
+                                                    <option value="menage">Ménage</option>
+                                                    <option value="demenageur">Déménageur</option>
+                                                </select>
+                                            ) : (
+                                                <span className="info-value" style={{ textTransform: 'capitalize' }}>{profile.trade}</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="premium-info-item">
                                         <div className="info-icon-box"><Globe size={16} /></div>
                                         <div className="info-content">
                                             <span className="info-label">Lien Google</span>
-                                            <a href={profile.google_business_url} target="_blank" rel="noopener noreferrer" className="info-value link">
-                                                Voir la fiche <ExternalLink size={12} />
-                                            </a>
+                                            {isEditing ? (
+                                                <input
+                                                    type="url"
+                                                    value={editFormData.google_business_url}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, google_business_url: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="https://g.page/..."
+                                                />
+                                            ) : (
+                                                <a href={profile.google_business_url} target="_blank" rel="noopener noreferrer" className="info-value link">
+                                                    Voir la fiche <ExternalLink size={12} />
+                                                </a>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
