@@ -5,12 +5,16 @@ import {
     Search,
     Trash2,
     CheckCircle,
-    XCircle,
-    Bell,
-    Award,
-    Eye
+    Eye,
+    User,
+    Plus,
+    X,
+    Mail,
+    Phone,
+    MapPin,
+    Award
 } from 'lucide-react';
-import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -21,16 +25,23 @@ interface Guide {
     status: string;
     created_at: string;
     google_email: string;
-    local_guide_level: number;
-    total_reviews_count: number;
     city: string;
-    warning_count: number;
 }
 
 export const GuidesList: React.FC = () => {
     const [guides, setGuides] = useState<Guide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [formData, setFormData] = useState({
+        email: '',
+        fullName: '',
+        googleEmail: '',
+        phone: '',
+        city: '',
+        password: ''
+    });
 
     useEffect(() => {
         loadGuides();
@@ -45,6 +56,33 @@ export const GuidesList: React.FC = () => {
             showError('Erreur', 'Erreur lors du chargement des guides');
         } finally {
             if (!silent) setIsLoading(false);
+        }
+    };
+
+    const handleCreateGuide = async () => {
+        if (!formData.email || !formData.fullName || !formData.googleEmail || !formData.phone || !formData.city) {
+            showError('Erreur', 'Tous les champs obligatoires (*) doivent être remplis');
+            return;
+        }
+
+        setIsCreating(true);
+        try {
+            await adminService.createGuide(formData);
+            showSuccess('Succès', `Compte Local Guide créé avec succès.`);
+            setShowCreateModal(false);
+            setFormData({
+                email: '',
+                fullName: '',
+                googleEmail: '',
+                phone: '',
+                city: '',
+                password: ''
+            });
+            loadGuides(true);
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la création');
+        } finally {
+            setIsCreating(false);
         }
     };
 
@@ -72,35 +110,6 @@ export const GuidesList: React.FC = () => {
         }
     };
 
-    const handleIssueWarning = async (guide: Guide) => {
-        try {
-            const reasonsData = await adminService.getSuspensionReasons();
-            const reasons = reasonsData.warnings;
-
-            const result = await showPremiumWarningModal(
-                'Avertissement',
-                `Envoyer un avertissement à ${guide.google_email}. Sélectionnez le motif :`,
-                reasons
-            );
-
-            if (!result.isConfirmed || !result.value) return;
-
-            let finalReason = result.value;
-
-            if (finalReason === 'OTHER') {
-                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
-                if (!manualInput.isConfirmed || !manualInput.value) return;
-                finalReason = manualInput.value;
-            }
-
-            const response = await adminService.issueWarning(guide.id, finalReason);
-            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
-            loadGuides(true);
-        } catch (error) {
-            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
-        }
-    };
-
     const filteredGuides = guides.filter(g =>
         g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         g.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -113,6 +122,14 @@ export const GuidesList: React.FC = () => {
                     <div className="admin-card-header">
                         <h2 className="card-title">Liste des Local Guides</h2>
                         <div className="admin-controls">
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="admin-btn-primary"
+                                style={{ marginRight: 'var(--space-4)' }}
+                            >
+                                <Plus size={18} />
+                                Créer Guide
+                            </button>
                             <div className="search-box">
                                 <Search size={18} />
                                 <input
@@ -137,9 +154,6 @@ export const GuidesList: React.FC = () => {
                                         <th>Local Guide</th>
                                         <th>Email Compte</th>
                                         <th>Ville</th>
-                                        <th>Niveau</th>
-                                        <th>Avis</th>
-                                        <th>Avertissements</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -153,30 +167,14 @@ export const GuidesList: React.FC = () => {
                                                         <img src={guide.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
-                                                            <div style={{ transform: 'scale(0.8)' }}><Award size={16} /></div>
+                                                            <User size={16} />
                                                         </div>
                                                     )}
                                                     {guide.google_email}
                                                 </div>
-
                                             </td>
                                             <td className="text-gray-500">{guide.email}</td>
                                             <td>{guide.city}</td>
-                                            <td>
-                                                <span className="level-badge">
-                                                    <Award size={12} /> Niv. {guide.local_guide_level}
-                                                </span>
-                                            </td>
-                                            <td>{guide.total_reviews_count}</td>
-                                            <td>
-                                                {guide.warning_count > 0 ? (
-                                                    <span className="admin-badge warning" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#fdba74' }}>
-                                                        {guide.warning_count}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs">-</span>
-                                                )}
-                                            </td>
                                             <td>
                                                 <span className={`admin-badge ${guide.status || 'inactive'}`}>
                                                     {guide.status}
@@ -184,39 +182,22 @@ export const GuidesList: React.FC = () => {
                                             </td>
                                             <td className="actions-cell">
                                                 <div className="action-buttons">
-                                                    <>
-                                                        <button
-                                                            onClick={() => (window.location.href = `/admin/guides/${guide.id}`)}
-                                                            className="action-btn"
-                                                            title="Voir détails"
-                                                        >
-                                                            <Eye size={18} />
-                                                        </button>
-                                                        {guide.status === 'active' ? (
-                                                            <button
-                                                                onClick={() => handleStatusUpdate(guide.id, 'suspended')}
-                                                                className="action-btn block-btn"
-                                                                title="Suspendre"
-                                                            >
-                                                                <XCircle size={18} />
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => handleStatusUpdate(guide.id, 'active')}
-                                                                className="action-btn active-btn"
-                                                                title="Activer"
-                                                            >
-                                                                <CheckCircle size={18} />
-                                                            </button>
-                                                        )}
-                                                    </>
                                                     <button
-                                                        onClick={() => handleIssueWarning(guide)}
-                                                        className="action-btn warn-btn"
-                                                        title="Avertir"
+                                                        onClick={() => (window.location.href = `/admin/guides/${guide.id}`)}
+                                                        className="action-btn"
+                                                        title="Voir détails"
                                                     >
-                                                        <Bell size={18} />
+                                                        <Eye size={18} />
                                                     </button>
+                                                    {guide.status !== 'active' && (
+                                                        <button
+                                                            onClick={() => handleStatusUpdate(guide.id, 'active')}
+                                                            className="action-btn active-btn"
+                                                            title="Activer"
+                                                        >
+                                                            <CheckCircle size={18} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleDelete(guide.id)}
                                                         className="action-btn delete-btn"
@@ -234,6 +215,116 @@ export const GuidesList: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Create Guide Modal */}
+            {showCreateModal && (
+                <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+                        <div className="modal-header">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                                <div style={{ width: '40px', height: '40px', background: 'var(--primary-gradient)', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                                    <Plus size={24} strokeWidth={3} />
+                                </div>
+                                <div>
+                                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Nouveau Local Guide</h2>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)' }}>Ajouter manuellement un guide au réseau</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowCreateModal(false)} className="modal-close">
+                                <X size={20} color="var(--gray-400)" />
+                            </button>
+                        </div>
+
+                        <div className="modal-body" style={{ padding: '2rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div>
+                                    <label className="form-label-premium">Nom Complet *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.fullName}
+                                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                        className="form-input-premium"
+                                        placeholder="Prénom Nom"
+                                        required
+                                    />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div>
+                                        <label className="form-label-premium">Email Connexion *</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="guide@email.com"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label-premium">Email Google Maps *</label>
+                                        <input
+                                            type="email"
+                                            value={formData.googleEmail}
+                                            onChange={(e) => setFormData({ ...formData, googleEmail: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="google@gmail.com"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                    <div>
+                                        <label className="form-label-premium">Téléphone Mobile *</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="06..."
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label-premium">Ville *</label>
+                                        <input
+                                            type="text"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                            className="form-input-premium"
+                                            placeholder="Ex: Paris"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="form-label-premium">Mot de passe *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        className="form-input-premium"
+                                        placeholder="Définir un mot de passe"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button onClick={() => setShowCreateModal(false)} className="btn-secondary">
+                                Annuler
+                            </button>
+                            <button
+                                onClick={handleCreateGuide}
+                                className="admin-btn-primary"
+                                disabled={isCreating}
+                            >
+                                {isCreating ? 'Création...' : 'Créer le compte Guide'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };

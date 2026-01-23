@@ -116,6 +116,21 @@ export const adminService = {
     },
 
     /**
+     * Create a new guide from admin panel
+     */
+    createGuide: async (data: {
+        email: string;
+        fullName: string;
+        googleEmail: string;
+        phone: string;
+        city: string;
+        password?: string;
+    }) => {
+        const response = await api.post('/admin/guides/create', data);
+        return response.data;
+    },
+
+    /**
      * Get all available subscription packs
      */
     getPacks: async () => {

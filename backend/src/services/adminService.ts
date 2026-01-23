@@ -943,6 +943,91 @@ export const createArtisan = async (data: {
 };
 
 /**
+ * Create a new local guide account from admin panel
+ */
+export const createGuide = async (data: {
+    email: string;
+    fullName: string;
+    googleEmail: string;
+    phone: string;
+    city: string;
+    password?: string;
+}) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Check if email already exists
+        const [existingUsers]: any = await connection.query(
+            'SELECT id FROM users WHERE email = ?',
+            [data.email]
+        );
+
+        if (existingUsers && existingUsers.length > 0) {
+            throw new Error('Un compte avec cet email existe déjà');
+        }
+
+        // 2. Generate UUIDs
+        const { v4: uuidv4 } = await import('uuid');
+        const userId = uuidv4();
+        const profileId = uuidv4();
+
+        // 3. Handle password
+        const manualPassword = data.password;
+        const tempPassword = manualPassword || (Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8));
+        const { hashPassword } = await import('../utils/password');
+        const hashedPassword = await hashPassword(tempPassword);
+
+        // 4. Create user
+        await connection.query(
+            `INSERT INTO users (id, email, full_name, password_hash, role, status, email_verified)
+             VALUES (?, ?, ?, ?, 'guide', 'active', TRUE)`,
+            [userId, data.email, data.fullName, hashedPassword]
+        );
+
+        // 5. Create guide profile
+        await connection.query(
+            `INSERT INTO guides_profiles 
+             (id, user_id, google_email, phone, city, local_guide_level, total_reviews_count)
+             VALUES (?, ?, ?, ?, ?, 1, 0)`,
+            [
+                profileId,
+                userId,
+                data.googleEmail,
+                data.phone,
+                data.city
+            ]
+        );
+
+        await connection.commit();
+
+        // 6. Send welcome email (optional)
+        try {
+            const { sendWelcomeEmail } = await import('./emailService');
+            await sendWelcomeEmail(data.email, data.fullName, 'guide');
+            console.log(`Temporary password for guide ${data.email}: ${tempPassword}`);
+        } catch (emailError) {
+            console.error('Error sending welcome email to guide:', emailError);
+        }
+
+        return {
+            success: true,
+            message: `Guide créé avec succès`,
+            userId,
+            tempPassword
+        };
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in createGuide:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
  * Update artisan profile and user info
  */
 export const updateArtisanProfile = async (userId: string, data: any) => {
