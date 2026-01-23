@@ -7,6 +7,7 @@ import {
     Trash2,
     CheckCircle,
     XCircle,
+    PauseCircle,
     Bell,
     Eye,
     Briefcase,
@@ -275,15 +276,15 @@ export const ArtisansList: React.FC = () => {
                                                             <button
                                                                 onClick={() => handleStatusUpdate(artisan.id, 'suspended')}
                                                                 className="action-btn block-btn"
-                                                                title="Suspendre"
+                                                                title="Suspendre le compte"
                                                             >
-                                                                <XCircle size={18} />
+                                                                <PauseCircle size={18} />
                                                             </button>
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleStatusUpdate(artisan.id, 'active')}
                                                                 className="action-btn active-btn"
-                                                                title="Activer"
+                                                                title="Réactiver le compte"
                                                             >
                                                                 <CheckCircle size={18} />
                                                             </button>
