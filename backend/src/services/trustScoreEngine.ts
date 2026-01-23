@@ -80,6 +80,7 @@ export class TrustScoreEngine {
         if (phoneVerified) verificationBonus += 10;
 
         // 4️⃣ Score Final (sur 100)
+        const penalties = 0;
         const finalScore = Math.min(100, emailScore + mapsScore + verificationBonus);
 
         // 6️⃣ Attribution Niveau de Confiance

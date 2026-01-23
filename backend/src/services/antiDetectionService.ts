@@ -1,5 +1,5 @@
 import { query } from '../config/database';
-import { TrustScoreEngine, TrustLevel } from './trustScoreEngine';
+import { TrustScoreEngine } from './trustScoreEngine';
 
 /**
  * Service centralisé pour toute la logique anti-détection
