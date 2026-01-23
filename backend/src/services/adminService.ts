@@ -35,7 +35,7 @@ export const getGuides = async () => {
 /**
  * Update user status (active, pending, suspended, rejected)
  */
-export const updateUserStatus = async (userId: string, status: string, reason?: string, baseUrl?: string) => {
+export const updateUserStatus = async (userId: string, status: string, reason?: string) => {
     // If status is suspended, we use the suspension service to trigger the full flow
     if (status === 'suspended') {
         const { suspensionService } = await import('./suspensionService');
@@ -56,7 +56,7 @@ export const updateUserStatus = async (userId: string, status: string, reason?: 
     try {
         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
         if (user && user.length > 0) {
-            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, status, baseUrl);
+            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, status);
         }
     } catch (error) {
         console.error('Error sending user status update email:', error);
@@ -290,7 +290,7 @@ export const getAllSubmissions = async () => {
 /**
  * Update review submission status (validate/reject)
  */
-export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, baseUrl?: string) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string) => {
     const connection = await pool.getConnection();
 
     try {
@@ -365,7 +365,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             `, { submissionId });
 
             if (rows && rows.length > 0) {
-                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, baseUrl);
+                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
 
                 // NOUVEAU : Vérifier rejets répététés si statut = rejected
                 if (status === 'rejected') {
@@ -1039,10 +1039,21 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
     try {
         await connection.beginTransaction();
 
-        // 1. Update users table (full_name, email)
+        // 1. Update users table (full_name, email, password if provided)
+        const userUpdates = ['full_name = ?', 'email = ?'];
+        const userParams = [data.full_name, data.email];
+
+        if (data.password && data.password.trim() !== '') {
+            const { hashPassword } = await import('../utils/password');
+            const hashedPassword = await hashPassword(data.password);
+            userUpdates.push('password_hash = ?');
+            userParams.push(hashedPassword);
+        }
+
+        userParams.push(userId);
         await connection.query(
-            'UPDATE users SET full_name = ?, email = ? WHERE id = ?',
-            [data.full_name, data.email, userId]
+            `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`,
+            userParams
         );
 
         // 2. Update artisans_profiles table
@@ -1075,6 +1086,61 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
     } catch (error) {
         await connection.rollback();
         console.error('Error in updateArtisanProfile:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Update guide profile and user info
+ */
+export const updateGuideProfile = async (userId: string, data: any) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Update users table (full_name, email, password if provided)
+        const userUpdates = ['full_name = ?', 'email = ?'];
+        const userParams = [data.full_name, data.email];
+
+        if (data.password && data.password.trim() !== '') {
+            const { hashPassword } = await import('../utils/password');
+            const hashedPassword = await hashPassword(data.password);
+            userUpdates.push('password_hash = ?');
+            userParams.push(hashedPassword);
+        }
+
+        userParams.push(userId);
+        await connection.query(
+            `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`,
+            userParams
+        );
+
+        // 2. Update guides_profiles table
+        await connection.query(
+            `UPDATE guides_profiles SET 
+                google_email = ?, 
+                phone = ?, 
+                city = ?, 
+                local_guide_level = ?, 
+                total_reviews_count = ?
+             WHERE user_id = ?`,
+            [
+                data.google_email,
+                data.phone,
+                data.city,
+                data.local_guide_level,
+                data.total_reviews_count,
+                userId
+            ]
+        );
+
+        await connection.commit();
+        return { success: true, message: 'Profil guide mis à jour' };
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in updateGuideProfile:', error);
         throw error;
     } finally {
         connection.release();

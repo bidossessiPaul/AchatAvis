@@ -36,6 +36,7 @@ router.post('/artisans/:userId/activate-pack', adminController.activateArtisanPa
 router.get('/guides', adminController.getGuides);
 router.post('/guides/create', adminController.createGuide);
 router.get('/guides/:userId', adminController.getGuideDetail);
+router.patch('/guides/:userId', adminController.updateGuide);
 router.get('/subscriptions', adminController.getAllSubscriptions);
 router.get('/subscriptions/stats', adminController.getSubscriptionStats);
 router.get('/submissions', adminController.getAllSubmissions);
