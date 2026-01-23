@@ -175,8 +175,9 @@ export const sendVerificationEmail = async (email: string, fullName: string, tok
 /**
  * Send welcome email to new users
  */
-export const sendWelcomeEmail = async (email: string, fullName: string, role: 'artisan' | 'guide') => {
-    const dashboardUrl = role === 'artisan' ? `${emailConfig.frontendUrl}/artisan` : `${emailConfig.frontendUrl}/guide`;
+export const sendWelcomeEmail = async (email: string, fullName: string, role: 'artisan' | 'guide', baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const dashboardUrl = role === 'artisan' ? `${frontendUrl}/artisan` : `${frontendUrl}/guide`;
 
     const roleText = role === 'artisan' ? 'Artisan' : 'Local Guide';
     const welcomeMessage = role === 'artisan'
@@ -239,9 +240,10 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
 /**
  * Send email when a pack is activated
  */
-export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, fichesQuota: number) => {
+export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, fichesQuota: number, baseUrl?: string) => {
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -286,7 +288,7 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
                         </div>
                         
                         <div class="button-container">
-                            <a href="${emailConfig.frontendUrl}/artisan/dashboard" class="button">Démarrer maintenant</a>
+                            <a href="${frontendUrl}/artisan/dashboard" class="button">Démarrer maintenant</a>
                         </div>
                     </div>
                 </div>
@@ -376,11 +378,12 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
 /**
  * Send email to artisan when a fiche is approved by admin
  */
-export const sendficheDecisionEmail = async (email: string, fullName: string, orderId: string, status: string) => {
+export const sendficheDecisionEmail = async (email: string, fullName: string, orderId: string, status: string, baseUrl?: string) => {
     if (status !== 'in_progress') return;
 
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -411,7 +414,7 @@ export const sendficheDecisionEmail = async (email: string, fullName: string, or
                             Excellente nouvelle ! Votre fiche a été validée par notre équipe technique. Elle est désormais visible par nos Local Guides.
                         </p>
                         <div class="button-container">
-                            <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Suivre l'avancement</a>
+                            <a href="${frontendUrl}/artisan/orders/${orderId}" class="button">Suivre l'avancement</a>
                         </div>
                     </div>
                 </div>
@@ -569,8 +572,9 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
 /**
  * Send email when a user is suspended with progressive level info
  */
-export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string, userAgent: string | null = null) => {
-    const dashboardUrl = `${emailConfig.frontendUrl}/suspended`;
+export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string, userAgent: string | null = null, baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const dashboardUrl = `${frontendUrl}/suspended`;
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
 
@@ -801,9 +805,10 @@ export const sendExemptionEmail = async (email: string, fullName: string, isExem
 /**
  * Send warning email to user
  */
-export const sendWarningEmail = async (email: string, fullName: string, reason: string, warningCount: number) => {
+export const sendWarningEmail = async (email: string, fullName: string, reason: string, warningCount: number, baseUrl?: string) => {
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -840,6 +845,12 @@ export const sendWarningEmail = async (email: string, fullName: string, reason: 
                         <div style="margin-top: 24px;">
                             <span class="count-badge">Avertissement ${warningCount} / 3</span>
                         </div>
+                        <div style="margin: 32px 0;">
+                            <a href="${frontendUrl}/guide/dashboard" 
+                               style="background-color: ${brandRed}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; text-transform: uppercase;">
+                               Accéder à mon Dashboard
+                            </a>
+                        </div>
                         <p class="text" style="margin-top: 24px; font-size: 14px; color: #6b7280; font-style: italic;">
                             Important : À 3 avertissements, votre compte sera automatiquement suspendu temporairement.
                         </p>
@@ -860,9 +871,10 @@ export const sendWarningEmail = async (email: string, fullName: string, reason: 
 /**
  * Send email to artisan when a fiche is submitted for review
  */
-export const sendficheSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string) => {
+export const sendficheSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string, baseUrl?: string) => {
     const brandRed = '#ff3b6a';
     const brandBlack = '#111827';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -895,7 +907,7 @@ export const sendficheSubmittedArtisanEmail = async (email: string, fullName: st
                             Dès qu'elle sera validée, vous recevrez une confirmation et elle deviendra active pour nos Local Guides.
                         </p>
                         <div class="button-container">
-                            <a href="${emailConfig.frontendUrl}/artisan/orders/${orderId}" class="button">Voir ma fiche</a>
+                            <a href="${frontendUrl}/artisan/orders/${orderId}" class="button">Voir ma fiche</a>
                         </div>
                     </div>
                 </div>
@@ -914,9 +926,10 @@ export const sendficheSubmittedArtisanEmail = async (email: string, fullName: st
 /**
  * Send alert to admin when a new fiche is submitted
  */
-export const sendficheSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string) => {
+export const sendficheSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string, baseUrl?: string) => {
     const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
     const brandRed = '#ff3b6a';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
         from: emailConfig.from,
@@ -931,7 +944,7 @@ export const sendficheSubmittedAdminEmail = async (artisanName: string, companyN
                     <p><strong>ID fiche :</strong> ${orderId}</p>
                     
                     <div style="margin-top: 32px;">
-                        <a href="${emailConfig.frontendUrl}/admin/fiches" 
+                        <a href="${frontendUrl}/admin/fiches" 
                            style="background-color: ${brandRed}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                            Accéder au Dashboard Admin
                         </a>

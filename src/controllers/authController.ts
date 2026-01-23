@@ -169,7 +169,9 @@ export const login = async (req: Request, res: Response) => {
                 if (users && users.length > 0) {
                     userName = users[0].full_name;
                     if (country) {
-                        await suspensionService.suspendForGeoblocking(users[0].id, country);
+                        const origin = req.get('origin') || req.get('referer');
+                        const baseUrl = origin ? new URL(origin).origin : undefined;
+                        await suspensionService.suspendForGeoblocking(users[0].id, country, baseUrl);
                     }
                 }
             } catch (err) {
@@ -480,9 +482,8 @@ export const uploadAvatar = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Aucun fichier téléchargé' });
         }
 
-        // Generate the public URL for the avatar
-        // This assumes the backend serves /public statically
-        const avatarUrl = `${req.protocol}://${req.get('host')}/public/uploads/avatars/${req.file.filename}`;
+        // Generate a relative URL for the avatar that will be proxied via /api
+        const avatarUrl = `/api/public/uploads/avatars/${req.file.filename}`;
 
         // Update user record in database
         await authService.updateProfile(req.user.userId, { avatarUrl });
@@ -595,7 +596,11 @@ export const verifyEmail = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Token requis' });
         }
 
-        const result = await authService.verifyEmail(token as string);
+        // Extract base URL from request
+        const origin = req.get('origin') || req.get('referer');
+        const baseUrl = origin ? new URL(origin).origin : undefined;
+
+        const result = await authService.verifyEmail(token as string, baseUrl);
         return res.json(result);
     } catch (error: any) {
         console.error('Verify email error:', error);

@@ -101,7 +101,7 @@ class SuspensionService {
   /**
    * Force suspension for geoblocking violation
    */
-  async suspendForGeoblocking(userId: string, country: string): Promise<void> {
+  async suspendForGeoblocking(userId: string, country: string, baseUrl?: string): Promise<void> {
     if (await this.isUserExempted(userId)) {
       console.log(`🛡️ SUSPENSION EXEMPTION: User ${userId} is exempted. Skipping geoblocking suspension.`);
       return;
@@ -115,7 +115,10 @@ class SuspensionService {
       userId,
       level.id,
       'vpn_proxy_detected',
-      `Suspension automatique : Tentative d'accès depuis un pays non autorisé (${country})`
+      `Suspension automatique : Tentative d'accès depuis un pays non autorisé (${country})`,
+      undefined,
+      undefined,
+      baseUrl
     );
   }
 
@@ -126,7 +129,8 @@ class SuspensionService {
     userId: string,
     reasonCategory: 'spam_submissions' | 'sector_cooldown_violation' | 'invalid_proofs_repeated' | 'identical_reviews' | 'vpn_proxy_detected' | 'multi_accounting' | 'manual_admin' | 'other',
     reasonDetails: string,
-    triggerProofId?: string
+    triggerProofId?: string,
+    baseUrl?: string
   ): Promise<{ suspended: boolean; warning?: boolean; suspension_id?: number }> {
 
     try {
@@ -139,7 +143,7 @@ class SuspensionService {
 
       const activeSuspension = await this.getActiveSuspension(userId);
       if (activeSuspension) {
-        await this.handleRecidiveDuringSuspension(userId, activeSuspension, reasonCategory, reasonDetails);
+        await this.handleRecidiveDuringSuspension(userId, activeSuspension, reasonCategory, reasonDetails, baseUrl);
         return { suspended: true, suspension_id: activeSuspension.id };
       }
 
@@ -147,13 +151,13 @@ class SuspensionService {
       const warningCount = await this.getActiveWarningsCount(userId);
 
       if (warningCount < (config?.max_warnings_before_suspend || 3)) {
-        await this.createWarning(userId, reasonCategory, reasonDetails, triggerProofId);
+        await this.createWarning(userId, reasonCategory, reasonDetails, triggerProofId, baseUrl);
         return { suspended: false, warning: true };
       }
 
       // Create suspension
       const level = await this.determineNextLevel(userId);
-      const suspensionId = await this.createSuspension(userId, level.id, reasonCategory, reasonDetails, triggerProofId);
+      const suspensionId = await this.createSuspension(userId, level.id, reasonCategory, reasonDetails, triggerProofId, undefined, baseUrl);
 
       return { suspended: true, suspension_id: suspensionId };
     } catch (error) {
@@ -162,7 +166,7 @@ class SuspensionService {
     }
   }
 
-  async createWarning(userId: string, type: string, message: string, proofId?: string): Promise<void> {
+  async createWarning(userId: string, type: string, message: string, proofId?: string, baseUrl?: string): Promise<void> {
     await query(
       `INSERT INTO suspension_warnings (user_id, warning_type, warning_message, trigger_proof_id, created_at) 
        VALUES (?, ?, ?, ?, NOW())`,
@@ -172,10 +176,14 @@ class SuspensionService {
     await query('UPDATE users SET warning_count = warning_count + 1 WHERE id = ?', [userId]);
 
     // Notification logic here
+    const user: any = await query('SELECT email, full_name, warning_count FROM users WHERE id = ?', [userId]);
+    if (user && user.length > 0) {
+      await sendWarningEmail(user[0].email, user[0].full_name, message, user[0].warning_count, baseUrl);
+    }
     console.log(`Warning issued for user ${userId}: ${message}`);
   }
 
-  async issueManualWarning(userId: string, reason: string, customCount?: number): Promise<{ warningCount: number; suspended: boolean }> {
+  async issueManualWarning(userId: string, reason: string, customCount?: number, baseUrl?: string): Promise<{ warningCount: number; suspended: boolean }> {
     const config = await this.getConfig();
     const maxWarnings = config?.max_warnings_before_suspend || 3;
 
@@ -202,7 +210,7 @@ class SuspensionService {
     // 4. Send email
     const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [userId]);
     if (user && user.length > 0) {
-      await sendWarningEmail(user[0].email, user[0].full_name, reason, warningCount);
+      await sendWarningEmail(user[0].email, user[0].full_name, reason, warningCount, baseUrl);
     }
 
     // 5. Check for auto-suspension when reaching the threshold
@@ -213,7 +221,10 @@ class SuspensionService {
         userId,
         level.id,
         'manual_admin',
-        `Suspension automatique après ${warningCount} avertissements. Dernier motif : ${reason}`
+        `Suspension automatique après ${warningCount} avertissements. Dernier motif : ${reason}`,
+        undefined,
+        undefined,
+        baseUrl
       );
       return { warningCount, suspended: true };
     }
@@ -243,7 +254,7 @@ class SuspensionService {
     return level[0];
   }
 
-  async createSuspension(userId: string, levelId: number, category: string, details: string, proofId?: string, adminNotes?: string): Promise<number> {
+  async createSuspension(userId: string, levelId: number, category: string, details: string, proofId?: string, adminNotes?: string, baseUrl?: string): Promise<number> {
     // Prevent double suspension
     const existing: any = await query('SELECT id FROM user_suspensions WHERE user_id = ? AND is_active = true', [userId]);
     if (existing && existing.length > 0) {
@@ -286,7 +297,7 @@ class SuspensionService {
       const user: any = await query('SELECT email, full_name, last_user_agent FROM users WHERE id = ?', [userId]);
       if (user && user.length > 0) {
         try {
-          await sendSuspensionEmail(user[0].email, user[0].full_name, level[0], details, user[0].last_user_agent);
+          await sendSuspensionEmail(user[0].email, user[0].full_name, level[0], details, user[0].last_user_agent, baseUrl);
           await sendAdminSuspensionNotice(user[0].email, user[0].full_name, level[0], details, user[0].last_user_agent);
         } catch (emailErr) {
           console.error("Non-blocking email failure:", emailErr);
@@ -302,11 +313,11 @@ class SuspensionService {
     }
   }
 
-  async handleRecidiveDuringSuspension(userId: string, current: any, category: string, details: string): Promise<void> {
+  async handleRecidiveDuringSuspension(userId: string, current: any, category: string, details: string, baseUrl?: string): Promise<void> {
     // Escalate immediately
     await query('UPDATE user_suspensions SET is_active = false, lifted_at = NOW(), lift_reason = "Escalade par récidive" WHERE id = ?', [current.id]);
     const nextLevel = await this.determineNextLevel(userId);
-    await this.createSuspension(userId, nextLevel.id, category, `Récidive pendant suspension : ${details}`);
+    await this.createSuspension(userId, nextLevel.id, category, `Récidive pendant suspension : ${details}`, undefined, undefined, baseUrl);
   }
 
   async getActiveSuspension(userId: string): Promise<any | null> {
@@ -353,7 +364,7 @@ class SuspensionService {
 
     const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [suspension[0].user_id]);
     if (user && user.length > 0) {
-      await sendSuspensionLiftedEmail(user[0].email, user[0].full_name, reason);
+      await sendSuspensionLiftedEmail(user[0].email, user[0].full_name, reason); // This email has no links or uses relative if any
     }
   }
 

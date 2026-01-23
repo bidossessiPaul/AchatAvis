@@ -74,6 +74,6 @@ transporter.verify(function (error: any) {
 });
 
 export const emailConfig = {
-    from: process.env.EMAIL_FROM || `"AchatAvis" <${process.env.EMAIL_USER}>`,
+    from: process.env.EMAIL_FROM || `"Achat Avis" <${process.env.EMAIL_USER}>`,
     frontendUrl: (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, ''),
 };
