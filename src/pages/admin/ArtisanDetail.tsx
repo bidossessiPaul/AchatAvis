@@ -21,7 +21,13 @@ import { showConfirm, showSuccess, showError, showInput, showSelection, showPrem
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
 
-validated_reviews_count: number;
+interface Order {
+    id: string;
+    status: string;
+    amount: number;
+    credits_purchased: number;
+    created_at: string;
+    validated_reviews_count: number;
 }
 
 interface Payment {
@@ -38,6 +44,7 @@ interface Pack {
     name: string;
     fiches_quota: number;
     price_cents: number;
+    quantity: number;
 }
 
 interface ArtisanDetailData {
@@ -60,6 +67,7 @@ interface ArtisanDetailData {
         google_business_url: string;
         subscription_status: string;
         subscription_end_date: string;
+        active_pack_name: string | null;
     };
     orders: Order[];
     payments: Payment[];
@@ -236,7 +244,7 @@ export const ArtisanDetail: React.FC = () => {
         </DashboardLayout>
     );
 
-    const { profile, orders } = data;
+    const { profile, orders, payments } = data;
 
     return (
         <DashboardLayout title={`Détails : ${profile.company_name}`}>
@@ -294,7 +302,7 @@ export const ArtisanDetail: React.FC = () => {
                                     )}
                                     {profile.subscription_status && (
                                         <span className={`premium-status-badge active`}>
-                                            {profile.subscription_status}
+                                            {profile.active_pack_name || profile.subscription_status}
                                         </span>
                                     )}
                                 </div>
@@ -489,197 +497,209 @@ export const ArtisanDetail: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="premium-card">
-                                    <h3><ShieldAlert size={20} /> Sécurité</h3>
-                                    <div className="premium-info-list">
-                                        <div className="premium-info-item">
-                                            <div className="info-icon-box"><ShieldAlert size={16} /></div>
-                                            <div className="info-content">
-                                                <span className="info-label">Mot de passe</span>
-                                                {isEditing ? (
-                                                    <div style={{ width: '100%' }}>
-                                                        <input
-                                                            type="text"
-                                                            value={editFormData.password}
-                                                            onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
-                                                            className="form-input-premium"
-                                                            placeholder="Nouveau mot de passe (laisser vide pour ne pas changer)"
-                                                        />
-                                                        <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
-                                                            Sera mis à jour uniquement si vous saisissez une valeur.
-                                                        </small>
-                                                    </div>
-                                                ) : (
-                                                    <span className="info-value">••••••••••••</span>
-                                                )}
-                                            </div>
+                            </div>
+
+                            <div className="premium-card">
+                                <h3><ShieldAlert size={20} /> Sécurité</h3>
+                                <div className="premium-info-list">
+                                    <div className="premium-info-item">
+                                        <div className="info-icon-box"><ShieldAlert size={16} /></div>
+                                        <div className="info-content">
+                                            <span className="info-label">Mot de passe</span>
+                                            {isEditing ? (
+                                                <div style={{ width: '100%' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={editFormData.password}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
+                                                        className="form-input-premium"
+                                                        placeholder="Nouveau mot de passe (laisser vide pour ne pas changer)"
+                                                    />
+                                                    <small style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '4px', display: 'block' }}>
+                                                        Sera mis à jour uniquement si vous saisissez une valeur.
+                                                    </small>
+                                                </div>
+                                            ) : (
+                                                <span className="info-value">••••••••••••</span>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                    </div>
-
-                    <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
-                        <h3><Zap size={20} /> Historique des Transactions (Recharges)</h3>
-                        <div className="admin-table-wrapper">
-                            <table className="premium-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Description</th>
-                                        <th>Montant</th>
-                                        <th>Type</th>
-                                        <th>Statut</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.payments && data.payments.length > 0 ? data.payments.map(payment => (
-                                        <tr key={payment.id}>
-                                            <td>{new Date(payment.created_at).toLocaleDateString()}</td>
-                                            <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={payment.description}>
-                                                {payment.description}
-                                            </td>
-                                            <td>{payment.amount}€</td>
-                                            <td>
-                                                <span className={`premium-status-badge active`} style={{ background: '#f1f5f9', color: '#475569' }}>
-                                                    {payment.type}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`premium-status-badge ${payment.status}`}>
-                                                    {payment.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    )) : (
+                        <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
+                            <h3><Zap size={20} /> Historique des Transactions (Recharges)</h3>
+                            <div className="admin-table-wrapper">
+                                <table className="premium-table">
+                                    <thead>
                                         <tr>
-                                            <td colSpan={5} className="text-center">Aucun paiement enregistré</td>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Montant</th>
+                                            <th>Type</th>
+                                            <th>Statut</th>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
-                        <h3><Briefcase size={20} /> Historique des Missions (Commandes)</h3>
-                        <div className="admin-table-wrapper">
-                            <table className="premium-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Crédits</th>
-                                        <th>Pack</th>
-                                        <th>Statut</th>
-                                        <th>Avis Validés</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.orders && data.orders.length > 0 ? data.orders.map(order => (
-                                        <tr key={order.id}>
-                                            <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                                            <td>{order.credits_purchased}</td>
-                                            <td>{order.amount}€</td>
-                                            <td>
-                                                <span className={`premium-status-badge ${order.status}`}>
-                                                    {order.status}
-                                                </span>
-                                            </td>
-                                            <td>{order.validated_reviews_count || 0}</td>
-                                        </tr>
-                                    )) : (
-                                        <tr>
-                                            <td colSpan={5} className="text-center">Aucune mission en cours</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="detail-sidebar-sticky">
-                    <div className="premium-card">
-                        <h3>Statistiques</h3>
-                        <div className="stats-premium-grid">
-                            <div className="stat-premium-item">
-                                <span className="stat-p-value">{orders.length}</span>
-                                <span className="stat-p-label">Missions</span>
+                                    </thead>
+                                    <tbody>
+                                        {payments && payments.length > 0 ? payments.map(payment => (
+                                            <tr key={payment.id}>
+                                                <td>{new Date(payment.created_at).toLocaleDateString()}</td>
+                                                <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={payment.description}>
+                                                    {payment.description}
+                                                </td>
+                                                <td>{payment.amount}€</td>
+                                                <td>
+                                                    <span className={`premium-status-badge active`} style={{ background: '#f1f5f9', color: '#475569' }}>
+                                                        {payment.type}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span className={`premium-status-badge ${payment.status}`}>
+                                                        {payment.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center">Aucun paiement enregistré</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                            <div className="stat-premium-item">
-                                <span className="stat-p-value">
-                                    {(data.payments || []).reduce((acc, curr) => acc + Number(curr.amount), 0)}€
-                                </span>
-                                <span className="stat-p-label">Investissement Total</span>
+                        </div>
+
+                        <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
+                            <h3><Briefcase size={20} /> Historique des Missions (Commandes)</h3>
+                            <div className="admin-table-wrapper">
+                                <table className="premium-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Crédits</th>
+                                            <th>Pack</th>
+                                            <th>Statut</th>
+                                            <th>Avis Validés</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {orders && orders.length > 0 ? orders.map(order => (
+                                            <tr key={order.id}>
+                                                <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                                                <td>{order.credits_purchased}</td>
+                                                <td>{order.amount}€</td>
+                                                <td>
+                                                    <span className={`premium-status-badge ${order.status}`}>
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+                                                <td>{order.validated_reviews_count || 0}</td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center">Aucune mission en cours</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
-                    {/* Manual Pack Activation Section */}
-                    <div className="premium-card highlight">
-                        <h3><Zap size={20} color="#f59e0b" /> Gestion du Pack</h3>
-                        <div style={{ padding: '0.5rem 0' }}>
-                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
-                                Activez manuellement un pack pour cet artisan suite à un paiement hors-site.
-                            </p>
-                            <select
-                                className="premium-select"
-                                value={selectedPackId}
-                                onChange={(e) => setSelectedPackId(e.target.value)}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '1rem', background: 'white' }}
-                            >
-                                <option value="">Sélectionner un pack...</option>
-                                {packs.map(pack => (
-                                    <option key={pack.id} value={pack.id}>
-                                        {pack.name} ({pack.fiches_quota} crédits)
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                onClick={handleActivatePack}
-                                disabled={!selectedPackId || isActivating}
-                                className="premium-action-btn primary"
-                                style={{ width: '100%', background: '#0ea5e9', color: 'white' }}
-                            >
-                                {isActivating ? <LoadingSpinner size="sm" /> : (
-                                    <>
-                                        <Zap size={18} />
-                                        Activer le Pack
-                                    </>
+                    <div className="detail-sidebar-sticky">
+                        <div className="premium-card">
+                            <h3>Statistiques</h3>
+                            <div className="stats-premium-grid">
+                                <div className="stat-premium-item">
+                                    <span className="stat-p-value">{orders.length}</span>
+                                    <span className="stat-p-label">Missions</span>
+                                </div>
+                                <div className="stat-premium-item">
+                                    <span className="stat-p-value">
+                                        {(payments || []).reduce((acc, curr) => acc + Number(curr.amount), 0)}€
+                                    </span>
+                                    <span className="stat-p-label">Investissement Total</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="premium-card highlight">
+                            <h3><Zap size={20} color="#f59e0b" /> Activation Pack</h3>
+                            <div style={{ padding: '0.5rem 0' }}>
+                                <div className="active-pack-recap" style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem' }}>
+                                        Pack Actuel
+                                    </div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                                        {profile.active_pack_name || 'Aucun pack actif'}
+                                    </div>
+                                    {profile.subscription_end_date && (
+                                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                            Expire le : {new Date(profile.subscription_end_date).toLocaleDateString()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
+                                    Sélectionnez un pack à activer manuellement :
+                                </p>
+                                <select
+                                    className="premium-select"
+                                    value={selectedPackId}
+                                    onChange={(e) => setSelectedPackId(e.target.value)}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '1rem', background: 'white' }}
+                                >
+                                    <option value="">Sélectionner un pack...</option>
+                                    {packs.map(pack => (
+                                        <option key={pack.id} value={pack.id}>
+                                            {pack.name} ({pack.quantity} avis)
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={handleActivatePack}
+                                    disabled={!selectedPackId || isActivating}
+                                    className="premium-action-btn primary"
+                                    style={{ width: '100%', background: '#0ea5e9', color: 'white' }}
+                                >
+                                    {isActivating ? <LoadingSpinner size="sm" /> : (
+                                        <>
+                                            <Zap size={18} />
+                                            Activer le Pack
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="premium-card">
+                            <h3>Actions Admin</h3>
+                            <div className="action-premium-stack">
+                                {profile.status === 'active' ? (
+                                    <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
+                                        <XCircle size={18} />
+                                        Suspendre le compte
+                                    </button>
+                                ) : (
+                                    <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
+                                        <CheckCircle size={18} />
+                                        Activer le compte
+                                    </button>
                                 )}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="premium-card">
-                        <h3>Actions Admin</h3>
-                        <div className="action-premium-stack">
-                            {profile.status === 'active' ? (
-                                <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
-                                    <XCircle size={18} />
-                                    Suspendre le compte
+                                <button onClick={handleIssueWarning} className="premium-action-btn warn">
+                                    <ShieldAlert size={18} />
+                                    Envoyer un avertissement
                                 </button>
-                            ) : (
-                                <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
-                                    <CheckCircle size={18} />
-                                    Activer le compte
+                                <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
+                                    <Trash2 size={18} />
+                                    Supprimer l'artisan
                                 </button>
-                            )}
-                            <button onClick={handleIssueWarning} className="premium-action-btn warn">
-                                <ShieldAlert size={18} />
-                                Envoyer un avertissement
-                            </button>
-                            <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
-                                <Trash2 size={18} />
-                                Supprimer l'artisan
-                            </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        </DashboardLayout >
+        </DashboardLayout>
     );
 };
