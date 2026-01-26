@@ -111,9 +111,11 @@ export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                ap.company_name, ap.siret, ap.trade, ap.phone, ap.address, ap.city, ap.postal_code,
-               ap.google_business_url, ap.subscription_status, ap.subscription_end_date
+               ap.google_business_url, ap.subscription_status, ap.subscription_end_date,
+               sp.name as active_pack_name
         FROM users u
         JOIN artisans_profiles ap ON u.id = ap.user_id
+        LEFT JOIN subscription_packs sp ON ap.subscription_product_id = sp.id
         WHERE u.id = ? AND u.role = 'artisan'
     `, [userId]);
 
