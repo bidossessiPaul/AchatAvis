@@ -161,5 +161,10 @@ export const adminService = {
     cancelPayment: async (paymentId: string) => {
         const response = await api.post(`/admin/payments/${paymentId}/cancel`);
         return response.data;
+    },
+
+    reactivatePayment: async (paymentId: string) => {
+        const response = await api.post(`/admin/payments/${paymentId}/reactivate`);
+        return response.data;
     }
 };
