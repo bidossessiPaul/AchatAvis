@@ -31,7 +31,8 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
         }),
         // Pack data
         payment_id: orderInitialData?.payment_id || '',
-        quantity: orderInitialData?.quantity || 10
+        quantity: orderInitialData?.quantity || 10,
+        initial_review_count: initialData?.initial_review_count || 0
     });
 
     // Deep persistence sync
@@ -41,7 +42,8 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                 ...prev,
                 ...initialData,
                 payment_id: prev.payment_id || orderInitialData?.payment_id || '',
-                quantity: prev.quantity || orderInitialData?.quantity || 10
+                quantity: prev.quantity || orderInitialData?.quantity || 10,
+                initial_review_count: prev.initial_review_count || initialData?.initial_review_count || 0
             }));
         }
     }, [initialData, orderInitialData]);
@@ -204,6 +206,27 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                     />
                 </div>
 
+                <div className="form-group">
+                    <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        Niveau d'avis actuel *
+                        <div className="info-tooltip-container">
+                            <HelpCircle size={14} />
+                            <span className="info-tooltip-text">
+                                Le nombre d'avis actuellement visibles sur votre fiche avant le début de cette mission.
+                            </span>
+                        </div>
+                    </label>
+                    <input
+                        type="number"
+                        className="form-input"
+                        placeholder="Ex: 12"
+                        min="0"
+                        value={formData.initial_review_count}
+                        onChange={(e) => setFormData({ ...formData, initial_review_count: parseInt(e.target.value) || 0 })}
+                        required
+                    />
+                </div>
+
                 <div className="form-group full-width">
                     <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         Lien de la fiche {platformId.toUpperCase()} *
@@ -295,7 +318,7 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                 <button
                     type="submit"
                     className="btn-next"
-                    disabled={!formData.name || !formData.sector_slug || !formData.city || !formData.platform_links[platformId]?.url || !formData.payment_id || isLoadingPacks}
+                    disabled={!formData.name || !formData.sector_slug || !formData.city || !formData.platform_links[platformId]?.url || !formData.payment_id || formData.initial_review_count === undefined || isLoadingPacks}
                 >
                     Suivant (Instruction des avis)
                 </button>
