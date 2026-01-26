@@ -18,6 +18,7 @@ import {
     Zap,
     Power
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
@@ -346,7 +347,7 @@ export const ArtisanDetail: React.FC = () => {
                         <div className="header-main-info">
                             <div className="header-icon-badge">
                                 {profile.avatar_url ? (
-                                    <img src={profile.avatar_url} alt={profile.full_name} className="header-avatar" />
+                                    <img src={getFileUrl(profile.avatar_url)} alt={profile.full_name} className="header-avatar" />
                                 ) : (
                                     <div className="header-avatar-placeholder">
                                         <Briefcase size={32} />

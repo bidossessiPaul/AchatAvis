@@ -19,8 +19,12 @@ import {
     BarChart3,
     Shield,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Zap,
+    Download,
+    Briefcase
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/url';
 import { motion, AnimatePresence } from 'framer-motion';
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -230,20 +234,15 @@ export const GuideDetail: React.FC = () => {
                 <header className="detail-header-section">
                     <div className="header-content-flex">
                         <div className="header-main-info">
-                            <motion.div
-                                className="header-icon-badge"
-                                initial={{ scale: 0.8, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                            >
+                            <div className="header-icon-badge">
                                 {profile.avatar_url ? (
-                                    <img src={profile.avatar_url} alt={profile.full_name} className="header-avatar" />
+                                    <img src={getFileUrl(profile.avatar_url)} alt={profile.full_name} className="header-avatar" />
                                 ) : (
                                     <div className="header-avatar-placeholder">
-                                        <Users size={48} />
+                                        <Briefcase size={32} />
                                     </div>
                                 )}
-                            </motion.div>
+                            </div>
                             <div className="header-titles">
                                 {isEditing ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

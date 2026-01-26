@@ -18,8 +18,10 @@ import {
     User,
     Phone,
     MapPin,
-    Globe
+    Globe,
+    Power
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
@@ -235,9 +237,9 @@ export const ArtisansList: React.FC = () => {
                                     {filteredArtisans.map(artisan => (
                                         <tr key={artisan.id}>
                                             <td className="font-medium">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                                <div className="artisan-info-main">
                                                     {artisan.avatar_url ? (
-                                                        <img src={artisan.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+                                                        <img src={getFileUrl(artisan.avatar_url)} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
                                                             <div style={{ transform: 'scale(0.8)' }}><Briefcase size={16} /></div>

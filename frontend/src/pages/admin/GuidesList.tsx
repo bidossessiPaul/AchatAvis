@@ -9,11 +9,11 @@ import {
     User,
     Plus,
     X,
-    Mail,
-    Phone,
-    MapPin,
-    Award
+    XCircle,
+    Calendar,
+    Power
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
@@ -162,9 +162,9 @@ export const GuidesList: React.FC = () => {
                                     {filteredGuides.map(guide => (
                                         <tr key={guide.id}>
                                             <td className="font-medium">
-                                                <div className="guide-cell" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                                <div className="artisan-info-main" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                                                     {guide.avatar_url ? (
-                                                        <img src={guide.avatar_url} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+                                                        <img src={getFileUrl(guide.avatar_url)} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
                                                     ) : (
                                                         <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
                                                             <User size={16} />
