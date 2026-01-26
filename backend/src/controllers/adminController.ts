@@ -183,6 +183,22 @@ export const cancelPayment = async (req: Request, res: Response) => {
 };
 
 /**
+ * Reactivate a payment
+ * POST /api/admin/payments/:paymentId/reactivate
+ */
+export const reactivatePayment = async (req: Request, res: Response) => {
+    const { paymentId } = req.params;
+
+    try {
+        const result = await adminService.reactivatePayment(paymentId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Reactivate payment error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Get all subscriptions
  * GET /api/admin/subscriptions
  */

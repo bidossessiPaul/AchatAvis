@@ -15,7 +15,8 @@ import {
     XCircle,
     Globe,
     ExternalLink,
-    Zap
+    Zap,
+    Power
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -182,6 +183,23 @@ export const ArtisanDetail: React.FC = () => {
         }
     };
 
+    const handleReactivatePayment = async (paymentId: string) => {
+        const confirmResult = await showConfirm(
+            'Réactiver le paiement',
+            'Voulez-vous vraiment réactiver ce paiement ? Cela rajoutera les crédits à l\'artisan.'
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.reactivatePayment(paymentId);
+            showSuccess('Succès', 'Paiement réactivé');
+            loadDetail();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la réactivation');
+        }
+    };
+
     const handleIssueWarning = async () => {
         if (!data) return;
         try {
@@ -209,6 +227,24 @@ export const ArtisanDetail: React.FC = () => {
             loadDetail();
         } catch (error) {
             showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
+        }
+    };
+
+    const handleDeleteUser = async () => {
+        if (!data) return;
+        const confirmResult = await showConfirm(
+            'Supprimer l\'artisan',
+            `Voulez-vous vraiment supprimer définitivement ${data.profile.company_name} ? Cette action est irréversible et supprimera toutes les données associées.`
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.deleteUser(id!);
+            showSuccess('Succès', 'Artisan supprimé avec succès');
+            navigate('/admin/artisans');
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la suppression');
         }
     };
 
@@ -571,6 +607,15 @@ export const ArtisanDetail: React.FC = () => {
                                                             Désactiver
                                                         </button>
                                                     )}
+                                                    {(payment.status === 'cancelled' || payment.status === 'deactivated') && payment.description.includes('(Activé par Admin)') && (
+                                                        <button
+                                                            onClick={() => handleReactivatePayment(payment.id)}
+                                                            className="text-green-500 hover:text-green-700"
+                                                            style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#dcfce7', border: 'none', cursor: 'pointer' }}
+                                                        >
+                                                            Réactiver
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         )) : (
@@ -715,21 +760,27 @@ export const ArtisanDetail: React.FC = () => {
                             <h3>Actions Admin</h3>
                             <div className="action-premium-stack">
                                 {profile.status === 'active' ? (
-                                    <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
-                                        <XCircle size={18} />
-                                        Suspendre le compte
-                                    </button>
+                                    <>
+                                        <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
+                                            <XCircle size={18} />
+                                            Suspendre le compte
+                                        </button>
+                                        <button onClick={() => handleStatusUpdate('deactivated')} className="premium-action-btn" style={{ background: '#f1f5f9', color: '#475569' }}>
+                                            <Power size={18} />
+                                            Désactiver le compte
+                                        </button>
+                                    </>
                                 ) : (
                                     <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
                                         <CheckCircle size={18} />
-                                        Activer le compte
+                                        Réactiver le compte
                                     </button>
                                 )}
                                 <button onClick={handleIssueWarning} className="premium-action-btn warn">
                                     <ShieldAlert size={18} />
                                     Envoyer un avertissement
                                 </button>
-                                <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
+                                <button onClick={handleDeleteUser} className="premium-action-btn delete" style={{ background: '#fee2e2', color: '#b91c1c' }}>
                                     <Trash2 size={18} />
                                     Supprimer l'artisan
                                 </button>

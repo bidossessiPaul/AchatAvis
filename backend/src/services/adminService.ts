@@ -198,21 +198,25 @@ export const getGlobalStats = async () => {
     // Total Revenue & Revenue Trend (last 30 days)
     const revenueStats: any = await query(`
         SELECT 
-            SUM(amount) as total_revenue,
-            DATE_FORMAT(created_at, '%Y-%m-%d') as day,
-            DATE_FORMAT(created_at, '%d/%m') as label
-        FROM payments
-        WHERE status = 'completed'
-          AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            SUM(p.amount) as total_revenue,
+            DATE_FORMAT(p.created_at, '%Y-%m-%d') as day,
+            DATE_FORMAT(p.created_at, '%d/%m') as label
+        FROM payments p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.status = 'completed'
+          AND u.status NOT IN ('suspended', 'deactivated', 'rejected')
+          AND p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         GROUP BY day, label
         ORDER BY day ASC
     `);
 
     // Total All Time Revenue (sum of all completed payments)
     const totalAllTimeRevenue: any = await query(`
-        SELECT SUM(amount) as total
-        FROM payments
-        WHERE status = 'completed'
+        SELECT SUM(p.amount) as total
+        FROM payments p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.status = 'completed'
+          AND u.status NOT IN ('suspended', 'deactivated', 'rejected')
     `);
 
     // User growth (last 6 months)
@@ -887,6 +891,56 @@ export const cancelPayment = async (paymentId: string) => {
     } catch (error) {
         await connection.rollback();
         console.error('Error in cancelPayment:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Reactivate a previously cancelled manual payment
+ */
+export const reactivatePayment = async (paymentId: string) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Fetch payment details
+        const [payments]: any = await connection.query(
+            'SELECT * FROM payments WHERE id = ?',
+            [paymentId]
+        );
+        const payment = payments.length > 0 ? payments[0] : null;
+
+        if (!payment) throw new Error("Paiement non trouvé");
+        if (payment.status !== 'cancelled' && payment.status !== 'deactivated') {
+            throw new Error("Seuls les paiements annulés ou désactivés peuvent être réactivés");
+        }
+
+        const userId = payment.user_id;
+        const fichesQuota = payment.fiches_quota || 0;
+
+        // 2. Add back credits in artisan profile
+        await connection.query(
+            `UPDATE artisans_profiles 
+             SET fiches_allowed = fiches_allowed + ?
+             WHERE user_id = ?`,
+            [fichesQuota, userId]
+        );
+
+        // 3. Update payment status back to completed
+        await connection.query(
+            `UPDATE payments SET status = 'completed' WHERE id = ?`,
+            [paymentId]
+        );
+
+        await connection.commit();
+        return { success: true, message: "Paiement réactivé et quotas restaurés." };
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in reactivatePayment:', error);
         throw error;
     } finally {
         connection.release();
