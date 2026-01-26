@@ -228,4 +228,40 @@ router.get('/apply-status-fix', async (_req: any, res) => {
     }
 });
 
+/**
+ * DEBUG 9: File System Diagnostics
+ * URL: /api/debug/dir-diag
+ */
+router.get('/dir-diag', async (_req: any, res) => {
+    const fs = require('fs');
+    const path = require('path');
+
+    const diag = {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        publicPath: path.join(__dirname, '..', 'public'),
+        backendPublicPath: path.join(process.cwd(), 'backend', 'public'),
+        directPublicPath: path.join(process.cwd(), 'public'),
+        exists: {
+            public: fs.existsSync(path.join(__dirname, '..', 'public')),
+            backendPublic: fs.existsSync(path.join(process.cwd(), 'backend', 'public')),
+            directPublic: fs.existsSync(path.join(process.cwd(), 'public')),
+            avatars: fs.existsSync(path.join(process.cwd(), 'public', 'uploads', 'avatars')) || fs.existsSync(path.join(process.cwd(), 'backend', 'public', 'uploads', 'avatars'))
+        },
+        filesInAvatars: [] as string[]
+    };
+
+    try {
+        const avatarDir = diag.exists.directPublic
+            ? path.join(process.cwd(), 'public', 'uploads', 'avatars')
+            : (diag.exists.backendPublic ? path.join(process.cwd(), 'backend', 'public', 'uploads', 'avatars') : null);
+
+        if (avatarDir && fs.existsSync(avatarDir)) {
+            diag.filesInAvatars = fs.readdirSync(avatarDir).slice(0, 10);
+        }
+    } catch (e) { }
+
+    return res.json(diag);
+});
+
 export default router;
