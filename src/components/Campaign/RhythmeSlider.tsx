@@ -18,8 +18,8 @@ export const RhythmeSlider: React.FC<RhythmeSliderProps> = ({
     sectorDifficulty,
     onRhythmeChange
 }) => {
-    // Default to Moderate
-    const [reviewsPerDay, setReviewsPerDay] = useState(3);
+    // Default to Moderate (2 reviews/day)
+    const [reviewsPerDay, setReviewsPerDay] = useState(2);
     const [mode, setMode] = useState<'discret' | 'modere' | 'rapide'>('modere');
 
 
