@@ -1,10 +1,10 @@
 /**
- * Utility to ensure a file URL is absolute and points to the correct backend API
+ * Utility to ensure a file URL is absolute and points to the correct backend API or Cloudinary
  */
 export const getFileUrl = (path: string | null | undefined): string => {
     if (!path) return '';
 
-    // If it's already an absolute URL, return as is
+    // If it's already an absolute URL (including Cloudinary), return as is
     if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:') || path.startsWith('blob:')) {
         return path;
     }
