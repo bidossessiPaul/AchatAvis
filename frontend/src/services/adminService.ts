@@ -105,20 +105,7 @@ export const adminService = {
     /**
      * Create a new artisan from admin panel
      */
-    createArtisan: async (data: {
-        email: string;
-        fullName: string;
-        companyName: string;
-        siret: string;
-        trade: string;
-        phone: string;
-        address?: string;
-        city: string;
-        postalCode?: string;
-        googleBusinessUrl?: string;
-        packId?: string;
-        password?: string;
-    }) => {
+    createArtisan: async (data: any) => {
         const response = await api.post('/admin/artisans/create', data);
         return response.data;
     },
@@ -126,14 +113,7 @@ export const adminService = {
     /**
      * Create a new guide from admin panel
      */
-    createGuide: async (data: {
-        email: string;
-        fullName: string;
-        googleEmail: string;
-        phone: string;
-        city: string;
-        password?: string;
-    }) => {
+    createGuide: async (data: any) => {
         const response = await api.post('/admin/guides/create', data);
         return response.data;
     },
@@ -143,6 +123,38 @@ export const adminService = {
      */
     getPacks: async () => {
         const response = await api.get('/admin/packs');
+        return response.data;
+    },
+
+    /**
+     * Get all sectors
+     */
+    getSectors: async () => {
+        const response = await api.get('/admin/sectors');
+        return response.data;
+    },
+
+    /**
+     * Create a new sector
+     */
+    createSector: async (data: any) => {
+        const response = await api.post('/admin/sectors', data);
+        return response.data;
+    },
+
+    /**
+     * Update an existing sector
+     */
+    updateSector: async (slug: string, data: any) => {
+        const response = await api.put(`/admin/sectors/${slug}`, data);
+        return response.data;
+    },
+
+    /**
+     * Delete a sector
+     */
+    deleteSector: async (slug: string) => {
+        const response = await api.delete(`/admin/sectors/${slug}`);
         return response.data;
     }
 };

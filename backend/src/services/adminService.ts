@@ -1146,3 +1146,46 @@ export const updateGuideProfile = async (userId: string, data: any) => {
         connection.release();
     }
 };
+
+/**
+ * Get all sectors from sector_difficulty table
+ */
+export const getSectors = async () => {
+    return await query(`SELECT * FROM sector_difficulty ORDER BY difficulty ASC, sector_name ASC`);
+};
+
+/**
+ * Create a new sector
+ */
+export const createSector = async (data: any) => {
+    const { sector_name, sector_slug, difficulty, google_strictness_level, icon_emoji, max_reviews_per_month_per_email, min_days_between_reviews, is_active } = data;
+    return await query(
+        `INSERT INTO sector_difficulty (sector_name, sector_slug, difficulty, google_strictness_level, icon_emoji, max_reviews_per_month_per_email, min_days_between_reviews, is_active)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [sector_name, sector_slug, difficulty, google_strictness_level || 1, icon_emoji, max_reviews_per_month_per_email, min_days_between_reviews || 3, is_active !== undefined ? is_active : true]
+    );
+};
+
+/**
+ * Update an existing sector by slug
+ */
+export const updateSector = async (slug: string, data: any) => {
+    const fields = Object.keys(data).filter(key => key !== 'sector_slug' && key !== 'id');
+    const values = fields.map(field => data[field]);
+
+    if (fields.length === 0) return;
+
+    const setClause = fields.map(field => `${field} = ?`).join(', ');
+
+    return await query(
+        `UPDATE sector_difficulty SET ${setClause} WHERE sector_slug = ?`,
+        [...values, slug]
+    );
+};
+
+/**
+ * Delete a sector by slug
+ */
+export const deleteSector = async (slug: string) => {
+    return await query(`DELETE FROM sector_difficulty WHERE sector_slug = ?`, [slug]);
+};

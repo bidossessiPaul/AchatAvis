@@ -46,6 +46,7 @@ import { AdminTeam } from './pages/admin/AdminTeam';
 import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 import { SuspensionAdminPage } from './pages/admin/SuspensionAdminPage';
 import { TrustScoreManagement } from './pages/admin/TrustScoreManagement';
+import { SectorManagement } from './pages/admin/SectorManagement';
 import { Profile } from './pages/Profile';
 import { NotFound } from './pages/NotFound';
 import SuspendedPage from './pages/SuspendedPage';
@@ -355,6 +356,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission={['can_manage_users', 'can_view_stats']}>
                             <TrustScoreManagement />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/sectors" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['super_admin', 'can_manage_fiches']}>
+                            <SectorManagement />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
