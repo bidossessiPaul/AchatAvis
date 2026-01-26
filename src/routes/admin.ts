@@ -60,4 +60,10 @@ router.post('/packs', adminController.createPack);
 router.put('/packs/:id', adminController.updatePack);
 router.delete('/packs/:id', adminController.deletePack);
 
+// Sector management
+router.get('/sectors', adminController.getAllSectors);
+router.post('/sectors', adminController.createSector);
+router.put('/sectors/:slug', adminController.updateSector);
+router.delete('/sectors/:slug', adminController.deleteSector);
+
 export default router;

@@ -471,3 +471,61 @@ export const updateGuide = async (req: Request, res: Response) => {
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+
+/**
+ * Get all sectors
+ * GET /api/admin/sectors
+ */
+export const getAllSectors = async (_req: Request, res: Response) => {
+    try {
+        const sectors = await adminService.getSectors();
+        res.json(sectors);
+    } catch (error) {
+        console.error('Get admin sectors error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Create a sector
+ * POST /api/admin/sectors
+ */
+export const createSector = async (req: Request, res: Response) => {
+    try {
+        await adminService.createSector(req.body);
+        res.status(201).json({ message: 'Sector created successfully' });
+    } catch (error: any) {
+        console.error('Create sector error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Update a sector
+ * PUT /api/admin/sectors/:slug
+ */
+export const updateSector = async (req: Request, res: Response) => {
+    const { slug } = req.params;
+    try {
+        await adminService.updateSector(slug, req.body);
+        res.json({ message: 'Sector updated successfully' });
+    } catch (error: any) {
+        console.error('Update sector error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Delete a sector
+ * DELETE /api/admin/sectors/:slug
+ */
+export const deleteSector = async (req: Request, res: Response) => {
+    const { slug } = req.params;
+    try {
+        await adminService.deleteSector(slug);
+        res.json({ message: 'Sector deleted successfully' });
+    } catch (error: any) {
+        console.error('Delete sector error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
