@@ -127,9 +127,17 @@ export const getArtisanDetail = async (userId: string) => {
         LIMIT 20
     `, [userId]);
 
+    const payments: any = await query(`
+        SELECT id, amount, status, type, description, processed_at as created_at
+        FROM payments
+        WHERE user_id = ? AND status = 'completed'
+        ORDER BY created_at DESC
+    `, [userId]);
+
     return {
         profile: profile[0],
-        orders: orders as any[]
+        orders: orders as any[],
+        payments: payments as any[]
     };
 };
 
