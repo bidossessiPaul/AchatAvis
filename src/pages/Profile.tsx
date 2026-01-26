@@ -12,6 +12,7 @@ import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
 import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
 import { useAntiDetectionStore } from '../context/antiDetectionStore';
 import './Profile.css';
+import { getFileUrl } from '../utils/url';
 
 interface Sector {
     sector_slug: string;
@@ -249,7 +250,7 @@ export const Profile: React.FC = () => {
                             <div className="profile-header">
                                 <div className="avatar-wrapper">
                                     {user?.avatar_url ? (
-                                        <img src={user.avatar_url} alt={user.full_name} className="profile-avatar" />
+                                        <img src={getFileUrl(user.avatar_url)} alt={user.full_name} className="profile-avatar" />
                                     ) : (
                                         <div className="profile-avatar-placeholder">
                                             <UserIcon size={48} />

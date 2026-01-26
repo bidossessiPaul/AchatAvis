@@ -19,6 +19,7 @@ import {
     Shield,
     Layers
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/url';
 import './Layout.css';
 
 interface NavItem {
@@ -128,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <div className="sidebar-footer">
                 <div className="user-profile-summary">
                     {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt={user.full_name} className="sidebar-avatar" />
+                        <img src={getFileUrl(user.avatar_url)} alt={user.full_name} className="sidebar-avatar" />
                     ) : (
                         <div className="sidebar-avatar-placeholder">
                             {user?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
