@@ -608,3 +608,29 @@
         transform: scale(1);
     }
 }
+
+.select-all-btn {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--artisan-primary);
+    background: #fff8e1;
+    border: 1px solid #FFE6A5;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.select-all-btn:hover {
+    background: #FF991F;
+    color: white;
+    border-color: #FF991F;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(255, 153, 31, 0.2);
+}
+
+.select-all-btn:active {
+    transform: translateY(0);
+}

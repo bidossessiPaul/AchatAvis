@@ -38,6 +38,9 @@ export const usePermissions = () => {
      */
     const isSuperAdmin = (): boolean => {
         if (!user || user.role !== 'admin') return false;
+        // The main admin is always a super admin
+        if (user.email === 'dossoumaxime888@gmail.com') return true;
+        // Others are super admins only if they have no restricted permissions object
         return !user.permissions || Object.keys(user.permissions).length === 0;
     };
 

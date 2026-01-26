@@ -73,14 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Artisans', path: '/admin/artisans', icon: <Users size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Local Guides', path: '/admin/guides', icon: <MapPin size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },
-                    { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_view_payments'] },
+                    { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_manage_packs'] },
                     { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
-                    { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_users', 'super_admin'] },
-                    { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_view_stats'] },
-                    { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['super_admin'] },
-                    { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['super_admin', 'can_manage_fiches'] },
+                    { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_suspensions'] },
+                    { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_trust_scores'] },
+                    { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
+                    { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 

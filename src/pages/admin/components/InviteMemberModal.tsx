@@ -9,25 +9,47 @@ interface InviteMemberModalProps {
     memberToEdit?: any;
 }
 
+interface PermissionsState {
+    can_validate_profiles: boolean;
+    can_validate_reviews: boolean;
+    can_validate_fiches: boolean;
+    can_view_payments: boolean;
+    can_view_stats: boolean;
+    can_manage_users: boolean;
+    can_manage_sectors: boolean;
+    can_manage_trust_scores: boolean;
+    can_manage_suspensions: boolean;
+    can_manage_packs: boolean;
+    can_manage_team: boolean;
+    can_manage_reviews: boolean;
+    can_manage_fiches: boolean;
+}
+
+const initialPermissions: PermissionsState = {
+    can_validate_profiles: false,
+    can_validate_reviews: false,
+    can_validate_fiches: false,
+    can_view_payments: false,
+    can_view_stats: false,
+    can_manage_users: false,
+    can_manage_sectors: false,
+    can_manage_trust_scores: false,
+    can_manage_suspensions: false,
+    can_manage_packs: false,
+    can_manage_team: false,
+    can_manage_reviews: false,
+    can_manage_fiches: false
+};
+
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, onClose, onInvite, onUpdate, memberToEdit }) => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-
-    // Default permissions: all false
-    const [permissions, setPermissions] = useState({
-        can_validate_profiles: false,
-        can_validate_reviews: false,
-        can_validate_fiches: false,
-        can_view_payments: false,
-        can_view_stats: false,
-        can_manage_users: false
-    });
+    const [permissions, setPermissions] = useState<PermissionsState>(initialPermissions);
 
     // Initialize with member data if editing
     React.useEffect(() => {
-        if (memberToEdit) {
+        if (memberToEdit && isOpen) {
             setEmail(memberToEdit.email);
-            // Handle permissions being a string or object
             let parsedPermissions = memberToEdit.permissions;
             if (typeof parsedPermissions === 'string') {
                 try {
@@ -36,7 +58,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                     parsedPermissions = {};
                 }
             }
-            // Ensure we have an object, default to empty
             parsedPermissions = parsedPermissions || {};
 
             setPermissions({
@@ -45,30 +66,38 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                 can_validate_fiches: !!parsedPermissions.can_validate_fiches,
                 can_view_payments: !!parsedPermissions.can_view_payments,
                 can_view_stats: !!parsedPermissions.can_view_stats,
-                can_manage_users: !!parsedPermissions.can_manage_users
+                can_manage_users: !!parsedPermissions.can_manage_users,
+                can_manage_sectors: !!parsedPermissions.can_manage_sectors,
+                can_manage_trust_scores: !!parsedPermissions.can_manage_trust_scores,
+                can_manage_suspensions: !!parsedPermissions.can_manage_suspensions,
+                can_manage_packs: !!parsedPermissions.can_manage_packs,
+                can_manage_team: !!parsedPermissions.can_manage_team,
+                can_manage_reviews: !!parsedPermissions.can_manage_reviews,
+                can_manage_fiches: !!parsedPermissions.can_manage_fiches
             });
-        } else {
-            // Reset for new invite
+        } else if (isOpen) {
             setEmail('');
-            setPermissions({
-                can_validate_profiles: false,
-                can_validate_reviews: false,
-                can_validate_fiches: false,
-                can_view_payments: false,
-                can_view_stats: false,
-                can_manage_users: false
-            });
+            setPermissions(initialPermissions);
         }
     }, [memberToEdit, isOpen]);
 
     if (!isOpen) return null;
 
-    const handleCheckboxChange = (key: string) => {
+    const handleCheckboxChange = (key: keyof PermissionsState) => {
         setPermissions(prev => ({
             ...prev,
-            // @ts-ignore
             [key]: !prev[key]
         }));
+    };
+
+    const handleSelectAll = (e: React.MouseEvent) => {
+        e.preventDefault();
+        const allSelected = Object.values(permissions).every(p => p === true);
+        const newState = { ...permissions };
+        Object.keys(newState).forEach(key => {
+            (newState as any)[key] = !allSelected;
+        });
+        setPermissions(newState);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -81,17 +110,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                 await onInvite(email, permissions);
             }
             onClose();
-            if (!memberToEdit) {
-                setEmail('');
-                setPermissions({
-                    can_validate_profiles: false,
-                    can_validate_reviews: false,
-                    can_validate_fiches: false,
-                    can_view_payments: false,
-                    can_view_stats: false,
-                    can_manage_users: false
-                });
-            }
         } catch (error) {
             console.error(error);
         } finally {
@@ -99,13 +117,17 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
         }
     };
 
-    const permissionConfig = [
-        { key: 'can_validate_profiles', label: 'Validation des Profils', desc: 'Approuver ou rejeter les nouveaux artisans/guides' },
-        { key: 'can_validate_reviews', label: 'Validation des Avis', desc: 'Modérer les soufiches d\'avis des guides' },
-        { key: 'can_validate_fiches', label: 'Validation des fiches', desc: 'Approuver les fiches créées par les artisans' },
-        { key: 'can_view_payments', label: 'Aperçu sur les Paiements', desc: 'Voir l\'historique des transactions Stripe' },
-        { key: 'can_view_stats', label: 'Accès aux Statistiques', desc: 'Voir les graphiques et KPI globaux' },
-        { key: 'can_manage_users', label: 'Liste des Utilisateurs', desc: 'Voir et rechercher dans la liste des utilisateurs' }
+    const permissionConfig: { key: keyof PermissionsState; label: string; desc: string }[] = [
+        { key: 'can_validate_profiles', label: 'Artisans & Guides', desc: 'Gestion des comptes et validation des profils' },
+        { key: 'can_validate_reviews', label: 'Modération Avis', desc: 'Validation et rejet des avis soumis par les guides' },
+        { key: 'can_validate_fiches', label: 'Gestion des Fiches', desc: 'Approuver les fiches et gérer les secteurs' },
+        { key: 'can_manage_sectors', label: 'Secteurs d\'activité', desc: 'Accès complet à la configuration des secteurs' },
+        { key: 'can_view_payments', label: 'Finance & Paiements', desc: 'Consulter les transactions et abonnements' },
+        { key: 'can_manage_packs', label: 'Gestion des Packs', desc: 'Créer et modifier les offres d\'abonnement' },
+        { key: 'can_manage_trust_scores', label: 'Trust Scores', desc: 'Ajuster les algorithmes de score de confiance' },
+        { key: 'can_manage_suspensions', label: 'Suspensions & Bans', desc: 'Gérer les restrictions de compte et bannissements' },
+        { key: 'can_manage_team', label: 'Gestion d\'Équipe', desc: 'Inviter et gérer les autres administrateurs' },
+        { key: 'can_view_stats', label: 'Statistiques', desc: 'Accès au tableau de bord des performances' }
     ];
 
     const isEditing = !!memberToEdit;
@@ -142,24 +164,28 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                     </div>
 
                     <div className="form-group">
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Shield size={16} className="text-blue-600" />
-                            Permissions d'accès
-                        </label>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                <Shield size={16} className="text-blue-600" />
+                                Permissions d'accès
+                            </label>
+                            <button
+                                type="button"
+                                onClick={handleSelectAll}
+                                className="select-all-btn"
+                            >
+                                {Object.values(permissions).every(p => p === true) ? 'Tout désélectionner' : 'Tout sélectionner'}
+                            </button>
+                        </div>
                         <div className="permission-list">
                             {permissionConfig.map((perm) => (
                                 <label key={perm.key} className="permission-item">
-                                    <div className={`checkbox-visual ${
-                                        // @ts-ignore
-                                        permissions[perm.key] ? 'checked' : ''
-                                        }`}>
-                                        {/* @ts-ignore */}
+                                    <div className={`checkbox-visual ${permissions[perm.key] ? 'checked' : ''}`}>
                                         {permissions[perm.key] && <Check size={12} className="text-white" />}
                                     </div>
                                     <input
                                         type="checkbox"
                                         className="hidden-checkbox"
-                                        // @ts-ignore
                                         checked={permissions[perm.key]}
                                         onChange={() => handleCheckboxChange(perm.key)}
                                     />

@@ -297,14 +297,14 @@ function App() {
                 } />
                 <Route path="/admin/packs" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission="can_view_payments">
+                        <PermissionGuard requiredPermission="can_manage_packs">
                             <PacksManagement />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/team" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission="super_admin">
+                        <PermissionGuard requiredPermission="can_manage_team">
                             <AdminTeam />
                         </PermissionGuard>
                     </ProtectedRoute>
@@ -347,21 +347,21 @@ function App() {
 
                 <Route path="/admin/suspensions" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission="super_admin">
+                        <PermissionGuard requiredPermission="can_manage_suspensions">
                             <SuspensionAdminPage />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/trust-scores" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission={['can_manage_users', 'can_view_stats']}>
+                        <PermissionGuard requiredPermission="can_manage_trust_scores">
                             <TrustScoreManagement />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
                 <Route path="/admin/sectors" element={
                     <ProtectedRoute allowedRoles={['admin']}>
-                        <PermissionGuard requiredPermission={['super_admin', 'can_manage_fiches']}>
+                        <PermissionGuard requiredPermission="can_manage_sectors">
                             <SectorManagement />
                         </PermissionGuard>
                     </ProtectedRoute>

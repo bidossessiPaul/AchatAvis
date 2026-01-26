@@ -65,11 +65,20 @@ export const AdminTeam = () => {
     };
 
     const handleEdit = (member: any) => {
+        if (member.email === 'dossoumaxime888@gmail.com') {
+            showError('Accès Refusé', "Le compte Super Administrateur ne peut pas être modifié.");
+            return;
+        }
         setMemberToEdit(member);
         setIsInviteModalOpen(true);
     };
 
-    const handleDelete = async (id: string, type: 'active' | 'pending') => {
+    const handleDelete = async (id: string, type: 'active' | 'pending', email?: string) => {
+        if (email === 'dossoumaxime888@gmail.com') {
+            showError('Accès Refusé', "Le compte Super Administrateur ne peut pas être supprimé.");
+            return;
+        }
+
         const result = await showConfirm(
             'Confirmation',
             "Êtes-vous sûr de vouloir supprimer ce membre ?"
@@ -86,22 +95,6 @@ export const AdminTeam = () => {
         }
     };
 
-    /*
-    const countPermissions = (perms: any) => {
-        if (!perms) return "Accès total";
-        // Handle if perms comes as string
-        if (typeof perms === 'string') {
-            try {
-                perms = JSON.parse(perms);
-            } catch (e) {
-                return "Erreur lecture";
-            }
-        }
-        const count = Object.values(perms).filter(Boolean).length;
-        return `${count} accès autorisés`;
-    };
-    */
-
     const handleCloseModal = () => {
         setIsInviteModalOpen(false);
         setMemberToEdit(null);
@@ -109,10 +102,11 @@ export const AdminTeam = () => {
 
     // Helper to safely get permission count
     const getPermissionCount = (member: any) => {
-        // If super admin (no permissions object or empty) usually means full access
-        // But for invited members, undefined/null might check differently based on implementation
-        if (!member.permissions || (typeof member.permissions === 'object' && Object.keys(member.permissions).length === 0)) {
-            // Check if it's the main admin (you might need a better check than this, e.g. specific ID or email)
+        if (member.email === 'dossoumaxime888@gmail.com') {
+            return 'Super Admin';
+        }
+
+        if (!member.permissions) {
             return 'Admin';
         }
 
@@ -124,13 +118,15 @@ export const AdminTeam = () => {
                 return '0';
             }
         }
+
+        if (typeof perms !== 'object') return '0';
+
         return Object.values(perms).filter(Boolean).length;
     };
 
     return (
         <DashboardLayout>
             <div className="admin-team-page">
-                {/* Header */}
                 <div className="team-header">
                     <div className="team-header-bg-icon">
                         <Users size={120} />
@@ -155,7 +151,6 @@ export const AdminTeam = () => {
                     </div>
                 </div>
 
-                {/* Team Grid */}
                 {loading ? (
                     <div className="loading-state">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
@@ -165,14 +160,12 @@ export const AdminTeam = () => {
                     <div className="team-grid">
                         {members.map((member) => (
                             <div key={member.id} className="team-card">
-                                {/* Status Indicator */}
                                 <div className={`status-badge ${member.status}`}>
                                     <div className="status-dot"></div>
                                     {member.status === 'active' ? 'Actif' : 'En attente'}
                                 </div>
 
                                 <div className="team-card-inner">
-                                    {/* User Info */}
                                     <div className="user-info-row">
                                         <div className={`user-avatar-circle ${member.status}`}>
                                             {member.full_name?.charAt(0) || member.email.charAt(0).toUpperCase()}
@@ -186,7 +179,6 @@ export const AdminTeam = () => {
                                         </div>
                                     </div>
 
-                                    {/* Stats Grid */}
                                     <div className="card-stats-grid">
                                         <div className="stat-box">
                                             <div className="stat-box-icon">
@@ -208,9 +200,7 @@ export const AdminTeam = () => {
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
                                     <div className="card-actions">
-                                        {/* Only show edit if active and we are super admin or have rights (logic simplified) */}
                                         <button
                                             onClick={() => handleEdit(member)}
                                             className="btn-action-card edit"
@@ -221,7 +211,7 @@ export const AdminTeam = () => {
                                         </button>
 
                                         <button
-                                            onClick={() => handleDelete(member.id, member.status)}
+                                            onClick={() => handleDelete(member.id, member.status, member.email)}
                                             className="btn-action-card delete"
                                             title={member.status === 'active' ? 'Supprimer l\'accès' : 'Annuler l\'invitation'}
                                         >
@@ -233,7 +223,6 @@ export const AdminTeam = () => {
                             </div>
                         ))}
 
-                        {/* Add New Card */}
                         <button
                             onClick={() => {
                                 setMemberToEdit(null);

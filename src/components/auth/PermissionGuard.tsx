@@ -1,12 +1,12 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
 import { useAuthStore } from '../../context/authStore';
+import { toast } from 'react-hot-toast';
 
 interface PermissionGuardProps {
     children: React.ReactNode;
-    requiredPermission: string | string[]; // Can be a single permission or an array (OR logic)
-    fallbackPath?: string;
+    requiredPermission: string | string[];
 }
 
 /**
@@ -16,10 +16,10 @@ interface PermissionGuardProps {
 export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     children,
     requiredPermission
-    // fallbackPath = '/admin'
 }) => {
     const { user } = useAuthStore();
     const { hasPermission, isSuperAdmin } = usePermissions();
+    const navigate = useNavigate();
 
     // Not logged in
     if (!user) {
@@ -49,36 +49,17 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
         return <>{children}</>;
     }
 
-    // No permission - show 403 message or redirect
-    return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '60vh',
-            padding: '2rem',
-            textAlign: 'center'
-        }}>
-            <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</h1>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>Accès Refusé</h2>
-            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>
-                Vous n'avez pas la permission d'accéder à cette page.
-            </p>
-            <button
-                onClick={() => window.history.back()}
-                style={{
-                    padding: '0.75rem 1.5rem',
-                    background: '#2563eb',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer',
-                    fontSize: '1rem'
-                }}
-            >
-                Retour
-            </button>
-        </div>
-    );
+    useEffect(() => {
+        if (!hasAccess) {
+            toast.error("Accès refusé : Vous n'avez pas les permissions nécessaires.");
+            navigate('/admin', { replace: true });
+        }
+    }, [hasAccess, navigate]);
+
+    if (hasAccess) {
+        return <>{children}</>;
+    }
+
+    // While redirecting
+    return null;
 };
