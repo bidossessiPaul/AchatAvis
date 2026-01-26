@@ -59,9 +59,13 @@ export const Profile: React.FC = () => {
                     ...grouped.hard
                 ];
                 setSectors(allSectors);
-                // If trade is empty, set a default from the list if available
-                if (!user?.trade && allSectors.length > 0) {
+                // If trade is empty in user, but we have initialized it in formData already
+                // or if we need to pick a default
+                if (!user?.trade && !formData.trade && allSectors.length > 0) {
                     setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
+                } else if (user?.trade) {
+                    // Force formData to reflect user trade once sectors are loaded
+                    setFormData(prev => ({ ...prev, trade: user.trade }));
                 }
             } catch (error) {
                 console.error("Failed to fetch sectors", error);
@@ -71,6 +75,23 @@ export const Profile: React.FC = () => {
         };
         fetchSectors();
     }, []);
+
+    useEffect(() => {
+        if (user && !formData.fullName) {
+            setFormData({
+                fullName: user.full_name || '',
+                companyName: user.company_name || '',
+                siret: user.siret || '',
+                trade: user.trade || '',
+                phone: user.phone || '',
+                address: user.address || '',
+                city: user.city || '',
+                postalCode: user.postal_code || '',
+                googleBusinessUrl: user.google_business_url || '',
+                googleEmail: user.google_email || '',
+            });
+        }
+    }, [user]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);

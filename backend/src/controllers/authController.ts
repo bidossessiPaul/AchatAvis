@@ -472,31 +472,39 @@ export const updateProfile = async (req: Request, res: Response) => {
  * Upload avatar
  * POST /api/auth/profile/avatar
  */
-export const uploadAvatar = async (req: Request, res: Response) => {
-    try {
-        if (!req.user) {
-            return res.status(401).json({ error: 'Not authenticated' });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ error: 'Aucun fichier téléchargé' });
-        }
-
-        // Generate a relative URL for the avatar that will be proxied via /api
-        const avatarUrl = `/api/public/uploads/avatars/${req.file.filename}`;
-
-        // Update user record in database
-        await authService.updateProfile(req.user.userId, { avatarUrl });
-
-        return res.json({
-            message: 'Avatar mis à jour avec succès',
-            avatarUrl,
-        });
-    } catch (error) {
-        console.error('Upload avatar error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+try {
+    if (!req.user) {
+        console.warn('⚠️ Avatar upload attempt without req.user');
+        return res.status(401).json({ error: 'Not authenticated' });
     }
-};
+
+    if (!req.file) {
+        console.warn('⚠️ Avatar upload attempt without file');
+        return res.status(400).json({ error: 'Aucun fichier téléchargé' });
+    }
+
+    console.log(`📸 Processing avatar for user ${req.user.userId}: ${req.file.filename}`);
+
+    // Generate a relative URL for the avatar
+    // Using /api/public since it's served in app.ts
+    const avatarUrl = `/api/public/uploads/avatars/${req.file.filename}`;
+
+    // Update user record in database
+    await authService.updateProfile(req.user.userId, { avatarUrl });
+
+    console.log(`✅ Avatar updated for user ${req.user.userId}`);
+
+    return res.json({
+        message: 'Avatar mis à jour avec succès',
+        avatarUrl,
+    });
+} catch (error: any) {
+    console.error('❌ Upload avatar error:', error);
+    return res.status(500).json({
+        error: 'Internal server error',
+        message: error.message
+    });
+}
 
 /**
  * Refresh token
