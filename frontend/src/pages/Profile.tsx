@@ -48,34 +48,7 @@ export const Profile: React.FC = () => {
     const { fetchGmailAccounts } = useAntiDetectionStore();
     const location = useLocation();
 
-    useEffect(() => {
-        const fetchSectors = async () => {
-            try {
-                const response = await api.get('/anti-detection/sectors');
-                const grouped = response.data.data;
-                const allSectors = [
-                    ...grouped.easy,
-                    ...grouped.medium,
-                    ...grouped.hard
-                ];
-                setSectors(allSectors);
-                // If trade is empty in user, but we have initialized it in formData already
-                // or if we need to pick a default
-                if (!user?.trade && !formData.trade && allSectors.length > 0) {
-                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
-                } else if (user?.trade) {
-                    // Force formData to reflect user trade once sectors are loaded
-                    setFormData(prev => ({ ...prev, trade: user.trade }));
-                }
-            } catch (error) {
-                console.error("Failed to fetch sectors", error);
-            } finally {
-                setIsLoadingSectors(false);
-            }
-        };
-        fetchSectors();
-    }, []);
-
+    // Fix: Sync formData when user object becomes available
     useEffect(() => {
         if (user && !formData.fullName) {
             setFormData({
@@ -92,6 +65,33 @@ export const Profile: React.FC = () => {
             });
         }
     }, [user]);
+
+    useEffect(() => {
+        const fetchSectors = async () => {
+            try {
+                const response = await api.get('/anti-detection/sectors');
+                const grouped = response.data.data;
+                const allSectors = [
+                    ...grouped.easy,
+                    ...grouped.medium,
+                    ...grouped.hard
+                ];
+                setSectors(allSectors);
+
+                // Fix: Ensure trade is correctly selected once sectors are loaded
+                if (user?.trade) {
+                    setFormData(prev => ({ ...prev, trade: user.trade || '' }));
+                } else if (!formData.trade && allSectors.length > 0) {
+                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch sectors", error);
+            } finally {
+                setIsLoadingSectors(false);
+            }
+        };
+        fetchSectors();
+    }, [user]); // Add user to dependency to ensure sync
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -142,7 +142,6 @@ export const Profile: React.FC = () => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Simple validation
         if (file.size > 5 * 1024 * 1024) {
             return showError('Fichier trop volumineux', 'La taille maximale est de 5Mo');
         }
@@ -156,9 +155,11 @@ export const Profile: React.FC = () => {
             }
             showSuccess('Succès', 'Avatar mis à jour !');
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image');
+            console.error('Frontend upload error:', error);
+            showError('Erreur', error.response?.data?.message || error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image');
         } finally {
             setIsAvatarLoading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -190,7 +191,7 @@ export const Profile: React.FC = () => {
     const handleGenerate2FA = async () => {
         setIs2FALoading(true);
         try {
-            const { secret, qrCode } = await authApi.generate2FA( /* currentPassword optional? */);
+            const { secret, qrCode } = await authApi.generate2FA();
             setTwoFactorSecret(secret);
             setQrCodeUrl(qrCode);
             setShow2FASetup(true);
@@ -243,7 +244,6 @@ export const Profile: React.FC = () => {
         <DashboardLayout title="Mon Profil">
             <div className="profile-container">
                 <div className="profile-grid">
-                    {/* Public Profile Card */}
                     <div className="profile-main">
                         <Card className="profile-card hero-card" style={{ marginBottom: '1.5rem' }}>
                             <div className="profile-header">
@@ -293,7 +293,6 @@ export const Profile: React.FC = () => {
                             </div>
                         </Card>
 
-                        {/* Tab Navigation */}
                         {user?.role === 'guide' && (
                             <div className="profile-tabs">
                                 <button
@@ -475,7 +474,6 @@ export const Profile: React.FC = () => {
                                     </form>
                                 </Card>
 
-                                {/* 2FA Section (Moved inside tab) */}
                                 <Card className="profile-card">
                                     <h3 className="card-title">
                                         <Shield size={20} style={{ marginRight: '8px', verticalAlign: 'middle', color: user?.two_factor_enabled ? '#10b981' : '#6b7280' }} />
@@ -563,7 +561,6 @@ export const Profile: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Sidebar / Security Info */}
                     <div className="profile-sidebar">
                         <Card className="profile-card">
                             <h3 className="card-title">
