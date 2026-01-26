@@ -14,24 +14,29 @@ export const getFileUrl = (path: string | null | undefined): string => {
         return path;
     }
 
-    // Get API base URL from environment (similar to api.ts)
+    // Get API base URL from environment
     let apiBase = import.meta.env.VITE_API_BASE_URL || '';
-
-    // Clean apiBase (remove trailing slash)
     apiBase = apiBase.trim().replace(/\/$/, '');
 
-    // If API base is relative (proxy used), ensure it has a leading slash
-    if (apiBase === '/api' || !apiBase.startsWith('http')) {
-        // Path already starts with /api (from backend)
-        if (path.startsWith('/api')) {
-            return path;
-        }
-        return `/api${path.startsWith('/') ? '' : '/'}${path}`;
+    // If apiBase is empty or a relative /api (development proxy)
+    if (!apiBase || apiBase === '/api') {
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        // If it's already an /api path, return it directly for the proxy
+        if (cleanPath.startsWith('/api')) return cleanPath;
+        // Otherwise prefix with /api
+        return `/api${cleanPath}`;
     }
 
-    // Path already starts with /api (from backend), so we don't want to double it
-    // But we need to make sure we don't end up with api.com/api//api/...
-    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    // In production, ensure we use the full absolute URL
+    // remove potential duplicate /api if path already has it
+    let cleanPath = path;
+    if (cleanPath.startsWith('/api')) {
+        cleanPath = cleanPath.substring(4);
+    }
+    if (!cleanPath.startsWith('/')) {
+        cleanPath = `/${cleanPath}`;
+    }
 
+    // Return full absolute URL
     return `${apiBase}${cleanPath}`;
 };
