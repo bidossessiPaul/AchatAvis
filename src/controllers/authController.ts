@@ -484,16 +484,19 @@ export const uploadAvatar = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Aucun fichier téléchargé' });
         }
 
-        console.log(`📸 Processing avatar for user ${req.user.userId}: ${req.file.filename}`);
+        console.log(`📸 Processing avatar for user ${req.user.userId}: ${req.file.originalname}`);
 
-        // Generate a relative URL for the avatar
-        // Using /api/public since it's served in app.ts
-        const avatarUrl = `/api/public/uploads/avatars/${req.file.filename}`;
+        // Import Cloudinary service
+        const { uploadToCloudinary } = await import('../services/cloudinaryService');
+
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, 'avatars');
+        const avatarUrl = result.secure_url;
 
         // Update user record in database
         await authService.updateProfile(req.user.userId, { avatarUrl });
 
-        console.log(`✅ Avatar updated for user ${req.user.userId}`);
+        console.log(`✅ Avatar uploaded to Cloudinary for user ${req.user.userId}`);
 
         return res.json({
             message: 'Avatar mis à jour avec succès',
