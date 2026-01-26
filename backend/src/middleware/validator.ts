@@ -93,17 +93,17 @@ export const reviewOrderSchema = z.object({
 
 // Profile update schema
 export const profileUpdateSchema = z.object({
-    fullName: z.string().min(2, "Le nom complet est requis").optional(),
+    fullName: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     avatarUrl: z.string().optional().nullable().or(z.literal('')).transform(val => {
         if (!val || val === '') return undefined;
         return val;
     }),
-    companyName: z.string().min(2, 'Le nom de l\'entreprise est requis').optional(),
+    companyName: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     siret: siretSchema.optional().or(z.literal('')),
-    trade: tradeSchema.optional(),
-    phone: phoneSchema.optional(),
-    address: z.string().min(5, 'L\'adresse est requise').optional(),
-    city: z.string().min(2, 'La ville est requise').optional(),
+    trade: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
+    phone: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
+    address: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
+    city: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     postalCode: z.string()
         .transform(val => val.replace(/\s/g, ''))
         .refine(val => val === '' || /^\d{5}$/.test(val), 'Le code postal doit faire 5 chiffres')
