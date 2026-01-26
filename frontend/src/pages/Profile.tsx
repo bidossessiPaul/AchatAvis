@@ -316,7 +316,6 @@ export const Profile: React.FC = () => {
                                                 value={formData.fullName}
                                                 onChange={handleProfileChange}
                                                 placeholder="Votre nom complet"
-                                                required
                                             />
                                             {(user?.role === 'artisan' || user?.role === 'guide') && (
                                                 <Input
@@ -325,7 +324,6 @@ export const Profile: React.FC = () => {
                                                     value={formData.phone}
                                                     onChange={handleProfileChange}
                                                     placeholder="06 00 00 00 00"
-                                                    required
                                                 />
                                             )}
                                         </div>
@@ -339,7 +337,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.googleEmail}
                                                         onChange={handleProfileChange}
                                                         placeholder="votre.compte@gmail.com"
-                                                        required
                                                     />
                                                     <Input
                                                         label="Ville"
@@ -347,7 +344,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.city}
                                                         onChange={handleProfileChange}
                                                         placeholder="Paris"
-                                                        required
                                                     />
                                                 </div>
                                             </>
@@ -362,7 +358,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.companyName}
                                                         onChange={handleProfileChange}
                                                         placeholder="Ma Société"
-                                                        required
                                                     />
                                                     <Input
                                                         label="SIRET"
@@ -421,7 +416,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.address}
                                                         onChange={handleProfileChange}
                                                         placeholder="123 rue de..."
-                                                        required
                                                     />
                                                 </div>
 
@@ -432,7 +426,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.city}
                                                         onChange={handleProfileChange}
                                                         placeholder="Paris"
-                                                        required
                                                     />
                                                     <Input
                                                         label="Code Postal"
@@ -440,7 +433,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.postalCode}
                                                         onChange={handleProfileChange}
                                                         placeholder="75000"
-                                                        required
                                                     />
                                                 </div>
 
