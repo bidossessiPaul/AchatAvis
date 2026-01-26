@@ -79,11 +79,9 @@ export const Profile: React.FC = () => {
                 ];
                 setSectors(allSectors);
 
-                // Fix: Ensure trade is correctly selected once sectors are loaded
+                // Fix: Only update formData.trade if user has a trade value
                 if (user?.trade) {
                     setFormData(prev => ({ ...prev, trade: user.trade || '' }));
-                } else if (!formData.trade && allSectors.length > 0) {
-                    setFormData(prev => ({ ...prev, trade: allSectors[0].sector_slug }));
                 }
             } catch (error) {
                 console.error("Failed to fetch sectors", error);
@@ -92,7 +90,7 @@ export const Profile: React.FC = () => {
             }
         };
         fetchSectors();
-    }, [user]); // Add user to dependency to ensure sync
+    }, [user]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
