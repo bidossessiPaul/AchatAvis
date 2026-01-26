@@ -542,7 +542,7 @@ export const updateProfile = async (userId: string, data: any) => {
 
         if (userUpdates.length > 0) {
             userParams.push(userId);
-            await connection.execute(
+            await connection.query(
                 `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`,
                 userParams
             );
@@ -577,7 +577,8 @@ export const updateProfile = async (userId: string, data: any) => {
 
         if (profileUpdates.length > 0) {
             profileParams.push(userId);
-            await connection.execute(
+            // Use query helper or execute directly but be careful with namedPlaceholders
+            await connection.query(
                 `UPDATE artisans_profiles SET ${profileUpdates.join(', ')} WHERE user_id = ?`,
                 profileParams
             );
@@ -602,7 +603,7 @@ export const updateProfile = async (userId: string, data: any) => {
 
         if (guideUpdates.length > 0) {
             guideParams.push(userId);
-            await connection.execute(
+            await connection.query(
                 `UPDATE guides_profiles SET ${guideUpdates.join(', ')} WHERE user_id = ?`,
                 guideParams
             );
