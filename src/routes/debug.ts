@@ -174,4 +174,29 @@ router.get('/seed-levels', async (_req: any, res) => {
     }
 });
 
+/**
+ * DEBUG 8: Apply Payment & User Status Fix
+ * URL: /api/debug/apply-status-fix
+ */
+router.get('/apply-status-fix', async (_req: any, res) => {
+    try {
+        console.log('🚀 Applying payment/user status fix via Debug API...');
+
+        // 1. Fix Payments Table
+        await query(`ALTER TABLE payments DROP CONSTRAINT IF EXISTS chk_payment_status`);
+        await query(`ALTER TABLE payments ADD CONSTRAINT chk_payment_status 
+                     CHECK (status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled', 'deactivated', 'blocked', 'deleted'))`);
+
+        // 2. Fix Users Table
+        await query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_status`);
+        await query(`ALTER TABLE users ADD CONSTRAINT chk_status 
+                     CHECK (status IN ('pending', 'active', 'suspended', 'rejected', 'deactivated'))`);
+
+        return res.json({ success: true, message: 'Constraints updated successfully' });
+    } catch (error: any) {
+        console.error('❌ Error applying status fix:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;

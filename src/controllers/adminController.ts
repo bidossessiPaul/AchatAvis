@@ -183,6 +183,38 @@ export const cancelPayment = async (req: Request, res: Response) => {
 };
 
 /**
+ * Block a payment
+ * POST /api/admin/payments/:paymentId/block
+ */
+export const blockPayment = async (req: Request, res: Response) => {
+    const { paymentId } = req.params;
+
+    try {
+        const result = await adminService.blockPayment(paymentId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Block payment error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Delete a payment (mark as deleted)
+ * DELETE /api/admin/payments/:paymentId/status
+ */
+export const deletePaymentStatus = async (req: Request, res: Response) => {
+    const { paymentId } = req.params;
+
+    try {
+        const result = await adminService.deletePaymentStatus(paymentId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Delete payment status error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Reactivate a payment
  * POST /api/admin/payments/:paymentId/reactivate
  */
