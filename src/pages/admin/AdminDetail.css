@@ -160,8 +160,8 @@
 .detail-content-layout {
     display: grid;
     grid-template-columns: 1fr 340px;
-    gap: 2.5rem;
-    /* Increased spacing between main and sidebar */
+    gap: 2rem;
+    max-width: 100%;
 }
 
 .info-cards-masonry {
@@ -282,14 +282,17 @@
 }
 
 /* Tables */
-.premium-card.table-card {
-    padding: 0;
-    overflow: hidden;
+.admin-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .premium-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 600px;
+    /* Ensure table doesn't get too squashed */
 }
 
 .premium-table th {
@@ -380,14 +383,45 @@
     border-radius: 16px !important;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1150px) {
     .detail-content-layout {
         grid-template-columns: 1fr;
+    }
+
+    .detail-sidebar-sticky {
+        position: static;
+        order: -1;
+        /* Sidebar first on mobile */
     }
 }
 
 @media (max-width: 768px) {
     .admin-dashboard.detail-page.revamped {
         padding: 1rem;
+    }
+
+    .header-content-flex {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.25rem;
+    }
+
+    .header-main-info {
+        width: 100%;
+    }
+
+    .header-actions {
+        width: 100%;
+        display: flex;
+        justify-content: stretch;
+    }
+
+    .premium-action-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .info-cards-masonry {
+        grid-template-columns: 1fr;
     }
 }
