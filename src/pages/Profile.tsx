@@ -49,9 +49,9 @@ export const Profile: React.FC = () => {
     const { fetchGmailAccounts } = useAntiDetectionStore();
     const location = useLocation();
 
-    // Fix: Sync formData when user object becomes available
+    // Fix: Sync formData when user object becomes available or changes
     useEffect(() => {
-        if (user && !formData.fullName) {
+        if (user) {
             setFormData({
                 fullName: user.full_name || '',
                 companyName: user.company_name || '',
@@ -65,7 +65,7 @@ export const Profile: React.FC = () => {
                 googleEmail: user.google_email || '',
             });
         }
-    }, [user]);
+    }, [user?.id]); // Only re-run when user ID changes, not on every user update
 
     useEffect(() => {
         const fetchSectors = async () => {
@@ -78,11 +78,6 @@ export const Profile: React.FC = () => {
                     ...grouped.hard
                 ];
                 setSectors(allSectors);
-
-                // Fix: Only update formData.trade if user has a trade value
-                if (user?.trade) {
-                    setFormData(prev => ({ ...prev, trade: user.trade || '' }));
-                }
             } catch (error) {
                 console.error("Failed to fetch sectors", error);
             } finally {
@@ -90,7 +85,7 @@ export const Profile: React.FC = () => {
             }
         };
         fetchSectors();
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
