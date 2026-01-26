@@ -110,8 +110,9 @@ export const getAllUsers = async () => {
 export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
-               ap.company_name, ap.siret, ap.trade, ap.phone, ap.address, ap.city, ap.postal_code,
+               ap.company_name, ap.trade, ap.phone, ap.address, ap.city, ap.postal_code,
                ap.google_business_url, ap.subscription_status, ap.subscription_end_date,
+               ap.monthly_reviews_quota, ap.current_month_reviews,
                sp.name as active_pack_name
         FROM users u
         JOIN artisans_profiles ap ON u.id = ap.user_id
@@ -838,6 +839,54 @@ export const activateArtisanPack = async (userId: string, packId: string, baseUr
     } catch (error) {
         await connection.rollback();
         console.error('Error in activateArtisanPack:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Cancel a manual payment and revert credits
+ */
+export const cancelPayment = async (paymentId: string) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Fetch payment details
+        const [payments]: any = await connection.query(
+            'SELECT * FROM payments WHERE id = ?',
+            [paymentId]
+        );
+        const payment = payments.length > 0 ? payments[0] : null;
+
+        if (!payment) throw new Error("Paiement non trouvé");
+        if (payment.status === 'cancelled') throw new Error("Paiement déjà annulé");
+
+        const userId = payment.user_id;
+        const fichesQuota = payment.fiches_quota || 0;
+
+        // 2. Revert credits in artisan profile
+        await connection.query(
+            `UPDATE artisans_profiles 
+             SET fiches_allowed = GREATEST(0, fiches_allowed - ?)
+             WHERE user_id = ?`,
+            [fichesQuota, userId]
+        );
+
+        // 3. Update payment status
+        await connection.query(
+            `UPDATE payments SET status = 'cancelled' WHERE id = ?`,
+            [paymentId]
+        );
+
+        await connection.commit();
+        return { success: true, message: "Paiement annulé et quotas mis à jour." };
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error in cancelPayment:', error);
         throw error;
     } finally {
         connection.release();

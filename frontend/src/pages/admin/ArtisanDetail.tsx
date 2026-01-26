@@ -58,7 +58,6 @@ interface ArtisanDetailData {
         last_login: string;
         warning_count: number;
         company_name: string;
-        siret: string;
         trade: string;
         phone: string;
         address: string;
@@ -68,6 +67,8 @@ interface ArtisanDetailData {
         subscription_status: string;
         subscription_end_date: string;
         active_pack_name: string | null;
+        monthly_reviews_quota: number;
+        current_month_reviews: number;
     };
     orders: Order[];
     payments: Payment[];
@@ -101,7 +102,6 @@ export const ArtisanDetail: React.FC = () => {
                 full_name: result.profile.full_name,
                 email: result.profile.email,
                 company_name: result.profile.company_name,
-                siret: result.profile.siret,
                 trade: result.profile.trade,
                 phone: result.profile.phone,
                 address: result.profile.address,
@@ -162,6 +162,23 @@ export const ArtisanDetail: React.FC = () => {
             showError('Erreur', error.response?.data?.error || "Erreur lors de l'activation du pack");
         } finally {
             setIsActivating(false);
+        }
+    };
+
+    const handleCancelPayment = async (paymentId: string) => {
+        const confirmResult = await showConfirm(
+            'Annuler le paiement',
+            'Voulez-vous vraiment annuler ce paiement ? Cela déduira les crédits accordés à l\'artisan.'
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.cancelPayment(paymentId);
+            showSuccess('Succès', 'Paiement annulé');
+            loadDetail();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de l\'annulation');
         }
     };
 
@@ -413,24 +430,8 @@ export const ArtisanDetail: React.FC = () => {
                             </div>
 
                             <div className="premium-card">
-                                <h3><ShieldAlert size={20} /> Informations Légales</h3>
+                                <h3><ShieldAlert size={20} /> Informations</h3>
                                 <div className="premium-info-list">
-                                    <div className="premium-info-item">
-                                        <div className="info-icon-box"><ShieldAlert size={16} /></div>
-                                        <div className="info-content">
-                                            <span className="info-label">SIRET</span>
-                                            {isEditing ? (
-                                                <input
-                                                    type="text"
-                                                    value={editFormData.siret}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, siret: e.target.value })}
-                                                    className="form-input-premium"
-                                                />
-                                            ) : (
-                                                <span className="info-value">{profile.siret}</span>
-                                            )}
-                                        </div>
-                                    </div>
                                     <div className="premium-info-item">
                                         <div className="info-icon-box"><Briefcase size={16} /></div>
                                         <div className="info-content">
@@ -539,13 +540,14 @@ export const ArtisanDetail: React.FC = () => {
                                             <th>Montant</th>
                                             <th>Type</th>
                                             <th>Statut</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {payments && payments.length > 0 ? payments.map(payment => (
                                             <tr key={payment.id}>
                                                 <td>{new Date(payment.created_at).toLocaleDateString()}</td>
-                                                <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={payment.description}>
+                                                <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={payment.description}>
                                                     {payment.description}
                                                 </td>
                                                 <td>{payment.amount}€</td>
@@ -558,6 +560,17 @@ export const ArtisanDetail: React.FC = () => {
                                                     <span className={`premium-status-badge ${payment.status}`}>
                                                         {payment.status}
                                                     </span>
+                                                </td>
+                                                <td>
+                                                    {payment.status === 'completed' && payment.description.includes('(Activé par Admin)') && (
+                                                        <button
+                                                            onClick={() => handleCancelPayment(payment.id)}
+                                                            className="text-red-500 hover:text-red-700"
+                                                            style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#fee2e2', border: 'none', cursor: 'pointer' }}
+                                                        >
+                                                            Désactiver
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         )) : (
@@ -625,17 +638,42 @@ export const ArtisanDetail: React.FC = () => {
                         </div>
 
                         <div className="premium-card highlight">
-                            <h3><Zap size={20} color="#f59e0b" /> Activation Pack</h3>
+                            <h3><Zap size={20} color="#f59e0b" /> Pack Actuel</h3>
                             <div style={{ padding: '0.5rem 0' }}>
                                 <div className="active-pack-recap" style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                        Pack Actuel
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.2rem' }}>
+                                                Statut
+                                            </div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
+                                                {profile.active_pack_name || 'Aucun pack actif'}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.2rem' }}>
+                                                Progression
+                                            </div>
+                                            <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0ea5e9' }}>
+                                                {profile.current_month_reviews} / {profile.monthly_reviews_quota}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>
-                                        {profile.active_pack_name || 'Aucun pack actif'}
+
+                                    {/* Progress Bar */}
+                                    <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                                        <div
+                                            style={{
+                                                width: `${Math.min(100, (profile.current_month_reviews / (profile.monthly_reviews_quota || 1)) * 100)}%`,
+                                                height: '100%',
+                                                background: '#0ea5e9',
+                                                transition: 'width 0.3s ease'
+                                            }}
+                                        />
                                     </div>
+
                                     {profile.subscription_end_date && (
-                                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
                                             Expire le : {new Date(profile.subscription_end_date).toLocaleDateString()}
                                         </div>
                                     )}

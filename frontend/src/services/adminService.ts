@@ -156,5 +156,10 @@ export const adminService = {
     deleteSector: async (slug: string) => {
         const response = await api.delete(`/admin/sectors/${slug}`);
         return response.data;
+    },
+
+    cancelPayment: async (paymentId: string) => {
+        const response = await api.post(`/admin/payments/${paymentId}/cancel`);
+        return response.data;
     }
 };

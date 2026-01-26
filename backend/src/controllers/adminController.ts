@@ -167,6 +167,22 @@ export const updateSubmissionStatus = async (req: Request, res: Response) => {
 };
 
 /**
+ * Cancel a payment
+ * POST /api/admin/payments/:paymentId/cancel
+ */
+export const cancelPayment = async (req: Request, res: Response) => {
+    const { paymentId } = req.params;
+
+    try {
+        const result = await adminService.cancelPayment(paymentId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Cancel payment error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Get all subscriptions
  * GET /api/admin/subscriptions
  */
