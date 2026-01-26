@@ -48,7 +48,8 @@ export const artisanService = {
             reviews_per_day = 3,
             rhythme_mode = 'modere',
             estimated_duration_days = 0,
-            client_cities = []
+            client_cities = [],
+            initial_review_count = 0
         } = data;
 
         const finalClientCities = Array.isArray(client_cities) ? JSON.stringify(client_cities) : client_cities;
@@ -63,13 +64,13 @@ export const artisanService = {
                 id, fiche_name, artisan_id, quantity, price, status, company_name, company_context, 
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
-                estimated_duration_days, client_cities, zones
-            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                estimated_duration_days, client_cities, zones, initial_review_count
+            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 orderId, fiche_name, artisanId, quantity, price, company_name, company_context,
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
-                estimated_duration_days, finalClientCities, data.zones || ''
+                estimated_duration_days, finalClientCities, data.zones || '', initial_review_count
             ]
         );
 
@@ -115,7 +116,7 @@ export const artisanService = {
             'staff_names', 'specific_instructions', 'city',
             // Anti-Detection Fields
             'sector_id', 'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
-            'estimated_duration_days', 'client_cities'
+            'estimated_duration_days', 'client_cities', 'initial_review_count'
         ];
 
         for (const field of updateableFields) {

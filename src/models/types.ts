@@ -130,6 +130,7 @@ export interface ReviewOrder {
     rhythme_mode?: string;
     estimated_duration_days?: number;
     client_cities?: string[] | string;
+    initial_review_count?: number;
     metadata?: any;
     created_at: Date;
     completed_at?: Date;
