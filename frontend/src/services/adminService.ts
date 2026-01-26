@@ -166,5 +166,15 @@ export const adminService = {
     reactivatePayment: async (paymentId: string) => {
         const response = await api.post(`/admin/payments/${paymentId}/reactivate`);
         return response.data;
+    },
+
+    blockPayment: async (paymentId: string) => {
+        const response = await api.post(`/admin/payments/${paymentId}/block`);
+        return response.data;
+    },
+
+    deletePaymentStatus: async (paymentId: string) => {
+        const response = await api.delete(`/admin/payments/${paymentId}/status`);
+        return response.data;
     }
 };

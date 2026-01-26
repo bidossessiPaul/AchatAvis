@@ -200,6 +200,40 @@ export const ArtisanDetail: React.FC = () => {
         }
     };
 
+    const handleBlockPayment = async (paymentId: string) => {
+        const confirmResult = await showConfirm(
+            'Bloquer le pack',
+            'Voulez-vous vraiment bloquer ce pack ? Les crédits seront retirés et le montant exclu des statistiques.'
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.blockPayment(paymentId);
+            showSuccess('Succès', 'Pack bloqué');
+            loadDetail();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors du blocage');
+        }
+    };
+
+    const handleDeletePaymentStatus = async (paymentId: string) => {
+        const confirmResult = await showConfirm(
+            'Supprimer le paiement',
+            'Voulez-vous vraiment marquer ce paiement comme supprimé ? Les crédits seront retirés s\'ils étaient encore actifs.'
+        );
+
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.deletePaymentStatus(paymentId);
+            showSuccess('Succès', 'Paiement supprimé');
+            loadDetail();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la suppression');
+        }
+    };
+
     const handleIssueWarning = async () => {
         if (!data) return;
         try {
@@ -598,24 +632,44 @@ export const ArtisanDetail: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    {payment.status === 'completed' && payment.description.includes('(Activé par Admin)') && (
-                                                        <button
-                                                            onClick={() => handleCancelPayment(payment.id)}
-                                                            className="text-red-500 hover:text-red-700"
-                                                            style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#fee2e2', border: 'none', cursor: 'pointer' }}
-                                                        >
-                                                            Désactiver
-                                                        </button>
-                                                    )}
-                                                    {(payment.status === 'cancelled' || payment.status === 'deactivated') && payment.description.includes('(Activé par Admin)') && (
-                                                        <button
-                                                            onClick={() => handleReactivatePayment(payment.id)}
-                                                            className="text-green-500 hover:text-green-700"
-                                                            style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#dcfce7', border: 'none', cursor: 'pointer' }}
-                                                        >
-                                                            Réactiver
-                                                        </button>
-                                                    )}
+                                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                        {payment.status === 'completed' && payment.description.includes('(Activé par Admin)') && (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleCancelPayment(payment.id)}
+                                                                    title="Désactiver"
+                                                                    style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#fee2e2', border: 'none', cursor: 'pointer', color: '#b91c1c' }}
+                                                                >
+                                                                    Désactiver
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleBlockPayment(payment.id)}
+                                                                    title="Bloquer"
+                                                                    style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#fef3c7', border: 'none', cursor: 'pointer', color: '#b45309' }}
+                                                                >
+                                                                    Bloquer
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                        {(payment.status === 'cancelled' || payment.status === 'deactivated' || payment.status === 'blocked') && payment.description.includes('(Activé par Admin)') && (
+                                                            <button
+                                                                onClick={() => handleReactivatePayment(payment.id)}
+                                                                title="Réactiver"
+                                                                style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#dcfce7', border: 'none', cursor: 'pointer', color: '#15803d' }}
+                                                            >
+                                                                Réactiver
+                                                            </button>
+                                                        )}
+                                                        {payment.status !== 'deleted' && (
+                                                            <button
+                                                                onClick={() => handleDeletePaymentStatus(payment.id)}
+                                                                title="Supprimer"
+                                                                style={{ fontSize: '0.75rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px', background: '#f1f5f9', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                                                            >
+                                                                Supprimer
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )) : (

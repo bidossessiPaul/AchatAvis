@@ -3,7 +3,7 @@
 
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS chk_payment_status;
 ALTER TABLE payments ADD CONSTRAINT chk_payment_status 
-CHECK (status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled', 'deactivated'));
+CHECK (status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled', 'deactivated', 'blocked', 'deleted'));
 
 ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_status;
 ALTER TABLE users ADD CONSTRAINT chk_status 

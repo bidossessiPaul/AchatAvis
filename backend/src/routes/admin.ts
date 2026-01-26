@@ -47,6 +47,8 @@ router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
 router.post('/payments/:paymentId/reactivate', adminController.reactivatePayment);
+router.post('/payments/:paymentId/block', adminController.blockPayment);
+router.delete('/payments/:paymentId/status', adminController.deletePaymentStatus);
 
 // fiche management
 router.get('/fiches', adminController.getfiches);

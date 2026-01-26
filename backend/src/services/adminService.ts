@@ -898,6 +898,82 @@ export const cancelPayment = async (paymentId: string) => {
 };
 
 /**
+ * Block a payment/pack (same as cancel but different status for UI)
+ */
+export const blockPayment = async (paymentId: string) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Fetch payment
+        const [payments]: any = await connection.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const payment = payments.length > 0 ? payments[0] : null;
+
+        if (!payment) throw new Error("Paiement non trouvé");
+
+        const userId = payment.user_id;
+        const fichesQuota = payment.fiches_quota || 0;
+
+        // 2. Revert credits
+        await connection.query(
+            `UPDATE artisans_profiles SET fiches_allowed = GREATEST(0, fiches_allowed - ?) WHERE user_id = ?`,
+            [fichesQuota, userId]
+        );
+
+        // 3. Set status to blocked
+        await connection.query(`UPDATE payments SET status = 'blocked' WHERE id = ?`, [paymentId]);
+
+        await connection.commit();
+        return { success: true, message: "Pack bloqué." };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Mark a payment/pack as deleted
+ */
+export const deletePaymentStatus = async (paymentId: string) => {
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // 1. Fetch payment
+        const [payments]: any = await connection.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
+        const payment = payments.length > 0 ? payments[0] : null;
+
+        if (!payment) throw new Error("Paiement non trouvé");
+
+        const userId = payment.user_id;
+        const fichesQuota = payment.fiches_quota || 0;
+
+        // 2. Revert credits (if it was completed)
+        if (payment.status === 'completed') {
+            await connection.query(
+                `UPDATE artisans_profiles SET fiches_allowed = GREATEST(0, fiches_allowed - ?) WHERE user_id = ?`,
+                [fichesQuota, userId]
+            );
+        }
+
+        // 3. Set status to deleted
+        await connection.query(`UPDATE payments SET status = 'deleted' WHERE id = ?`, [paymentId]);
+
+        await connection.commit();
+        return { success: true, message: "Paiement marqué comme supprimé." };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
  * Reactivate a previously cancelled manual payment
  */
 export const reactivatePayment = async (paymentId: string) => {
