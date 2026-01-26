@@ -133,7 +133,7 @@ export const getArtisanDetail = async (userId: string) => {
     const payments: any = await query(`
         SELECT id, amount, status, type, description, processed_at as created_at
         FROM payments
-        WHERE user_id = ? AND status = 'completed'
+        WHERE user_id = ?
         ORDER BY created_at DESC
     `, [userId]);
 
