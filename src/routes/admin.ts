@@ -45,6 +45,7 @@ router.patch('/users/:userId/status', adminController.updateUserStatus);
 router.post('/users/:userId/warning', adminController.issueWarning);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
+router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
 
 // fiche management
 router.get('/fiches', adminController.getfiches);
