@@ -318,6 +318,12 @@
     gap: 1.5rem;
 }
 
+.action-premium-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .stats-premium-grid {
     display: grid;
     gap: 0.75rem;

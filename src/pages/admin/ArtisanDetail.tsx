@@ -21,13 +21,16 @@ import { showConfirm, showSuccess, showError, showInput, showSelection, showPrem
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
 
-interface Order {
+validated_reviews_count: number;
+}
+
+interface Payment {
     id: string;
-    status: string;
     amount: number;
-    credits_purchased: number;
+    status: string;
+    type: string;
+    description: string;
     created_at: string;
-    validated_reviews_count: number;
 }
 
 interface Pack {
@@ -59,6 +62,7 @@ interface ArtisanDetailData {
         subscription_end_date: string;
     };
     orders: Order[];
+    payments: Payment[];
 }
 
 export const ArtisanDetail: React.FC = () => {
@@ -515,121 +519,167 @@ export const ArtisanDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="premium-card table-card">
-                            <h3><Briefcase size={20} /> Historique des Commandes</h3>
-                            <div className="admin-table-wrapper">
-                                <table className="premium-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Crédits</th>
-                                            <th>Montant</th>
-                                            <th>Statut</th>
-                                            <th>Avis Validés</th>
+                    </div>
+
+                    <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
+                        <h3><Zap size={20} /> Historique des Transactions (Recharges)</h3>
+                        <div className="admin-table-wrapper">
+                            <table className="premium-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Montant</th>
+                                        <th>Type</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.payments && data.payments.length > 0 ? data.payments.map(payment => (
+                                        <tr key={payment.id}>
+                                            <td>{new Date(payment.created_at).toLocaleDateString()}</td>
+                                            <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={payment.description}>
+                                                {payment.description}
+                                            </td>
+                                            <td>{payment.amount}€</td>
+                                            <td>
+                                                <span className={`premium-status-badge active`} style={{ background: '#f1f5f9', color: '#475569' }}>
+                                                    {payment.type}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`premium-status-badge ${payment.status}`}>
+                                                    {payment.status}
+                                                </span>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {orders.length > 0 ? orders.map(order => (
-                                            <tr key={order.id}>
-                                                <td>{new Date(order.created_at).toLocaleDateString()}</td>
-                                                <td>{order.credits_purchased}</td>
-                                                <td>{order.amount}€</td>
-                                                <td>
-                                                    <span className={`premium-status-badge ${order.status}`}>
-                                                        {order.status}
-                                                    </span>
-                                                </td>
-                                                <td>{order.validated_reviews_count || 0}</td>
-                                            </tr>
-                                        )) : (
-                                            <tr>
-                                                <td colSpan={5} className="text-center">Aucune commande</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="text-center">Aucun paiement enregistré</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
+                        <h3><Briefcase size={20} /> Historique des Missions (Commandes)</h3>
+                        <div className="admin-table-wrapper">
+                            <table className="premium-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Crédits</th>
+                                        <th>Pack</th>
+                                        <th>Statut</th>
+                                        <th>Avis Validés</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.orders && data.orders.length > 0 ? data.orders.map(order => (
+                                        <tr key={order.id}>
+                                            <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                                            <td>{order.credits_purchased}</td>
+                                            <td>{order.amount}€</td>
+                                            <td>
+                                                <span className={`premium-status-badge ${order.status}`}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td>{order.validated_reviews_count || 0}</td>
+                                        </tr>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="text-center">Aucune mission en cours</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="detail-sidebar-sticky">
+                    <div className="premium-card">
+                        <h3>Statistiques</h3>
+                        <div className="stats-premium-grid">
+                            <div className="stat-premium-item">
+                                <span className="stat-p-value">{orders.length}</span>
+                                <span className="stat-p-label">Missions</span>
+                            </div>
+                            <div className="stat-premium-item">
+                                <span className="stat-p-value">
+                                    {(data.payments || []).reduce((acc, curr) => acc + Number(curr.amount), 0)}€
+                                </span>
+                                <span className="stat-p-label">Investissement Total</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="detail-sidebar-sticky">
-                        <div className="premium-card">
-                            <h3>Statistiques</h3>
-                            <div className="stats-premium-grid">
-                                <div className="stat-premium-item">
-                                    <span className="stat-p-value">{orders.length}</span>
-                                    <span className="stat-p-label">Commandes</span>
-                                </div>
-                                <div className="stat-premium-item">
-                                    <span className="stat-p-value">{orders.reduce((acc, curr) => acc + Number(curr.amount), 0)}€</span>
-                                    <span className="stat-p-label">Total Dépensé</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Manual Pack Activation Section */}
-                        <div className="premium-card highlight">
-                            <h3><Zap size={20} color="#f59e0b" /> Gestion du Pack</h3>
-                            <div style={{ padding: '0.5rem 0' }}>
-                                <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
-                                    Activez manuellement un pack pour cet artisan suite à un paiement hors-site.
-                                </p>
-                                <select
-                                    className="premium-select"
-                                    value={selectedPackId}
-                                    onChange={(e) => setSelectedPackId(e.target.value)}
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '1rem', background: 'white' }}
-                                >
-                                    <option value="">Sélectionner un pack...</option>
-                                    {packs.map(pack => (
-                                        <option key={pack.id} value={pack.id}>
-                                            {pack.name} ({pack.fiches_quota} crédits)
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={handleActivatePack}
-                                    disabled={!selectedPackId || isActivating}
-                                    className="premium-action-btn primary"
-                                    style={{ width: '100%', background: '#0ea5e9', color: 'white' }}
-                                >
-                                    {isActivating ? <LoadingSpinner size="sm" /> : (
-                                        <>
-                                            <Zap size={18} />
-                                            Activer le Pack
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="premium-card">
-                            <h3>Actions Admin</h3>
-                            <div className="action-premium-stack">
-                                {profile.status === 'active' ? (
-                                    <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
-                                        <XCircle size={18} />
-                                        Suspendre le compte
-                                    </button>
-                                ) : (
-                                    <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
-                                        <CheckCircle size={18} />
-                                        Activer le compte
-                                    </button>
+                    {/* Manual Pack Activation Section */}
+                    <div className="premium-card highlight">
+                        <h3><Zap size={20} color="#f59e0b" /> Gestion du Pack</h3>
+                        <div style={{ padding: '0.5rem 0' }}>
+                            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
+                                Activez manuellement un pack pour cet artisan suite à un paiement hors-site.
+                            </p>
+                            <select
+                                className="premium-select"
+                                value={selectedPackId}
+                                onChange={(e) => setSelectedPackId(e.target.value)}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', marginBottom: '1rem', background: 'white' }}
+                            >
+                                <option value="">Sélectionner un pack...</option>
+                                {packs.map(pack => (
+                                    <option key={pack.id} value={pack.id}>
+                                        {pack.name} ({pack.fiches_quota} crédits)
+                                    </option>
+                                ))}
+                            </select>
+                            <button
+                                onClick={handleActivatePack}
+                                disabled={!selectedPackId || isActivating}
+                                className="premium-action-btn primary"
+                                style={{ width: '100%', background: '#0ea5e9', color: 'white' }}
+                            >
+                                {isActivating ? <LoadingSpinner size="sm" /> : (
+                                    <>
+                                        <Zap size={18} />
+                                        Activer le Pack
+                                    </>
                                 )}
-                                <button onClick={handleIssueWarning} className="premium-action-btn warn">
-                                    <ShieldAlert size={18} />
-                                    Envoyer un avertissement
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="premium-card">
+                        <h3>Actions Admin</h3>
+                        <div className="action-premium-stack">
+                            {profile.status === 'active' ? (
+                                <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
+                                    <XCircle size={18} />
+                                    Suspendre le compte
                                 </button>
-                                <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
-                                    <Trash2 size={18} />
-                                    Supprimer l'artisan
+                            ) : (
+                                <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
+                                    <CheckCircle size={18} />
+                                    Activer le compte
                                 </button>
-                            </div>
+                            )}
+                            <button onClick={handleIssueWarning} className="premium-action-btn warn">
+                                <ShieldAlert size={18} />
+                                Envoyer un avertissement
+                            </button>
+                            <button onClick={() => showError('Info', 'Fonctionnalité de suppression non implémentée')} className="premium-action-btn delete">
+                                <Trash2 size={18} />
+                                Supprimer l'artisan
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </DashboardLayout>
+        </div>
+        </DashboardLayout >
     );
 };
