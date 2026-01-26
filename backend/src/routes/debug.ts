@@ -181,18 +181,47 @@ router.get('/seed-levels', async (_req: any, res) => {
 router.get('/apply-status-fix', async (_req: any, res) => {
     try {
         console.log('🚀 Applying payment/user status fix via Debug API...');
+        const log: string[] = [];
+
+        // Get DB Version
+        const version: any = await query('SELECT VERSION() as v');
+        log.push(`📦 Database Version: ${version[0]?.v || 'Unknown'}`);
 
         // 1. Fix Payments Table
-        await query(`ALTER TABLE payments DROP CONSTRAINT IF EXISTS chk_payment_status`);
+        try {
+            await query(`ALTER TABLE payments DROP CONSTRAINT IF EXISTS chk_payment_status`);
+            log.push('✅ Dropped chk_payment_status (if existed)');
+        } catch (e: any) {
+            try {
+                await query(`ALTER TABLE payments DROP CHECK chk_payment_status`);
+                log.push('✅ Dropped chk_payment_status using DROP CHECK');
+            } catch (e2: any) {
+                log.push(`⚠️ Note: Could not drop payment constraint: ${e2.message}`);
+            }
+        }
+
         await query(`ALTER TABLE payments ADD CONSTRAINT chk_payment_status 
                      CHECK (status IN ('pending', 'completed', 'failed', 'refunded', 'cancelled', 'deactivated', 'blocked', 'deleted'))`);
+        log.push('✅ Added new chk_payment_status constraint');
 
         // 2. Fix Users Table
-        await query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_status`);
+        try {
+            await query(`ALTER TABLE users DROP CONSTRAINT IF EXISTS chk_status`);
+            log.push('✅ Dropped chk_status (if existed)');
+        } catch (e: any) {
+            try {
+                await query(`ALTER TABLE users DROP CHECK chk_status`);
+                log.push('✅ Dropped chk_status using DROP CHECK');
+            } catch (e2: any) {
+                log.push(`⚠️ Note: Could not drop user constraint: ${e2.message}`);
+            }
+        }
+
         await query(`ALTER TABLE users ADD CONSTRAINT chk_status 
                      CHECK (status IN ('pending', 'active', 'suspended', 'rejected', 'deactivated'))`);
+        log.push('✅ Added new chk_status constraint');
 
-        return res.json({ success: true, message: 'Constraints updated successfully' });
+        return res.json({ success: true, message: 'Constraints updated successfully', log });
     } catch (error: any) {
         console.error('❌ Error applying status fix:', error);
         return res.status(500).json({ success: false, error: error.message });
