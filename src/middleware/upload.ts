@@ -6,16 +6,22 @@ import { v4 as uuidv4 } from 'uuid';
 // Configure storage
 const storage = multer.diskStorage({
     destination: (_req, _file, cb) => {
-        // Use process.cwd() for more reliable path resolution in different environments
-        const rootDir = process.cwd();
-        const uploadPath = path.join(rootDir, 'backend', 'public', 'uploads', 'avatars');
+        // Use multiple strategies to find the public/uploads directory
+        const strategies = [
+            path.join(__dirname, '..', 'public', 'uploads', 'avatars'),
+            path.join(process.cwd(), 'backend', 'public', 'uploads', 'avatars'),
+            path.join(process.cwd(), 'public', 'uploads', 'avatars'),
+        ];
 
-        // Fallback for environments where 'backend' folder might not be present in the path (e.g. some CI/CD or specific Vercel configs)
-        const fallbackPath = path.join(rootDir, 'public', 'uploads', 'avatars');
-
-        let finalPath = uploadPath;
-        if (!fs.existsSync(path.join(rootDir, 'backend')) && fs.existsSync(path.join(rootDir, 'public'))) {
-            finalPath = fallbackPath;
+        let finalPath = strategies[0];
+        // Find the first strategy that points to an existing 'public' or 'backend' parent, 
+        // or just use the first one and create it.
+        for (const p of strategies) {
+            const parent = path.dirname(path.dirname(p));
+            if (fs.existsSync(parent)) {
+                finalPath = p;
+                break;
+            }
         }
 
         try {
