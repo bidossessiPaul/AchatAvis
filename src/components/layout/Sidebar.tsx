@@ -16,7 +16,8 @@ import {
     ShieldCheck,
     LogOut,
     Mail,
-    Shield
+    Shield,
+    Layers
 } from 'lucide-react';
 import './Layout.css';
 
@@ -79,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_users', 'super_admin'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_view_stats'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['super_admin'] },
-                    // { label: 'Logs & Système', path: '/admin/logs', icon: <Shield size={20} />, permissions: ['can_view_stats'] },
+                    { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['super_admin', 'can_manage_fiches'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 
