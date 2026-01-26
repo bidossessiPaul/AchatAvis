@@ -46,6 +46,7 @@ router.post('/users/:userId/warning', adminController.issueWarning);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
+router.post('/payments/:paymentId/reactivate', adminController.reactivatePayment);
 
 // fiche management
 router.get('/fiches', adminController.getfiches);
