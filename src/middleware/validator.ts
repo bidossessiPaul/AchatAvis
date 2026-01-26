@@ -94,7 +94,10 @@ export const reviewOrderSchema = z.object({
 // Profile update schema
 export const profileUpdateSchema = z.object({
     fullName: z.string().min(2, "Le nom complet est requis").optional(),
-    avatarUrl: z.string().url("URL d'avatar invalide").optional().or(z.literal('')),
+    avatarUrl: z.string().optional().nullable().or(z.literal('')).transform(val => {
+        if (!val || val === '') return undefined;
+        return val;
+    }),
     companyName: z.string().min(2, 'Le nom de l\'entreprise est requis').optional(),
     siret: siretSchema.optional().or(z.literal('')),
     trade: tradeSchema.optional(),
