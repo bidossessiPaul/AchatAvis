@@ -23,7 +23,6 @@ export interface User {
     last_detected_country?: string;
     // Artisan Profile Fields
     company_name?: string;
-    siret?: string;
     trade?: string;
     phone?: string;
     address?: string;
@@ -41,7 +40,6 @@ export interface ArtisanProfile {
     id: string;
     user_id: string;
     company_name: string;
-    siret: string;
     trade: string;
     phone: string;
     address: string;
@@ -92,7 +90,6 @@ export interface ArtisanRegistration {
     fullName: string;
     password: string;
     companyName: string;
-    siret: string;
     trade: string;
     phone: string;
     address: string;

@@ -96,10 +96,8 @@ export const ArtisansList: React.FC = () => {
 
         setIsCreating(true);
         try {
-            // Include a dummy siret or handle it in backend
             const result = await adminService.createArtisan({
-                ...formData,
-                siret: `TEMP_${Date.now()}` // Pass temporary SIRET as it's often required in schema/backend
+                ...formData
             });
             showSuccess('Succès', `Compte Artisan créé avec succès.`);
             setShowCreateModal(false);

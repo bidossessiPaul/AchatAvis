@@ -35,7 +35,6 @@ export const Profile: React.FC = () => {
     const [formData, setFormData] = useState({
         fullName: user?.full_name || '',
         companyName: user?.company_name || '',
-        siret: user?.siret || '',
         trade: user?.trade || '',
         phone: user?.phone || '',
         address: user?.address || '',
@@ -55,7 +54,6 @@ export const Profile: React.FC = () => {
             setFormData({
                 fullName: user.full_name || '',
                 companyName: user.company_name || '',
-                siret: user.siret || '',
                 trade: user.trade || '',
                 phone: user.phone || '',
                 address: user.address || '',
@@ -358,13 +356,6 @@ export const Profile: React.FC = () => {
                                                         value={formData.companyName}
                                                         onChange={handleProfileChange}
                                                         placeholder="Ma Société"
-                                                    />
-                                                    <Input
-                                                        label="SIRET"
-                                                        name="siret"
-                                                        value={formData.siret}
-                                                        onChange={handleProfileChange}
-                                                        placeholder="14 chiffres"
                                                     />
                                                 </div>
 

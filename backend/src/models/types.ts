@@ -17,7 +17,6 @@ export interface User {
     permissions?: any; // JSON field for admin team members
     // Joined Artisan Profile fields
     company_name?: string;
-    siret?: string;
     trade?: string;
     phone?: string;
     address?: string;
@@ -51,7 +50,6 @@ export interface ArtisanProfile {
     id: string;
     user_id: string;
     company_name: string;
-    siret: string;
     trade: 'plombier' | 'electricien' | 'chauffagiste' | 'couvreur' | 'vitrier' | 'paysagiste' | 'menage' | 'demenageur';
     sector_id?: number;
     sector_difficulty?: 'easy' | 'medium' | 'hard';
