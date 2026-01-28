@@ -8,13 +8,6 @@ export const passwordSchema = z
     .string()
     .min(8, 'Le mot de passe doit faire au moins 8 caractères');
 
-// SIRET validation (14 digits) - Handle empty strings if optional
-export const siretSchema = z
-    .string()
-    .transform(val => val.replace(/[\s.-]/g, ''))
-    .refine(val => val === '' || /^\d{14}$/.test(val), {
-        message: 'Le SIRET doit faire exactement 14 chiffres',
-    });
 
 // Phone validation (strip spaces and check digits)
 export const phoneSchema = z
@@ -36,14 +29,13 @@ export const artisanRegistrationSchema = z.object({
     fullName: z.string().min(2, "Le nom complet est requis"),
     password: passwordSchema,
     companyName: z.string().min(2, 'Le nom de l\'entreprise est requis'),
-    siret: siretSchema.optional().or(z.literal('')),
     trade: tradeSchema,
     phone: phoneSchema,
     address: z.string().min(5, 'L\'adresse est requise'),
     city: z.string().min(2, 'La ville est requise'),
     postalCode: z.string()
         .transform(val => val.replace(/\s/g, ''))
-        .refine(val => /^\d{5}$/.test(val), 'Le code postal doit faire 5 chiffres'),
+        .refine(val => /^\d{4,5}$/.test(val), 'Le code postal doit faire 4 ou 5 chiffres'),
     googleBusinessUrl: z.string().url('URL Google Business invalide').optional().or(z.literal('')),
 });
 
@@ -99,14 +91,13 @@ export const profileUpdateSchema = z.object({
         return val;
     }),
     companyName: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
-    siret: siretSchema.optional().or(z.literal('')),
     trade: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     phone: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     address: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     city: z.string().optional().or(z.literal('')).transform(val => val === '' ? undefined : val),
     postalCode: z.string()
         .transform(val => val.replace(/\s/g, ''))
-        .refine(val => val === '' || /^\d{5}$/.test(val), 'Le code postal doit faire 5 chiffres')
+        .refine(val => val === '' || /^\d{4,5}$/.test(val), 'Le code postal doit faire 4 ou 5 chiffres')
         .optional(),
     googleBusinessUrl: z.string().url('URL Google Business invalide').optional().or(z.literal('')),
     googleEmail: z.string().email('Email Google invalide').optional().or(z.literal('')),

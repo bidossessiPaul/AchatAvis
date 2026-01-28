@@ -34,13 +34,12 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
         // Create artisan profile
         await connection.execute(
             `INSERT INTO artisans_profiles 
-             (id, user_id, company_name, siret, trade, phone, address, city, postal_code, google_business_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, user_id, company_name, trade, phone, address, city, postal_code, google_business_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 profileId,
                 userId,
                 data.companyName,
-                data.siret,
                 data.trade,
                 data.phone,
                 data.address,
@@ -77,9 +76,6 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
         if (error.errno === 1062) {
             if (error.message.includes('email')) {
                 throw new Error('Email already registered');
-            }
-            if (error.message.includes('siret')) {
-                throw new Error('SIRET already registered');
             }
         }
 
@@ -217,7 +213,7 @@ export const login = async (email: string, password: string) => {
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
-                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
+                ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
@@ -395,7 +391,7 @@ export const verify2FA = async (userId: string, token: string) => {
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, 
                 u.created_at, u.updated_at, u.last_login,
                 u.two_factor_enabled, u.two_factor_secret,
-                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
+                ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
@@ -451,7 +447,7 @@ export const verify2FA = async (userId: string, token: string) => {
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
-                ap.company_name, ap.siret, ap.trade, ap.google_business_url,
+                ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
                 COALESCE(ap.address, '') as address,
@@ -550,13 +546,12 @@ export const updateProfile = async (userId: string, data: any) => {
 
         // 2. Update artisan profile if user is an artisan
         const artisanFields = [
-            'companyName', 'siret', 'trade', 'phone', 'address', 'city', 'postalCode', 'googleBusinessUrl'
+            'companyName', 'trade', 'phone', 'address', 'city', 'postalCode', 'googleBusinessUrl'
         ];
 
         // Map camelCase to snake_case for DB
         const mapping: Record<string, string> = {
             companyName: 'company_name',
-            siret: 'siret',
             trade: 'trade',
             phone: 'phone',
             address: 'address',

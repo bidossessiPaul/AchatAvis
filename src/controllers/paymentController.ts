@@ -85,11 +85,10 @@ export const paymentController = {
             if (checkProfile.length === 0) {
                 console.log('⚠️ Profil manquant, création...');
                 const profileId = uuidv4();
-                const tempSiret = `TEMP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
                 await connection.execute(`
-                    INSERT INTO artisans_profiles (id, user_id, company_name, siret, trade, phone, address, city, postal_code)
-                    VALUES (?, ?, 'À compléter', ?, 'plombier', '0000000000', 'À compléter', 'À compléter', '00000')
-                `, [profileId, userId, tempSiret]);
+                    INSERT INTO artisans_profiles (id, user_id, company_name, trade, phone, address, city, postal_code)
+                    VALUES (?, ?, 'À compléter', 'plombier', '0000000000', 'À compléter', 'À compléter', '00000')
+                `, [profileId, userId]);
             }
 
             // Mettre à jour abonnement

@@ -8,7 +8,7 @@ import { notificationService } from './notificationService';
 export const getArtisans = async () => {
     return await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
-               ap.company_name, ap.siret, ap.trade, ap.phone, ap.city, 
+               ap.company_name, ap.trade, ap.phone, ap.city, 
                ap.subscription_status, ap.subscription_end_date
         FROM users u
         JOIN artisans_profiles ap ON u.id = ap.user_id
@@ -1031,7 +1031,6 @@ export const createArtisan = async (data: {
     email: string;
     fullName: string;
     companyName: string;
-    siret: string;
     trade: string;
     phone: string;
     address?: string;
@@ -1078,13 +1077,12 @@ export const createArtisan = async (data: {
         // 4. Create artisan profile
         await connection.query(
             `INSERT INTO artisans_profiles 
-             (id, user_id, company_name, siret, trade, phone, address, city, postal_code, google_business_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, user_id, company_name, trade, phone, address, city, postal_code, google_business_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 profileId,
                 userId,
                 data.companyName,
-                data.siret,
                 data.trade,
                 data.phone,
                 data.address || '',
@@ -1249,7 +1247,6 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
         await connection.query(
             `UPDATE artisans_profiles SET 
                 company_name = ?, 
-                siret = ?, 
                 trade = ?, 
                 phone = ?, 
                 address = ?, 
@@ -1259,7 +1256,6 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
              WHERE user_id = ?`,
             [
                 data.company_name,
-                data.siret,
                 data.trade,
                 data.phone,
                 data.address,
