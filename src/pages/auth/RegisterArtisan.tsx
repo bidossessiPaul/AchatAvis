@@ -29,7 +29,6 @@ export const RegisterArtisan: React.FC = () => {
         fullName: '',
         password: '',
         companyName: '',
-        siret: '',
         trade: '', // Start empty, will be set once sectors load
         phone: '',
         address: '',
@@ -173,17 +172,6 @@ export const RegisterArtisan: React.FC = () => {
                                     required
                                 />
 
-                                <Input
-                                    type="text"
-                                    name="siret"
-                                    label="SIRET (facultatif)"
-                                    placeholder="14 chiffres"
-                                    maxLength={14}
-                                    value={formData.siret}
-                                    onChange={handleChange}
-                                    error={errors.siret}
-                                    icon={<Hash size={18} />}
-                                />
 
                                 <div className="input-wrapper">
                                     <label className="input-label">
@@ -263,7 +251,6 @@ export const RegisterArtisan: React.FC = () => {
                                         name="postalCode"
                                         label="Code postal"
                                         placeholder="75001"
-                                        maxLength={5}
                                         value={formData.postalCode}
                                         onChange={handleChange}
                                         error={errors.postalCode}
