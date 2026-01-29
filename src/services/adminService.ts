@@ -1374,3 +1374,34 @@ export const updateSector = async (slug: string, data: any) => {
 export const deleteSector = async (slug: string) => {
     return await query(`DELETE FROM sector_difficulty WHERE sector_slug = ?`, [slug]);
 };
+/**
+ * Get all reviews in a 360 view (Proposals + Submissions)
+ */
+export const getReview360Data = async () => {
+    return await query(`
+        SELECT 
+            p.id as proposal_id, 
+            p.content as proposal_content, 
+            p.author_name as proposal_author, 
+            p.status as proposal_status, 
+            p.order_id,
+            ro.company_name as fiche_name, 
+            ap.company_name as artisan_name,
+            ua.avatar_url as artisan_avatar,
+            s.id as submission_id, 
+            s.status as submission_status, 
+            s.submitted_at, 
+            s.review_url,
+            u.full_name as guide_name,
+            gp.google_email as guide_google_email
+        FROM review_proposals p
+        JOIN reviews_orders ro ON p.order_id = ro.id
+        JOIN artisans_profiles ap ON ro.artisan_id = ap.user_id
+        JOIN users ua ON ap.user_id = ua.id
+        LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
+        LEFT JOIN users u ON s.guide_id = u.id
+        LEFT JOIN guides_profiles gp ON u.id = gp.user_id
+        WHERE p.status != 'draft'
+        ORDER BY COALESCE(s.submitted_at, p.created_at) DESC
+    `);
+};
