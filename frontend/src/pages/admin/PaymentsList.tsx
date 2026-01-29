@@ -9,7 +9,9 @@ import {
     RotateCcw,
     Mail,
     User as UserIcon,
-    Wallet
+    Wallet,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -36,6 +38,8 @@ export const PaymentsList: React.FC = () => {
     const [selectedPayout, setSelectedPayout] = useState<PayoutRequest | null>(null);
     const [adminNote, setAdminNote] = useState('');
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         loadRequests();
@@ -85,6 +89,14 @@ export const PaymentsList: React.FC = () => {
 
         return matchesSearch && matchesStatus;
     });
+
+    const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
 
     return (
         <DashboardLayout title="Gestion des Paiements">
@@ -165,7 +177,7 @@ export const PaymentsList: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredRequests.length > 0 ? filteredRequests.map(request => (
+                                    {paginatedRequests.length > 0 ? paginatedRequests.map(request => (
                                         <tr key={request.id} style={{ backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', borderRadius: '16px', overflow: 'hidden' }}>
                                             <td className="font-medium" style={{ padding: '1.25rem 1.5rem', border: 'none', borderRadius: '16px 0 0 16px' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -251,6 +263,26 @@ export const PaymentsList: React.FC = () => {
                             </table>
                         )}
                     </div>
+
+                    {!isLoading && filteredRequests.length > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
+                                <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', backgroundColor: 'white' }}>
+                                    <option value={20}>20 paiements</option>
+                                    <option value={50}>50 paiements</option>
+                                    <option value={100}>100 paiements</option>
+                                    <option value={200}>200 paiements</option>
+                                </select>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredRequests.length)} sur {filteredRequests.length}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
+                                <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>Page {currentPage} / {totalPages}</span>
+                                <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white', color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}>Suivant<ChevronRight size={16} /></button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Revision/Refuse Modal Mockup (Conditional Inline Card) */}

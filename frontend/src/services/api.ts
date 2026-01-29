@@ -417,6 +417,11 @@ export const adminApi = {
     deletePack: async (id: string): Promise<void> => {
         await api.delete(`/admin/packs/${id}`);
     },
+
+    getReview360: async (): Promise<any[]> => {
+        const response = await api.get('/admin/reviews/360');
+        return response.data;
+    },
 };
 
 // Suspension API

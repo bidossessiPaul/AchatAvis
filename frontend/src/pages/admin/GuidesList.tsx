@@ -11,7 +11,9 @@ import {
     X,
     XCircle,
     Calendar,
-    Power
+    Power,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -34,6 +36,8 @@ export const GuidesList: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [currentPage, setCurrentPage] = useState(1);
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -115,6 +119,15 @@ export const GuidesList: React.FC = () => {
         g.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Pagination
+    const totalPages = Math.ceil(filteredGuides.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedGuides = filteredGuides.slice(startIndex, startIndex + itemsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
     return (
         <DashboardLayout title="Gestion des Guides">
             <div className="admin-dashboard revamped">
@@ -159,7 +172,7 @@ export const GuidesList: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredGuides.map(guide => (
+                                    {paginatedGuides.map(guide => (
                                         <tr key={guide.id}>
                                             <td className="font-medium">
                                                 <div className="artisan-info-main" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
@@ -213,6 +226,26 @@ export const GuidesList: React.FC = () => {
                             </table>
                         )}
                     </div>
+
+                    {!isLoading && filteredGuides.length > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
+                                <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', backgroundColor: 'white' }}>
+                                    <option value={20}>20 guides</option>
+                                    <option value={50}>50 guides</option>
+                                    <option value={100}>100 guides</option>
+                                    <option value={200}>200 guides</option>
+                                </select>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredGuides.length)} sur {filteredGuides.length}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
+                                <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>Page {currentPage} / {totalPages}</span>
+                                <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white', color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}>Suivant<ChevronRight size={16} /></button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
