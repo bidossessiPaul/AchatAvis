@@ -15,7 +15,9 @@ import {
     // ExternalLink,
     Clock,
     ArrowUpRight,
-    FolderOpen
+    FolderOpen,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import {
     XAxis,
@@ -71,9 +73,10 @@ export const SubscriptionsList: React.FC = () => {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('active');
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         loadData();
@@ -106,6 +109,14 @@ export const SubscriptionsList: React.FC = () => {
 
         return matchesSearch && matchesStatus;
     });
+
+    const totalPages = Math.ceil(filteredSubs.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedSubs = filteredSubs.slice(startIndex, startIndex + itemsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
 
 
 
@@ -264,6 +275,25 @@ export const SubscriptionsList: React.FC = () => {
                             </div>
                         </div>
 
+                        {!isLoading && filteredSubs.length > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
+                                    <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', backgroundColor: 'white' }}>
+                                        <option value={20}>20 abonnements</option>
+                                        <option value={50}>50 abonnements</option>
+                                        <option value={100}>100 abonnements</option>
+                                        <option value={200}>200 abonnements</option>
+                                    </select>
+                                    <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredSubs.length)} sur {filteredSubs.length}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
+                                    <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>Page {currentPage} / {totalPages}</span>
+                                    <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white', color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}>Suivant<ChevronRight size={16} /></button>
+                                </div>
+                            </div>
+                        )}
                         <div className="admin-main-card glass">
                             <div className="admin-card-header" style={{ padding: '0.5rem 0 1.5rem 0' }}>
                                 <div>
@@ -331,7 +361,7 @@ export const SubscriptionsList: React.FC = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredSubs.length > 0 ? (filteredSubs.map((sub, index) => (
+                                        {paginatedSubs.length > 0 ? (paginatedSubs.map((sub, index) => (
                                             <tr key={sub.payment_id || sub.user_id + index} style={{ animationDelay: `${index * 50}ms` }}>
                                                 <td>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>

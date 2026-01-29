@@ -5,24 +5,18 @@ import { SectorSelect } from '../../components/Campaign/SectorSelect';
 import {
     Search,
     Trash2,
-    CheckCircle,
-    XCircle,
-    PauseCircle,
-    Bell,
-    Eye,
     Briefcase,
+    ChevronLeft,
+    ChevronRight,
     Plus,
+    Eye,
     X,
     Building2,
-    Mail,
     User,
-    Phone,
-    MapPin,
-    Globe,
-    Power
+    MapPin
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
-import { showConfirm, showSuccess, showError, showInput, showPremiumWarningModal } from '../../utils/Swal';
+import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -46,6 +40,8 @@ export const ArtisansList: React.FC = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [packs, setPacks] = useState<any[]>([]);
+    const [itemsPerPage, setItemsPerPage] = useState(20);
+    const [currentPage, setCurrentPage] = useState(1);
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -96,7 +92,7 @@ export const ArtisansList: React.FC = () => {
 
         setIsCreating(true);
         try {
-            const result = await adminService.createArtisan({
+            await adminService.createArtisan({
                 ...formData
             });
             showSuccess('Succès', `Compte Artisan créé avec succès.`);
@@ -124,17 +120,7 @@ export const ArtisansList: React.FC = () => {
         }
     };
 
-    const handleStatusUpdate = async (userId: string, newStatus: string) => {
-        const result = await showConfirm('Confirmation', `Changer le statut en ${newStatus} ?`);
-        if (!result.isConfirmed) return;
-        try {
-            await adminService.updateUserStatus(userId, newStatus);
-            showSuccess('Succès', 'Statut mis à jour');
-            loadArtisans(true);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
-        }
-    };
+
 
     const handleDelete = async (userId: string) => {
         const result = await showConfirm('Supprimer ce compte ?', 'Cette action est irréversible.');
@@ -148,43 +134,22 @@ export const ArtisansList: React.FC = () => {
         }
     };
 
-    const handleIssueWarning = async (artisan: Artisan) => {
-        try {
-            const reasonsData = await adminService.getSuspensionReasons();
-            const reasons = reasonsData.warnings;
 
-            const result = await showPremiumWarningModal(
-                'Avertissement',
-                `Envoyer un avertissement à ${artisan.company_name}. Sélectionnez le motif :`,
-                reasons
-            );
-
-            if (!result.isConfirmed || !result.value) return;
-
-            let finalReason = result.value;
-            console.log('🔍 Reason selected:', finalReason);
-
-            if (finalReason === 'OTHER') {
-                console.log('🔍 Opening manual input modal...');
-                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
-                if (!manualInput.isConfirmed || !manualInput.value) return;
-                finalReason = manualInput.value;
-                console.log('🔍 Manual reason entered:', finalReason);
-            }
-
-            const response = await adminService.issueWarning(artisan.id, finalReason);
-            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
-            loadArtisans(true);
-        } catch (error) {
-            console.error('❌ Error in handleIssueWarning:', error);
-            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
-        }
-    };
 
     const filteredArtisans = artisans.filter(a =>
         a.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         a.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Pagination
+    const totalPages = Math.ceil(filteredArtisans.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedArtisans = filteredArtisans.slice(startIndex, startIndex + itemsPerPage);
+
+    // Reset to first page when search changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     return (
         <DashboardLayout title="Gestion des Artisans">
@@ -222,27 +187,29 @@ export const ArtisansList: React.FC = () => {
                             <table className="admin-modern-table">
                                 <thead>
                                     <tr>
+                                        <th style={{ width: '60px' }}></th>
                                         <th>Entreprise</th>
                                         <th>Email</th>
                                         <th>Métier</th>
                                         <th>Abonnement</th>
-                                        <th>Avertissements</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredArtisans.map(artisan => (
+                                    {paginatedArtisans.map(artisan => (
                                         <tr key={artisan.id}>
-                                            <td className="font-medium">
-                                                <div className="artisan-info-main">
+                                            <td style={{ paddingRight: '0.5rem' }}>
+                                                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gray-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)', overflow: 'hidden', border: '1px solid var(--gray-100)' }}>
                                                     {artisan.avatar_url ? (
-                                                        <img src={getFileUrl(artisan.avatar_url)} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+                                                        <img src={getFileUrl(artisan.avatar_url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
-                                                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gray-400)' }}>
-                                                            <div style={{ transform: 'scale(0.8)' }}><Briefcase size={16} /></div>
-                                                        </div>
+                                                        <div style={{ transform: 'scale(0.8)' }}><Briefcase size={16} /></div>
                                                     )}
+                                                </div>
+                                            </td>
+                                            <td className="font-medium">
+                                                <div style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
                                                     {artisan.company_name}
                                                 </div>
                                             </td>
@@ -254,15 +221,7 @@ export const ArtisansList: React.FC = () => {
                                                     {artisan.subscription_status || 'Aucun'}
                                                 </span>
                                             </td>
-                                            <td>
-                                                {artisan.warning_count > 0 ? (
-                                                    <span className="admin-badge warning" style={{ background: '#fff7ed', color: '#c2410c', borderColor: '#fdba74' }}>
-                                                        {artisan.warning_count}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs">-</span>
-                                                )}
-                                            </td>
+
                                             <td>
                                                 <span className={`admin-badge ${artisan.status || 'inactive'}`}>
                                                     {artisan.status}
@@ -279,13 +238,7 @@ export const ArtisansList: React.FC = () => {
                                                             <Eye size={18} />
                                                         </button>
                                                     </>
-                                                    <button
-                                                        onClick={() => handleIssueWarning(artisan)}
-                                                        className="action-btn warn-btn"
-                                                        title="Avertir"
-                                                    >
-                                                        <Bell size={18} />
-                                                    </button>
+
                                                     <button
                                                         onClick={() => handleDelete(artisan.id)}
                                                         className="action-btn delete-btn"
@@ -301,6 +254,104 @@ export const ArtisansList: React.FC = () => {
                             </table>
                         )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {!isLoading && filteredArtisans.length > 0 && (
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginTop: '2rem',
+                            padding: '1.5rem',
+                            backgroundColor: 'var(--gray-50)',
+                            borderRadius: '12px',
+                            flexWrap: 'wrap',
+                            gap: '1rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
+                                <select
+                                    value={itemsPerPage}
+                                    onChange={(e) => {
+                                        setItemsPerPage(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--gray-300)',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        backgroundColor: 'white'
+                                    }}
+                                >
+                                    <option value={20}>20 artisans</option>
+                                    <option value={50}>50 artisans</option>
+                                    <option value={100}>100 artisans</option>
+                                    <option value={200}>200 artisans</option>
+                                </select>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>
+                                    {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredArtisans.length)} sur {filteredArtisans.length}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--gray-300)',
+                                        backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white',
+                                        color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)',
+                                        cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <ChevronLeft size={16} />
+                                    Précédent
+                                </button>
+
+                                <span style={{
+                                    padding: '0.5rem 1rem',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 600,
+                                    color: 'var(--gray-700)'
+                                }}>
+                                    Page {currentPage} / {totalPages}
+                                </span>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    style={{
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--gray-300)',
+                                        backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white',
+                                        color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)',
+                                        cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    Suivant
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Create Artisan Modal */}

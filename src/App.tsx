@@ -37,6 +37,7 @@ import { PaymentsList } from './pages/admin/PaymentsList';
 import { ArtisanDetail } from './pages/admin/ArtisanDetail';
 import { GuideDetail } from './pages/admin/GuideDetail';
 import { ReviewValidation } from './pages/admin/ReviewValidation';
+import { ReviewTracking360 } from './pages/admin/ReviewTracking360';
 import { AdminFiches } from './pages/admin/AdminFiches';
 import { AdminFicheDetail } from './pages/admin/AdminFicheDetail';
 import { SubscriptionsList } from './pages/admin/SubscriptionsList';
@@ -313,6 +314,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission={['can_manage_reviews', 'can_validate_reviews']}>
                             <ReviewValidation />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/reviews-360" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_reviews', 'can_validate_reviews']}>
+                            <ReviewTracking360 />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
