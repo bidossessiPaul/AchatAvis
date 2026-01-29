@@ -593,3 +593,16 @@ export const deleteSector = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+/**
+ * Get all reviews 360 view
+ * GET /api/admin/reviews/360
+ */
+export const getReview360 = async (_req: Request, res: Response) => {
+    try {
+        const data = await adminService.getReview360Data();
+        res.json(data);
+    } catch (error) {
+        console.error('Get review 360 error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
