@@ -34,13 +34,14 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         return () => clearInterval(interval);
     }, [isGenerating]);
 
-    const handleGenerate = async () => {
+    const handleGenerate = async (force: boolean = false) => {
         setIsGenerating(true);
         setLoadingMessageIndex(0);
         if (onError) onError(null);
         try {
             // Save to backend - triggered with no proposals to use OpenAI on backend
-            const savedProposals = await artisanService.generateProposals(order.id);
+            // Pass force flag
+            const savedProposals = await artisanService.generateProposals(order.id, [], force);
             setProposals(savedProposals);
         } catch (error: any) {
             console.error("Failed to generate", error);
@@ -81,7 +82,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 className="submission-card-title" style={{ margin: 0 }}>Génération des avis</h2>
                 {proposals.length === 0 && !isGenerating && (
-                    <button onClick={handleGenerate} className="btn-next" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button onClick={() => handleGenerate()} className="btn-next" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Sparkles size={18} />
                         Lancer la génération
                     </button>
@@ -114,13 +115,20 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                         <span style={{ fontSize: '0.875rem', color: '#4b5563', fontWeight: 500 }}>
                             {proposals.length} avis générés sur {order.quantity} demandés
                         </span>
-                        <button onClick={handleGenerate} style={{ background: 'none', border: 'none', color: 'var(--primary-brand)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
-                            <RefreshCw size={14} />
-                            Régénérer tout
-                        </button>
+                        {(order.quantity || 0) > proposals.length ? (
+                            <button onClick={() => handleGenerate()} style={{ background: '#fff7ed', border: '1px solid #ea580c', color: '#ea580c', borderRadius: '0.5rem', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                                <Sparkles size={14} />
+                                Générer les {(order.quantity || 0) - proposals.length} manquants
+                            </button>
+                        ) : (
+                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                                <RefreshCw size={14} />
+                                Tout régénérer
+                            </button>
+                        )}
                     </div>
 
-                    <div className="proposals-table-wrapper" style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                    <div className="proposals-table-wrapper" style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
                             <thead style={{ backgroundColor: '#f9fafb' }}>
                                 <tr>

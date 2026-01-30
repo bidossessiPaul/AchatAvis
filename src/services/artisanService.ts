@@ -37,8 +37,8 @@ export const artisanService = {
     /**
      * Generate AI review proposals for an order
      */
-    async generateProposals(orderId: string, proposals?: Partial<ReviewProposal>[]): Promise<ReviewProposal[]> {
-        const response = await api.post(`/artisan/orders/${orderId}/proposals/generate`, { proposals });
+    async generateProposals(orderId: string, proposals?: Partial<ReviewProposal>[], force: boolean = false): Promise<ReviewProposal[]> {
+        const response = await api.post(`/artisan/orders/${orderId}/proposals/generate`, { proposals, force });
         return response.data;
     },
 

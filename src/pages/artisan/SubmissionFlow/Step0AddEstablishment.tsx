@@ -281,7 +281,7 @@ export const Step0AddEstablishment: React.FC<Step0AddEstProps> = ({ platformId, 
                                 >
                                     {availablePacks.map(pack => (
                                         <option key={pack.id} value={pack.id}>
-                                            {pack.pack_name || pack.description} ({pack.fiches_used}/{pack.fiches_quota} mission{pack.fiches_quota > 1 ? 's' : ''})
+                                            {pack.review_quantity} Avis - {pack.pack_name || pack.description} ({pack.fiches_used}/{pack.fiches_quota} mission{pack.fiches_quota > 1 ? 's' : ''})
                                         </option>
                                     ))}
                                 </select>

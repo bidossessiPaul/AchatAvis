@@ -462,7 +462,7 @@ export const GuideDetail: React.FC = () => {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <Shield size={22} color="#6366f1" />
-                                    <h3 style={{ margin: 0 }}>Comptes Gmail Google Maps</h3>
+                                    <h3 style={{ margin: 0 }}>Comptes Gmail Local Guide</h3>
                                 </div>
                                 <span className="premium-status-badge active" style={{ fontSize: '0.75rem' }}>
                                     {gmailAccounts.length} comptes actifs
