@@ -342,10 +342,10 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 return res.status(400).json({ success: false, error: 'Ville requise' });
             }
 
-            // Import dynamically since openAiService might not be imported at top
-            const { openAiService } = require('../services/openAiService');
+            // Import dynamically since aiService might not be imported at top
+            const { aiService } = require('../services/aiService');
 
-            const cities = await openAiService.generateNearbyCities(base_city, count || 5);
+            const cities = await aiService.generateNearbyCities(base_city, count || 5);
 
             // Toujours inclure la ville de base si elle n'est pas dans la liste
             // Mais de manière intelligente (la mettre en premier)

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { artisanService } from '../services/artisanService';
-import { openAiService } from '../services/openAiService';
+import { aiService } from '../services/aiService';
+import { query } from '../config/database';
 
 export const artisanController = {
     async createDraft(req: Request, res: Response) {
@@ -84,11 +85,48 @@ export const artisanController = {
             console.log("👤 Récupération du profil artisan pour contexte...");
             const artisanProfile: any = await artisanService.getArtisanProfileByUserId(order.artisan_id);
 
+            // Count existing proposals to determine how many more are needed
+            const existingProposals: any = await query('SELECT COUNT(*) as count FROM review_proposals WHERE order_id = ?', [id]);
+            const existingCount = existingProposals[0]?.count || 0;
+            const targetQuantity = order.quantity || 1;
+
+            const { force } = req.body;
+            let needed = targetQuantity - existingCount;
+            let append = true;
+
+            if (force) {
+                console.log("⚠️ Force regeneration requested. Resetting all reviews.");
+                needed = targetQuantity;
+                append = false;
+            } else {
+                if (needed <= 0) {
+                    console.log(`✅ Déjà ${existingCount}/${targetQuantity} avis générés. Pas d'action requise.`);
+                    // Fetch and return existing
+                    const current = await artisanService.createProposals(id, [], true); // effectively just gets
+                    return res.json(current);
+                }
+            }
+
+            // If we are forcing regeneration (e.g. user clicked "Regenerate All"), we might handle that via a query param in future, 
+            // but for now, the user requested "Generate Remaining" logic.
+            // However, the standard behavior of "Generate" button usually implies "Do the work".
+            // If we have 0, needed = target. If we have 5/10, needed = 5.
+            // If needed <= 0, we might just return existing.
+
+            // To support "Regenerate all", the frontend should probably delete first or we add a flag.
+            // For this specific request: "default generate all, if fail, button to generate rest".
+            // So if I call this and I have 5/10, I expect 5 more.
+
+
+
+            console.log(`📊 Etat actuel: ${existingCount}/${targetQuantity}. Reste à générer: ${needed}`);
+
+            // Update params to request only needed
             const generationParams = {
                 companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
                 ficheName: order.fiche_name,
                 trade: artisanProfile?.trade || 'Artisan',
-                quantity: order.quantity || 1,
+                quantity: needed, // REQUEST ONLY NEEDED
                 context: order.company_context,
                 sector: order.sector,
                 zones: order.zones,
@@ -98,13 +136,14 @@ export const artisanController = {
             };
             console.log("🧠 Paramètres envoyés à l'IA:", JSON.stringify(generationParams, null, 2));
 
-            const generated = await openAiService.generateReviews(generationParams);
+            const generated = await aiService.generateReviews(generationParams);
 
-            // On s'assure de ne pas dépasser la quantité demandée
-            const finalProposals = generated.slice(0, order.quantity);
+            // On s'assure de ne pas dépasser la quantité demandée (par rapport à ce qu'on a demandé)
+            const finalProposals = generated.slice(0, needed);
 
-            console.log(`💾 Sauvegarde de ${finalProposals.length} propositions...`);
-            const created = await artisanService.createProposals(id, finalProposals);
+            console.log(`💾 Sauvegarde de ${finalProposals.length} nouvelles propositions (Append=${append})...`);
+            // Pass append mode based on force flag
+            const created = await artisanService.createProposals(id, finalProposals, append);
 
             console.log("✅ Generation terminée avec succès !");
             return res.json(created);
@@ -230,7 +269,7 @@ export const artisanController = {
                 return res.status(400).json({ error: 'Missing content or author_name' });
             }
 
-            const responseText = await openAiService.generateReviewResponse(content, author_name);
+            const responseText = await aiService.generateReviewResponse(content, author_name);
             return res.json({ response: responseText });
         } catch (error: any) {
             console.error("❌ Error generating review response:", error);
