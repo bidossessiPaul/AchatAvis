@@ -33,6 +33,7 @@ export const SectorManagement: React.FC = () => {
     const [sectors, setSectors] = useState<Sector[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
     const [itemsPerPage, setItemsPerPage] = useState(20);
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -136,7 +137,8 @@ export const SectorManagement: React.FC = () => {
     const filteredSectors = sectors.filter(s => {
         const matchesSearch = s.sector_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.sector_slug.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchesSearch;
+        const matchesDifficulty = difficultyFilter === 'all' || s.difficulty === difficultyFilter;
+        return matchesSearch && matchesDifficulty;
     });
 
     const totalPages = Math.ceil(filteredSectors.length / itemsPerPage);
@@ -145,7 +147,7 @@ export const SectorManagement: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm]);
+    }, [searchTerm, difficultyFilter]);
 
     const getDifficultyBadge = (difficulty: string) => {
         switch (difficulty) {
@@ -183,87 +185,155 @@ export const SectorManagement: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Difficulty Filter */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                        <button
+                            onClick={() => setDifficultyFilter('all')}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: difficultyFilter === 'all' ? '2px solid var(--artisan-primary)' : '1px solid var(--gray-300)',
+                                background: difficultyFilter === 'all' ? 'var(--artisan-primary)' : 'white',
+                                color: difficultyFilter === 'all' ? 'white' : 'var(--gray-700)',
+                                fontWeight: 600,
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Tous ({sectors.length})
+                        </button>
+                        <button
+                            onClick={() => setDifficultyFilter('easy')}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: difficultyFilter === 'easy' ? '2px solid #059669' : '1px solid #a7f3d0',
+                                background: difficultyFilter === 'easy' ? '#ecfdf5' : 'white',
+                                color: difficultyFilter === 'easy' ? '#059669' : '#10b981',
+                                fontWeight: 600,
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Facile ({sectors.filter(s => s.difficulty === 'easy').length})
+                        </button>
+                        <button
+                            onClick={() => setDifficultyFilter('medium')}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: difficultyFilter === 'medium' ? '2px solid #d97706' : '1px solid #fde68a',
+                                background: difficultyFilter === 'medium' ? '#fffbeb' : 'white',
+                                color: difficultyFilter === 'medium' ? '#d97706' : '#f59e0b',
+                                fontWeight: 600,
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Moyen ({sectors.filter(s => s.difficulty === 'medium').length})
+                        </button>
+                        <button
+                            onClick={() => setDifficultyFilter('hard')}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: difficultyFilter === 'hard' ? '2px solid #dc2626' : '1px solid #fecaca',
+                                background: difficultyFilter === 'hard' ? '#fef2f2' : 'white',
+                                color: difficultyFilter === 'hard' ? '#dc2626' : '#ef4444',
+                                fontWeight: 600,
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Difficile ({sectors.filter(s => s.difficulty === 'hard').length})
+                        </button>
+                    </div>
+
                     <div className="admin-table-container">
                         {loading ? (
                             <div className="admin-loading">
                                 <LoadingSpinner size="lg" text="Chargement des secteurs..." />
                             </div>
                         ) : filteredSectors.length > 0 ? (
-                            <table className="admin-modern-table">
-                                <thead>
-                                    <tr>
-                                        <th>Secteur</th>
-                                        <th className="text-center">Difficulté</th>
-                                        <th className="text-center">Sévérité G</th>
-                                        <th className="text-center">Quota/Mois</th>
-                                        <th className="text-center">Délai (j)</th>
-                                        <th className="text-center">Statut</th>
-                                        <th className="text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {paginatedSectors.map((sector) => (
-                                        <tr key={sector.id}>
-                                            <td className="font-medium">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                                                        {sector.icon_emoji || <LayoutGrid size={16} />}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold">{sector.sector_name}</div>
-                                                        <div className="text-gray-400 text-xs">{sector.sector_slug}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="text-center">{getDifficultyBadge(sector.difficulty)}</td>
-                                            <td className="text-center">
-                                                <span className="admin-badge" style={{ background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' }}>
-                                                    Niv. {sector.google_strictness_level}
-                                                </span>
-                                            </td>
-                                            <td className="text-center font-medium">{sector.max_reviews_per_month_per_email || '∞'}</td>
-                                            <td className="text-center">{sector.min_days_between_reviews}j</td>
-                                            <td className="text-center">
-                                                {sector.is_active ? (
-                                                    <span className="admin-badge active">Actif</span>
-                                                ) : (
-                                                    <span className="admin-badge rejected">Inactif</span>
-                                                )}
-                                            </td>
-                                            <td className="actions-cell">
-                                                <div className="action-buttons">
-                                                    <button className="action-btn" onClick={() => handleOpenModal(sector)} title="Modifier">
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    <button className="action-btn delete-btn" onClick={() => handleDelete(sector.sector_slug)} title="Supprimer">
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-
-                                                {!loading && filteredSectors.length > 0 && (
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                            <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
-                                                            <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', backgroundColor: 'white' }}>
-                                                                <option value={20}>20 secteurs</option>
-                                                                <option value={50}>50 secteurs</option>
-                                                                <option value={100}>100 secteurs</option>
-                                                                <option value={200}>200 secteurs</option>
-                                                            </select>
-                                                            <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredSectors.length)} sur {filteredSectors.length}</span>
-                                                        </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
-                                                            <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>Page {currentPage} / {totalPages}</span>
-                                                            <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white', color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}>Suivant<ChevronRight size={16} /></button>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </td>
+                            <>
+                                <table className="admin-modern-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Secteur</th>
+                                            <th className="text-center">Difficulté</th>
+                                            <th className="text-center">Sévérité G</th>
+                                            <th className="text-center">Quota/Mois</th>
+                                            <th className="text-center">Délai (j)</th>
+                                            <th className="text-center">Statut</th>
+                                            <th className="text-right">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {paginatedSectors.map((sector) => (
+                                            <tr key={sector.id}>
+                                                <td className="font-medium">
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', background: 'var(--gray-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                                                            {sector.icon_emoji || <LayoutGrid size={16} />}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold">{sector.sector_name}</div>
+                                                            <div className="text-gray-400 text-xs">{sector.sector_slug}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="text-center">{getDifficultyBadge(sector.difficulty)}</td>
+                                                <td className="text-center">
+                                                    <span className="admin-badge" style={{ background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' }}>
+                                                        Niv. {sector.google_strictness_level}
+                                                    </span>
+                                                </td>
+                                                <td className="text-center font-medium">{sector.max_reviews_per_month_per_email || '∞'}</td>
+                                                <td className="text-center">{sector.min_days_between_reviews}j</td>
+                                                <td className="text-center">
+                                                    {sector.is_active ? (
+                                                        <span className="admin-badge active">Actif</span>
+                                                    ) : (
+                                                        <span className="admin-badge rejected">Inactif</span>
+                                                    )}
+                                                </td>
+                                                <td className="actions-cell">
+                                                    <div className="action-buttons">
+                                                        <button className="action-btn" onClick={() => handleOpenModal(sector)} title="Modifier">
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button className="action-btn delete-btn" onClick={() => handleDelete(sector.sector_slug)} title="Supprimer">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
+                                        <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', backgroundColor: 'white' }}>
+                                            <option value={20}>20 secteurs</option>
+                                            <option value={50}>50 secteurs</option>
+                                            <option value={100}>100 secteurs</option>
+                                            <option value={200}>200 secteurs</option>
+                                        </select>
+                                        <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredSectors.length)} sur {filteredSectors.length}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
+                                        <span style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, color: 'var(--gray-700)' }}>Page {currentPage} / {totalPages}</span>
+                                        <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === totalPages ? 'var(--gray-100)' : 'white', color: currentPage === totalPages ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}>Suivant<ChevronRight size={16} /></button>
+                                    </div>
+                                </div>
+                            </>
                         ) : (
                             <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--gray-400)' }}>
                                 <Info size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />

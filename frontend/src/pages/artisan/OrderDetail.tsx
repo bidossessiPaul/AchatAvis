@@ -136,19 +136,28 @@ export const OrderDetail: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
-                            background: '#f3f4f6',
-                            border: 'none',
-                            color: '#111827',
+                            background: order.proposals && order.proposals.length < (order.quantity || 0) ? '#fff7ed' : '#f3f4f6',
+                            border: order.proposals && order.proposals.length < (order.quantity || 0) ? '1px solid #ea580c' : 'none',
+                            color: order.proposals && order.proposals.length < (order.quantity || 0) ? '#ea580c' : '#111827',
                             padding: '0.6rem 1.2rem',
                             borderRadius: '0.75rem',
                             cursor: 'pointer',
                             fontWeight: 600,
                             transition: 'all 0.2s'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
+                        onMouseEnter={(e) => e.currentTarget.style.background = order.proposals && order.proposals.length < (order.quantity || 0) ? '#ffedd5' : '#e5e7eb'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = order.proposals && order.proposals.length < (order.quantity || 0) ? '#fff7ed' : '#f3f4f6'}
                     >
-                        <Zap size={18} color={tradeInfo.color} /> Modifier & Régénérer
+                        {order.proposals && order.proposals.length < (order.quantity || 0) ? (
+                            <>
+                                <AlertTriangle size={18} />
+                                Compléter ({((order.quantity || 0) - order.proposals.length)} manquants)
+                            </>
+                        ) : (
+                            <>
+                                <Zap size={18} color={tradeInfo.color} /> Modifier & Régénérer
+                            </>
+                        )}
                     </button>
                 </div>
 
