@@ -1,6 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 import dotenv from 'dotenv';
-import { TextBlock } from '@anthropic-ai/sdk/resources/messages.mjs';
 
 dotenv.config();
 
@@ -25,7 +24,6 @@ export const aiService = {
     async generateReviews(params: GenerateReviewsParams) {
         const {
             companyName,
-            ficheName,
             trade,
             quantity,
             context,
@@ -132,7 +130,7 @@ Format de sortie attendu (JSON) :
                 if (Array.isArray(parsed)) return parsed;
                 throw new Error("Format invalide (pas un tableau)");
             } catch (e) {
-                console.error("Erreur parsing JSON Claude:", content);
+                console.error("Erreur parsing JSON Claude:", rawContent);
                 throw e;
             }
 
