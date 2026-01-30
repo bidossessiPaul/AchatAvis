@@ -284,14 +284,16 @@ export const artisanService = {
     /**
      * Create AI generated proposals for an order
      */
-    async createProposals(orderId: string, proposals: Partial<ReviewProposal>[]) {
+    async createProposals(orderId: string, proposals: Partial<ReviewProposal>[], append: boolean = false) {
         if (!Array.isArray(proposals)) {
             console.error("❌ createProposals: proposals n'est pas un tableau", proposals);
             throw new Error("Proposals must be an array");
         }
 
-        // Clear existing proposals (draft or approved) to allow full regeneration
-        await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
+        // Clear existing proposals (draft or approved) ONLY if not appending
+        if (!append) {
+            await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
+        }
 
         for (const p of proposals) {
             const id = uuidv4();

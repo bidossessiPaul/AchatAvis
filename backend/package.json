@@ -22,6 +22,7 @@
   "author": "AchatAvis",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cheerio": "^0.22.35",
     "axios": "^1.13.2",
