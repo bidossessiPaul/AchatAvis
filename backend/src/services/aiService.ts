@@ -5,6 +5,8 @@ dotenv.config();
 
 const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 120 * 1000, // 2 minutes timeout for API calls
+    maxRetries: 2, // Retry twice on failure
 });
 
 interface GenerateReviewsParams {
