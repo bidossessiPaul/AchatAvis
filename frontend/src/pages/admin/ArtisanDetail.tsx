@@ -63,6 +63,7 @@ interface ArtisanDetailData {
         status: string;
         created_at: string;
         last_login: string;
+        last_seen: string | null;
         warning_count: number;
         company_name: string;
         trade: string;
@@ -419,7 +420,31 @@ export const ArtisanDetail: React.FC = () => {
                                 ) : (
                                     <>
                                         <span className="header-subtitle" title={profile.full_name}>{profile.full_name}</span>
-                                        <h2>{profile.company_name}</h2>
+                                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            {profile.company_name}
+                                            {(() => {
+                                                if (!profile.last_seen) return null;
+                                                const lastSeenDate = new Date(profile.last_seen);
+                                                const now = new Date();
+                                                const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+                                                if (diffInMinutes < 5) {
+                                                    return (
+                                                        <span
+                                                            title="En ligne"
+                                                            style={{
+                                                                width: '12px',
+                                                                height: '12px',
+                                                                backgroundColor: '#10b981',
+                                                                borderRadius: '50%',
+                                                                display: 'inline-block',
+                                                                boxShadow: '0 0 0 2px #fff, 0 0 8px #10b98177'
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+                                        </h2>
                                     </>
                                 )}
                                 <div className="status-row">

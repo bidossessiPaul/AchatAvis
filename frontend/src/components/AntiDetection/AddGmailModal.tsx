@@ -103,11 +103,36 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
                         />
 
                         <Input
-                            label="Lien Profil Google Maps (Optionnel)"
+                            label="Lien vers profil Guide Local (Optionnel)"
                             placeholder="https://www.google.com/maps/contrib/..."
                             value={formData.mapsProfileUrl}
                             onChange={(e) => setFormData({ ...formData, mapsProfileUrl: e.target.value })}
                         />
+                        <div style={{
+                            background: '#f0f9ff',
+                            border: '1px solid #bae6fd',
+                            borderRadius: '0.75rem',
+                            padding: '0.875rem',
+                            marginTop: '-0.5rem'
+                        }}>
+                            <p style={{
+                                fontSize: '0.75rem',
+                                color: '#0369a1',
+                                margin: 0,
+                                lineHeight: '1.4'
+                            }}>
+                                💡 <strong>Important :</strong> Sans ce lien, votre compte sera bloqué. Pour le trouver, rendez-vous sur{' '}
+                                <a
+                                    href="https://www.google.com/maps/contrib/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ color: '#0ea5e9', textDecoration: 'underline', fontWeight: 600 }}
+                                >
+                                    Google Maps
+                                </a>
+                                {' '}et copiez l'URL de votre profil Guide Local.
+                            </p>
+                        </div>
                     </div>
 
                     <div style={{ display: 'grid', gap: '0.75rem' }}>

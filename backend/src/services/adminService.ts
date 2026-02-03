@@ -7,7 +7,7 @@ import { notificationService } from './notificationService';
  */
 export const getArtisans = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                ap.company_name, ap.trade, ap.phone, ap.city, 
                ap.subscription_status, ap.subscription_end_date
         FROM users u
@@ -22,7 +22,7 @@ export const getArtisans = async () => {
  */
 export const getGuides = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.city,
                COUNT(DISTINCT rs.id) as submitted_reviews_count
@@ -30,7 +30,7 @@ export const getGuides = async () => {
         JOIN guides_profiles gp ON u.id = gp.user_id
         LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
         WHERE u.role = 'guide'
-        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                  gp.google_email, gp.local_guide_level, gp.total_reviews_count, gp.phone, gp.city
         ORDER BY u.created_at DESC
     `);
@@ -113,7 +113,7 @@ export const getAllUsers = async () => {
  */
 export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                ap.company_name, ap.trade, ap.phone, ap.whatsapp_number, ap.address, ap.city, ap.postal_code,
                ap.google_business_url, ap.subscription_status, ap.subscription_end_date,
                ap.monthly_reviews_quota, ap.current_month_reviews,
@@ -153,7 +153,7 @@ export const getArtisanDetail = async (userId: string) => {
  */
 export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.whatsapp_number, gp.city
         FROM users u
@@ -823,8 +823,19 @@ export const getAdminficheDetail = async (orderId: string) => {
  * Update any fiche field (Admin CRUD)
  */
 export const updatefiche = async (orderId: string, data: any) => {
-    const fields = Object.keys(data);
-    const values = Object.values(data);
+    // Filter out fields that don't exist in reviews_orders table
+    // These are read-only fields from JOINs or computed values
+    const invalidFields = ['pack_reviews_per_fiche', 'pack_features', 'pack_name', 'artisan_name', 'artisan_email', 'artisan_company'];
+
+    const filteredData = Object.keys(data)
+        .filter(key => !invalidFields.includes(key))
+        .reduce((obj: any, key) => {
+            obj[key] = data[key];
+            return obj;
+        }, {});
+
+    const fields = Object.keys(filteredData);
+    const values = Object.values(filteredData);
 
     if (fields.length === 0) return;
 
@@ -837,12 +848,12 @@ export const updatefiche = async (orderId: string, data: any) => {
     );
 
     // If payout_per_review was updated, cascade the change to PENDING submissions
-    if (data.payout_per_review !== undefined) {
+    if (filteredData.payout_per_review !== undefined) {
         await query(
             `UPDATE reviews_submissions 
              SET earnings = ? 
              WHERE order_id = ? AND status = 'pending'`,
-            [data.payout_per_review, orderId]
+            [filteredData.payout_per_review, orderId]
         );
     }
 

@@ -276,8 +276,6 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 false // Phone not verified yet
             );
 
-            const trustScoreValue = result.finalScore;
-            const trustLevel = result.trustLevel;
             const maxReviewsPerMonth = result.maxReviewsPerMonth;
 
             await query(`
@@ -298,19 +296,86 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 is_verified = TRUE,
                 verification_date = NOW()
             `, [
-                user_id, email, maps_profile_url, local_guide_level || 1,
-                total_reviews_google || 0, trustScoreValue, trustLevel.toLowerCase(),
-                trustScoreValue, trustLevel.toUpperCase(),
-                avatar_url || null, avatar_url ? true : false,
+                user_id, email, maps_profile_url, local_guide_level || 1, total_reviews_google || 0,
+                result.finalScore, "Nouveau", result.finalScore, result.trustLevel,
+                result.details.mapsProfile?.data?.avatarUrl || avatar_url || null,
+                result.details.mapsProfile?.data?.avatarUrl ? true : false,
                 maxReviewsPerMonth
             ]);
 
-            return res.json({ success: true, message: 'Compte Gmail ajouté avec succès' });
+            return res.json({ success: true, message: 'Compte ajouté avec succès' });
         } catch (error: any) {
-            if (error.code === 'ER_DUP_ENTRY') {
-                return res.status(400).json({ success: false, error: 'Cet email est déjà enregistré pour votre compte.' });
+            console.error('Add gmail error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async updateGmailAccount(req: Request, res: Response) {
+        try {
+            const { accountId } = req.params;
+            const { maps_profile_url } = req.body;
+            const user_id = req.user?.userId;
+
+            if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+            // 1. Verify ownership
+            const existing: any = await query('SELECT * FROM guide_gmail_accounts WHERE id = ? AND user_id = ?', [accountId, user_id]);
+            if (!existing || existing.length === 0) {
+                return res.status(404).json({ success: false, error: 'Compte introuvable' });
             }
-            console.error('Error adding Gmail account:', error);
+            const account = existing[0];
+
+            // 2. Check global uniqueness of URL if provided
+            if (maps_profile_url) {
+                const dup: any = await query(
+                    'SELECT id FROM guide_gmail_accounts WHERE maps_profile_url = ? AND id != ?',
+                    [maps_profile_url, accountId]
+                );
+                if (dup && dup.length > 0) {
+                    return res.status(400).json({ success: false, error: 'Ce lien est déjà utilisé par un autre compte.' });
+                }
+            }
+
+            // 3. Recalculate Trust Score
+            const { TrustScoreEngine } = require('../services/trustScoreEngine');
+            const result = await TrustScoreEngine.calculateTrustScore(
+                account.email,
+                maps_profile_url || account.maps_profile_url,
+                account.phone_verified // Keep existing verification status
+            );
+
+            // 4. Update Database
+            await query(`
+                UPDATE guide_gmail_accounts
+                SET maps_profile_url = ?,
+                    local_guide_level = ?,
+                    total_reviews_google = ?,
+                    trust_score = ?,
+                    trust_score_value = ?,
+                    trust_level = ?,
+                    avatar_url = ?,
+                    has_profile_picture = ?,
+                    monthly_quota_limit = ?,
+                    is_blocked = ?,
+                    updated_at = NOW()
+                WHERE id = ?
+            `, [
+                maps_profile_url,
+                result.details.mapsProfile?.data?.localGuideLevel || 1,
+                result.details.mapsProfile?.data?.totalReviews || 0,
+                result.finalScore,
+                result.finalScore,
+                result.trustLevel,
+                result.details.mapsProfile?.data?.avatarUrl || account.avatar_url,
+                result.details.mapsProfile?.data?.avatarUrl ? true : false,
+                result.maxReviewsPerMonth,
+                result.isBlocked, // This should now be false if URL is provided/valid
+                accountId
+            ]);
+
+            return res.json({ success: true, message: 'Compte mis à jour avec succès' });
+        } catch (error: any) {
+            console.error('Update gmail error:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     },
