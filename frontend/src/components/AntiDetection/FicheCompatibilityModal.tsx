@@ -43,7 +43,7 @@ export const FicheCompatibilityModal: React.FC<Props> = ({
         <div style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 1000,
+            zIndex: 2000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

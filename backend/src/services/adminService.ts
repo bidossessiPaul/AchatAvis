@@ -7,7 +7,7 @@ import { notificationService } from './notificationService';
  */
 export const getArtisans = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                ap.company_name, ap.trade, ap.phone, ap.city, 
                ap.subscription_status, ap.subscription_end_date
         FROM users u
@@ -22,7 +22,7 @@ export const getArtisans = async () => {
  */
 export const getGuides = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.city,
                COUNT(DISTINCT rs.id) as submitted_reviews_count
@@ -30,7 +30,7 @@ export const getGuides = async () => {
         JOIN guides_profiles gp ON u.id = gp.user_id
         LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
         WHERE u.role = 'guide'
-        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
+        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                  gp.google_email, gp.local_guide_level, gp.total_reviews_count, gp.phone, gp.city
         ORDER BY u.created_at DESC
     `);
@@ -113,7 +113,7 @@ export const getAllUsers = async () => {
  */
 export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                ap.company_name, ap.trade, ap.phone, ap.whatsapp_number, ap.address, ap.city, ap.postal_code,
                ap.google_business_url, ap.subscription_status, ap.subscription_end_date,
                ap.monthly_reviews_quota, ap.current_month_reviews,
@@ -153,7 +153,7 @@ export const getArtisanDetail = async (userId: string) => {
  */
 export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.whatsapp_number, gp.city
         FROM users u
@@ -1519,13 +1519,15 @@ export const getReview360Data = async () => {
             ap.company_name as artisan_name,
             ua.avatar_url as artisan_avatar,
             ro.artisan_id,
+            ap.whatsapp_number as artisan_whatsapp,
             s.id as submission_id, 
             s.status as submission_status, 
             s.submitted_at, 
             s.review_url,
             s.guide_id,
             u.full_name as guide_name,
-            gp.google_email as guide_google_email
+            gp.google_email as guide_google_email,
+            gp.whatsapp_number as guide_whatsapp
         FROM review_proposals p
         JOIN reviews_orders ro ON p.order_id = ro.id
         JOIN artisans_profiles ap ON ro.artisan_id = ap.user_id

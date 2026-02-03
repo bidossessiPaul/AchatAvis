@@ -186,25 +186,6 @@ export const artisanController = {
         }
     },
 
-    async updateProposal(req: Request, res: Response) {
-        try {
-            const { proposalId } = req.params;
-            await artisanService.updateProposal(proposalId, req.body);
-            return res.json({ success: true });
-        } catch (error: any) {
-            return res.status(500).json({ error: 'Failed to update proposal', message: error.message });
-        }
-    },
-
-    async deleteProposal(req: Request, res: Response) {
-        try {
-            const { proposalId } = req.params;
-            await artisanService.deleteProposal(proposalId);
-            return res.json({ success: true });
-        } catch (error: any) {
-            return res.status(500).json({ error: 'Failed to delete proposal', message: error.message });
-        }
-    },
 
     async getProfile(req: Request, res: Response) {
         const userId = (req as any).user?.userId || (req as any).user?.id;
@@ -297,6 +278,47 @@ export const artisanController = {
         } catch (error: any) {
             console.error("❌ Error generating review response:", error);
             return res.status(500).json({ error: 'Failed to generate review response', message: error.message });
+        }
+    },
+
+    async updateProposal(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params; // Changed from proposalId to id to match routes
+            const { content, author_name, rating } = req.body;
+
+            const result = await artisanService.updateProposal(user.userId, id, {
+                content,
+                author_name,
+                rating
+            });
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error updating proposal:', error);
+            return res.status(500).json({
+                error: 'Failed to update proposal',
+                message: error.message
+            });
+        }
+    },
+
+    async deleteProposal(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params; // Changed from proposalId to id to match routes
+
+            const result = await artisanService.deleteProposal(user.userId, id);
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error deleting proposal:', error);
+            return res.status(500).json({
+                error: 'Failed to delete proposal',
+                message: error.message
+            });
         }
     }
 };
