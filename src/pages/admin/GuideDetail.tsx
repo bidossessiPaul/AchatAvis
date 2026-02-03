@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { motion, AnimatePresence } from 'framer-motion';
-import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
+import { showConfirm, showSuccess, showError, showInput, showSelection } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
 
@@ -42,7 +42,6 @@ interface GuideProfile {
     avatar_url: string | null;
     google_email: string;
     status: string;
-    warning_count: number;
     created_at: string;
     last_seen: string | null;
     local_guide_level: number;
@@ -141,35 +140,7 @@ export const GuideDetail: React.FC = () => {
         }
     };
 
-    const handleIssueWarning = async () => {
-        if (!profile) return;
-        try {
-            const reasonsData = await adminService.getSuspensionReasons();
-            const reasons = [...reasonsData.warnings, 'Autre (Saisie manuelle)'];
 
-            const result = await showPremiumWarningModal(
-                'Avertissement',
-                `Envoyer un avertissement à ${profile.full_name}. Sélectionnez le motif :`,
-                reasons
-            );
-
-            if (!result.isConfirmed || !result.value) return;
-
-            let finalReason = result.value;
-
-            if (finalReason === 'OTHER') {
-                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
-                if (!manualInput.isConfirmed || !manualInput.value) return;
-                finalReason = manualInput.value;
-            }
-
-            const response = await adminService.issueWarning(id!, finalReason);
-            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
-            loadData();
-        } catch (error) {
-            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
-        }
-    };
 
     const handleStatusUpdate = async (newStatus: string) => {
         const action = newStatus === 'suspended' ? 'suspendre' : 'activer';
@@ -295,12 +266,6 @@ export const GuideDetail: React.FC = () => {
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}
                                     </span>
-                                    {profile.warning_count > 0 && (
-                                        <span className="premium-status-badge warning" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Shield size={14} />
-                                            {profile.warning_count} Avertissement(s)
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -689,10 +654,7 @@ export const GuideDetail: React.FC = () => {
                                         Réactiver le compte
                                     </button>
                                 )}
-                                <button onClick={handleIssueWarning} className="premium-action-btn warn">
-                                    <Shield size={18} />
-                                    Notifier un avertissement
-                                </button>
+
                                 <button onClick={() => showError('Attention', 'La suppression définitive est irréversible.')} className="premium-action-btn delete" >
                                     <Trash2 size={18} />
                                     Supprimer du registre

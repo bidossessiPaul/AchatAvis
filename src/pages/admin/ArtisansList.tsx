@@ -31,7 +31,6 @@ interface Artisan {
     trade: string;
     city: string;
     subscription_status: string;
-    warning_count: number;
 }
 
 export const ArtisansList: React.FC = () => {

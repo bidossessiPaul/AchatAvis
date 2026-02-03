@@ -86,13 +86,7 @@ export const adminService = {
         return response.data.data;
     },
 
-    /**
-     * Issue a formal warning to a user
-     */
-    issueWarning: async (userId: string, reason: string, warningCount?: number) => {
-        const response = await api.post(`/admin/users/${userId}/warning`, { reason, warningCount });
-        return response.data;
-    },
+
 
     /**
      * Get standardized reasons for warnings and suspensions
