@@ -127,5 +127,24 @@ export const guideController = {
                 message: error.message
             });
         }
+    },
+
+    async updateSubmission(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const { reviewUrl, googleEmail } = req.body;
+
+            const result = await guideService.updateSubmission(user.userId, id, { reviewUrl, googleEmail });
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error updating submission:', error);
+            return res.status(500).json({
+                error: 'Failed to update submission',
+                message: error.message
+            });
+        }
     }
 };

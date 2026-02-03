@@ -29,10 +29,12 @@ router.delete('/orders/:id', artisanController.deleteOrder);
 
 // Proposals
 router.post('/orders/:id/proposals/generate', artisanController.generateProposals);
-router.put('/proposals/:proposalId', artisanController.updateProposal);
 router.post('/orders/:id/proposals', artisanController.generateProposals);
+router.put('/proposals/:id', artisanController.updateProposal);
+router.delete('/proposals/:id', artisanController.deleteProposal);
 
 // AI Response Generation
 router.post('/submissions/generate-response', artisanController.generateReviewResponse);
 
 export default router;
+

@@ -44,7 +44,8 @@ router.get('/submissions', adminController.getAllSubmissions);
 router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.patch('/users/:userId/status', adminController.updateUserStatus);
-router.post('/users/:userId/warning', adminController.issueWarning);
+// Warning system removed - route disabled
+// router.post('/users/:userId/warning', adminController.issueWarning);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
