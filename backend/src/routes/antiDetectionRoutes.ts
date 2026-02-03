@@ -20,6 +20,7 @@ router.get('/gmail-history/:accountId', authenticate, antiDetectionController.ge
 // Gmail Management
 router.post('/gmail-accounts/verify-preview', authenticate, antiDetectionController.verifyGmailAccountPreview);
 router.post('/gmail-accounts/add', authenticate, antiDetectionController.addGmailAccount);
+router.put('/gmail-accounts/:accountId', authenticate, antiDetectionController.updateGmailAccount);
 router.delete('/gmail-accounts/:accountId', authenticate, antiDetectionController.deleteGmailAccount);
 
 // Checks
