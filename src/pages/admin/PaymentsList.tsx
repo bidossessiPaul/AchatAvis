@@ -28,6 +28,8 @@ interface PayoutRequest {
     requested_at: string;
     processed_at?: string;
     admin_note?: string;
+    preferred_payout_method?: string;
+    payout_details?: any;
 }
 
 export const PaymentsList: React.FC = () => {
@@ -97,6 +99,49 @@ export const PaymentsList: React.FC = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, statusFilter]);
+
+    const renderPaymentInfo = (request: PayoutRequest) => {
+        if (!request.preferred_payout_method) return <span className="text-gray-400 italic">Non configuré</span>;
+
+        const method = request.preferred_payout_method;
+        const details = typeof request.payout_details === 'string'
+            ? JSON.parse(request.payout_details)
+            : request.payout_details;
+
+        switch (method) {
+            case 'bank_transfer':
+                return (
+                    <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>Virement</div>
+                        <div style={{ color: '#64748b' }}>{details.accountName}</div>
+                        <div style={{ color: '#64748b', fontSize: '10px' }}>{details.iban}</div>
+                    </div>
+                );
+            case 'paypal':
+                return (
+                    <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>PayPal</div>
+                        <div style={{ color: '#64748b' }}>{details.email}</div>
+                    </div>
+                );
+            case 'mobile_money':
+            case 'wave':
+                return (
+                    <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{method === 'wave' ? 'Wave' : 'Mobile Money'}</div>
+                        <div style={{ color: '#64748b' }}>{details.phone}</div>
+                        <div style={{ color: '#64748b' }}>{details.fullName}</div>
+                    </div>
+                );
+            default:
+                return (
+                    <div style={{ fontSize: '11px', lineHeight: '1.2' }}>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>Autre</div>
+                        <div style={{ color: '#64748b' }}>{details.info}</div>
+                    </div>
+                );
+        }
+    };
 
     return (
         <DashboardLayout title="Gestion des Paiements">
@@ -171,6 +216,7 @@ export const PaymentsList: React.FC = () => {
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Guide</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Compte Google</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Montant</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Moyen de Paiement</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }} className="text-center">Actions</th>
@@ -194,6 +240,9 @@ export const PaymentsList: React.FC = () => {
                                                 <div style={{ fontWeight: 700, color: '#FF991F' }}>
                                                     {Number(request.amount).toFixed(2)}€
                                                 </div>
+                                            </td>
+                                            <td style={{ border: 'none' }}>
+                                                {renderPaymentInfo(request)}
                                             </td>
                                             <td style={{ fontSize: '12px', color: '#64748b', border: 'none' }}>
                                                 {new Date(request.requested_at).toLocaleDateString()}
@@ -251,7 +300,7 @@ export const PaymentsList: React.FC = () => {
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={6} className="text-center" style={{ padding: '60px' }}>
+                                            <td colSpan={7} className="text-center" style={{ padding: '60px' }}>
                                                 <div className="empty-state">
                                                     <Wallet size={48} className="empty-icon" />
                                                     <p className="empty-text">Aucune demande de paiement trouvée.</p>

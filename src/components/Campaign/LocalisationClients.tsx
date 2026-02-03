@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
-import { MapPin, RefreshCw, X, Plus } from 'lucide-react';
+import { RefreshCw, X, Plus } from 'lucide-react';
 import { Button } from '../common/Button';
 import { showSuccess, showError } from '../../utils/Swal';
 

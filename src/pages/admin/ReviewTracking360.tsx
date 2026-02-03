@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
@@ -41,9 +42,12 @@ interface Review360Item {
     review_url?: string;
     guide_name?: string;
     guide_google_email?: string;
+    artisan_id?: string;
+    guide_id?: string;
 }
 
 export const ReviewTracking360: React.FC = () => {
+    const navigate = useNavigate();
     const [items, setItems] = useState<Review360Item[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -309,13 +313,61 @@ export const ReviewTracking360: React.FC = () => {
                                                 </td>
                                                 <td className="font-medium" style={{ padding: '1.25rem 1.5rem 1.25rem 0', border: 'none' }}>
                                                     <div>
-                                                        <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.95rem' }}>{item.fiche_name}</div>
-                                                        <div style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px' }}>{item.artisan_name}</div>
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                color: '#111827',
+                                                                fontSize: '0.95rem',
+                                                                maxWidth: '200px',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}
+                                                            title={item.fiche_name}
+                                                        >
+                                                            {item.fiche_name}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                color: '#6b7280',
+                                                                fontSize: '13px',
+                                                                marginTop: '2px',
+                                                                cursor: item.artisan_id ? 'pointer' : 'default',
+                                                                textDecoration: item.artisan_id ? 'underline' : 'none',
+                                                                textUnderlineOffset: '2px',
+                                                                maxWidth: '150px',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}
+                                                            onClick={(e) => {
+                                                                if (item.artisan_id) {
+                                                                    e.stopPropagation();
+                                                                    navigate(`/admin/artisans/${item.artisan_id}`);
+                                                                }
+                                                            }}
+                                                            title={item.artisan_name}
+                                                        >
+                                                            {item.artisan_name}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none' }}>
                                                     <div style={{ maxWidth: '250px' }}>
-                                                        <div style={{ fontWeight: 600, color: '#374151', fontSize: '13px' }}>{item.proposal_author}</div>
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                color: '#374151',
+                                                                fontSize: '13px',
+                                                                maxWidth: '200px',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}
+                                                            title={item.proposal_author}
+                                                        >
+                                                            {item.proposal_author}
+                                                        </div>
                                                         <div style={{ color: '#6b7280', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                             {item.proposal_content}
                                                         </div>
@@ -324,8 +376,37 @@ export const ReviewTracking360: React.FC = () => {
                                                 <td style={{ border: 'none' }}>
                                                     {item.guide_name ? (
                                                         <div>
-                                                            <div style={{ fontWeight: 600, color: '#111827', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                <User size={14} /> {item.guide_name}
+                                                            <div
+                                                                style={{
+                                                                    fontWeight: 600,
+                                                                    color: '#111827',
+                                                                    fontSize: '13px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '6px',
+                                                                    cursor: item.guide_id ? 'pointer' : 'default',
+                                                                    maxWidth: '150px',
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    if (item.guide_id) {
+                                                                        e.stopPropagation();
+                                                                        navigate(`/admin/guides/${item.guide_id}`);
+                                                                    }
+                                                                }}
+                                                                title={item.guide_name}
+                                                            >
+                                                                <User size={14} style={{ flexShrink: 0 }} />
+                                                                <span style={{
+                                                                    textDecoration: item.guide_id ? 'underline' : 'none',
+                                                                    textUnderlineOffset: '2px',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}>
+                                                                    {item.guide_name}
+                                                                </span>
                                                             </div>
                                                             <div style={{ color: '#6b7280', fontSize: '11px' }}>{item.guide_google_email}</div>
                                                         </div>

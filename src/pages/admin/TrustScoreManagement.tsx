@@ -3,15 +3,11 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { trustScoreService } from '../../services/trustScoreService';
 import {
     Search,
-    RefreshCw,
     Edit3,
-    ExternalLink,
     Shield,
-    CheckCircle2,
     XCircle
 } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import Swal from 'sweetalert2';
 import '../admin/AdminLists.css';
 
@@ -70,32 +66,7 @@ export const TrustScoreManagement: React.FC = () => {
         }
     };
 
-    const handleToggleActive = async (account: TrustAccount) => {
-        try {
-            const newStatus = account.is_active === 1 ? false : true;
-            await trustScoreService.toggleAccountActivation(account.id, newStatus);
-            showSuccess('Succès', `Compte ${newStatus ? 'activé' : 'désactivé'}`);
-            // Update local state to avoid full reload
-            setAccounts(prev => prev.map(acc =>
-                acc.id === account.id ? { ...acc, is_active: newStatus ? 1 : 0 } : acc
-            ));
-        } catch (error) {
-            showError('Erreur', 'Impossible de modifier le statut');
-        }
-    };
 
-    const handleRecalculate = async (account: TrustAccount) => {
-        try {
-            setIsLoading(true);
-            await trustScoreService.recalculateAccount(account.id);
-            showSuccess('Succès', 'Score recalculé avec succès');
-            loadAccounts(true);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors du recalcul');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const handleOverride = async (account: TrustAccount) => {
         const { value: formValues } = await Swal.fire({
@@ -178,7 +149,6 @@ export const TrustScoreManagement: React.FC = () => {
                 const newLevel = formValues.trustLevel;
                 const newScore = parseInt(formValues.trustScore);
 
-                let payloadScore = newScore;
 
                 // If level changed, let's auto-set the score to the standard for that level
                 // UNLESS the user explicitly typed a different score? 

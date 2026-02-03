@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
-import { useAuthStore } from '../../context/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronDown,
@@ -13,7 +12,6 @@ import {
     CheckCircle
 } from 'lucide-react';
 
-import { AntiDetectionIntro } from '../../components/AntiDetection/AntiDetectionIntro';
 import { SectorDifficultyList } from '../../components/AntiDetection/SectorDifficultyList';
 import { SecurityRadar } from '../../components/AntiDetection/SecurityRadar';
 import {
@@ -45,10 +43,8 @@ const ruleIconMap: Record<string, React.ReactNode> = {
 };
 
 export const AntiDetectionRulesPage: React.FC = () => {
-    const { user } = useAuthStore();
     const {
         rules,
-        complianceData,
         fetchAntiDetectionRules,
         loading
     } = useAntiDetectionStore();

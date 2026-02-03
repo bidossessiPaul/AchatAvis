@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, Mail, ArrowLeft, ExternalLink, MessageCircle } from 'lucide-react';
+import { ShieldAlert, Mail, ArrowLeft, ExternalLink } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 
 const SuspendedPage: React.FC = () => {

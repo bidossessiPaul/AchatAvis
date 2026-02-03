@@ -8,7 +8,10 @@ import {
     Building2,
     ExternalLink,
     CheckCircle2,
-    Clock
+    Clock,
+    Edit2,
+    X,
+    Check
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -33,6 +36,8 @@ interface FicheDetailData {
     reviews_received: number;
     proposals: any[];
     pack_name?: string;
+    pack_reviews_per_fiche?: number;
+    pack_features?: string;
     fiches_quota?: number;
     pack_fiches_used?: number;
 }
@@ -44,6 +49,8 @@ export const AdminFicheDetail: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<any>({});
+    const [editingProposalId, setEditingProposalId] = useState<string | null>(null);
+    const [editedContent, setEditedContent] = useState<string>('');
 
     useEffect(() => {
         if (orderId) loadfiche(orderId);
@@ -108,6 +115,27 @@ export const AdminFicheDetail: React.FC = () => {
         } catch (error) {
             showError('Erreur', 'Erreur lors de la publication');
         }
+    };
+
+    const handleEditProposal = (proposalId: string, content: string) => {
+        setEditingProposalId(proposalId);
+        setEditedContent(content);
+    };
+
+    const handleSaveProposal = async (proposalId: string) => {
+        try {
+            await adminApi.updateProposal(proposalId, { content: editedContent });
+            showSuccess('Succès', 'Avis mis à jour');
+            setEditingProposalId(null);
+            loadfiche(orderId!);
+        } catch (error) {
+            showError('Erreur', "Erreur lors de la mise à jour de l'avis");
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingProposalId(null);
+        setEditedContent('');
     };
 
     if (isLoading) return (
@@ -180,24 +208,6 @@ export const AdminFicheDetail: React.FC = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label>Secteur d'activité</label>
-                                <input
-                                    type="text"
-                                    className="admin-input"
-                                    value={formData.sector || ''}
-                                    onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Ton souhaité</label>
-                                <input
-                                    type="text"
-                                    className="admin-input"
-                                    value={formData.desired_tone || ''}
-                                    onChange={(e) => setFormData({ ...formData, desired_tone: e.target.value })}
-                                />
-                            </div>
-                            <div className="form-group">
                                 <label>Quantité d'avis</label>
                                 <div className="admin-input" style={{ background: '#f9fafb', color: '#6b7280' }}>
                                     {fiche.quantity} avis
@@ -248,16 +258,84 @@ export const AdminFicheDetail: React.FC = () => {
                                     <tr>
                                         <th>Contenu</th>
                                         <th>Statut</th>
+                                        <th style={{ width: '100px', textAlign: 'center' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {fiche.proposals.map((p: any) => (
                                         <tr key={p.id}>
-                                            <td style={{ fontSize: '13px' }}>{p.content}</td>
+                                            <td style={{ fontSize: '13px' }}>
+                                                {editingProposalId === p.id ? (
+                                                    <textarea
+                                                        value={editedContent}
+                                                        onChange={(e) => setEditedContent(e.target.value)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '0.75rem',
+                                                            borderRadius: '8px',
+                                                            border: '2px solid #3b82f6',
+                                                            fontSize: '13px',
+                                                            fontFamily: 'inherit',
+                                                            minHeight: '80px',
+                                                            resize: 'vertical'
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    p.content
+                                                )}
+                                            </td>
                                             <td>
                                                 <span className={`admin-badge ${p.status === 'approved' ? 'active' : 'inactive'}`}>
                                                     {p.status}
                                                 </span>
+                                            </td>
+                                            <td>
+                                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                                    {editingProposalId === p.id ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleSaveProposal(p.id)}
+                                                                className="action-btn"
+                                                                style={{
+                                                                    background: '#10b981',
+                                                                    color: 'white',
+                                                                    padding: '0.4rem 0.6rem',
+                                                                    borderRadius: '6px'
+                                                                }}
+                                                                title="Enregistrer"
+                                                            >
+                                                                <Check size={16} />
+                                                            </button>
+                                                            <button
+                                                                onClick={handleCancelEdit}
+                                                                className="action-btn"
+                                                                style={{
+                                                                    background: '#ef4444',
+                                                                    color: 'white',
+                                                                    padding: '0.4rem 0.6rem',
+                                                                    borderRadius: '6px'
+                                                                }}
+                                                                title="Annuler"
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => handleEditProposal(p.id, p.content)}
+                                                            className="action-btn"
+                                                            style={{
+                                                                background: '#f59e0b',
+                                                                color: 'white',
+                                                                padding: '0.4rem 0.6rem',
+                                                                borderRadius: '6px'
+                                                            }}
+                                                            title="Éditer"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -278,7 +356,33 @@ export const AdminFicheDetail: React.FC = () => {
                                     <div className="admin-badge active" style={{ marginBottom: '1rem' }}>
                                         {fiche.pack_fiches_used} / {fiche.fiches_quota} fiches utilisées
                                     </div>
-                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>
+
+                                    <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#B45309', fontWeight: 700, fontSize: '0.85rem' }}>
+                                            <Building2 size={16} />
+                                            {fiche.pack_reviews_per_fiche ? `${fiche.pack_reviews_per_fiche} avis par fiche` : 'Quantité d\'avis non définie'}
+                                        </div>
+
+                                        {fiche.pack_features && (
+                                            <div style={{ marginTop: '0.5rem' }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#92400e', marginBottom: '0.4rem', textTransform: 'uppercase' }}>Infos importantes :</div>
+                                                <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.8rem', color: '#92400e', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                    {(() => {
+                                                        try {
+                                                            const features = typeof fiche.pack_features === 'string' ? JSON.parse(fiche.pack_features) : fiche.pack_features;
+                                                            return Array.isArray(features) ? features.slice(0, 4).map((f: string, i: number) => (
+                                                                <li key={i}>{f}</li>
+                                                            )) : null;
+                                                        } catch (e) {
+                                                            return null;
+                                                        }
+                                                    })()}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div style={{ fontSize: '12px', color: '#6b7280', borderTop: '1px solid rgba(251, 191, 36, 0.3)', paddingTop: '0.75rem' }}>
                                         Cette fiche consomme 1 crédit sur le quota de ce pack.
                                     </div>
                                 </div>

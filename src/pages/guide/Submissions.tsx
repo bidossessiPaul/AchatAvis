@@ -4,12 +4,9 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
 import {
     Star,
-    ExternalLink,
     CheckCircle2,
     Clock,
     AlertCircle,
-    Calendar,
-    Mail,
     DollarSign
 } from 'lucide-react';
 import './Submissions.css';

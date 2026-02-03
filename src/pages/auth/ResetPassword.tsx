@@ -4,7 +4,6 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
 import { authApi } from '../../services/api';
-import { Lock, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 import './Auth.css';
 

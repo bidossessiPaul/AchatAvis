@@ -35,6 +35,7 @@ export const RegisterArtisan: React.FC = () => {
         city: '',
         postalCode: '',
         googleBusinessUrl: '',
+        whatsappNumber: '',
     });
 
     React.useEffect(() => {
@@ -268,6 +269,19 @@ export const RegisterArtisan: React.FC = () => {
                                     onChange={handleChange}
                                     error={errors.googleBusinessUrl}
                                     icon={<Globe size={18} />}
+                                />
+
+                                <Input
+                                    type="tel"
+                                    name="whatsappNumber"
+                                    label="Numéro WhatsApp (avec indicatif pays, ex: +33...)"
+                                    placeholder="+33612345678"
+                                    value={formData.whatsappNumber}
+                                    onChange={handleChange}
+                                    error={errors.whatsappNumber}
+                                    icon={<Smartphone size={18} />}
+                                    required
+                                    helperText="Obligatoire pour le suivi de vos campagnes"
                                 />
 
                                 <Button

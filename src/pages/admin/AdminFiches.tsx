@@ -266,18 +266,48 @@ export const AdminFiches: React.FC = () => {
                                     {paginatedFiches.length > 0 ? paginatedFiches.map((fiche) => (
                                         <tr key={fiche.id} style={{ backgroundColor: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', borderRadius: '16px', overflow: 'hidden' }}>
                                             <td style={{ padding: '1.25rem 1.5rem', border: 'none', borderRadius: '16px 0 0 16px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/admin/artisans/${fiche.artisan_id}`);
+                                                    }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+                                                    className="hover:opacity-80 transition-opacity"
+                                                    title="Voir le profil artisan"
+                                                >
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255, 153, 31, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         <Building2 size={16} color="var(--artisan-primary)" />
                                                     </div>
-                                                    <span className="font-medium" style={{ color: '#111827', fontWeight: 600 }}>
+                                                    <span className="font-medium" style={{
+                                                        color: '#111827',
+                                                        fontWeight: 600,
+                                                        textDecoration: 'underline',
+                                                        textUnderlineOffset: '2px',
+                                                        maxWidth: '150px',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        display: 'block'
+                                                    }}>
                                                         {fiche.artisan_name}
                                                     </span>
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                    <span style={{ color: '#374151', fontWeight: 500, fontSize: '14px' }}>
+                                                    <span
+                                                        style={{
+                                                            color: '#374151',
+                                                            fontWeight: 500,
+                                                            fontSize: '14px',
+                                                            maxWidth: '200px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            display: 'block'
+                                                        }}
+                                                        title={fiche.company_name || fiche.original_company_name}
+                                                    >
                                                         {fiche.company_name || fiche.original_company_name}
                                                     </span>
                                                     <span style={{ fontSize: '11px', color: '#9ca3af' }}>

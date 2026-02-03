@@ -22,6 +22,7 @@ export const RegisterGuide: React.FC = () => {
         password: '',
         googleEmail: '',
         phone: '',
+        whatsappNumber: '',
         city: '',
     });
 
@@ -140,7 +141,6 @@ export const RegisterGuide: React.FC = () => {
                                     icon={<Mail size={18} />}
                                     required
                                 />
-
                                 <Input
                                     type="tel"
                                     name="phone"
@@ -151,6 +151,19 @@ export const RegisterGuide: React.FC = () => {
                                     error={errors.phone}
                                     icon={<Smartphone size={18} />}
                                     required
+                                />
+
+                                <Input
+                                    type="tel"
+                                    name="whatsappNumber"
+                                    label="Numéro WhatsApp (avec indicatif pays, ex: +33...)"
+                                    placeholder="+33612345678"
+                                    value={formData.whatsappNumber}
+                                    onChange={handleChange}
+                                    error={errors.whatsappNumber}
+                                    icon={<Smartphone size={18} />}
+                                    required
+                                    helperText="Obligatoire pour recevoir vos missions"
                                 />
 
                                 <Input

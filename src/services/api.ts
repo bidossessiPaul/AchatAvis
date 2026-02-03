@@ -288,6 +288,17 @@ export const payoutApi = {
         return response.data;
     },
 
+    // Guide: Get payment method
+    getPaymentMethod: async (): Promise<{ method: string, details: any }> => {
+        const response = await api.get('/payouts/guide/payment-method');
+        return response.data;
+    },
+
+    // Guide: Update payment method
+    updatePaymentMethod: async (data: { method: string, details: any }): Promise<void> => {
+        await api.put('/payouts/guide/payment-method', data);
+    },
+
     // Admin: Get all payout requests
     getAllRequests: async (): Promise<any[]> => {
         const response = await api.get('/payouts/admin/requests');
@@ -421,6 +432,10 @@ export const adminApi = {
     getReview360: async (): Promise<any[]> => {
         const response = await api.get('/admin/reviews/360');
         return response.data;
+    },
+
+    updateProposal: async (proposalId: string, data: { content: string }): Promise<void> => {
+        await api.put(`/admin/proposals/${proposalId}`, data);
     },
 };
 

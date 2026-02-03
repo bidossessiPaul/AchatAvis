@@ -3,7 +3,6 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import {
     Shield,
     Users,
-    History,
     Save,
     ToggleLeft,
     ToggleRight,
