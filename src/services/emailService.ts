@@ -802,71 +802,7 @@ export const sendExemptionEmail = async (email: string, fullName: string, isExem
     }
 };
 
-/**
- * Send warning email to user
- */
-export const sendWarningEmail = async (email: string, fullName: string, reason: string, warningCount: number, baseUrl?: string) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
-    const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
-    const mailOptions = {
-        from: emailConfig.from,
-        to: email,
-        subject: `⚠️ Avertissement de sécurité - AchatAvis`,
-        html: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #ffffff; }
-                    .card { background-color: #ffffff; border-radius: 16px; border: 2px solid ${brandBlack}; padding: 40px; text-align: center; }
-                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
-                    .logo span { color: ${brandRed}; }
-                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
-                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
-                    .warning-box { background-color: #fff7ed; border-radius: 12px; padding: 24px; margin: 24px 0; border: 1px solid #fed7aa; border-left: 6px solid #f97316; text-align: left; }
-                    .count-badge { display: inline-block; background-color: ${brandRed}; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; margin-top: 8px; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
-                        <h2 class="title">Avertissement Officiel</h2>
-                        <div class="warning-box">
-                            <p style="margin: 0; font-weight: 800; color: #9a3412; text-transform: uppercase; font-size: 13px;">Motif de l'avertissement :</p>
-                            <p style="margin: 12px 0 0 0; color: #4b5563;">"${reason}"</p>
-                        </div>
-                        <p class="text">
-                            Bonjour <strong>${fullName}</strong>,<br><br>
-                            Votre compte a reçu un avertissement formel pour non-respect de nos règles communautaires. 
-                        </p>
-                        <div style="margin-top: 24px;">
-                            <span class="count-badge">Avertissement ${warningCount} / 3</span>
-                        </div>
-                        <div style="margin: 32px 0;">
-                            <a href="${frontendUrl}/guide/dashboard" 
-                               style="background-color: ${brandRed}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; text-transform: uppercase;">
-                               Accéder à mon Dashboard
-                            </a>
-                        </div>
-                        <p class="text" style="margin-top: 24px; font-size: 14px; color: #6b7280; font-style: italic;">
-                            Important : À 3 avertissements, votre compte sera automatiquement suspendu temporairement.
-                        </p>
-                    </div>
-                </div>
-            </body>
-            </html>
-        `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-    } catch (error) {
-        console.error(`Error sending warning email:`, error);
-    }
-};
 
 /**
  * Send email to artisan when a fiche is submitted for review
