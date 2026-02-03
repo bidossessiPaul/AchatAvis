@@ -105,7 +105,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
         // NON-BLOCKING: Update last_seen timestamp
         // We don't await this to keep the middleware fast
-        query('UPDATE users SET last_seen = NOW() WHERE id = ?', [payload.userId]).catch(err => {
+        query('UPDATE users SET last_seen = UTC_TIMESTAMP() WHERE id = ?', [payload.userId]).catch(err => {
             console.error('⚠️ [Auth Middleware] Failed to update last_seen:', err);
         });
 
