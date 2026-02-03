@@ -96,7 +96,8 @@ export const updatePaymentMethod = async (req: Request, res: Response) => {
         const { method, details } = req.body;
 
         if (!method) {
-            return res.status(400).json({ error: 'Le moyen de paiement est requis' });
+            res.status(400).json({ error: 'Le moyen de paiement est requis' });
+            return;
         }
 
         await guideService.updatePaymentMethod(userId, method, details);
