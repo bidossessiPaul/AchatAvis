@@ -101,7 +101,7 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
 
     const totalEarnings = filteredHistory
         .filter(item => item.status === 'validated')
-        .reduce((sum, item) => sum + item.earnings, 0);
+        .reduce((sum, item) => sum + Number(item.earnings || 0), 0);
 
     const getStatusStyles = (status: string) => {
         switch (status) {
