@@ -164,67 +164,43 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
     },
 
     verifyGmailPreview: async (email: string, mapsProfileUrl?: string) => {
-        try {
-            const response = await api.post('/anti-detection/gmail-accounts/verify-preview', {
-                email,
-                mapsProfileUrl
-            });
-            return response.data.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.post('/anti-detection/gmail-accounts/verify-preview', {
+            email,
+            mapsProfileUrl
+        });
+        return response.data.data;
     },
 
     addGmailAccount: async (data: any) => {
-        try {
-            const response = await api.post('/anti-detection/gmail-accounts/add', data);
-            return response.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.post('/anti-detection/gmail-accounts/add', data);
+        return response.data;
     },
 
     updateGmailAccount: async (accountId: number, data: any) => {
-        try {
-            const response = await api.put(`/anti-detection/gmail-accounts/${accountId}`, data);
-            return response.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.put(`/anti-detection/gmail-accounts/${accountId}`, data);
+        return response.data;
     },
 
     deleteGmailAccount: async (accountId: number, userId: string) => {
-        try {
-            const response = await api.delete(`/anti-detection/gmail-accounts/${accountId}`, {
-                data: { userId }
-            });
-            return response.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.delete(`/anti-detection/gmail-accounts/${accountId}`, {
+            data: { userId }
+        });
+        return response.data;
     },
 
     checkficheCompatibility: async (campaignId: string, gmailId: number) => {
-        try {
-            const response = await api.post('/anti-detection/can-take-fiche', {
-                campaign_id: campaignId,
-                gmail_account_id: gmailId
-            });
-            return response.data.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.post('/anti-detection/can-take-fiche', {
+            campaign_id: campaignId,
+            gmail_account_id: gmailId
+        });
+        return response.data.data;
     },
 
     submitQuiz: async (userId: string, score: number) => {
-        try {
-            const response = await api.post('/anti-detection/quiz/submit', {
-                user_id: userId,
-                score
-            });
-            return response.data.data;
-        } catch (error: any) {
-            throw error;
-        }
+        const response = await api.post('/anti-detection/quiz/submit', {
+            user_id: userId,
+            score
+        });
+        return response.data.data;
     }
 }));

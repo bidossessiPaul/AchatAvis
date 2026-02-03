@@ -79,9 +79,10 @@ export const SubmissionFlow: React.FC = () => {
             setOrder(data);
             setProposals(data.proposals);
 
-            // Security: If fiche is already published or beyond, redirect out
-            if (['in_progress', 'completed', 'cancelled'].includes(data.status)) {
-                showError('Action impossible', "Cette fiche est déjà publiée et ne peut plus être modifiée.");
+            // Security: If fiche is cancelled, redirect out. 
+            // We now ALLOW 'in_progress' and 'completed' to be edited (to modify unposted reviews)
+            if (data.status === 'cancelled') {
+                showError('Action impossible', "Cette fiche est annulée et ne peut plus être modifiée.");
                 navigate('/artisan');
                 return;
             }

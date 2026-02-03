@@ -155,7 +155,8 @@ export const OrderDetail: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                <Zap size={18} color={tradeInfo.color} /> Modifier & Régénérer
+                                <Zap size={18} color={tradeInfo.color} />
+                                {['in_progress', 'completed'].includes(order.status) ? 'Modifier la fiche & les avis' : 'Modifier & Régénérer'}
                             </>
                         )}
                     </button>
