@@ -24,7 +24,7 @@ import {
     Smartphone
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
-import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
+import { showConfirm, showSuccess, showError, showInput, showSelection } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminDetail.css';
 
@@ -64,7 +64,6 @@ interface ArtisanDetailData {
         created_at: string;
         last_login: string;
         last_seen: string | null;
-        warning_count: number;
         company_name: string;
         trade: string;
         phone: string;
@@ -279,35 +278,7 @@ export const ArtisanDetail: React.FC = () => {
         }
     };
 
-    const handleIssueWarning = async () => {
-        if (!data) return;
-        try {
-            const reasonsData = await adminService.getSuspensionReasons();
-            const reasons = reasonsData.warnings;
 
-            const result = await showPremiumWarningModal(
-                'Avertissement',
-                `Envoyer un avertissement à ${data.profile.company_name}. Sélectionnez le motif :`,
-                reasons
-            );
-
-            if (!result.isConfirmed || !result.value) return;
-
-            let finalReason = result.value;
-
-            if (finalReason === 'OTHER') {
-                const manualInput = await showInput('Autre motif', 'Saisissez le motif de l\'avertissement :', 'Précisez la raison...');
-                if (!manualInput.isConfirmed || !manualInput.value) return;
-                finalReason = manualInput.value;
-            }
-
-            const response = await adminService.issueWarning(id!, finalReason);
-            showSuccess('Succès', response.suspended ? 'Avertissement envoyé et compte suspendu !' : `Avertissement envoyé (${response.warningCount}/3).`);
-            loadDetail();
-        } catch (error) {
-            showError('Erreur', "Erreur lors de l'envoi de l'avertissement");
-        }
-    };
 
     const handleDeleteUser = async () => {
         if (!data) return;
@@ -451,11 +422,6 @@ export const ArtisanDetail: React.FC = () => {
                                     <span className={`premium-status-badge ${profile.status}`}>
                                         {profile.status}
                                     </span>
-                                    {profile.warning_count > 0 && (
-                                        <span className="premium-status-badge warning">
-                                            {profile.warning_count} Avertissement(s)
-                                        </span>
-                                    )}
                                     {profile.subscription_status && (
                                         <span className={`premium-status-badge active`}>
                                             {profile.active_pack_name || profile.subscription_status}
@@ -930,10 +896,7 @@ export const ArtisanDetail: React.FC = () => {
                                         Réactiver le compte
                                     </button>
                                 )}
-                                <button onClick={handleIssueWarning} className="premium-action-btn warn">
-                                    <ShieldAlert size={18} />
-                                    Envoyer un avertissement
-                                </button>
+
                                 <button onClick={handleDeleteUser} className="premium-action-btn delete" style={{ background: '#fee2e2', color: '#b91c1c' }}>
                                     <Trash2 size={18} />
                                     Supprimer l'artisan

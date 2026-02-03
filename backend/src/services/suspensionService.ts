@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendSuspensionEmail, sendSuspensionLiftedEmail, sendAdminSuspensionNotice, sendWarningEmail } from './emailService';
+import { sendSuspensionEmail, sendSuspensionLiftedEmail, sendAdminSuspensionNotice } from './emailService';
 // import { notificationService } from './notificationService'; // Planifié pour plus tard
 
 interface SuspensionConfig {
@@ -147,15 +147,7 @@ class SuspensionService {
         return { suspended: true, suspension_id: activeSuspension.id };
       }
 
-      const config = await this.getConfig();
-      const warningCount = await this.getActiveWarningsCount(userId);
-
-      if (warningCount < (config?.max_warnings_before_suspend || 3)) {
-        await this.createWarning(userId, reasonCategory, reasonDetails, triggerProofId, baseUrl);
-        return { suspended: false, warning: true };
-      }
-
-      // Create suspension
+      // No warnings anymore: Create suspension immediately
       const level = await this.determineNextLevel(userId);
       const suspensionId = await this.createSuspension(userId, level.id, reasonCategory, reasonDetails, triggerProofId, undefined, baseUrl);
 
@@ -166,70 +158,27 @@ class SuspensionService {
     }
   }
 
-  async createWarning(userId: string, type: string, message: string, proofId?: string, baseUrl?: string): Promise<void> {
-    await query(
-      `INSERT INTO suspension_warnings (user_id, warning_type, warning_message, trigger_proof_id, created_at) 
-       VALUES (?, ?, ?, ?, NOW())`,
-      [userId, type, message, proofId || null]
-    );
-
-    await query('UPDATE users SET warning_count = warning_count + 1 WHERE id = ?', [userId]);
-
-    // Notification logic here
-    const user: any = await query('SELECT email, full_name, warning_count FROM users WHERE id = ?', [userId]);
-    if (user && user.length > 0) {
-      await sendWarningEmail(user[0].email, user[0].full_name, message, user[0].warning_count, baseUrl);
-    }
-    console.log(`Warning issued for user ${userId}: ${message}`);
+  async createWarning(_userId: string, _type: string, _message: string, _proofId?: string, _baseUrl?: string): Promise<void> {
+    // Warning system removed. No-op for backward compatibility if needed, but not used internally anymore.
+    console.log(`Warning requested but system is removed for user ${_userId}`);
   }
 
-  async issueManualWarning(userId: string, reason: string, customCount?: number, baseUrl?: string): Promise<{ warningCount: number; suspended: boolean }> {
-    const config = await this.getConfig();
-    const maxWarnings = config?.max_warnings_before_suspend || 3;
+  async issueManualWarning(userId: string, reason: string, _customCount?: number, baseUrl?: string): Promise<{ warningCount: number; suspended: boolean }> {
+    // Forward manual warnings to immediate suspension
+    console.log(`Manual warning requested for ${userId}: ${reason}. System removed, issuing suspension instead.`);
 
-    // 1. Create the warning record
-    await query(
-      `INSERT INTO suspension_warnings (user_id, warning_type, warning_message, created_at) 
-       VALUES (?, 'manual_admin', ?, NOW())`,
-      [userId, reason]
+    const level = await this.determineNextLevel(userId);
+    await this.createSuspension(
+      userId,
+      level.id,
+      'manual_admin',
+      reason,
+      undefined,
+      undefined,
+      baseUrl
     );
 
-    // 2. Update user's warning_count
-    if (customCount !== undefined) {
-      await query('UPDATE users SET warning_count = ? WHERE id = ?', [customCount, userId]);
-    } else {
-      await query('UPDATE users SET warning_count = warning_count + 1 WHERE id = ?', [userId]);
-    }
-
-    // 3. Get updated count from users table
-    const userResult: any = await query('SELECT warning_count FROM users WHERE id = ?', [userId]);
-    const warningCount = userResult?.[0]?.warning_count || 0;
-
-    console.log(`⚠️  Warning issued: User now has ${warningCount} warnings, max is ${maxWarnings}`);
-
-    // 4. Send email
-    const user: any = await query('SELECT email, full_name FROM users WHERE id = ?', [userId]);
-    if (user && user.length > 0) {
-      await sendWarningEmail(user[0].email, user[0].full_name, reason, warningCount, baseUrl);
-    }
-
-    // 5. Check for auto-suspension when reaching the threshold
-    if (warningCount >= maxWarnings) {
-      console.log(`🚫 Triggering suspension: ${warningCount} >= ${maxWarnings}`);
-      const level = await this.determineNextLevel(userId);
-      await this.createSuspension(
-        userId,
-        level.id,
-        'manual_admin',
-        `Suspension automatique après ${warningCount} avertissements. Dernier motif : ${reason}`,
-        undefined,
-        undefined,
-        baseUrl
-      );
-      return { warningCount, suspended: true };
-    }
-
-    return { warningCount, suspended: false };
+    return { warningCount: 0, suspended: true };
   }
 
   async determineNextLevel(userId: string): Promise<any> {
@@ -339,12 +288,8 @@ class SuspensionService {
     };
   }
 
-  async getActiveWarningsCount(userId: string): Promise<number> {
-    const result: any = await query(
-      'SELECT COUNT(*) as count FROM suspension_warnings WHERE user_id = ? AND is_resolved = false AND created_at > DATE_SUB(NOW(), INTERVAL 30 DAY)',
-      [userId]
-    );
-    return result?.[0]?.count || 0;
+  async getActiveWarningsCount(_userId: string): Promise<number> {
+    return 0; // System removed
   }
 
   async liftSuspension(suspensionId: number, adminId: string, reason: string): Promise<void> {
