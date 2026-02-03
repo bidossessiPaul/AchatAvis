@@ -276,8 +276,6 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 false // Phone not verified yet
             );
 
-            const trustScoreValue = result.finalScore;
-            const trustLevel = result.trustLevel;
             const maxReviewsPerMonth = result.maxReviewsPerMonth;
 
             await query(`
