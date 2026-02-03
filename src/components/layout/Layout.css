@@ -16,7 +16,7 @@
     height: 100vh;
     left: 0;
     top: 0;
-    z-index: var(--z-modal);
+    z-index: var(--z-fixed);
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
 }
 
@@ -300,7 +300,8 @@
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.4);
-    z-index: var(--z-modal-backdrop);
+    z-index: 1025;
+    /* Between sticky (1020) and fixed (1030) */
     /* Just below sidebar */
     opacity: 0;
     animation: fadeIn 0.2s forwards;

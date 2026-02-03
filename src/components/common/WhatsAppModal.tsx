@@ -83,8 +83,14 @@ export const WhatsAppModal: React.FC = () => {
             title="📞 Numéro WhatsApp Requis"
             showCloseButton={!isGuide} // Guide must fill it
         >
-            <div style={{ padding: '1rem' }}>
-                <p style={{ color: '#4b5563', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+            <div style={{ padding: window.innerWidth <= 768 ? '0' : '1rem' }}>
+                <p style={{
+                    color: '#4b5563',
+                    marginBottom: '1.5rem',
+                    fontSize: window.innerWidth <= 768 ? '0.875rem' : '0.95rem',
+                    lineHeight: 1.5,
+                    wordWrap: 'break-word'
+                }}>
                     {isGuide ? (
                         "En tant que Guide, vous devez impérativement ajouter votre numéro WhatsApp pour recevoir vos missions et être payé."
                     ) : (
@@ -96,14 +102,20 @@ export const WhatsAppModal: React.FC = () => {
                     background: '#f0fdf4',
                     border: '1px solid #bbf7d0',
                     borderRadius: '8px',
-                    padding: '1rem',
+                    padding: window.innerWidth <= 768 ? '0.75rem' : '1rem',
                     marginBottom: '1.5rem',
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '0.75rem'
                 }}>
-                    <MessageSquare size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
-                    <p style={{ fontSize: '0.85rem', color: '#166534', margin: 0 }}>
+                    <MessageSquare size={window.innerWidth <= 768 ? 18 : 20} style={{ color: '#16a34a', flexShrink: 0, marginTop: '2px' }} />
+                    <p style={{
+                        fontSize: window.innerWidth <= 768 ? '0.8125rem' : '0.85rem',
+                        color: '#166534',
+                        margin: 0,
+                        lineHeight: 1.4,
+                        wordWrap: 'break-word'
+                    }}>
                         Nous formons automatiquement le lien WhatsApp pour vous. Vous devez cliquer sur "Tester le lien" pour vérifier qu'il redirige bien vers votre compte.
                     </p>
                 </div>

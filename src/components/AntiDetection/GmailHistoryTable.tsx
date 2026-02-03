@@ -5,8 +5,16 @@ import {
     Clock,
     XCircle,
     TrendingUp,
-    Search
+    Search,
+    Edit3,
+    ExternalLink,
+    Mail,
+    Link,
+    X
 } from 'lucide-react';
+import { guideService } from '../../services/guideService';
+import { showSuccess, showError } from '../../utils/Swal';
+import Swal from 'sweetalert2';
 import {
     MdRestaurant, MdPlumbing, MdElectricalServices, MdRealEstateAgent,
     MdHealthAndSafety, MdCarRepair, MdCleaningServices,
@@ -83,6 +91,8 @@ interface HistoryItem {
     sector_id: number;
     sector_name: string;
     sector_icon: string;
+    review_url: string;
+    google_email: string;
 }
 
 interface GmailHistoryTableProps {
@@ -92,6 +102,9 @@ interface GmailHistoryTableProps {
 export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history }) => {
     const [statusFilter, setStatusFilter] = useState<'all' | 'validated' | 'pending' | 'rejected'>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [editingItem, setEditingItem] = useState<HistoryItem | null>(null);
+    const [editForm, setEditForm] = useState({ reviewUrl: '', googleEmail: '' });
+    const [isSaving, setIsSaving] = useState(false);
 
     const filteredHistory = history.filter(item => {
         const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
@@ -126,6 +139,49 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                     label: 'Attente',
                     icon: <Clock size={12} />
                 };
+        }
+    };
+
+    const handleEdit = (item: HistoryItem) => {
+        setEditingItem(item);
+        setEditForm({
+            reviewUrl: item.review_url || '',
+            googleEmail: item.google_email || ''
+        });
+    };
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingItem) return;
+
+        setIsSaving(true);
+        Swal.fire({
+            title: 'Mise à jour...',
+            text: 'Veuillez patienter',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        try {
+            await guideService.updateSubmission(editingItem.id, {
+                reviewUrl: editForm.reviewUrl,
+                googleEmail: editForm.googleEmail
+            });
+
+            // Local update
+            editingItem.review_url = editForm.reviewUrl;
+            editingItem.google_email = editForm.googleEmail;
+
+            setEditingItem(null);
+            Swal.close();
+            showSuccess('Succès', 'Votre soumission a été mise à jour.');
+        } catch (err: any) {
+            console.error('Update failed:', err);
+            Swal.close();
+            showError('Erreur', err.response?.data?.message || 'Impossible de mettre à jour la soumission.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -215,12 +271,13 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                             <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Date</th>
                             <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Statut</th>
                             <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'right' }}>Gain</th>
+                            <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', textAlign: 'center' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredHistory.length === 0 ? (
                             <tr>
-                                <td colSpan={5} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>
+                                <td colSpan={6} style={{ padding: '4rem', textAlign: 'center', color: '#94a3b8' }}>
                                     Aucun résultat correspondant à vos critères.
                                 </td>
                             </tr>
@@ -265,6 +322,47 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                             {Number(item.earnings || 0).toFixed(2)}€
                                         </td>
+                                        <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                                                {item.status === 'pending' && (
+                                                    <button
+                                                        onClick={() => handleEdit(item)}
+                                                        style={{
+                                                            padding: '0.4rem',
+                                                            borderRadius: '0.5rem',
+                                                            border: 'none',
+                                                            background: '#f1f5f9',
+                                                            color: '#64748b',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        title="Modifier"
+                                                    >
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                )}
+                                                {item.review_url && (
+                                                    <a
+                                                        href={item.review_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            padding: '0.4rem',
+                                                            borderRadius: '0.5rem',
+                                                            border: 'none',
+                                                            background: '#f1f5f9',
+                                                            color: '#64748b',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}
+                                                        title="Voir l'avis"
+                                                    >
+                                                        <ExternalLink size={16} />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </td>
                                     </tr>
                                 );
                             })
@@ -272,6 +370,122 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                     </tbody>
                 </table>
             </div>
+
+            {editingItem && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(4px)',
+                    }}
+                    onClick={() => setEditingItem(null)}
+                >
+                    <div
+                        style={{
+                            background: 'white',
+                            padding: '2rem',
+                            borderRadius: '1.25rem',
+                            width: '100%',
+                            maxWidth: '500px',
+                            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>Modifier la soumission</h3>
+                            <button onClick={() => setEditingItem(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Link size={14} /> URL de l'avis publié
+                                </label>
+                                <input
+                                    type="url"
+                                    required
+                                    value={editForm.reviewUrl}
+                                    onChange={(e) => setEditForm({ ...editForm, reviewUrl: e.target.value })}
+                                    placeholder="https://maps.app.goo.gl/..."
+                                    style={{
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: '0.875rem',
+                                        outline: 'none',
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Mail size={14} /> Email Google utilisé
+                                </label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={editForm.googleEmail}
+                                    onChange={(e) => setEditForm({ ...editForm, googleEmail: e.target.value })}
+                                    placeholder="votre.email@gmail.com"
+                                    style={{
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: '0.875rem',
+                                        outline: 'none',
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingItem(null)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    style={{
+                                        flex: 2,
+                                        padding: '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: 'none',
+                                        background: 'var(--guide-gradient)',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        opacity: isSaving ? 0.7 : 1,
+                                    }}
+                                >
+                                    {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

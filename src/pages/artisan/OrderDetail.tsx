@@ -23,7 +23,10 @@ import {
     Trees,
     Brush,
     Truck,
-    Briefcase
+    Briefcase,
+    Edit3,
+    X,
+    Star
 } from 'lucide-react';
 
 const getTradeInfo = (trade: string) => {
@@ -47,6 +50,11 @@ export const OrderDetail: React.FC = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { user } = useAuthStore();
+
+    // Edit Modal States
+    const [editingProposal, setEditingProposal] = useState<ReviewProposal | null>(null);
+    const [editForm, setEditForm] = useState({ content: '', author_name: '', rating: 5 });
+    const [isSaving, setIsSaving] = useState(false);
 
     const tradeInfo = getTradeInfo(order?.sector || order?.company_name || '');
 
@@ -82,6 +90,56 @@ export const OrderDetail: React.FC = () => {
             console.error("Failed to delete order", err);
             setError("Erreur lors de la suppression de la soufiche.");
             setIsDeleting(false);
+        }
+    };
+
+    const handleEditProposal = (proposal: ReviewProposal) => {
+        setEditingProposal(proposal);
+        setEditForm({
+            content: proposal.content,
+            author_name: proposal.author_name,
+            rating: proposal.rating || 5
+        });
+    };
+
+    const handleSaveProposal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingProposal) return;
+
+        setIsSaving(true);
+        try {
+            await artisanService.updateProposal(editingProposal.id, editForm);
+            // Update local state
+            if (order) {
+                const updatedProposals = order.proposals.map(p =>
+                    p.id === editingProposal.id
+                        ? { ...p, ...editForm }
+                        : p
+                );
+                setOrder({ ...order, proposals: updatedProposals });
+            }
+            setEditingProposal(null);
+        } catch (err: any) {
+            console.error('Failed to update proposal:', err);
+            alert(err.response?.data?.message || 'Erreur lors de la mise à jour');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteProposal = async (proposalId: string) => {
+        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) return;
+
+        try {
+            await artisanService.deleteProposal(proposalId);
+            // Update local state
+            if (order) {
+                const updatedProposals = order.proposals.filter(p => p.id !== proposalId);
+                setOrder({ ...order, proposals: updatedProposals });
+            }
+        } catch (err: any) {
+            console.error('Failed to delete proposal:', err);
+            alert(err.response?.data?.message || 'Erreur lors de la suppression');
         }
     };
 
@@ -124,7 +182,8 @@ export const OrderDetail: React.FC = () => {
                             border: 'none',
                             color: '#6b7280',
                             cursor: 'pointer',
-                            fontWeight: 500
+                            fontWeight: 500,
+                            padding: '0.5rem 0'
                         }}
                     >
                         <ArrowLeft size={18} /> Retour
@@ -143,7 +202,8 @@ export const OrderDetail: React.FC = () => {
                             borderRadius: '0.75rem',
                             cursor: 'pointer',
                             fontWeight: 600,
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            fontSize: window.innerWidth <= 768 ? '0.8125rem' : '0.875rem'
                         }}
                         onMouseEnter={(e) => e.currentTarget.style.background = order.proposals && order.proposals.length < (order.quantity || 0) ? '#ffedd5' : '#e5e7eb'}
                         onMouseLeave={(e) => e.currentTarget.style.background = order.proposals && order.proposals.length < (order.quantity || 0) ? '#fff7ed' : '#f3f4f6'}
@@ -151,12 +211,16 @@ export const OrderDetail: React.FC = () => {
                         {order.proposals && order.proposals.length < (order.quantity || 0) ? (
                             <>
                                 <AlertTriangle size={18} />
-                                Compléter ({((order.quantity || 0) - order.proposals.length)} manquants)
+                                <span style={{ whiteSpace: 'nowrap' }}>
+                                    Compléter ({((order.quantity || 0) - order.proposals.length)} manquants)
+                                </span>
                             </>
                         ) : (
                             <>
                                 <Zap size={18} color={tradeInfo.color} />
-                                {['in_progress', 'completed'].includes(order.status) ? 'Modifier la fiche & les avis' : 'Modifier & Régénérer'}
+                                <span style={{ whiteSpace: 'nowrap' }}>
+                                    {['in_progress', 'completed'].includes(order.status) ? 'Modifier' : 'Régénérer'}
+                                </span>
                             </>
                         )}
                     </button>
@@ -179,27 +243,40 @@ export const OrderDetail: React.FC = () => {
                     </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: window.innerWidth <= 1024 ? '1fr' : '1fr 340px',
+                    gap: window.innerWidth <= 768 ? '1rem' : '2rem',
+                    alignItems: 'start'
+                }}>
                     {/* Left Column: Proposals and Main Info */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* Key Info Card */}
                         <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: window.innerWidth <= 640 ? 'column' : 'row',
+                                justifyContent: 'space-between',
+                                alignItems: window.innerWidth <= 640 ? 'flex-start' : 'flex-start',
+                                gap: '1rem',
+                                marginBottom: '1.5rem'
+                            }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                                         {getTradeInfo(order.sector || order.company_name || '').icon}
                                         <h1 style={{
-                                            fontSize: '1.5rem',
+                                            fontSize: window.innerWidth <= 768 ? '1.25rem' : '1.5rem',
                                             fontWeight: 800,
                                             margin: 0,
-                                            color: '#111827'
+                                            color: '#111827',
+                                            wordBreak: 'break-word'
                                         }}>
                                             {order.company_name}
                                         </h1>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '1rem', color: '#6b7280', fontSize: '0.875rem' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <div style={{ display: 'flex', gap: '1rem', color: '#6b7280', fontSize: '0.875rem', flexWrap: 'wrap' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
                                             <Calendar size={14} /> {new Date(order.created_at).toLocaleDateString()}
                                         </span>
                                         {order.google_business_url && (
@@ -207,7 +284,7 @@ export const OrderDetail: React.FC = () => {
                                                 href={order.google_business_url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                style={{ color: tradeInfo.color, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500 }}
+                                                style={{ color: tradeInfo.color, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap' }}
                                             >
                                                 <LinkIcon size={14} /> Voir sur Google
                                             </a>
@@ -215,27 +292,35 @@ export const OrderDetail: React.FC = () => {
                                     </div>
                                 </div>
                                 <span style={{
-                                    padding: '0.5rem 1rem',
+                                    padding: '0.4rem 0.8rem',
                                     borderRadius: '9999px',
-                                    fontSize: '0.75rem',
+                                    fontSize: '0.7rem',
                                     fontWeight: 700,
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
                                     backgroundColor: order.status === 'completed' ? '#ecfdf5' : order.status === 'draft' ? '#f3f4f6' : '#fff7ed',
-                                    color: order.status === 'completed' ? '#047857' : order.status === 'draft' ? '#4b5563' : '#c2410c'
+                                    color: order.status === 'completed' ? '#047857' : order.status === 'draft' ? '#4b5563' : '#c2410c',
+                                    alignSelf: window.innerWidth <= 640 ? 'flex-start' : 'flex-start'
                                 }}>
                                     {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'Soumis' : order.status}
                                 </span>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', padding: '1.5rem', background: '#f9fafb', borderRadius: '1rem' }}>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: window.innerWidth <= 480 ? '1fr' : '1fr 1fr',
+                                gap: '1rem',
+                                padding: window.innerWidth <= 768 ? '1rem' : '1.5rem',
+                                background: '#f9fafb',
+                                borderRadius: '1rem'
+                            }}>
                                 <div>
-                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Secteur & Zones</h4>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <h4 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Secteur & Zones</h4>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                                         <span style={{
                                             padding: '0.2rem 0.6rem',
                                             borderRadius: '0.5rem',
-                                            fontSize: '0.75rem',
+                                            fontSize: '0.7rem',
                                             fontWeight: 700,
                                             backgroundColor: getTradeInfo(order.sector || '').bg,
                                             color: getTradeInfo(order.sector || '').color,
@@ -244,12 +329,12 @@ export const OrderDetail: React.FC = () => {
                                             {order.sector || 'Non spécifié'}
                                         </span>
                                     </div>
-                                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#6b7280' }}>{order.zones || 'Toute la France'}</p>
+                                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{order.zones || 'Toute la France'}</p>
                                 </div>
                                 <div>
-                                    <h4 style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Objectif</h4>
-                                    <p style={{ margin: 0, fontSize: '0.925rem' }}>{order.quantity} avis attendus</p>
-                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#6b7280' }}>{order.reviews_received} avis reçus à ce jour</p>
+                                    <h4 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Objectif</h4>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>{order.quantity} avis attendus</p>
+                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{order.reviews_received} avis reçus</p>
                                 </div>
                             </div>
                         </div>
@@ -337,12 +422,48 @@ export const OrderDetail: React.FC = () => {
                                 {order.proposals && order.proposals.filter(p => !p.submission_id).length > 0 ? (
                                     order.proposals.filter(p => !p.submission_id).map((proposal) => (
                                         <div key={proposal.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6', position: 'relative' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '0.925rem' }}>{proposal.author_name}</span>
-                                                <div style={{ display: 'flex', gap: '2px' }}>
-                                                    {[...Array(5)].map((_, i) => (
-                                                        <span key={i} style={{ color: i < (proposal.rating || 5) ? '#fbbf24' : '#d1d5db' }}>★</span>
-                                                    ))}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '0.925rem' }}>{proposal.author_name}</span>
+                                                    <div style={{ display: 'flex', gap: '2px', marginTop: '0.25rem' }}>
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <span key={i} style={{ color: i < (proposal.rating || 5) ? '#fbbf24' : '#d1d5db' }}>★</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <button
+                                                        onClick={() => handleEditProposal(proposal)}
+                                                        style={{
+                                                            padding: '0.5rem',
+                                                            borderRadius: '0.5rem',
+                                                            border: '1px solid #e2e8f0',
+                                                            background: 'white',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            color: '#64748b'
+                                                        }}
+                                                        title="Modifier"
+                                                    >
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteProposal(proposal.id)}
+                                                        style={{
+                                                            padding: '0.5rem',
+                                                            borderRadius: '0.5rem',
+                                                            border: '1px solid #fecaca',
+                                                            background: '#fef2f2',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            color: '#dc2626'
+                                                        }}
+                                                        title="Supprimer"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
                                                 </div>
                                             </div>
                                             <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.6, fontSize: '0.95rem' }}>"{proposal.content}"</p>
@@ -443,6 +564,156 @@ export const OrderDetail: React.FC = () => {
                     </div>
                 </div>
             </PremiumBlurOverlay>
+
+            {/* Edit Proposal Modal */}
+            {editingProposal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(4px)',
+                    padding: '1rem'
+                }} onClick={() => setEditingProposal(null)}>
+                    <div style={{
+                        background: 'white',
+                        padding: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+                        borderRadius: '1.25rem',
+                        width: '100%',
+                        maxWidth: '600px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{
+                                fontSize: window.innerWidth <= 768 ? '1.125rem' : '1.25rem',
+                                fontWeight: 800,
+                                color: '#1e293b',
+                                margin: 0
+                            }}>Modifier l'avis</h3>
+                            <button onClick={() => setEditingProposal(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.25rem' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveProposal} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Nom de l'auteur</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editForm.author_name}
+                                    onChange={e => setEditForm({ ...editForm, author_name: e.target.value })}
+                                    style={{
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '0.875rem',
+                                        outline: 'none',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Note</label>
+                                <div style={{ display: 'flex', gap: window.innerWidth <= 768 ? '0.35rem' : '0.5rem', justifyContent: 'flex-start' }}>
+                                    {[1, 2, 3, 4, 5].map(rating => (
+                                        <button
+                                            key={rating}
+                                            type="button"
+                                            onClick={() => setEditForm({ ...editForm, rating })}
+                                            style={{
+                                                width: window.innerWidth <= 768 ? '2.25rem' : '2.5rem',
+                                                height: window.innerWidth <= 768 ? '2.25rem' : '2.5rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                cursor: 'pointer',
+                                                fontSize: '1.5rem',
+                                                padding: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            <Star
+                                                size={window.innerWidth <= 768 ? 28 : 32}
+                                                fill={rating <= editForm.rating ? '#fbbf24' : 'none'}
+                                                color={rating <= editForm.rating ? '#fbbf24' : '#d1d5db'}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Contenu de l'avis</label>
+                                <textarea
+                                    required
+                                    value={editForm.content}
+                                    onChange={e => setEditForm({ ...editForm, content: e.target.value })}
+                                    rows={window.innerWidth <= 768 ? 4 : 5}
+                                    style={{
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '0.875rem',
+                                        outline: 'none',
+                                        resize: 'vertical',
+                                        fontFamily: 'inherit',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: window.innerWidth <= 480 ? 'column' : 'row' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingProposal(null)}
+                                    style={{
+                                        flex: window.innerWidth <= 480 ? 'auto' : 1,
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '1rem'
+                                    }}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    style={{
+                                        flex: window.innerWidth <= 480 ? 'auto' : 2,
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: 'none',
+                                        background: '#FF6B35',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        opacity: isSaving ? 0.7 : 1,
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '1rem'
+                                    }}
+                                >
+                                    {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };

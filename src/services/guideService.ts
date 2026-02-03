@@ -38,5 +38,10 @@ export const guideService = {
     async getStats(): Promise<any> {
         const response = await api.get('/guide/stats');
         return response.data;
+    },
+
+    async updateSubmission(id: string, data: { reviewUrl?: string, googleEmail?: string }): Promise<any> {
+        const response = await api.put(`/guide/submissions/${id}`, data);
+        return response.data;
     }
 };

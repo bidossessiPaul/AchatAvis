@@ -44,6 +44,8 @@ interface Review360Item {
     guide_google_email?: string;
     artisan_id?: string;
     guide_id?: string;
+    artisan_whatsapp?: string;
+    guide_whatsapp?: string;
 }
 
 export const ReviewTracking360: React.FC = () => {
@@ -770,6 +772,30 @@ export const ReviewTracking360: React.FC = () => {
                                             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827' }}>{selectedItem.artisan_name}</span>
                                         </div>
                                     </div>
+                                    {selectedItem.artisan_whatsapp && (
+                                        <div style={{ marginTop: '0.5rem' }}>
+                                            <a
+                                                href={`https://wa.me/${selectedItem.artisan_whatsapp.replace(/\+/g, '').replace(/\s/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '0.5rem 1rem',
+                                                    backgroundColor: '#25D366',
+                                                    color: 'white',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    textDecoration: 'none'
+                                                }}
+                                            >
+                                                <MessageSquare size={14} />
+                                                Contacter l'Artisan via WhatsApp
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -794,9 +820,33 @@ export const ReviewTracking360: React.FC = () => {
                                             <span style={{ fontSize: '0.875rem', color: '#1e40af' }}>Email Google :</span>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                 <Mail size={14} style={{ color: '#1e40af' }} />
-                                                <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#1e3a8a' }}>{selectedItem.guide_google_email}</span>
+                                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1e3a8a' }}>{selectedItem.guide_google_email}</span>
                                             </div>
                                         </div>
+                                        {selectedItem.guide_whatsapp && (
+                                            <div style={{ marginTop: '1rem', borderTop: '1px solid #dbeafe', paddingTop: '1rem' }}>
+                                                <a
+                                                    href={`https://wa.me/${selectedItem.guide_whatsapp.replace(/\+/g, '').replace(/\s/g, '')}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        padding: '0.5rem 1rem',
+                                                        backgroundColor: '#25D366',
+                                                        color: 'white',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        textDecoration: 'none'
+                                                    }}
+                                                >
+                                                    <MessageSquare size={14} />
+                                                    Contacter le Guide via WhatsApp
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
