@@ -44,6 +44,7 @@ interface GuideProfile {
     status: string;
     warning_count: number;
     created_at: string;
+    last_seen: string | null;
     local_guide_level: number;
     total_reviews_count: number;
     phone: string;
@@ -261,7 +262,31 @@ export const GuideDetail: React.FC = () => {
                                 ) : (
                                     <>
                                         <span className="header-subtitle">Local Guide • Niveau {profile.local_guide_level}</span>
-                                        <h2 style={{ fontSize: '1.5rem', marginTop: '0.2rem' }}>{profile.full_name}</h2>
+                                        <h2 style={{ fontSize: '1.5rem', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            {profile.full_name}
+                                            {(() => {
+                                                if (!profile.last_seen) return null;
+                                                const lastSeenDate = new Date(profile.last_seen);
+                                                const now = new Date();
+                                                const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+                                                if (diffInMinutes < 5) {
+                                                    return (
+                                                        <span
+                                                            title="En ligne"
+                                                            style={{
+                                                                width: '12px',
+                                                                height: '12px',
+                                                                backgroundColor: '#10b981',
+                                                                borderRadius: '50%',
+                                                                display: 'inline-block',
+                                                                boxShadow: '0 0 0 2px #fff, 0 0 8px #10b98177'
+                                                            }}
+                                                        />
+                                                    );
+                                                }
+                                                return null;
+                                            })()}
+                                        </h2>
                                         <p style={{ opacity: 0.6, fontSize: '0.85rem', fontWeight: 600, marginTop: '0.1rem' }}>{profile.google_email}</p>
                                     </>
                                 )}

@@ -66,6 +66,7 @@ interface AntiDetectionState {
     verifyGmailPreview: (email: string, mapsProfileUrl?: string) => Promise<any>;
     updateGmailActivity: (accountId: number, sectorSlug: string) => Promise<void>;
     addGmailAccount: (data: any) => Promise<any>;
+    updateGmailAccount: (accountId: number, data: any) => Promise<any>;
     deleteGmailAccount: (accountId: number, userId: string) => Promise<any>;
     checkficheCompatibility: (campaignId: string, gmailId: number) => Promise<any>;
     submitQuiz: (userId: string, score: number) => Promise<any>;
@@ -177,6 +178,15 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
     addGmailAccount: async (data: any) => {
         try {
             const response = await api.post('/anti-detection/gmail-accounts/add', data);
+            return response.data;
+        } catch (error: any) {
+            throw error;
+        }
+    },
+
+    updateGmailAccount: async (accountId: number, data: any) => {
+        try {
+            const response = await api.put(`/anti-detection/gmail-accounts/${accountId}`, data);
             return response.data;
         } catch (error: any) {
             throw error;

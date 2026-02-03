@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { Trash2, Mail } from 'lucide-react';
+import { Trash2, Mail, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { Button } from '../common/Button';
-import { showConfirm, showSuccess, showError } from '../../utils/Swal';
+import Swal, { showConfirm, showSuccess, showError } from '../../utils/Swal';
 
 export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => {
     const { user } = useAuthStore();
-    const { gmailAccounts, fetchGmailAccounts, deleteGmailAccount, loading } = useAntiDetectionStore();
+    const { gmailAccounts, fetchGmailAccounts, deleteGmailAccount, updateGmailAccount, loading } = useAntiDetectionStore();
 
     useEffect(() => {
         if (user) {
@@ -31,6 +31,47 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
             fetchGmailAccounts(user.id);
         } catch (error: any) {
             showError('Erreur', 'Impossible de supprimer le compte');
+        }
+    };
+
+    const handleAddLink = async (accountId: number) => {
+        if (!user) return;
+
+        const { value: url } = await Swal.fire({
+            title: 'Ajout du lien profil',
+            input: 'url',
+            inputLabel: 'Lien vers votre profil Guide Local',
+            inputPlaceholder: 'https://www.google.com/maps/contrib/...',
+            html: `
+                <div style="background: #f0f9ff; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #bae6fd;">
+                    <p style="font-size: 0.85rem; color: #0369a1; margin: 0;">
+                        Pour débloquer ce compte, collez le lien de votre profil Guide Local.
+                        <a href="https://www.google.com/maps/contrib/" target="_blank" style="color: #0284c7; text-decoration: underline;">Trouver mon lien</a>
+                    </p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Enregistrer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#2383E2',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Le lien est requis !';
+                }
+                if (!value.includes('google.com/maps/contrib')) {
+                    return 'Le lien doit provenir de Google Maps (google.com/maps/contrib/...)';
+                }
+            }
+        });
+
+        if (url) {
+            try {
+                await updateGmailAccount(accountId, { maps_profile_url: url });
+                showSuccess('Succès', 'Profil mis à jour et compte débloqué !');
+                fetchGmailAccounts(user.id);
+            } catch (error: any) {
+                showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+            }
         }
     };
 
@@ -76,10 +117,45 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
                             <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
                                     <span style={{ fontWeight: 600, color: '#0f172a' }}>{account.email}</span>
+                                    {(account.is_blocked || !account.maps_profile_url) && (
+                                        <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <AlertTriangle size={12} />
+                                            Bloqué
+                                        </span>
+                                    )}
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                    Compte actif • Prêt pour les avis
-                                </div>
+
+                                {(account.is_blocked || !account.maps_profile_url) ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <p style={{ fontSize: '0.8rem', color: '#ef4444', margin: 0, fontWeight: 500 }}>
+                                            Action requise : Lien profil manquant
+                                        </p>
+                                        <button
+                                            onClick={() => handleAddLink(account.id)}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem',
+                                                background: '#2383E2',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '0.5rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                width: 'fit-content'
+                                            }}
+                                        >
+                                            <LinkIcon size={14} />
+                                            Ajouter le lien du profil
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                        Compte actif • Prêt pour les avis
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
