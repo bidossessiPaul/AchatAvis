@@ -23,6 +23,7 @@ interface Guide {
     avatar_url: string | null;
     status: string;
     created_at: string;
+    last_seen: string | null;
     google_email: string;
     city: string;
     submitted_reviews_count: number;
@@ -126,6 +127,14 @@ export const GuidesList: React.FC = () => {
         setCurrentPage(1);
     }, [searchTerm]);
 
+    const isOnline = (lastSeen: string | null) => {
+        if (!lastSeen) return false;
+        const lastSeenDate = new Date(lastSeen);
+        const now = new Date();
+        const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+        return diffInMinutes < 5; // Connected if active in last 5 minutes
+    };
+
     return (
         <DashboardLayout title="Gestion des Guides">
             <div className="admin-dashboard revamped">
@@ -182,7 +191,22 @@ export const GuidesList: React.FC = () => {
                                                             <User size={16} />
                                                         </div>
                                                     )}
-                                                    {guide.google_email}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        {guide.google_email}
+                                                        {isOnline(guide.last_seen) && (
+                                                            <span
+                                                                title="En ligne"
+                                                                style={{
+                                                                    width: '10px',
+                                                                    height: '10px',
+                                                                    backgroundColor: '#10b981',
+                                                                    borderRadius: '50%',
+                                                                    display: 'inline-block',
+                                                                    boxShadow: '0 0 0 2px #fff, 0 0 8px #10b98177'
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="text-gray-500">{guide.email}</td>

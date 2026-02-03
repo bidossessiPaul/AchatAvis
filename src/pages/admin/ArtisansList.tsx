@@ -26,6 +26,7 @@ interface Artisan {
     avatar_url: string | null;
     status: string;
     created_at: string;
+    last_seen: string | null;
     company_name: string;
     trade: string;
     city: string;
@@ -151,6 +152,14 @@ export const ArtisansList: React.FC = () => {
         setCurrentPage(1);
     }, [searchTerm]);
 
+    const isOnline = (lastSeen: string | null) => {
+        if (!lastSeen) return false;
+        const lastSeenDate = new Date(lastSeen);
+        const now = new Date();
+        const diffInMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60);
+        return diffInMinutes < 5; // Connected if active in last 5 minutes
+    };
+
     return (
         <DashboardLayout title="Gestion des Artisans">
             <div className="admin-dashboard revamped">
@@ -209,8 +218,23 @@ export const ArtisansList: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td className="font-medium">
-                                                <div style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
-                                                    {artisan.company_name}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ fontWeight: 600, color: 'var(--gray-900)' }}>
+                                                        {artisan.company_name}
+                                                    </div>
+                                                    {isOnline(artisan.last_seen) && (
+                                                        <span
+                                                            title="En ligne"
+                                                            style={{
+                                                                width: '10px',
+                                                                height: '10px',
+                                                                backgroundColor: '#10b981',
+                                                                borderRadius: '50%',
+                                                                display: 'inline-block',
+                                                                boxShadow: '0 0 0 2px #fff, 0 0 8px #10b98177'
+                                                            }}
+                                                        />
+                                                    )}
                                                 </div>
                                             </td>
 
