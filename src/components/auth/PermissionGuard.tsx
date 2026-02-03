@@ -21,6 +21,24 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     const { hasPermission, isSuperAdmin } = usePermissions();
     const navigate = useNavigate();
 
+    // Check permissions
+    const hasAccess = React.useMemo(() => {
+        if (!user || user.role !== 'admin') return false;
+        if (isSuperAdmin()) return true;
+
+        if (Array.isArray(requiredPermission)) {
+            return requiredPermission.some(perm => hasPermission(perm));
+        }
+        return hasPermission(requiredPermission);
+    }, [user, requiredPermission, hasPermission, isSuperAdmin]);
+
+    useEffect(() => {
+        if (user && user.role === 'admin' && !isSuperAdmin() && !hasAccess) {
+            toast.error("Accès refusé : Vous n'avez pas les permissions nécessaires.");
+            navigate('/admin', { replace: true });
+        }
+    }, [user, hasAccess, navigate, isSuperAdmin]);
+
     // Not logged in
     if (!user) {
         return <Navigate to="/login" replace />;
@@ -35,26 +53,6 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     if (isSuperAdmin()) {
         return <>{children}</>;
     }
-
-    // Check permissions
-    let hasAccess = false;
-    if (Array.isArray(requiredPermission)) {
-        // OR logic: true if has ANY of the permissions
-        hasAccess = requiredPermission.some(perm => hasPermission(perm));
-    } else {
-        hasAccess = hasPermission(requiredPermission);
-    }
-
-    if (hasAccess) {
-        return <>{children}</>;
-    }
-
-    useEffect(() => {
-        if (!hasAccess) {
-            toast.error("Accès refusé : Vous n'avez pas les permissions nécessaires.");
-            navigate('/admin', { replace: true });
-        }
-    }, [hasAccess, navigate]);
 
     if (hasAccess) {
         return <>{children}</>;

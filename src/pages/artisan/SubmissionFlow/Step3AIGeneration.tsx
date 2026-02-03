@@ -54,16 +54,18 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (p: ReviewProposal) => {
+        if (p.submission_id) return; // Cannot delete published reviews
         try {
-            await artisanService.deleteProposal(id);
-            setProposals(prev => prev.filter(p => p.id !== id));
+            await artisanService.deleteProposal(p.id);
+            setProposals(prev => prev.filter(item => item.id !== p.id));
         } catch (error) {
             console.error("Delete failed", error);
         }
     };
 
     const handleEdit = (p: ReviewProposal) => {
+        if (p.submission_id) return; // Cannot edit published reviews
         setEditingId(p.id);
         setEditValue(p.content);
     };
@@ -188,7 +190,25 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                 {proposals.map((p) => (
                                     <tr key={p.id}>
                                         <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top', width: '20%' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#000' }}>{p.author_name}</span>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                                <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#000' }}>{p.author_name}</span>
+                                                {p.submission_id && (
+                                                    <span style={{
+                                                        fontSize: '0.625rem',
+                                                        backgroundColor: '#ecfdf5',
+                                                        color: '#059669',
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        fontWeight: 700,
+                                                        width: 'fit-content',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '2px'
+                                                    }}>
+                                                        <Check size={10} /> PUBLLIÉ
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', fontSize: '0.9375rem', color: '#1a1a1a', lineHeight: 1.6 }}>
                                             {editingId === p.id ? (
@@ -203,14 +223,16 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                             )}
                                         </td>
                                         <td style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', textAlign: 'right', verticalAlign: 'top', width: '15%' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                                {editingId === p.id ? (
-                                                    <button onClick={() => handleSaveEdit(p.id)} style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer' }}><Check size={18} /></button>
-                                                ) : (
-                                                    <button onClick={() => handleEdit(p)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
-                                                )}
-                                                <button onClick={() => handleDelete(p.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                                            </div>
+                                            {!p.submission_id && (
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                    {editingId === p.id ? (
+                                                        <button onClick={() => handleSaveEdit(p.id)} style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer' }}><Check size={18} /></button>
+                                                    ) : (
+                                                        <button onClick={() => handleEdit(p)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                                                    )}
+                                                    <button onClick={() => handleDelete(p)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

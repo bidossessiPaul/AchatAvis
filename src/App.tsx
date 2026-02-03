@@ -56,6 +56,11 @@ import { useAuthStore } from './context/authStore';
 function App() {
     const { checkAuth } = useAuthStore();
 
+    useEffect(() => {
+        // Initial check
+        checkAuth();
+    }, [checkAuth]);
+
     // Synchronous URL fixing for malformed links (e.g. starting with //)
     // This must happen before the first render to avoid catching the "*" route redirect
     if (window.location.pathname.startsWith('//')) {
@@ -63,11 +68,6 @@ function App() {
         window.location.replace(cleanPath + window.location.search);
         return null;
     }
-
-    useEffect(() => {
-        // Initial check
-        checkAuth();
-    }, [checkAuth]);
 
     return (
         <BrowserRouter>
