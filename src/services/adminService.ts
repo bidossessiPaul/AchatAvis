@@ -24,10 +24,14 @@ export const getGuides = async () => {
     return await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
-               gp.phone, gp.city
+               gp.phone, gp.city,
+               COUNT(DISTINCT rs.id) as submitted_reviews_count
         FROM users u
         JOIN guides_profiles gp ON u.id = gp.user_id
+        LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
         WHERE u.role = 'guide'
+        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+                 gp.google_email, gp.local_guide_level, gp.total_reviews_count, gp.phone, gp.city
         ORDER BY u.created_at DESC
     `);
 };
@@ -110,7 +114,7 @@ export const getAllUsers = async () => {
 export const getArtisanDetail = async (userId: string) => {
     const profile: any = await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
-               ap.company_name, ap.trade, ap.phone, ap.address, ap.city, ap.postal_code,
+               ap.company_name, ap.trade, ap.phone, ap.whatsapp_number, ap.address, ap.city, ap.postal_code,
                ap.google_business_url, ap.subscription_status, ap.subscription_end_date,
                ap.monthly_reviews_quota, ap.current_month_reviews,
                sp.name as active_pack_name
@@ -151,7 +155,7 @@ export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
-               gp.phone, gp.city
+               gp.phone, gp.whatsapp_number, gp.city
         FROM users u
         JOIN guides_profiles gp ON u.id = gp.user_id
         WHERE u.id = ? AND u.role = 'guide'
@@ -161,9 +165,12 @@ export const getGuideDetail = async (userId: string) => {
 
     const submissions = await query(`
         SELECT s.id, s.status, s.earnings, s.submitted_at as created_at, s.review_url as proof_url,
-               ap.company_name as artisan_name
+               s.artisan_id, s.order_id,
+               ap.company_name as artisan_name,
+               ro.company_name as fiche_name
         FROM reviews_submissions s
         JOIN artisans_profiles ap ON s.artisan_id = ap.user_id
+        JOIN reviews_orders ro ON s.order_id = ro.id
         WHERE s.guide_id = ?
         ORDER BY s.submitted_at DESC
         LIMIT 20
@@ -195,22 +202,36 @@ export const getGuideDetail = async (userId: string) => {
  * Get global statistics for the admin dashboard
  */
 export const getGlobalStats = async () => {
-    // Total Revenue & Revenue Trend (last 30 days)
-    const revenueStats: any = await query(`
+    // Total Revenue, Payouts & Trend (last 30 days) - Filling missing dates
+    const financialStats: any = await query(`
+        WITH RECURSIVE days AS (
+            SELECT DATE(DATE_SUB(NOW(), INTERVAL 29 DAY)) as day
+            UNION ALL
+            SELECT DATE_ADD(day, INTERVAL 1 DAY)
+            FROM days
+            WHERE day < DATE(NOW())
+        )
         SELECT 
-            SUM(p.amount) as total_revenue,
-            DATE_FORMAT(p.created_at, '%Y-%m-%d') as day,
-            DATE_FORMAT(p.created_at, '%d/%m') as label
-        FROM payments p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.status = 'completed'
-          AND u.status NOT IN ('suspended', 'deactivated', 'rejected')
-          AND p.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        GROUP BY day, label
-        ORDER BY day ASC
+            d.day,
+            DATE_FORMAT(d.day, '%d/%m') as label,
+            COALESCE((
+                SELECT SUM(p.amount) 
+                FROM payments p 
+                WHERE DATE(p.created_at) = d.day 
+                AND p.status = 'completed'
+            ), 0) as total_revenue,
+            COALESCE((
+                SELECT SUM(pr.amount) 
+                FROM payout_requests pr 
+                WHERE DATE(pr.requested_at) = d.day 
+                AND pr.status = 'paid'
+            ), 0) as total_payouts
+        FROM days d
+        GROUP BY d.day, label
+        ORDER BY d.day ASC
     `);
 
-    // Total All Time Revenue (sum of all completed payments)
+    // Total All Time Revenue
     const totalAllTimeRevenue: any = await query(`
         SELECT SUM(p.amount) as total
         FROM payments p
@@ -219,7 +240,35 @@ export const getGlobalStats = async () => {
           AND u.status NOT IN ('suspended', 'deactivated', 'rejected')
     `);
 
-    // User growth (last 6 months)
+    // Submission Stats (for Donut Chart)
+    const submissionStats: any = await query(`
+        SELECT status, COUNT(*) as count 
+        FROM reviews_submissions 
+        GROUP BY status
+    `);
+
+    // Top Sectors (for Bar Chart) - Based on orders
+    const sectorStats: any = await query(`
+        SELECT 
+            COALESCE(sd.sector_name, 'Autre') as label, 
+            COUNT(*) as value 
+        FROM reviews_orders o
+        LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+        GROUP BY label 
+        ORDER BY value DESC 
+        LIMIT 6
+    `);
+
+    // Trust Level Distribution (for Bar Chart) - From guide_gmail_accounts
+    const trustDistribution: any = await query(`
+        SELECT 
+            COALESCE(trust_level, 'BRONZE') as label, 
+            COUNT(*) as value 
+        FROM guide_gmail_accounts 
+        GROUP BY label
+    `);
+
+    // User growth (last 12 months)
     const userGrowth: any = await query(`
         SELECT 
             COUNT(*) as count,
@@ -249,12 +298,44 @@ export const getGlobalStats = async () => {
             (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as pending_payouts
     `);
 
+    // Recent Activities
+    const recentActivities: any = await query(`
+        SELECT * FROM (
+            -- New Users
+            SELECT 'new_user' as type, full_name as title, CONCAT(role, ' ( Création de compte )') as subtitle, created_at as date, NULL as amount
+            FROM users
+            UNION ALL
+            -- New Submissions
+            SELECT 'submission' as type, u.full_name as title, CONCAT(u.role, ' ( Nouvel avis soumis )') as subtitle, s.submitted_at as date, s.earnings as amount
+            FROM reviews_submissions s
+            JOIN users u ON s.guide_id = u.id
+            UNION ALL
+            -- Validated Submissions
+            SELECT 'validation' as type, u.full_name as title, CONCAT(u.role, ' ( Avis validé )') as subtitle, s.validated_at as date, s.earnings as amount
+            FROM reviews_submissions s
+            JOIN users u ON s.guide_id = u.id
+            WHERE s.status = 'validated' AND s.validated_at IS NOT NULL
+            UNION ALL
+            -- Payments
+            SELECT 'payment' as type, u.full_name as title, p.description as subtitle, p.created_at as date, p.amount as amount
+            FROM payments p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.status = 'completed'
+        ) activities
+        ORDER BY date DESC
+        LIMIT 10
+    `);
+
     return {
-        revenue: revenueStats,
+        revenue: financialStats,
+        submissionStats,
+        sectorStats,
+        trustDistribution,
         totalAllTimeRevenue: totalAllTimeRevenue[0]?.total || 0,
         growth: userGrowth,
         pending: pendingActions[0],
-        totals: totalCounts[0]
+        totals: totalCounts[0],
+        activities: recentActivities
     };
 };
 
@@ -263,7 +344,8 @@ export const getGlobalStats = async () => {
  */
 export const getAllPayoutRequests = async () => {
     return await query(`
-        SELECT p.*, u.full_name as guide_name, u.email as guide_email, gp.google_email
+        SELECT p.*, u.full_name as guide_name, u.email as guide_email, gp.google_email, 
+               gp.preferred_payout_method, gp.payout_details
         FROM payout_requests p
         JOIN users u ON p.guide_id = u.id
         JOIN guides_profiles gp ON u.id = gp.user_id
@@ -300,6 +382,37 @@ export const getAllSubmissions = async () => {
         JOIN reviews_orders ro ON s.order_id = ro.id
         ORDER BY s.submitted_at DESC
     `);
+};
+
+/**
+ * Get submissions for a specific artisan
+ */
+export const getArtisanSubmissions = async (artisanId: string) => {
+    return await query(`
+        SELECT 
+            p.id as proposal_id,
+            p.content as proposal_content,
+            p.author_name as proposal_author,
+            p.rating,
+            p.status as proposal_status,
+            s.id as submission_id,
+            s.status as submission_status,
+            s.review_url,
+            s.submitted_at,
+            s.earnings,
+            s.rejection_reason,
+            o.company_name as fiche_name,
+            o.id as order_id,
+            u.full_name as guide_name,
+            u.id as guide_id,
+            p.created_at as proposal_date
+        FROM review_proposals p
+        JOIN reviews_orders o ON p.order_id = o.id
+        LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
+        LEFT JOIN users u ON s.guide_id = u.id
+        WHERE o.artisan_id = ?
+        ORDER BY COALESCE(s.submitted_at, p.created_at) DESC
+    `, [artisanId]);
 };
 
 /**
@@ -678,6 +791,8 @@ export const getAdminficheDetail = async (orderId: string) => {
     const orders: any = await query(`
         SELECT o.*, u.full_name as artisan_name, u.email as artisan_email, ap.company_name as artisan_company,
                COALESCE(sp.name, pay.description) as pack_name, 
+               sp.quantity as pack_reviews_per_fiche,
+               sp.features as pack_features,
                pay.fiches_quota, pay.fiches_used as pack_fiches_used,
                pay.amount as payment_amount,
                o.payout_per_review
@@ -1249,6 +1364,7 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
                 company_name = ?, 
                 trade = ?, 
                 phone = ?, 
+                whatsapp_number = ?, 
                 address = ?, 
                 city = ?, 
                 postal_code = ?, 
@@ -1258,6 +1374,7 @@ export const updateArtisanProfile = async (userId: string, data: any) => {
                 data.company_name,
                 data.trade,
                 data.phone,
+                data.whatsapp_number,
                 data.address,
                 data.city,
                 data.postal_code,
@@ -1307,6 +1424,7 @@ export const updateGuideProfile = async (userId: string, data: any) => {
             `UPDATE guides_profiles SET 
                 google_email = ?, 
                 phone = ?, 
+                whatsapp_number = ?, 
                 city = ?, 
                 local_guide_level = ?, 
                 total_reviews_count = ?
@@ -1314,6 +1432,7 @@ export const updateGuideProfile = async (userId: string, data: any) => {
             [
                 data.google_email,
                 data.phone,
+                data.whatsapp_number,
                 data.city,
                 data.local_guide_level,
                 data.total_reviews_count,
@@ -1378,8 +1497,8 @@ export const deleteSector = async (slug: string) => {
  * Get all reviews in a 360 view (Proposals + Submissions)
  */
 export const getReview360Data = async () => {
-    return await query(`
-        SELECT 
+    const result = await query(
+        `SELECT 
             p.id as proposal_id, 
             p.content as proposal_content, 
             p.author_name as proposal_author, 
@@ -1388,10 +1507,12 @@ export const getReview360Data = async () => {
             ro.company_name as fiche_name, 
             ap.company_name as artisan_name,
             ua.avatar_url as artisan_avatar,
+            ro.artisan_id,
             s.id as submission_id, 
             s.status as submission_status, 
             s.submitted_at, 
             s.review_url,
+            s.guide_id,
             u.full_name as guide_name,
             gp.google_email as guide_google_email
         FROM review_proposals p
@@ -1402,6 +1523,15 @@ export const getReview360Data = async () => {
         LEFT JOIN users u ON s.guide_id = u.id
         LEFT JOIN guides_profiles gp ON u.id = gp.user_id
         WHERE p.status != 'draft'
-        ORDER BY COALESCE(s.submitted_at, p.created_at) DESC
-    `);
+        ORDER BY COALESCE(s.submitted_at, p.created_at) DESC`
+    );
+    return result;
 };
+
+/**
+ * Update a review proposal
+ */
+export const updateProposal = async (proposalId: string, data: { content: string }) => {
+    return await query('UPDATE review_proposals SET content = ? WHERE id = ?', [data.content, proposalId]);
+};
+

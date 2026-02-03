@@ -30,6 +30,7 @@ router.get('/reasons', adminController.getSuspensionReasons); // Alias for testi
 
 router.get('/artisans', adminController.getArtisans);
 router.get('/artisans/:userId', adminController.getArtisanDetail);
+router.get('/artisans/:userId/submissions', adminController.getArtisanSubmissions);
 router.patch('/artisans/:userId', adminController.updateArtisan);
 router.post('/artisans/create', adminController.createArtisan);
 router.post('/artisans/:userId/activate-pack', adminController.activateArtisanPack);
@@ -58,6 +59,8 @@ router.get('/fiches/:orderId', adminController.getAdminficheDetail);
 router.post('/fiches/:orderId/approve', adminController.approvefiche);
 router.put('/fiches/:orderId', adminController.updatefiche);
 router.delete('/fiches/:orderId', adminController.deletefiche);
+router.put('/proposals/:proposalId', adminController.updateProposal);
+
 
 // Pack management
 router.get('/packs', adminController.getPacks);

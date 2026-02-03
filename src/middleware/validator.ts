@@ -12,7 +12,7 @@ export const passwordSchema = z
 // Phone validation (strip spaces and check digits)
 export const phoneSchema = z
     .string()
-    .transform(val => val.replace(/[\s.-]/g, '')) // Supprimer espaces, points, tirets
+    .transform(val => val.replace(/[\s.+-]/g, '')) // Supprimer espaces, points, plus, tirets
     .refine(val => /^\d{10,}$/.test(val), {
         message: 'Le téléphone doit contenir au moins 10 chiffres',
     });
@@ -37,6 +37,7 @@ export const artisanRegistrationSchema = z.object({
         .transform(val => val.replace(/\s/g, ''))
         .refine(val => /^\d{4,5}$/.test(val), 'Le code postal doit faire 4 ou 5 chiffres'),
     googleBusinessUrl: z.string().url('URL Google Business invalide').optional().or(z.literal('')),
+    whatsappNumber: phoneSchema.optional().or(z.literal('')),
 });
 
 // Guide registration schema
@@ -46,6 +47,7 @@ export const guideRegistrationSchema = z.object({
     password: passwordSchema,
     googleEmail: z.string().email('Email Google invalide'),
     phone: phoneSchema,
+    whatsappNumber: phoneSchema.optional().or(z.literal('')),
     city: z.string().min(2, 'La ville est requise'),
 });
 
@@ -101,6 +103,7 @@ export const profileUpdateSchema = z.object({
         .optional(),
     googleBusinessUrl: z.string().url('URL Google Business invalide').optional().or(z.literal('')),
     googleEmail: z.string().email('Email Google invalide').optional().or(z.literal('')),
+    whatsappNumber: z.string().optional().or(z.literal('').transform(val => val === '' ? undefined : val)),
 });
 
 export type ArtisanRegistrationInput = z.infer<typeof artisanRegistrationSchema>;

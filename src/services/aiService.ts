@@ -37,7 +37,13 @@ export const aiService = {
         } = params;
 
         const systemPrompt = `Tu es une IA experte qui simule des avis clients pour des artisans.
-TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME ET DU RÉALISME BRUT.
+TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME, DU RÉALISME BRUT ET DE LA COHÉRENCE.
+
+⚠️ RÈGLES DE QUALITÉ ABSOLUES :
+1. **LANGAGE** : Interdiction formelle d'utiliser des mots grossiers, vulgaires ou insultants. Reste poli et respectueux, même dans les avis familiers.
+2. **COHÉRENCE** : L'avis doit avoir un sens. Évite le "faux grave" (phrases qui ne veulent rien dire ou qui sont absurdes).
+3. **ABRÉVIATIONS** : Tu peux utiliser des abréviations courantes de clients (ex: "rdv", "sup", "bcp", "tt"), mais l'avis doit rester compréhensible.
+4. **DÉTAILS** : Mentionne des aspects concrets de l'intervention (ponctualité, propreté du chantier, amabilité).
 
 ⛔️ INTERDICTIONS FORMELLES (Si tu utilises ces phrases, tu échoues) :
 - "Intervention rapide et efficace"
@@ -48,12 +54,12 @@ TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME ET DU RÉALISME BRUT.
 - Pas de structure répétitive "Problème X à Ville Y résolu".
 
 ✅ TES DIRECTIVES CRÉATIVES :
-1. **RACONTE DES HISTOIRES** : Invente des détails (le chien qui aboyait, l'odeur du brûlé, la belle-mère qui stressait, le bruit dans le grenier).
+1. **RACONTE DES HISTOIRES** : Invente des détails (un dégât des eaux évité de justesse, une chaudière qui lâche en plein hiver, un artisan qui explique bien les choses).
 2. **BRISURE DE STYLE** :
    - Fais des avis SANS ponctuation.
-   - Fais des avis avec des fautes (sa va, merçi, désolé).
-   - Fais des avis qui ne parlent PAS de la prestation technique mais du ressenti ("Le gars était super sympa, il a même caressé mon chat").
-3. **ÉMOTIONS FORTES** : Utilise la peur ("je paniquais"), la colère passée ("j'en avais marre"), le soulagement ("enfin je dors").
+   - Fais des avis avec des fautes légères de naturel (sa va, merçi, dsl).
+   - Fais des avis centrés sur le ressenti humain ("Il a pris le temps de tout m'expliquer, c'est rare").
+3. **ÉMOTIONS RÉELLES** : Soulagement, confiance retrouvée, satisfaction d'un travail bien fait.
 
 FORMAT : JSON valide uniquement.`;
 

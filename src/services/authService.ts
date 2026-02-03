@@ -34,14 +34,15 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
         // Create artisan profile
         await connection.execute(
             `INSERT INTO artisans_profiles 
-             (id, user_id, company_name, trade, phone, address, city, postal_code, google_business_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (id, user_id, company_name, trade, phone, whatsapp_number, address, city, postal_code, google_business_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 profileId,
                 userId,
                 data.companyName,
                 data.trade,
                 data.phone,
+                data.whatsappNumber || null,
                 data.address,
                 data.city,
                 data.postalCode,
@@ -108,9 +109,9 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
         // Create guide profile
         await connection.execute(
             `INSERT INTO guides_profiles 
-             (id, user_id, google_email, local_guide_level, total_reviews_count, phone, city)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [profileId, userId, data.googleEmail, 1, 0, data.phone, data.city]
+             (id, user_id, google_email, local_guide_level, total_reviews_count, phone, whatsapp_number, city)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [profileId, userId, data.googleEmail, 1, 0, data.phone, data.whatsappNumber || null, data.city]
         );
 
         // Auto-provision registration email to guide_gmail_accounts (Requirement for fiche Detail pre-selection)
@@ -216,6 +217,7 @@ export const login = async (email: string, password: string) => {
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.whatsapp_number, gp.whatsapp_number) as whatsapp_number,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
@@ -394,6 +396,7 @@ export const verify2FA = async (userId: string, token: string) => {
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.whatsapp_number, gp.whatsapp_number) as whatsapp_number,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
@@ -450,6 +453,7 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
+                COALESCE(ap.whatsapp_number, gp.whatsapp_number) as whatsapp_number,
                 COALESCE(ap.address, '') as address,
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
@@ -546,7 +550,7 @@ export const updateProfile = async (userId: string, data: any) => {
 
         // 2. Update artisan profile if user is an artisan
         const artisanFields = [
-            'companyName', 'trade', 'phone', 'address', 'city', 'postalCode', 'googleBusinessUrl'
+            'companyName', 'trade', 'phone', 'whatsappNumber', 'address', 'city', 'postalCode', 'googleBusinessUrl'
         ];
 
         // Map camelCase to snake_case for DB
@@ -554,6 +558,7 @@ export const updateProfile = async (userId: string, data: any) => {
             companyName: 'company_name',
             trade: 'trade',
             phone: 'phone',
+            whatsappNumber: 'whatsapp_number',
             address: 'address',
             city: 'city',
             postalCode: 'postal_code',
@@ -590,6 +595,10 @@ export const updateProfile = async (userId: string, data: any) => {
         if (data.phone !== undefined) {
             guideUpdates.push('phone = ?');
             guideParams.push(data.phone);
+        }
+        if (data.whatsappNumber !== undefined) {
+            guideUpdates.push('whatsapp_number = ?');
+            guideParams.push(data.whatsappNumber);
         }
         if (data.city !== undefined) {
             guideUpdates.push('city = ?');
