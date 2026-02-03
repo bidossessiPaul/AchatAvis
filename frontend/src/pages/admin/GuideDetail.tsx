@@ -3,26 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminService } from '../../services/adminService';
 import {
-    Users,
     Mail,
     Phone,
     MapPin,
-    Calendar,
     ArrowLeft,
-    Award,
     Trash2,
     CheckCircle,
     XCircle,
-    Star,
     ExternalLink,
-    TrendingUp,
     BarChart3,
     Shield,
-    ChevronDown,
-    ChevronUp,
-    Zap,
-    Download,
-    Briefcase
+    Briefcase,
+    Smartphone,
+    MessageCircle
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,6 +27,9 @@ interface Submission {
     id: string;
     created_at: string;
     artisan_name: string;
+    artisan_id: string;
+    fiche_name: string;
+    order_id: string;
     earnings: number;
     status: string;
     proof_url: string;
@@ -51,6 +47,7 @@ interface GuideProfile {
     local_guide_level: number;
     total_reviews_count: number;
     phone: string;
+    whatsapp_number: string;
     city: string;
 }
 
@@ -105,6 +102,7 @@ export const GuideDetail: React.FC = () => {
                 google_email: data.profile.google_email,
                 phone: data.profile.phone,
                 city: data.profile.city,
+                whatsapp_number: data.profile.whatsapp_number,
                 local_guide_level: data.profile.local_guide_level,
                 total_reviews_count: data.profile.total_reviews_count,
                 password: ''
@@ -133,13 +131,12 @@ export const GuideDetail: React.FC = () => {
 
     const fetchGmailHistory = async (accountId: number) => {
         try {
-            // Set a loading state for this specific account's history
-            setGmailHistory(prev => ({ ...prev, [accountId]: [] })); // Clear previous history or set a loading indicator
+            setGmailHistory(prev => ({ ...prev, [accountId]: [] }));
             const historyData = await adminService.getGmailAccountHistory(accountId);
             setGmailHistory(prev => ({ ...prev, [accountId]: historyData }));
         } catch (error) {
             showError('Erreur', "Erreur lors du chargement de l'historique Gmail");
-            setGmailHistory(prev => ({ ...prev, [accountId]: [] })); // Clear or show error
+            setGmailHistory(prev => ({ ...prev, [accountId]: [] }));
         }
     };
 
@@ -230,7 +227,6 @@ export const GuideDetail: React.FC = () => {
                     Retour à la liste
                 </button>
 
-                {/* New Premium Header Section */}
                 <header className="detail-header-section">
                     <div className="header-content-flex">
                         <div className="header-main-info">
@@ -317,14 +313,11 @@ export const GuideDetail: React.FC = () => {
                 </header>
 
                 <div className="detail-content-layout">
-                    {/* Main Content Area */}
                     <div className="detail-main-columns">
-
-                        {/* Info Cards Grid */}
                         <div className="info-cards-masonry">
                             <div className="premium-card">
                                 <h3><Mail size={20} /> Informations de contact</h3>
-                                <div className="premium-info-list">
+                                <div className="premium-info-list" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                     <div className="premium-info-item">
                                         <div className="info-icon-box"><Mail size={16} /></div>
                                         <div className="info-content">
@@ -354,6 +347,37 @@ export const GuideDetail: React.FC = () => {
                                                 />
                                             ) : (
                                                 <span className="info-value">{profile.phone || 'Non renseigné'}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="premium-info-item">
+                                        <div className="info-icon-box" style={{ background: '#25d366', color: 'white' }}><Smartphone size={16} /></div>
+                                        <div className="info-content">
+                                            <span className="info-label">WhatsApp</span>
+                                            {isEditing ? (
+                                                <input
+                                                    type="tel"
+                                                    value={editFormData.whatsapp_number}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, whatsapp_number: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="+33..."
+                                                />
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <span className="info-value">{profile.whatsapp_number || 'Non renseigné'}</span>
+                                                    {profile.whatsapp_number && (
+                                                        <a
+                                                            href={`https://wa.me/${profile.whatsapp_number.replace(/[\s.+-]/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="info-value link"
+                                                            title="Ouvrir dans WhatsApp"
+                                                            style={{ color: '#25d366' }}
+                                                        >
+                                                            <MessageCircle size={14} />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -403,11 +427,8 @@ export const GuideDetail: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-
-
                         </div>
 
-                        {/* Recent Contributions */}
                         <div className="premium-card table-card">
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.5rem 2rem 0' }}>
                                 <h3 style={{ margin: 0 }}><BarChart3 size={20} /> Historique des contributions</h3>
@@ -420,7 +441,8 @@ export const GuideDetail: React.FC = () => {
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Entreprise Partenaire</th>
+                                            <th>Fiche</th>
+                                            <th>Artisan</th>
                                             <th>Rémunération</th>
                                             <th>Statut</th>
                                             <th>Justificatif</th>
@@ -431,7 +453,42 @@ export const GuideDetail: React.FC = () => {
                                             <tr key={sub.id}>
                                                 <td>{new Date(sub.created_at).toLocaleDateString()}</td>
                                                 <td>
-                                                    <div style={{ fontWeight: 800 }}>{sub.artisan_name}</div>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            color: '#374151',
+                                                            textDecoration: 'underline',
+                                                            textUnderlineOffset: '2px',
+                                                            maxWidth: '200px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}
+                                                        onClick={() => navigate(`/admin/fiches/${sub.order_id}`)}
+                                                        title={sub.fiche_name}
+                                                    >
+                                                        {sub.fiche_name}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 800,
+                                                            cursor: 'pointer',
+                                                            color: '#111827',
+                                                            textDecoration: 'underline',
+                                                            textUnderlineOffset: '2px',
+                                                            maxWidth: '180px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}
+                                                        onClick={() => navigate(`/admin/artisans/${sub.artisan_id}`)}
+                                                        title={sub.artisan_name}
+                                                    >
+                                                        {sub.artisan_name}
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <span style={{ color: '#10b981', fontWeight: 800 }}>+{Number(sub.earnings).toFixed(2)}€</span>
@@ -449,7 +506,7 @@ export const GuideDetail: React.FC = () => {
                                             </tr>
                                         )) : (
                                             <tr>
-                                                <td colSpan={5} className="text-center" style={{ padding: '3rem', color: '#94a3b8' }}>Aucune contribution enregistrée</td>
+                                                <td colSpan={6} className="text-center" style={{ padding: '3rem', color: '#94a3b8' }}>Aucune contribution enregistrée</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -457,7 +514,6 @@ export const GuideDetail: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Gmail Accounts & History (Admin View) */}
                         <div className="premium-card" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fdfcfd 100%)', marginTop: '2rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -579,7 +635,6 @@ export const GuideDetail: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar Stats & Actions */}
                     <div className="detail-sidebar-sticky">
                         <div className="premium-card highlight">
                             <h3>Activité financière</h3>

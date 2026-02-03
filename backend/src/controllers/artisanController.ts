@@ -92,12 +92,10 @@ export const artisanController = {
 
             const { force } = req.body;
             let needed = targetQuantity - existingCount;
-            let append = true;
 
             if (force) {
                 console.log("⚠️ Force regeneration requested. Resetting all reviews.");
                 needed = targetQuantity;
-                append = false;
             } else {
                 if (needed <= 0) {
                     console.log(`✅ Déjà ${existingCount}/${targetQuantity} avis générés. Pas d'action requise.`);
@@ -121,32 +119,57 @@ export const artisanController = {
 
             console.log(`📊 Etat actuel: ${existingCount}/${targetQuantity}. Reste à générer: ${needed}`);
 
-            // Update params to request only needed
-            const generationParams = {
-                companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
-                ficheName: order.fiche_name,
-                trade: artisanProfile?.trade || 'Artisan',
-                quantity: needed, // REQUEST ONLY NEEDED
-                context: order.company_context,
-                sector: order.sector,
-                zones: order.zones,
-                services: order.services,
-                staffNames: order.staff_names,
-                specificInstructions: order.specific_instructions
-            };
-            console.log("🧠 Paramètres envoyés à l'IA:", JSON.stringify(generationParams, null, 2));
+            const batchSize = 20;
+            let totalCreated: any[] = [];
+            let currentNeeded = needed;
 
-            const generated = await aiService.generateReviews(generationParams);
+            while (currentNeeded > 0) {
+                const currentBatchSize = Math.min(currentNeeded, batchSize);
+                console.log(`🤖 Génération d'un lot de ${currentBatchSize} avis...`);
 
-            // On s'assure de ne pas dépasser la quantité demandée (par rapport à ce qu'on a demandé)
-            const finalProposals = generated.slice(0, needed);
+                const generationParams = {
+                    companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
+                    ficheName: order.fiche_name,
+                    trade: artisanProfile?.trade || 'Artisan',
+                    quantity: currentBatchSize,
+                    context: order.company_context,
+                    sector: order.sector,
+                    zones: order.zones,
+                    services: order.services,
+                    staffNames: order.staff_names,
+                    specificInstructions: order.specific_instructions
+                };
 
-            console.log(`💾 Sauvegarde de ${finalProposals.length} nouvelles propositions (Append=${append})...`);
-            // Pass append mode based on force flag
-            const created = await artisanService.createProposals(id, finalProposals, append);
+                try {
+                    const generated = await aiService.generateReviews(generationParams);
+                    const finalProposals = generated.slice(0, currentBatchSize);
 
-            console.log("✅ Generation terminée avec succès !");
-            return res.json(created);
+                    console.log(`💾 Sauvegarde de ${finalProposals.length} propositions...`);
+
+                    // If it's the first batch AND force is true, we don't append (it will clear existing)
+                    // Otherwise we always append to build up the total
+                    const shouldAppend = !(currentNeeded === needed && force);
+
+                    const batchCreated = await artisanService.createProposals(id, finalProposals, shouldAppend);
+                    totalCreated = batchCreated;
+
+                    currentNeeded -= finalProposals.length;
+
+                    // If AI generated fewer than requested but didn't error, we might be hitting a limit
+                    if (finalProposals.length === 0) {
+                        console.warn("⚠️ L'IA n'a généré aucun avis pour ce lot. Arrêt de la boucle.");
+                        break;
+                    }
+                } catch (batchError: any) {
+                    console.error("❌ Erreur pendant un lot de génération:", batchError.message);
+                    // On s'arrête si une erreur critique survient (ex: API Quota)
+                    // Mais on a déjà sauvegardé les lots précédents
+                    break;
+                }
+            }
+
+            console.log(`✅ Generation terminée. Total: ${totalCreated.length}/${targetQuantity}`);
+            return res.json(totalCreated);
         } catch (error: any) {
             console.error("❌ ERREUR FATALE GENERATION:", error);
             return res.status(500).json({ error: 'Failed to generate proposals', message: error.message });

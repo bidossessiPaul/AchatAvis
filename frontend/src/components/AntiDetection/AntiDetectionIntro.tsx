@@ -1,12 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-    Zap,
-    Target,
     Mail,
     ArrowRight,
     MapPin,
-    History,
     FileSearch,
     Fingerprint,
     Activity,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Award, AlertCircle, CheckCircle } from 'lucide-react';
+import { Award } from 'lucide-react';
 
 interface ComplianceWidgetProps {
     data: any;

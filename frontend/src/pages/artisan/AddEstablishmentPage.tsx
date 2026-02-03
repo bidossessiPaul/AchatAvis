@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Link as LinkIcon, Edit, MapPin, Globe, CheckCircle, AlertTriangle, ArrowLeft, Loader2 } from 'lucide-react';
+import { Search, MapPin, Globe, CheckCircle, AlertTriangle, ArrowLeft, Loader2 } from 'lucide-react';
 import { establishmentApi } from '../../services/api';
 import api from '../../services/api';
 import { Button } from '../../components/common/Button';

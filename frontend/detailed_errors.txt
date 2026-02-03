@@ -1,0 +1,48 @@
+src/components/AntiDetection/AntiDetectionIntro.tsx(4,5): error TS6133: 'Zap' is declared but its value is never read.
+src/components/AntiDetection/AntiDetectionIntro.tsx(5,5): error TS6133: 'Target' is declared but its value is never read.
+src/components/AntiDetection/AntiDetectionIntro.tsx(9,5): error TS6133: 'History' is declared but its value is never read.
+src/components/AntiDetection/ComplianceWidget.tsx(3,10): error TS6133: 'ShieldCheck' is declared but its value is never read.
+src/components/AntiDetection/ComplianceWidget.tsx(3,30): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/components/AntiDetection/ComplianceWidget.tsx(3,43): error TS6133: 'CheckCircle' is declared but its value is never read.
+src/components/AntiDetection/SecurityRadar.tsx(9,5): error TS6133: 'ChevronUp' is declared but its value is never read.
+src/components/Campaign/LocalisationClients.tsx(3,10): error TS6133: 'MapPin' is declared but its value is never read.
+src/pages/admin/ArtisanDetail.tsx(10,5): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(6,5): error TS6133: 'Users' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(10,5): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(12,5): error TS6133: 'Award' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(16,5): error TS6133: 'Star' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(18,5): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(21,5): error TS6133: 'ChevronDown' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(22,5): error TS6133: 'ChevronUp' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(23,5): error TS6133: 'Zap' is declared but its value is never read.
+src/pages/admin/GuideDetail.tsx(24,5): error TS6133: 'Download' is declared but its value is never read.
+src/pages/admin/GuidesList.tsx(12,5): error TS6133: 'XCircle' is declared but its value is never read.
+src/pages/admin/GuidesList.tsx(13,5): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/admin/GuidesList.tsx(14,5): error TS6133: 'Power' is declared but its value is never read.
+src/pages/admin/ReviewValidation.tsx(13,5): error TS6133: 'Building2' is declared but its value is never read.
+src/pages/admin/SuspensionAdminPage.tsx(6,5): error TS6133: 'History' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(6,5): error TS6133: 'RefreshCw' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(8,5): error TS6133: 'ExternalLink' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(10,5): error TS6133: 'CheckCircle2' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(14,1): error TS6133: 'LoadingSpinner' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(73,11): error TS6133: 'handleToggleActive' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(87,11): error TS6133: 'handleRecalculate' is declared but its value is never read.
+src/pages/admin/TrustScoreManagement.tsx(181,21): error TS6133: 'payloadScore' is declared but its value is never read.
+src/pages/artisan/AddEstablishmentPage.tsx(3,26): error TS6133: 'LinkIcon' is declared but its value is never read.
+src/pages/artisan/AddEstablishmentPage.tsx(3,36): error TS6133: 'Edit' is declared but its value is never read.
+src/pages/artisan/SubmissionFlow/Step3AIGeneration.tsx(28,23): error TS2503: Cannot find namespace 'NodeJS'.
+src/pages/auth/ForgotPassword.tsx(7,1): error TS6192: All imports in import declaration are unused.
+src/pages/auth/Login.tsx(7,10): error TS6133: 'User' is declared but its value is never read.
+src/pages/auth/Login.tsx(7,16): error TS6133: 'MapPin' is declared but its value is never read.
+src/pages/auth/Login.tsx(7,24): error TS6133: 'ArrowRight' is declared but its value is never read.
+src/pages/auth/ResetPassword.tsx(7,1): error TS6192: All imports in import declaration are unused.
+src/pages/guide/AntiDetectionRulesPage.tsx(16,1): error TS6133: 'AntiDetectionIntro' is declared but its value is never read.
+src/pages/guide/AntiDetectionRulesPage.tsx(48,11): error TS6133: 'user' is declared but its value is never read.
+src/pages/guide/AntiDetectionRulesPage.tsx(51,9): error TS6133: 'complianceData' is declared but its value is never read.
+src/pages/guide/FicheDetail.tsx(462,93): error TS2339: Property 'daily_submissions_count' does not exist on type 'ReviewOrder & { proposals: ReviewProposal[]; submissions: ReviewSubmission[]; artisan_company: string; city?: string | undefined; }'.
+src/pages/guide/FicheDetail.tsx(466,70): error TS2339: Property 'daily_submissions_count' does not exist on type 'ReviewOrder & { proposals: ReviewProposal[]; submissions: ReviewSubmission[]; artisan_company: string; city?: string | undefined; }'.
+src/pages/guide/FicheDetail.tsx(467,52): error TS2339: Property 'daily_submissions_count' does not exist on type 'ReviewOrder & { proposals: ReviewProposal[]; submissions: ReviewSubmission[]; artisan_company: string; city?: string | undefined; }'.
+src/pages/guide/Submissions.tsx(7,5): error TS6133: 'ExternalLink' is declared but its value is never read.
+src/pages/guide/Submissions.tsx(11,5): error TS6133: 'Calendar' is declared but its value is never read.
+src/pages/guide/Submissions.tsx(12,5): error TS6133: 'Mail' is declared but its value is never read.
+src/pages/SuspendedPage.tsx(2,54): error TS6133: 'MessageCircle' is declared but its value is never read.

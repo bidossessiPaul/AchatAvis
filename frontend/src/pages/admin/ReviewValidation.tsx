@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
@@ -10,7 +11,6 @@ import {
     Clock,
     User,
     RotateCcw,
-    Building2,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -41,6 +41,7 @@ interface Submission {
 
 
 export const ReviewValidation: React.FC = () => {
+    const navigate = useNavigate();
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -230,12 +231,64 @@ export const ReviewValidation: React.FC = () => {
                                                             <User size={18} />
                                                         </div>
                                                     )}
-                                                    <span style={{ fontWeight: 600, color: '#111827' }}>{submission.guide_name}</span>
+                                                    <span
+                                                        style={{
+                                                            fontWeight: 600,
+                                                            color: '#111827',
+                                                            cursor: 'pointer',
+                                                            textDecoration: 'underline',
+                                                            textUnderlineOffset: '2px',
+                                                            maxWidth: '150px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/admin/guides/${submission.guide_id}`);
+                                                        }}
+                                                        title={submission.guide_name}
+                                                    >
+                                                        {submission.guide_name}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <div style={{ border: 'none', color: '#374151', fontWeight: 600 }}>{submission.fiche_name}</div>
-                                                <div style={{ border: 'none', color: '#6b7280', fontSize: '11px' }}>{submission.artisan_name}</div>
+                                                <div
+                                                    style={{
+                                                        border: 'none',
+                                                        color: '#374151',
+                                                        fontWeight: 600,
+                                                        maxWidth: '200px',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}
+                                                    title={submission.fiche_name}
+                                                >
+                                                    {submission.fiche_name}
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        border: 'none',
+                                                        color: '#6b7280',
+                                                        fontSize: '11px',
+                                                        cursor: 'pointer',
+                                                        textDecoration: 'underline',
+                                                        textUnderlineOffset: '2px',
+                                                        maxWidth: '200px',
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/admin/artisans/${submission.artisan_id}`);
+                                                    }}
+                                                    title={submission.artisan_name}
+                                                >
+                                                    {submission.artisan_name}
+                                                </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

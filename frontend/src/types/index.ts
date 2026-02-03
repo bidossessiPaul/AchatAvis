@@ -29,6 +29,7 @@ export interface User {
     city?: string;
     postal_code?: string;
     google_business_url?: string;
+    whatsapp_number?: string;
     // Guide Profile Fields
     local_guide_level?: number;
     total_reviews_validated?: number;
@@ -46,6 +47,7 @@ export interface ArtisanProfile {
     city: string;
     postal_code: string;
     google_business_url?: string;
+    whatsapp_number: string;
     monthly_reviews_quota: number;
     current_month_reviews: number;
     total_reviews_received: number;
@@ -61,6 +63,7 @@ export interface GuideProfile {
     local_guide_level: number;
     total_reviews_count: number;
     phone?: string;
+    whatsapp_number?: string;
     total_reviews_submitted: number;
     total_reviews_validated: number;
     total_earnings: number;
@@ -96,6 +99,7 @@ export interface ArtisanRegistration {
     city: string;
     postalCode: string;
     googleBusinessUrl?: string;
+    whatsappNumber?: string;
 }
 
 export interface GuideRegistration {
@@ -104,6 +108,7 @@ export interface GuideRegistration {
     password: string;
     googleEmail: string;
     phone: string;
+    whatsappNumber?: string;
     city: string;
 }
 
@@ -150,6 +155,7 @@ export interface ReviewOrder {
     payout_per_review?: number;
     establishment_id?: string;
     city?: string;
+    daily_submissions_count?: number;
 }
 
 export interface ReviewProposal {

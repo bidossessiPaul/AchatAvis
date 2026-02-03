@@ -31,6 +31,14 @@ export const adminService = {
     },
 
     /**
+     * Get all submissions for a specific artisan
+     */
+    getArtisanSubmissions: async (userId: string) => {
+        const response = await api.get(`/admin/artisans/${userId}/submissions`);
+        return response.data;
+    },
+
+    /**
      * Update artisan profile
      */
     updateArtisan: async (userId: string, data: any) => {

@@ -26,6 +26,20 @@ router.post(
     payoutController.requestPayout
 );
 
+router.get(
+    '/guide/payment-method',
+    authenticate,
+    authorize('guide'),
+    payoutController.getPaymentMethod
+);
+
+router.put(
+    '/guide/payment-method',
+    authenticate,
+    authorize('guide'),
+    payoutController.updatePaymentMethod
+);
+
 // Admin Routes
 router.get(
     '/admin/requests',
