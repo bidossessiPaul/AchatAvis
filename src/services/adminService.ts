@@ -7,7 +7,7 @@ import { notificationService } from './notificationService';
  */
 export const getArtisans = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                ap.company_name, ap.trade, ap.phone, ap.city, 
                ap.subscription_status, ap.subscription_end_date
         FROM users u
@@ -22,7 +22,7 @@ export const getArtisans = async () => {
  */
 export const getGuides = async () => {
     return await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
                gp.phone, gp.city,
                COUNT(DISTINCT rs.id) as submitted_reviews_count
@@ -30,7 +30,7 @@ export const getGuides = async () => {
         JOIN guides_profiles gp ON u.id = gp.user_id
         LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
         WHERE u.role = 'guide'
-        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.warning_count,
+        GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen, u.warning_count,
                  gp.google_email, gp.local_guide_level, gp.total_reviews_count, gp.phone, gp.city
         ORDER BY u.created_at DESC
     `);
