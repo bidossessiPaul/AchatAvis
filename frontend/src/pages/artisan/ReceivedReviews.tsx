@@ -12,7 +12,9 @@ import {
     Sparkles,
     Copy,
     Check,
-    X
+    X,
+    Edit2,
+    Trash2
 } from 'lucide-react';
 import { showError, showSuccess } from '../../utils/Swal';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
@@ -56,6 +58,15 @@ export const ReceivedReviews: React.FC = () => {
     const [generatedResponse, setGeneratedResponse] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [hasCopied, setHasCopied] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Editing State
+    const [editingProposal, setEditingProposal] = useState<Submission | null>(null);
+    const [editForm, setEditForm] = useState({
+        content: '',
+        author_name: '',
+        rating: 5
+    });
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1);
@@ -110,6 +121,48 @@ export const ReceivedReviews: React.FC = () => {
             showError('Erreur', 'Impossible de générer la réponse IA');
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleEdit = (submission: Submission) => {
+        setEditingProposal(submission);
+        setEditForm({
+            content: submission.proposal_content,
+            author_name: submission.proposal_author,
+            rating: submission.rating
+        });
+    };
+
+    const handleSaveProposal = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingProposal) return;
+
+        setIsSaving(true);
+        try {
+            await artisanService.updateProposal(editingProposal.proposal_id, {
+                content: editForm.content,
+                author_name: editForm.author_name,
+                rating: editForm.rating
+            });
+
+            // Update local state
+            setSubmissions(prev => prev.map(s =>
+                s.proposal_id === editingProposal.proposal_id
+                    ? {
+                        ...s,
+                        proposal_content: editForm.content,
+                        proposal_author: editForm.author_name,
+                        rating: editForm.rating
+                    }
+                    : s
+            ));
+
+            showSuccess('Succès', 'Avis mis à jour avec succès');
+            setEditingProposal(null);
+        } catch (error) {
+            showError('Erreur', 'Impossible de mettre à jour l\'avis');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -287,6 +340,15 @@ export const ReceivedReviews: React.FC = () => {
                                                     <div className="actions-cell">
                                                         <button
                                                             className="action-btn ai-btn"
+                                                            onClick={() => handleEdit(review)}
+                                                            title="Modifier l'avis"
+                                                            disabled={review.submission_status === 'validated'}
+                                                            style={review.submission_status === 'validated' ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button
+                                                            className="action-btn ai-btn"
                                                             onClick={() => handleOpenModal(review)}
                                                             title="Générer une réponse IA"
                                                             disabled={review.submission_status !== 'validated'}
@@ -430,6 +492,155 @@ export const ReceivedReviews: React.FC = () => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Edit Proposal Modal */}
+            {editingProposal && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2000,
+                    backdropFilter: 'blur(4px)',
+                    padding: '1rem'
+                }} onClick={() => setEditingProposal(null)}>
+                    <div style={{
+                        background: 'white',
+                        padding: window.innerWidth <= 768 ? '1.5rem' : '2rem',
+                        borderRadius: '1.25rem',
+                        width: '100%',
+                        maxWidth: '600px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{
+                                fontSize: window.innerWidth <= 768 ? '1.125rem' : '1.25rem',
+                                fontWeight: 800,
+                                color: '#1e293b',
+                                margin: 0
+                            }}>Modifier l'avis</h3>
+                            <button onClick={() => setEditingProposal(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: '0.25rem' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSaveProposal} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Nom de l'auteur</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editForm.author_name}
+                                    onChange={e => setEditForm({ ...editForm, author_name: e.target.value })}
+                                    style={{
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '0.875rem',
+                                        outline: 'none',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Note</label>
+                                <div style={{ display: 'flex', gap: window.innerWidth <= 768 ? '0.35rem' : '0.5rem', justifyContent: 'flex-start' }}>
+                                    {[1, 2, 3, 4, 5].map(rating => (
+                                        <button
+                                            key={rating}
+                                            type="button"
+                                            onClick={() => setEditForm({ ...editForm, rating })}
+                                            style={{
+                                                width: window.innerWidth <= 768 ? '2.25rem' : '2.5rem',
+                                                height: window.innerWidth <= 768 ? '2.25rem' : '2.5rem',
+                                                border: 'none',
+                                                background: 'transparent',
+                                                cursor: 'pointer',
+                                                fontSize: '1.5rem',
+                                                padding: 0,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}
+                                        >
+                                            <Star
+                                                size={window.innerWidth <= 768 ? 28 : 32}
+                                                fill={rating <= editForm.rating ? '#fbbf24' : 'none'}
+                                                color={rating <= editForm.rating ? '#fbbf24' : '#d1d5db'}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569' }}>Contenu de l'avis</label>
+                                <textarea
+                                    required
+                                    value={editForm.content}
+                                    onChange={e => setEditForm({ ...editForm, content: e.target.value })}
+                                    rows={window.innerWidth <= 768 ? 4 : 5}
+                                    style={{
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '0.875rem',
+                                        outline: 'none',
+                                        resize: 'vertical',
+                                        fontFamily: 'inherit',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexDirection: window.innerWidth <= 480 ? 'column' : 'row' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingProposal(null)}
+                                    style={{
+                                        flex: window.innerWidth <= 480 ? 'auto' : 1,
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: '1px solid #e2e8f0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '1rem'
+                                    }}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    style={{
+                                        flex: window.innerWidth <= 480 ? 'auto' : 2,
+                                        padding: window.innerWidth <= 768 ? '0.625rem' : '0.75rem',
+                                        borderRadius: '0.75rem',
+                                        border: 'none',
+                                        background: '#FF6B35',
+                                        color: 'white',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        opacity: isSaving ? 0.7 : 1,
+                                        fontSize: window.innerWidth <= 768 ? '0.9375rem' : '1rem'
+                                    }}
+                                >
+                                    {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

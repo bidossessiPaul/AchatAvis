@@ -298,5 +298,46 @@ export const artisanController = {
             console.error("❌ Error generating review response:", error);
             return res.status(500).json({ error: 'Failed to generate review response', message: error.message });
         }
+    },
+
+    async updateProposal(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const { content, author_name, rating } = req.body;
+
+            const result = await artisanService.updateProposal(user.userId, id, {
+                content,
+                author_name,
+                rating
+            });
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error updating proposal:', error);
+            return res.status(500).json({
+                error: 'Failed to update proposal',
+                message: error.message
+            });
+        }
+    },
+
+    async deleteProposal(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+
+            const result = await artisanService.deleteProposal(user.userId, id);
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error deleting proposal:', error);
+            return res.status(500).json({
+                error: 'Failed to delete proposal',
+                message: error.message
+            });
+        }
     }
 };

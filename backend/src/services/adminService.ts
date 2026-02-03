@@ -1519,13 +1519,15 @@ export const getReview360Data = async () => {
             ap.company_name as artisan_name,
             ua.avatar_url as artisan_avatar,
             ro.artisan_id,
+            ap.whatsapp_number as artisan_whatsapp,
             s.id as submission_id, 
             s.status as submission_status, 
             s.submitted_at, 
             s.review_url,
             s.guide_id,
             u.full_name as guide_name,
-            gp.google_email as guide_google_email
+            gp.google_email as guide_google_email,
+            gp.whatsapp_number as guide_whatsapp
         FROM review_proposals p
         JOIN reviews_orders ro ON p.order_id = ro.id
         JOIN artisans_profiles ap ON ro.artisan_id = ap.user_id

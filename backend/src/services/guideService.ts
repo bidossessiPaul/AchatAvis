@@ -448,5 +448,48 @@ export const guideService = {
             SET preferred_payout_method = ?, payout_details = ?
             WHERE user_id = ?
         `, [method, JSON.stringify(details), userId]);
+    },
+
+    async updateSubmission(guideId: string, submissionId: string, data: { reviewUrl?: string, googleEmail?: string }) {
+        // 1. Verify submission exists and belongs to the guide, and is still pending
+        const existing: any = await query(`
+            SELECT id, status FROM reviews_submissions 
+            WHERE id = ? AND guide_id = ?
+        `, [submissionId, guideId]);
+
+        if (!existing || existing.length === 0) {
+            throw new Error('Soumission non trouvée ou non autorisée');
+        }
+
+        if (existing[0].status !== 'pending') {
+            throw new Error('Seules les soumissions en attente peuvent être modifiées');
+        }
+
+        // 2. Prepare update fields
+        const updates: string[] = [];
+        const params: any[] = [];
+
+        if (data.reviewUrl) {
+            updates.push('review_url = ?');
+            params.push(data.reviewUrl);
+        }
+
+        if (data.googleEmail) {
+            updates.push('google_email = ?');
+            params.push(data.googleEmail);
+        }
+
+        if (updates.length === 0) return { success: true, message: 'Aucune modification' };
+
+        params.push(submissionId);
+
+        // 3. Perform update
+        await query(`
+            UPDATE reviews_submissions 
+            SET ${updates.join(', ')} 
+            WHERE id = ?
+        `, params);
+
+        return { success: true, message: 'Soumission mise à jour avec succès' };
     }
 };

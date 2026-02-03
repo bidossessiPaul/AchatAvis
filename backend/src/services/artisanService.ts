@@ -316,28 +316,96 @@ export const artisanService = {
     },
 
     /**
-     * Delete a proposal
+     * Update a proposal content/rating (SECURE VERSION with ownership checks)
+     * Artisans can modify proposals at ANY TIME
      */
-    async deleteProposal(proposalId: string) {
-        return query('DELETE FROM review_proposals WHERE id = ?', [proposalId]);
+    async updateProposal(artisanId: string, proposalId: string, data: { content?: string, author_name?: string, rating?: number }) {
+        if (!proposalId) {
+            throw new Error('ID de proposition manquant');
+        }
+        // 1. Verify that the proposal exists and belongs to the artisan
+        const existing: any = await query(`
+            SELECT rp.id, ro.artisan_id
+            FROM review_proposals rp
+            JOIN reviews_orders ro ON rp.order_id = ro.id
+            WHERE rp.id = ?
+        `, [proposalId]);
+
+        if (!existing || existing.length === 0) {
+            throw new Error('Proposition non trouvée');
+        }
+
+        if (existing[0].artisan_id !== artisanId) {
+            throw new Error('Non autorisé à modifier cette proposition');
+        }
+
+        // Artisan can modify at ANY TIME (removed submission_id check per user request)
+
+        // 2. Prepare update fields (ensure no undefined values)
+        const updates: string[] = [];
+        const params: any[] = [];
+
+        if (data.content !== undefined && data.content !== null) {
+            updates.push('content = ?');
+            params.push(data.content);
+        }
+
+        if (data.author_name !== undefined && data.author_name !== null) {
+            updates.push('author_name = ?');
+            params.push(data.author_name);
+        }
+
+        if (data.rating !== undefined && data.rating !== null) {
+            updates.push('rating = ?');
+            params.push(data.rating);
+        }
+
+        if (updates.length === 0) {
+            return { success: true, message: 'Aucune modification' };
+        }
+
+        params.push(proposalId);
+
+        // 3. Perform update
+        await query(`
+            UPDATE review_proposals 
+            SET ${updates.join(', ')} 
+            WHERE id = ?
+        `, params);
+
+        return { success: true, message: 'Proposition mise à jour avec succès' };
     },
 
     /**
-     * Update a proposal content/rating
+     * Delete a proposal (SECURE VERSION with ownership checks)
+     * Artisans can delete proposals at ANY TIME
      */
-    async updateProposal(proposalId: string, data: Partial<ReviewProposal>) {
-        const fields = [];
-        const values = [];
+    async deleteProposal(artisanId: string, proposalId: string) {
+        if (!proposalId) {
+            throw new Error('ID de proposition manquant');
+        }
+        // 1. Verify that the proposal exists and belongs to the artisan
+        const existing: any = await query(`
+            SELECT rp.id, ro.artisan_id
+            FROM review_proposals rp
+            JOIN reviews_orders ro ON rp.order_id = ro.id
+            WHERE rp.id = ?
+        `, [proposalId]);
 
-        if (data.content !== undefined) { fields.push('content = ?'); values.push(data.content); }
-        if (data.rating !== undefined) { fields.push('rating = ?'); values.push(data.rating); }
-        if (data.author_name !== undefined) { fields.push('author_name = ?'); values.push(data.author_name); }
-        if (data.status !== undefined) { fields.push('status = ?'); values.push(data.status); }
+        if (!existing || existing.length === 0) {
+            throw new Error('Proposition non trouvée');
+        }
 
-        if (fields.length === 0) return;
+        if (existing[0].artisan_id !== artisanId) {
+            throw new Error('Non autorisé à supprimer cette proposition');
+        }
 
-        values.push(proposalId);
-        await query(`UPDATE review_proposals SET ${fields.join(', ')} WHERE id = ?`, values);
+        // Artisan can delete at ANY TIME (removed submission_id check per user request)
+
+        // 2. Delete the proposal
+        await query('DELETE FROM review_proposals WHERE id = ?', [proposalId]);
+
+        return { success: true, message: 'Proposition supprimée avec succès' };
     },
 
     /**
@@ -530,3 +598,5 @@ export const artisanService = {
         };
     }
 };
+
+

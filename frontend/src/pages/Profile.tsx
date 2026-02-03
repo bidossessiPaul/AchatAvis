@@ -319,7 +319,11 @@ export const Profile: React.FC = () => {
                                 <Card className="profile-card">
                                     <h3 className="card-title">Informations Personnelles</h3>
                                     <form onSubmit={handleProfileSubmit} className="profile-form">
-                                        <div style={{ display: 'grid', gridTemplateColumns: (user?.role === 'artisan' || user?.role === 'guide') ? '1fr 1fr' : '1fr', gap: '1rem' }}>
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: window.innerWidth <= 640 ? '1fr' : (user?.role === 'artisan' || user?.role === 'guide') ? '1fr 1fr' : '1fr',
+                                            gap: '1rem'
+                                        }}>
                                             <Input
                                                 label="Nom Complet"
                                                 name="fullName"
@@ -391,7 +395,12 @@ export const Profile: React.FC = () => {
 
                                         {user?.role === 'guide' && (
                                             <>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: window.innerWidth <= 640 ? '1fr' : '1fr 1fr',
+                                                    gap: '1rem',
+                                                    marginTop: '1rem'
+                                                }}>
                                                     <Input
                                                         label="Email Google (Local Guide)"
                                                         name="googleEmail"
@@ -473,7 +482,12 @@ export const Profile: React.FC = () => {
                                                     />
                                                 </div>
 
-                                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+                                                <div style={{
+                                                    display: 'grid',
+                                                    gridTemplateColumns: window.innerWidth <= 640 ? '1fr' : '2fr 1fr',
+                                                    gap: '1rem',
+                                                    marginTop: '1rem'
+                                                }}>
                                                     <Input
                                                         label="Ville"
                                                         name="city"

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
-import { usePermissions } from '../../hooks/usePermissions';
 import {
     LayoutDashboard,
     Package,
@@ -36,7 +35,6 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const { user, logout } = useAuthStore();
-    const { hasPermission, isSuperAdmin } = usePermissions();
     const location = useLocation();
 
     // Close sidebar when route changes (mobile)
@@ -86,17 +84,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 
-                // Filter based on permissions (super admin sees all)
-                if (isSuperAdmin()) {
-                    return allAdminItems;
-                }
-
-                return allAdminItems.filter(item => {
-                    // No permission required = always show
-                    if (!item.permissions || item.permissions.length === 0) return true;
-                    // Check if user has AT LEAST ONE of the required permissions
-                    return item.permissions.some(perm => hasPermission(perm));
-                });
+                // Return all items for all admins to ensure consistent interface order
+                // PermissionGuard still handles security for individual pages
+                return allAdminItems;
             }
             default:
                 return [];

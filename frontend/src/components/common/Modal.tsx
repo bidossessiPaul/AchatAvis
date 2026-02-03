@@ -31,6 +31,8 @@ export const Modal: React.FC<ModalProps> = ({
         };
     }, [isOpen]);
 
+    const isMobile = window.innerWidth <= 768;
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -38,11 +40,11 @@ export const Modal: React.FC<ModalProps> = ({
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        zIndex: 1000,
+                        zIndex: 2000,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '1rem'
+                        padding: isMobile ? '0.75rem' : '1rem'
                     }}
                 >
                     {/* Overlay */}
@@ -69,17 +71,18 @@ export const Modal: React.FC<ModalProps> = ({
                             width: '100%',
                             maxWidth: maxWidth,
                             background: 'white',
-                            borderRadius: '1.5rem',
+                            borderRadius: isMobile ? '1.25rem' : '1.5rem',
                             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
                             overflow: 'hidden',
                             display: 'flex',
-                            flexDirection: 'column'
+                            flexDirection: 'column',
+                            maxHeight: isMobile ? '95vh' : '90vh'
                         }}
                     >
                         {/* Header */}
                         {(title || showCloseButton) && (
                             <div style={{
-                                padding: '1.25rem 1.5rem',
+                                padding: isMobile ? '1rem 1.25rem' : '1.25rem 1.5rem',
                                 borderBottom: '1px solid #f1f5f9',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -89,9 +92,11 @@ export const Modal: React.FC<ModalProps> = ({
                                 {title && (
                                     <h3 style={{
                                         margin: 0,
-                                        fontSize: '1.1rem',
+                                        fontSize: isMobile ? '1rem' : '1.1rem',
                                         fontWeight: 700,
-                                        color: '#0f172a'
+                                        color: '#0f172a',
+                                        lineHeight: 1.3,
+                                        paddingRight: showCloseButton ? '1rem' : 0
                                     }}>
                                         {title}
                                     </h3>
@@ -107,19 +112,25 @@ export const Modal: React.FC<ModalProps> = ({
                                             display: 'flex',
                                             cursor: 'pointer',
                                             color: '#64748b',
-                                            transition: 'all 0.2s'
+                                            transition: 'all 0.2s',
+                                            flexShrink: 0
                                         }}
                                         onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
                                         onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
                                     >
-                                        <X size={20} />
+                                        <X size={isMobile ? 18 : 20} />
                                     </button>
                                 )}
                             </div>
                         )}
 
                         {/* Body */}
-                        <div style={{ padding: '1.5rem', overflowY: 'auto', maxHeight: '80vh' }}>
+                        <div style={{
+                            padding: isMobile ? '1rem' : '1.5rem',
+                            overflowY: 'auto',
+                            maxHeight: '80vh',
+                            fontSize: isMobile ? '0.9375rem' : '1rem'
+                        }}>
                             {children}
                         </div>
                     </motion.div>
