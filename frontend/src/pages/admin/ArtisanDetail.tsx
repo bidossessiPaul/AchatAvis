@@ -7,7 +7,6 @@ import {
     Mail,
     Phone,
     MapPin,
-    Calendar,
     ArrowLeft,
     ShieldAlert,
     Trash2,
@@ -16,7 +15,13 @@ import {
     Globe,
     ExternalLink,
     Zap,
-    Power
+    Power,
+    Search,
+    Filter,
+    MessageSquare,
+    MessageCircle,
+    User,
+    Smartphone
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError, showInput, showSelection, showPremiumWarningModal } from '../../utils/Swal';
@@ -62,6 +67,7 @@ interface ArtisanDetailData {
         company_name: string;
         trade: string;
         phone: string;
+        whatsapp_number: string;
         address: string;
         city: string;
         postal_code: string;
@@ -76,6 +82,25 @@ interface ArtisanDetailData {
     payments: Payment[];
 }
 
+interface ArtisanSubmission {
+    proposal_id: string;
+    proposal_content: string;
+    proposal_author: string;
+    rating: number;
+    proposal_status: string;
+    submission_id: string | null;
+    submission_status: 'pending' | 'validated' | 'rejected' | null;
+    review_url: string | null;
+    submitted_at: string | null;
+    earnings: number;
+    rejection_reason: string | null;
+    fiche_name: string;
+    order_id: string;
+    guide_name: string | null;
+    guide_id: string | null;
+    proposal_date: string;
+}
+
 export const ArtisanDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -87,11 +112,16 @@ export const ArtisanDetail: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editFormData, setEditFormData] = useState<any>(null);
+    const [submissions, setSubmissions] = useState<ArtisanSubmission[]>([]);
+    const [submissionsLoading, setSubmissionsLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     useEffect(() => {
         if (id) {
             loadDetail();
             fetchPacks();
+            loadSubmissions();
         }
     }, [id]);
 
@@ -110,12 +140,25 @@ export const ArtisanDetail: React.FC = () => {
                 city: result.profile.city,
                 postal_code: result.profile.postal_code,
                 google_business_url: result.profile.google_business_url,
+                whatsapp_number: result.profile.whatsapp_number,
                 password: ''
             });
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement des détails');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const loadSubmissions = async () => {
+        setSubmissionsLoading(true);
+        try {
+            const result = await adminService.getArtisanSubmissions(id!);
+            setSubmissions(result);
+        } catch (error) {
+            console.error('Error loading submissions:', error);
+        } finally {
+            setSubmissionsLoading(false);
         }
     };
 
@@ -458,6 +501,37 @@ export const ArtisanDetail: React.FC = () => {
                                                 />
                                             ) : (
                                                 <span className="info-value">{profile.phone || 'Non renseigné'}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="premium-info-item">
+                                        <div className="info-icon-box" style={{ background: '#25d366', color: 'white' }}><Smartphone size={16} /></div>
+                                        <div className="info-content">
+                                            <span className="info-label">WhatsApp</span>
+                                            {isEditing ? (
+                                                <input
+                                                    type="tel"
+                                                    value={editFormData.whatsapp_number}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, whatsapp_number: e.target.value })}
+                                                    className="form-input-premium"
+                                                    placeholder="+33..."
+                                                />
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <span className="info-value">{profile.whatsapp_number || 'Non renseigné'}</span>
+                                                    {profile.whatsapp_number && (
+                                                        <a
+                                                            href={`https://wa.me/${profile.whatsapp_number.replace(/[\s.+-]/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="info-value link"
+                                                            title="Ouvrir dans WhatsApp"
+                                                            style={{ color: '#25d366' }}
+                                                        >
+                                                            <MessageCircle size={14} />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -841,6 +915,260 @@ export const ArtisanDetail: React.FC = () => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* Reviews Section */}
+                <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <h3><MessageSquare size={20} /> Avis de cet Artisan</h3>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div className="search-box-premium" style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{
+                                        padding: '0.6rem 1rem 0.6rem 2.5rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        width: '220px',
+                                        fontSize: '0.875rem'
+                                    }}
+                                />
+                            </div>
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)', pointerEvents: 'none' }} />
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    style={{
+                                        padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        background: 'white',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--gray-700)',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="all">Tous les statuts</option>
+                                    <option value="pending">En attente</option>
+                                    <option value="submitted">Soumis</option>
+                                    <option value="validated">Validés</option>
+                                    <option value="rejected">Rejetés</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="admin-table-wrapper" style={{ maxHeight: '600px', overflowY: 'auto', overflowX: 'auto' }}>
+                        {submissionsLoading ? (
+                            <div style={{ textAlign: 'center', padding: '3rem' }}>
+                                <LoadingSpinner size="lg" text="Chargement des avis..." />
+                            </div>
+                        ) : (
+                            <table className="premium-table">
+                                <thead>
+                                    <tr>
+                                        <th>Fiche</th>
+                                        <th>Guide</th>
+                                        <th>Contenu</th>
+                                        <th>Statut</th>
+                                        <th>Date</th>
+                                        <th>Preuve</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {(() => {
+                                        const filtered = submissions.filter(sub => {
+                                            const matchesSearch =
+                                                sub.fiche_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                sub.guide_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                sub.proposal_content?.toLowerCase().includes(searchTerm.toLowerCase());
+
+                                            let matchesStatus = true;
+                                            if (statusFilter === 'pending') {
+                                                matchesStatus = !sub.submission_id || sub.submission_status === 'pending';
+                                            } else if (statusFilter === 'submitted') {
+                                                matchesStatus = !!sub.submission_id && !sub.submission_status;
+                                            } else if (statusFilter === 'validated') {
+                                                matchesStatus = sub.submission_status === 'validated';
+                                            } else if (statusFilter === 'rejected') {
+                                                matchesStatus = sub.submission_status === 'rejected';
+                                            }
+
+                                            return matchesSearch && matchesStatus;
+                                        });
+
+                                        if (filtered.length === 0) {
+                                            return (
+                                                <tr>
+                                                    <td colSpan={6} className="text-center" style={{ padding: '2rem', color: '#9ca3af' }}>
+                                                        Aucun avis trouvé
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+
+                                        return filtered.map(sub => (
+                                            <tr key={sub.proposal_id}>
+                                                <td>
+                                                    <div
+                                                        style={{
+                                                            fontWeight: 600,
+                                                            color: '#374151',
+                                                            cursor: 'pointer',
+                                                            textDecoration: 'underline',
+                                                            textUnderlineOffset: '2px',
+                                                            maxWidth: '200px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }}
+                                                        onClick={() => navigate(`/admin/fiches/${sub.order_id}`)}
+                                                        title={sub.fiche_name}
+                                                    >
+                                                        {sub.fiche_name}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {sub.guide_name ? (
+                                                        <div
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                cursor: 'pointer',
+                                                                textDecoration: 'underline',
+                                                                textUnderlineOffset: '2px'
+                                                            }}
+                                                            onClick={() => navigate(`/admin/guides/${sub.guide_id}`)}
+                                                        >
+                                                            <User size={14} />
+                                                            <span style={{ fontWeight: 600, color: '#111827', fontSize: '13px' }}>
+                                                                {sub.guide_name}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '12px', fontStyle: 'italic' }}>
+                                                            Non assigné
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div style={{ maxWidth: '250px' }}>
+                                                        <div
+                                                            style={{
+                                                                fontWeight: 600,
+                                                                color: '#374151',
+                                                                fontSize: '13px',
+                                                                maxWidth: '100%',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}
+                                                            title={sub.proposal_author}
+                                                        >
+                                                            {sub.proposal_author}
+                                                        </div>
+                                                        <div
+                                                            style={{
+                                                                color: '#6b7280',
+                                                                fontSize: '11px',
+                                                                whiteSpace: 'nowrap',
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis'
+                                                            }}
+                                                            title={sub.proposal_content}
+                                                        >
+                                                            {sub.proposal_content}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {sub.submission_id ? (
+                                                        <span
+                                                            className="premium-status-badge"
+                                                            style={{
+                                                                padding: '0.4rem 0.8rem',
+                                                                borderRadius: '10px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 700,
+                                                                textTransform: 'uppercase',
+                                                                backgroundColor:
+                                                                    sub.submission_status === 'validated' ? '#dcfce7' :
+                                                                        sub.submission_status === 'rejected' ? '#fee2e2' :
+                                                                            '#fef3c7',
+                                                                color:
+                                                                    sub.submission_status === 'validated' ? '#166534' :
+                                                                        sub.submission_status === 'rejected' ? '#991b1b' :
+                                                                            '#92400e'
+                                                            }}
+                                                        >
+                                                            {sub.submission_status === 'validated' ? 'Validé' :
+                                                                sub.submission_status === 'rejected' ? 'Rejeté' :
+                                                                    'En attente'}
+                                                        </span>
+                                                    ) : (
+                                                        <span
+                                                            className="premium-status-badge"
+                                                            style={{
+                                                                padding: '0.4rem 0.8rem',
+                                                                borderRadius: '10px',
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 700,
+                                                                textTransform: 'uppercase',
+                                                                backgroundColor: '#f3f4f6',
+                                                                color: '#4b5563'
+                                                            }}
+                                                        >
+                                                            Non soumis
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>
+                                                        {sub.submitted_at ?
+                                                            new Date(sub.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) :
+                                                            new Date(sub.proposal_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {sub.review_url ? (
+                                                        <a
+                                                            href={sub.review_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '6px',
+                                                                padding: '0.4rem 0.8rem',
+                                                                backgroundColor: '#f8fafc',
+                                                                borderRadius: '8px',
+                                                                color: 'var(--primary-brand)',
+                                                                textDecoration: 'none',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 600,
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            Voir <ExternalLink size={14} />
+                                                        </a>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ));
+                                    })()}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             </div>

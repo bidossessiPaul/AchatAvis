@@ -6,7 +6,6 @@ import {
     AlertCircle,
     CheckCircle2,
     ChevronDown,
-    ChevronUp,
     Zap,
     Mail,
     X,

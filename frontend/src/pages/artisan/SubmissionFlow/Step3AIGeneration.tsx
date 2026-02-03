@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
-import { Trash2, Edit2, Check, RefreshCw, Sparkles } from 'lucide-react';
+import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import { showConfirm } from '../../../utils/Swal';
 
 interface Step3Props {
     order: ReviewOrder;
@@ -25,7 +26,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     ];
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: any;
         if (isGenerating) {
             interval = setInterval(() => {
                 setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
@@ -77,6 +78,22 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         }
     };
 
+    const handleNextClick = () => {
+        if (proposals.length < (order.quantity || 0)) {
+            const missing = (order.quantity || 0) - proposals.length;
+            showConfirm(
+                "Génération incomplète",
+                `Il reste encore ${missing} avis à générer pour atteindre votre pack (${order.quantity} avis). Souhaitez-vous générer les avis manquants maintenant ?`
+            ).then((result) => {
+                if (result.isConfirmed) {
+                    handleGenerate();
+                }
+            });
+            return;
+        }
+        onNext();
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -111,18 +128,48 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                 </div>
             ) : proposals.length > 0 ? (
                 <div className="proposals-list">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                        <span style={{ fontSize: '0.875rem', color: '#4b5563', fontWeight: 500 }}>
-                            {proposals.length} avis générés sur {order.quantity} demandés
-                        </span>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: (order.quantity || 0) > proposals.length ? '#fffbeb' : '#f0fdf4',
+                        padding: '1rem',
+                        borderRadius: '0.75rem',
+                        marginBottom: '1.5rem',
+                        border: (order.quantity || 0) > proposals.length ? '1px solid #fcd34d' : '1px solid #86efac'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                backgroundColor: (order.quantity || 0) > proposals.length ? '#fef3c7' : '#dcfce7',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: (order.quantity || 0) > proposals.length ? '#b45309' : '#15803d'
+                            }}>
+                                {(order.quantity || 0) > proposals.length ? <AlertCircle size={20} /> : <Check size={20} />}
+                            </div>
+                            <div>
+                                <span style={{ fontSize: '0.9375rem', color: '#1e293b', fontWeight: 700, display: 'block' }}>
+                                    {proposals.length} avis générés sur {order.quantity}
+                                </span>
+                                <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
+                                    {(order.quantity || 0) > proposals.length
+                                        ? `Il manque ${(order.quantity || 0) - proposals.length} avis pour compléter votre pack.`
+                                        : "Tous les avis requis ont été générés avec succès."}
+                                </span>
+                            </div>
+                        </div>
                         {(order.quantity || 0) > proposals.length ? (
-                            <button onClick={() => handleGenerate()} style={{ background: '#fff7ed', border: '1px solid #ea580c', color: '#ea580c', borderRadius: '0.5rem', padding: '0.4rem 0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
+                            <button onClick={() => handleGenerate()} style={{ background: '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
                                 <Sparkles size={14} />
-                                Générer les {(order.quantity || 0) - proposals.length} manquants
+                                Compléter la génération
                             </button>
                         ) : (
-                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.875rem', fontWeight: 700 }}>
-                                <RefreshCw size={14} />
+                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                                <RefreshCw size={12} />
                                 Tout régénérer
                             </button>
                         )}
@@ -183,12 +230,11 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                 </button>
                 <button
                     type="button"
-                    onClick={onNext}
+                    onClick={handleNextClick}
                     className="btn-next"
-                    disabled={proposals.length === 0}
-                    style={proposals.length === 0 ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    disabled={isGenerating}
                 >
-                    Suivant
+                    {proposals.length < (order.quantity || 0) ? "Suivant (Incomplet)" : "Suivant"}
                 </button>
             </div>
         </div>

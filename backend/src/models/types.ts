@@ -23,6 +23,7 @@ export interface User {
     city?: string;
     postal_code?: string;
     google_business_url?: string;
+    whatsapp_number?: string;
     subscription_status?: string;
     subscription_end_date?: Date;
     subscription_tier?: string;
@@ -58,6 +59,7 @@ export interface ArtisanProfile {
     city: string;
     postal_code: string;
     google_business_url?: string;
+    whatsapp_number?: string;
     monthly_reviews_quota: number;
     current_month_reviews: number;
     total_reviews_received: number;
@@ -80,6 +82,7 @@ export interface GuideProfile {
     local_guide_level: number;
     total_reviews_count: number;
     phone?: string;
+    whatsapp_number?: string;
     total_reviews_submitted: number;
     total_reviews_validated: number;
     total_earnings: number;

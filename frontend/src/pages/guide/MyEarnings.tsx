@@ -10,7 +10,12 @@ import {
     Calendar,
     CheckCircle2,
     RotateCw,
-    AlertTriangle
+    AlertTriangle,
+    CreditCard,
+    Plus,
+    X,
+    Banknote,
+    Smartphone
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import './MyEarnings.css';
@@ -30,6 +35,10 @@ export const MyEarnings: React.FC = () => {
     const [history, setHistory] = useState<PayoutRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<{ method: string, details: any } | null>(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedMethod, setSelectedMethod] = useState('');
+    const [methodDetails, setMethodDetails] = useState<any>({});
 
     useEffect(() => {
         loadData();
@@ -38,12 +47,18 @@ export const MyEarnings: React.FC = () => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [statsData, historyData] = await Promise.all([
+            const [statsData, historyData, paymentData] = await Promise.all([
                 payoutApi.getEarnings(),
-                payoutApi.getPayoutHistory()
+                payoutApi.getPayoutHistory(),
+                payoutApi.getPaymentMethod()
             ]);
             setStats(statsData);
             setHistory(historyData);
+            setPaymentMethod(paymentData);
+            if (paymentData) {
+                setSelectedMethod(paymentData.method);
+                setMethodDetails(paymentData.details || {});
+            }
         } catch (error) {
             showError('Erreur', 'Erreur lors du chargement de vos gains');
         } finally {
@@ -73,6 +88,36 @@ export const MyEarnings: React.FC = () => {
             showError('Erreur', error.response?.data?.error || 'Erreur lors de la demande');
         } finally {
             setIsActionLoading(false);
+        }
+    };
+
+    const handleSavePaymentMethod = async () => {
+        if (!selectedMethod) {
+            showError('Erreur', 'Veuillez choisir un moyen de paiement');
+            return;
+        }
+
+        setIsActionLoading(true);
+        try {
+            await payoutApi.updatePaymentMethod({ method: selectedMethod, details: methodDetails });
+            showSuccess('Succès', 'Moyen de paiement mis à jour !');
+            setShowPaymentModal(false);
+            loadData();
+        } catch (error: any) {
+            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+        } finally {
+            setIsActionLoading(false);
+        }
+    };
+
+    const getMethodLabel = (method: string) => {
+        switch (method) {
+            case 'bank_transfer': return 'Virement bancaire';
+            case 'paypal': return 'PayPal';
+            case 'mobile_money': return 'Mobile Money';
+            case 'wave': return 'Wave';
+            case 'other': return 'Autre';
+            default: return 'Non configuré';
         }
     };
 
@@ -144,25 +189,135 @@ export const MyEarnings: React.FC = () => {
                 </div>
 
                 {/* Withdraw Action Section */}
-                <div className="withdraw-section">
-                    <h3 style={{ margin: 0, fontWeight: 700 }}>Retirer mes gains</h3>
-                    <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', maxWidth: '400px' }}>
-                        Cliquez sur le bouton ci-dessous pour transférer votre solde disponible vers votre compte de paiement enregistré.
-                    </p>
-                    <button
-                        className="withdraw-btn"
-                        onClick={handleWithdrawRequest}
-                        disabled={isActionLoading || (stats?.balance || 0) < 20}
-                    >
-                        {isActionLoading ? 'Traitement...' : `Retirer ${stats?.balance.toFixed(2)}€`}
-                    </button>
-                    {(stats?.balance || 0) < 20 && (
-                        <p className="withdraw-amount-tip">
-                            <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                            Solde minimum de 20.00€ requis pour effectuer un retrait.
+                <div className="withdraw-section-container">
+                    <div className="withdraw-section">
+                        <h3 style={{ margin: 0, fontWeight: 700 }}>Retirer mes gains</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem', textAlign: 'center', maxWidth: '400px' }}>
+                            Cliquez sur le bouton ci-dessous pour transférer votre solde disponible vers votre compte de paiement enregistré.
                         </p>
-                    )}
+                        <button
+                            className="withdraw-btn"
+                            onClick={handleWithdrawRequest}
+                            disabled={isActionLoading || (stats?.balance || 0) < 20 || !paymentMethod}
+                        >
+                            {isActionLoading ? 'Traitement...' : `Retirer ${stats?.balance.toFixed(2)}€`}
+                        </button>
+                        {(stats?.balance || 0) < 20 && (
+                            <p className="withdraw-amount-tip">
+                                <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                                Solde minimum de 20.00€ requis pour effectuer un retrait.
+                            </p>
+                        )}
+                        {!paymentMethod && (
+                            <p className="withdraw-amount-tip" style={{ color: '#ef4444' }}>
+                                <AlertTriangle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                                Veuillez configurer un moyen de paiement pour demander un retrait.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="payment-method-card">
+                        <div className="method-info">
+                            <CreditCard size={20} />
+                            <div>
+                                <p className="method-label">Moyen de paiement</p>
+                                <p className="method-value">{paymentMethod ? getMethodLabel(paymentMethod.method) : 'Non configuré'}</p>
+                            </div>
+                        </div>
+                        <button className="setup-btn" onClick={() => setShowPaymentModal(true)}>
+                            {paymentMethod ? 'Modifier' : 'Ajouter'} <Plus size={16} />
+                        </button>
+                    </div>
                 </div>
+
+                {/* Payment Method Modal */}
+                {showPaymentModal && (
+                    <div className="modal-overlay">
+                        <div className="modal-content payment-config-modal">
+                            <div className="modal-header">
+                                <h3>Configurer le paiement</h3>
+                                <button className="close-btn" onClick={() => setShowPaymentModal(false)}><X size={20} /></button>
+                            </div>
+                            <div className="modal-body">
+                                <div className="method-selector">
+                                    <label>Type de paiement</label>
+                                    <div className="method-options">
+                                        {[
+                                            { id: 'bank_transfer', label: 'Virement', icon: <Banknote size={16} /> },
+                                            { id: 'paypal', label: 'PayPal', icon: <TrendingUp size={16} /> }, // PayPal doesn't have a specific icon here, using generic
+                                            { id: 'mobile_money', label: 'Mobile Money', icon: <Smartphone size={16} /> },
+                                            { id: 'wave', label: 'Wave', icon: <Smartphone size={16} /> },
+                                            { id: 'other', label: 'Autre', icon: <CreditCard size={16} /> }
+                                        ].map(option => (
+                                            <div
+                                                key={option.id}
+                                                className={`method-option-card ${selectedMethod === option.id ? 'active' : ''}`}
+                                                onClick={() => setSelectedMethod(option.id)}
+                                            >
+                                                {option.icon}
+                                                <span>{option.label}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {selectedMethod === 'bank_transfer' && (
+                                    <div className="method-details-form">
+                                        <div className="form-group">
+                                            <label>Titulaire du compte</label>
+                                            <input type="text" value={methodDetails.accountName || ''} onChange={e => setMethodDetails({ ...methodDetails, accountName: e.target.value })} placeholder="Nom Complet" />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>IBAN</label>
+                                            <input type="text" value={methodDetails.iban || ''} onChange={e => setMethodDetails({ ...methodDetails, iban: e.target.value })} placeholder="FR76 ..." />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>BIC/SWIFT</label>
+                                            <input type="text" value={methodDetails.bic || ''} onChange={e => setMethodDetails({ ...methodDetails, bic: e.target.value })} placeholder="BANKFR ..." />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedMethod === 'paypal' && (
+                                    <div className="method-details-form">
+                                        <div className="form-group">
+                                            <label>Email PayPal</label>
+                                            <input type="email" value={methodDetails.email || ''} onChange={e => setMethodDetails({ ...methodDetails, email: e.target.value })} placeholder="votre@email.com" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {(selectedMethod === 'mobile_money' || selectedMethod === 'wave') && (
+                                    <div className="method-details-form">
+                                        <div className="form-group">
+                                            <label>Numéro de téléphone</label>
+                                            <input type="tel" value={methodDetails.phone || ''} onChange={e => setMethodDetails({ ...methodDetails, phone: e.target.value })} placeholder="+225 ..." />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Nom du bénéficiaire</label>
+                                            <input type="text" value={methodDetails.fullName || ''} onChange={e => setMethodDetails({ ...methodDetails, fullName: e.target.value })} placeholder="Nom Complet" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedMethod === 'other' && (
+                                    <div className="method-details-form">
+                                        <div className="form-group">
+                                            <label>Détails du paiement</label>
+                                            <textarea value={methodDetails.info || ''} onChange={e => setMethodDetails({ ...methodDetails, info: e.target.value })} placeholder="Décrivez comment vous souhaitez être payé..." />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn-cancel" onClick={() => setShowPaymentModal(false)}>Annuler</button>
+                                <button className="btn-save" onClick={handleSavePaymentMethod} disabled={isActionLoading}>
+                                    {isActionLoading ? 'Enregistrement...' : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* History Table */}
                 <div className="submissions-main-card">

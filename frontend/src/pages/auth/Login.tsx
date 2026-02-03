@@ -4,7 +4,7 @@ import { useAuthStore } from '../../context/authStore';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Card } from '../../components/common/Card';
-import { User, MapPin, ArrowRight, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import './Auth.css';
 
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';

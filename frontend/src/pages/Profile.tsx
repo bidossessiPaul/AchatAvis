@@ -6,7 +6,7 @@ import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Card } from '../components/common/Card';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
-import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe, Loader } from 'lucide-react';
+import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe, Loader, Smartphone, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../utils/Swal';
 import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
 import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
@@ -42,7 +42,9 @@ export const Profile: React.FC = () => {
         postalCode: user?.postal_code || '',
         googleBusinessUrl: user?.google_business_url || '',
         googleEmail: user?.google_email || '',
+        whatsappNumber: user?.whatsapp_number || '',
     });
+    const [hasWhatsAppTested, setHasWhatsAppTested] = useState(false);
     const [activeTab, setActiveTab] = useState<'info' | 'gmail'>('info');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const { fetchGmailAccounts } = useAntiDetectionStore();
@@ -61,6 +63,7 @@ export const Profile: React.FC = () => {
                 postalCode: user.postal_code || '',
                 googleBusinessUrl: user.google_business_url || '',
                 googleEmail: user.google_email || '',
+                whatsappNumber: user.whatsapp_number || '',
             });
         }
     }, [user?.id]); // Only re-run when user ID changes, not on every user update
@@ -102,6 +105,9 @@ export const Profile: React.FC = () => {
     });
 
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        if (e.target.name === 'whatsappNumber') {
+            setHasWhatsAppTested(false);
+        }
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -111,6 +117,12 @@ export const Profile: React.FC = () => {
 
     const handleProfileSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Security check: if whatsapp changed, must test
+        if (formData.whatsappNumber && formData.whatsappNumber !== user?.whatsapp_number && !hasWhatsAppTested) {
+            return showError('Test WhatsApp requis', 'Veuillez tester le lien WhatsApp avant d\'enregistrer vos modifications.');
+        }
+
         setIsLoading(true);
 
         try {
@@ -325,6 +337,57 @@ export const Profile: React.FC = () => {
                                                 />
                                             )}
                                         </div>
+
+                                        {(user?.role === 'artisan' || user?.role === 'guide') && (
+                                            <div style={{ marginTop: '1.5rem', background: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                                    <div style={{ background: '#25d366', color: 'white', padding: '0.5rem', borderRadius: '0.75rem' }}>
+                                                        <Smartphone size={20} />
+                                                    </div>
+                                                    <h4 style={{ margin: 0, fontWeight: 700, fontSize: '1rem' }}>Configuration WhatsApp</h4>
+                                                </div>
+
+                                                <Input
+                                                    label="Numéro WhatsApp (Format international)"
+                                                    name="whatsappNumber"
+                                                    value={formData.whatsappNumber}
+                                                    onChange={handleProfileChange}
+                                                    placeholder="+33600000000"
+                                                    helperText="Exemple: +33612345678 (indispensable pour les alertes)"
+                                                />
+
+                                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', alignItems: 'center' }}>
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            if (!formData.whatsappNumber) return;
+                                                            const clean = formData.whatsappNumber.replace(/\D/g, '');
+                                                            window.open(`https://wa.me/${clean}`, '_blank');
+                                                            setHasWhatsAppTested(true);
+                                                        }}
+                                                        disabled={!formData.whatsappNumber}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                                    >
+                                                        <ExternalLink size={16} />
+                                                        Tester le lien
+                                                    </Button>
+
+                                                    {hasWhatsAppTested && (
+                                                        <span style={{ color: '#10b981', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
+                                                            <CheckCircle2 size={16} /> Lien vérifié
+                                                        </span>
+                                                    )}
+
+                                                    {formData.whatsappNumber && formData.whatsappNumber !== user?.whatsapp_number && !hasWhatsAppTested && (
+                                                        <span style={{ color: '#f59e0b', fontSize: '0.85rem', fontWeight: 600 }}>
+                                                            ⚠️ Test requis après modification
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {user?.role === 'guide' && (
                                             <>

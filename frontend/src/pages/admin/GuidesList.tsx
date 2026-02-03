@@ -9,9 +9,6 @@ import {
     User,
     Plus,
     X,
-    XCircle,
-    Calendar,
-    Power,
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
@@ -28,6 +25,7 @@ interface Guide {
     created_at: string;
     google_email: string;
     city: string;
+    submitted_reviews_count: number;
 }
 
 export const GuidesList: React.FC = () => {
@@ -167,6 +165,7 @@ export const GuidesList: React.FC = () => {
                                         <th>Local Guide</th>
                                         <th>Email Compte</th>
                                         <th>Ville</th>
+                                        <th>Avis Postés</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -188,6 +187,32 @@ export const GuidesList: React.FC = () => {
                                             </td>
                                             <td className="text-gray-500">{guide.email}</td>
                                             <td>{guide.city}</td>
+                                            <td>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    padding: '0.4rem 0.8rem',
+                                                    backgroundColor: '#f0f9ff',
+                                                    borderRadius: '10px',
+                                                    width: 'fit-content'
+                                                }}>
+                                                    <span style={{
+                                                        fontSize: '1.25rem',
+                                                        fontWeight: 800,
+                                                        color: '#0369a1'
+                                                    }}>
+                                                        {guide.submitted_reviews_count || 0}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '0.75rem',
+                                                        color: '#0c4a6e',
+                                                        fontWeight: 600
+                                                    }}>
+                                                        avis
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <span className={`admin-badge ${guide.status || 'inactive'}`}>
                                                     {guide.status}

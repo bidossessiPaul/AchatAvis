@@ -425,5 +425,28 @@ export const guideService = {
     async getGmailQuotasForFiche(userId: string, ficheId: string) {
         const { getGmailQuotasForFiche } = await import('./gmailQuotaService');
         return getGmailQuotasForFiche(userId, ficheId);
+    },
+
+    async getPaymentMethod(userId: string) {
+        const result: any = await query(`
+            SELECT preferred_payout_method, payout_details
+            FROM guides_profiles
+            WHERE user_id = ?
+        `, [userId]);
+
+        if (!result || result.length === 0) return null;
+
+        return {
+            method: result[0].preferred_payout_method,
+            details: result[0].payout_details
+        };
+    },
+
+    async updatePaymentMethod(userId: string, method: string, details: any) {
+        return await query(`
+            UPDATE guides_profiles 
+            SET preferred_payout_method = ?, payout_details = ?
+            WHERE user_id = ?
+        `, [method, JSON.stringify(details), userId]);
     }
 };

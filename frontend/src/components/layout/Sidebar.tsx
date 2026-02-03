@@ -63,26 +63,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },
                     { label: 'Toutes les fiches', path: '/guide/fiches', icon: <MapPin size={20} /> },
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
+                    { label: 'Mes Gmails', path: '/profile?tab=gmail', icon: <Mail size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
-                    { label: 'Mes Gmails', path: '/profile?tab=gmail', icon: <Mail size={20} /> },
                 ];
             case 'admin': {
                 const allAdminItems: NavItem[] = [
                     { label: 'Vue d\'ensemble', path: '/admin', icon: <LayoutDashboard size={20} />, permissions: ['can_view_stats'] },
                     { label: 'Artisans', path: '/admin/artisans', icon: <Users size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Local Guides', path: '/admin/guides', icon: <MapPin size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
+                    { label: 'Fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
+                    { label: 'Suivi 360', path: '/admin/reviews-360', icon: <ShieldCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
+                    { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
+                    { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_manage_packs'] },
-                    { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
-                    { label: 'Suivi 360', path: '/admin/reviews-360', icon: <ShieldCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
-                    { label: 'Fiches', path: '/admin/fiches', icon: <Briefcase size={20} />, permissions: ['can_manage_fiches', 'can_validate_fiches'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion Suspensions', path: '/admin/suspensions', icon: <Shield size={20} />, permissions: ['can_manage_suspensions'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_trust_scores'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
-                    { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 

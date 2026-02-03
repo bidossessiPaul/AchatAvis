@@ -74,6 +74,22 @@ export const PlanSelection: React.FC = () => {
                 </p>
             </div>
 
+            <div style={{
+                backgroundColor: '#fff1f2',
+                border: '2px solid #ef4444',
+                color: '#ef4444',
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                textAlign: 'center',
+                marginBottom: '2rem',
+                fontWeight: 900,
+                fontSize: '1.5rem',
+                boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1)'
+            }}>
+                ⚠️ MODE TEST ACTIVÉ : NE PAS UTILISER DE VRAIE CARTE BANCAIRE.<br />
+                <span style={{ fontSize: '1rem', fontWeight: 600 }}>Le site est en cours de développement. Les paiements réels ne sont pas encore supportés.</span>
+            </div>
+
             {availablePacks.length > 0 && (
                 <div className="active-pack-alert">
                     <div className="active-pack-info">

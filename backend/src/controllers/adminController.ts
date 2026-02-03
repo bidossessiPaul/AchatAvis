@@ -104,6 +104,21 @@ export const getArtisanDetail = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get all submissions for a specific artisan
+ * GET /api/admin/artisans/:userId/submissions
+ */
+export const getArtisanSubmissions = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    try {
+        const submissions = await adminService.getArtisanSubmissions(userId);
+        return res.json(submissions);
+    } catch (error) {
+        console.error('Get artisan submissions error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
  * Get detailed guide info
  * GET /api/admin/guides/:userId
  */
@@ -604,5 +619,22 @@ export const getReview360 = async (_req: Request, res: Response) => {
     } catch (error) {
         console.error('Get review 360 error:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Update a review proposal
+ * PUT /api/admin/proposals/:proposalId
+ */
+export const updateProposal = async (req: Request, res: Response) => {
+    const { proposalId } = req.params;
+    const { content } = req.body;
+
+    try {
+        await adminService.updateProposal(proposalId, { content });
+        res.json({ message: 'Proposal updated successfully' });
+    } catch (error: any) {
+        console.error('Update proposal error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };

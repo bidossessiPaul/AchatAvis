@@ -72,3 +72,37 @@ export const updatePayoutStatus = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+/**
+ * Get guide payment method
+ */
+export const getPaymentMethod = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const result = await guideService.getPaymentMethod(userId);
+        res.json(result);
+    } catch (error) {
+        console.error('Get payment method error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Update guide payment method
+ */
+export const updatePaymentMethod = async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { method, details } = req.body;
+
+        if (!method) {
+            return res.status(400).json({ error: 'Le moyen de paiement est requis' });
+        }
+
+        await guideService.updatePaymentMethod(userId, method, details);
+        res.json({ message: 'Moyen de paiement mis à jour avec succès' });
+    } catch (error) {
+        console.error('Update payment method error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
