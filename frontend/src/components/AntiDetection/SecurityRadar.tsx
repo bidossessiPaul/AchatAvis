@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -79,13 +79,11 @@ const getSectorIcon = (identifier: string) => {
 };
 
 export const SecurityRadar: React.FC = () => {
-    const { guideRecap, fetchGuideRecap, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
+    const { guideRecap, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
     const [expandedSector, setExpandedSector] = useState<string | null>(null);
     const [historyModalAccount, setHistoryModalAccount] = useState<{ account: any, sectorId: number | null, sectorName: string } | null>(null);
 
-    useEffect(() => {
-        fetchGuideRecap();
-    }, [fetchGuideRecap]);
+    // useEffect removed - parent handles fetching
 
     const handleOpenHistory = async (e: React.MouseEvent, account: any, sectorId: number | null, sectorName: string) => {
         e.stopPropagation();
