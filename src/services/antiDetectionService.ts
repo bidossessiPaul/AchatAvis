@@ -145,7 +145,8 @@ class AntiDetectionService {
             ? JSON.parse(gmail.sector_activity_log)
             : gmail.sector_activity_log || {};
 
-        const sectorSlug = campaign.sector_slug;
+        // Default to 'general' if sector_slug is missing (e.g. left join failed)
+        const sectorSlug = campaign.sector_slug || 'general';
         const sectorActivity = activityLog[sectorSlug] || { last_posted: null, count_this_month: 0 };
 
         if (campaign.max_reviews_per_month_per_email && sectorActivity.count_this_month >= campaign.max_reviews_per_month_per_email) {
