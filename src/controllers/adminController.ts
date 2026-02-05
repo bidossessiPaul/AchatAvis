@@ -433,7 +433,7 @@ export const getSuspensionReasons = async (_req: Request, res: Response) => {
     console.log('--- HIT getSuspensionReasons ---');
     return res.json({
         warnings: [],
-        suspensions: SUSPENSION_REASONS
+        suspensions: []
     });
 };
 

@@ -39,7 +39,7 @@ export const getGuides = async () => {
 /**
  * Update user status (active, pending, suspended, rejected)
  */
-export const updateUserStatus = async (userId: string, status: string, reason?: string) => {
+export const updateUserStatus = async (userId: string, status: string, _reason?: string) => {
     // NOTE: Automatic suspension system has been removed.
     // Admins can still manually update user status (including 'suspended') via this function.
     const result = await query(
