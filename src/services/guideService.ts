@@ -12,19 +12,7 @@ export const guideService = {
      * 3. The guide hasn't already submitted a review for this order
      */
     async getAvailablefiches(guideId: string) {
-        // ✅ NOUVEAU : Vérifier si suspendu ou banni
-        const user: any = await query('SELECT status, is_banned, role FROM users WHERE id = ?', [guideId]);
-        if (user && user.length > 0) {
-            if (user[0].is_banned) throw new Error('Votre compte est banni définitivement.');
 
-            if (user[0].status === 'suspended') {
-                const { suspensionService } = await import('./suspensionService');
-                const isSystemActive = await suspensionService.isSystemEnabled();
-                if (isSystemActive && user[0].role !== 'admin') {
-                    throw new Error('Votre compte est temporairement suspendu.');
-                }
-            }
-        }
 
         return query(`
             SELECT o.*, 
@@ -295,13 +283,7 @@ export const guideService = {
             await antiDetectionService.updateGmailActivity(data.gmailAccountId, currentSectorSlug);
         }
 
-        // 6. NOUVEAU : Déclencheurs automatiques de suspension
-        const { suspensionTriggers } = await import('./suspensionTriggers');
-        await suspensionTriggers.checkSpamSubmissions(guideId, submissionId, data.baseUrl);
-        await suspensionTriggers.checkIdenticalReviews(guideId, data.reviewUrl, submissionId, data.baseUrl);
-        if (data.gmailAccountId && currentSectorSlug) {
-            await suspensionTriggers.checkSectorCooldown(guideId, data.gmailAccountId, currentSectorSlug, submissionId, data.baseUrl);
-        }
+
 
         // 7. Notify Artisan
         notificationService.sendToUser(data.artisanId, {

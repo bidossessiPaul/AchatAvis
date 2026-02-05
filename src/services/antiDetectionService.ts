@@ -288,7 +288,7 @@ class AntiDetectionService {
     async getGuideActivityRecap(userId: string) {
         // Fetch all Gmail accounts for this guide with global quota info
         const gmailAccounts: any = await query(`
-            SELECT id, email, account_level, sector_activity_log,
+            SELECT id, email, trust_level as account_level, sector_activity_log,
                    monthly_reviews_posted, monthly_quota_limit
             FROM guide_gmail_accounts 
             WHERE user_id = ?

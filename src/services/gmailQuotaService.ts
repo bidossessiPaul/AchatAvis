@@ -23,7 +23,7 @@ export async function getGmailQuotasForFiche(userId: string, ficheId: string) {
 
     // 2. Get all Gmail accounts for this guide
     const gmailAccounts: any = await query(`
-        SELECT id, email, account_level, sector_activity_log, 
+        SELECT id, email, trust_level as account_level, sector_activity_log, 
                monthly_reviews_posted, monthly_quota_limit, monthly_reset_date,
                last_review_posted_at, is_verified
         FROM guide_gmail_accounts

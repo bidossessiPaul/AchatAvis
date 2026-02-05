@@ -16,7 +16,6 @@ import {
     refreshToken,
     forgotPassword,
     resetPassword,
-    detectRegion,
     verifyEmail,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
@@ -31,7 +30,6 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.post('/refresh-token', refreshToken);
 router.post('/2fa/verify', verify2FA);
-router.get('/detect-region', detectRegion);
 router.get('/verify-email', verifyEmail);
 
 // Protected routes (require authentication)

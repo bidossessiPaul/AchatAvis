@@ -12,7 +12,7 @@ import payoutRoutes from './routes/payouts';
 import teamRoutes from './routes/team';
 import debugRoutes from './routes/debug';
 import antiDetectionRoutes from './routes/antiDetectionRoutes';
-import suspensionRoutes from './routes/suspensionRoutes';
+
 import establishmentRoutes from './routes/establishment';
 import notificationRoutes from './routes/notifications';
 import trustScoreRoutes from './routes/trustScore';
@@ -94,7 +94,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/team', teamRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/anti-detection', antiDetectionRoutes);
-app.use('/api/suspensions', suspensionRoutes);
+
 app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);

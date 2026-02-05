@@ -280,14 +280,12 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
 
             await query(`
                 INSERT INTO guide_gmail_accounts
-                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score, account_level, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date, monthly_quota_limit)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), ?)
+                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date, monthly_quota_limit)
+                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), ?)
                 ON DUPLICATE KEY UPDATE
                 maps_profile_url = VALUES(maps_profile_url),
                 local_guide_level = VALUES(local_guide_level),
                 total_reviews_google = VALUES(total_reviews_google),
-                trust_score = VALUES(trust_score),
-                account_level = VALUES(account_level),
                 trust_score_value = VALUES(trust_score_value),
                 trust_level = VALUES(trust_level),
                 avatar_url = VALUES(avatar_url),
@@ -296,8 +294,9 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 is_verified = TRUE,
                 verification_date = NOW()
             `, [
-                user_id, email, maps_profile_url, local_guide_level || 1, total_reviews_google || 0,
-                result.finalScore, "Nouveau", result.finalScore, result.trustLevel,
+                user_id, email, maps_profile_url, result.details.mapsProfile?.data?.localGuideLevel || 1,
+                result.details.mapsProfile?.data?.totalReviews || 0,
+                result.finalScore, result.trustLevel,
                 result.details.mapsProfile?.data?.avatarUrl || avatar_url || null,
                 result.details.mapsProfile?.data?.avatarUrl ? true : false,
                 maxReviewsPerMonth
@@ -350,7 +349,6 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 SET maps_profile_url = ?,
                     local_guide_level = ?,
                     total_reviews_google = ?,
-                    trust_score = ?,
                     trust_score_value = ?,
                     trust_level = ?,
                     avatar_url = ?,
@@ -360,16 +358,15 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                     updated_at = NOW()
                 WHERE id = ?
             `, [
-                maps_profile_url,
+                maps_profile_url || account.maps_profile_url,
                 result.details.mapsProfile?.data?.localGuideLevel || 1,
                 result.details.mapsProfile?.data?.totalReviews || 0,
-                result.finalScore,
                 result.finalScore,
                 result.trustLevel,
                 result.details.mapsProfile?.data?.avatarUrl || account.avatar_url,
                 result.details.mapsProfile?.data?.avatarUrl ? true : false,
                 result.maxReviewsPerMonth,
-                result.isBlocked, // This should now be false if URL is provided/valid
+                result.isBlocked,
                 accountId
             ]);
 
