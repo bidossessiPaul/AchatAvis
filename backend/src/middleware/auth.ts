@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, TokenPayload } from '../utils/token';
-import { suspensionService } from '../services/suspensionService';
+
 
 
 // Extend Express Request type to include user
@@ -36,7 +36,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
         // REAL-TIME CHECK: Fetch current user status from DB
         const { query } = await import('../config/database');
-        const rows: any = await query('SELECT status, full_name, last_detected_country, last_ip FROM users WHERE id = ?', [payload.userId]);
+        const rows: any = await query('SELECT status, full_name, last_ip FROM users WHERE id = ?', [payload.userId]);
 
         if (!rows || rows.length === 0) {
             console.error(`❌ [Auth Middleware] User ${payload.userId} not found in DB`);
@@ -47,59 +47,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const userRole = payload.role;
         console.log(`ℹ️ [Auth Middleware] User ${payload.email} status: ${userStatus}, role: ${userRole}`);
 
-        // CHECK IF SYSTEM IS ENABLED
-        const isSystemActive = await suspensionService.isSystemEnabled();
 
-        if (isSystemActive && userRole !== 'admin') {
-            // WHITELIST CHECK: Exempted users bypass all suspension and geoblocking checks
-            if (await suspensionService.isUserExempted(payload.userId)) {
-                console.log(`🛡️ [Auth Middleware] User ${payload.email} is EXEMPTED. Mandatory access granted.`);
-                req.user = payload;
-                return next();
-            }
-
-            // 1. HARD SUSPENSION CHECK
-            if (userStatus === 'suspended' || userStatus === 'rejected') {
-                console.warn(`🛡️ [Auth Middleware] BLOCKED REQUEST: User ${payload.email} is ${userStatus}.`);
-                return res.status(403).json({
-                    error: 'Account restricted',
-                    code: 'ACCOUNT_SUSPENDED',
-                    status: userStatus,
-                    user_name: rows[0].full_name,
-                    country: rows[0].last_detected_country
-                });
-            }
-
-            // 2. GEOBLOCKING CHECK
-            try {
-                const currentIp = req.ip || '';
-                const lastIp = rows[0].last_ip;
-
-                // Only check if IP changed to avoid excessive API calls
-                if (currentIp !== lastIp) {
-                    const country = await suspensionService.detectCountryFromIP(currentIp);
-                    if (country && await suspensionService.isCountryBlocked(country)) {
-                        console.warn(`🚫 [Auth Middleware] Geoblocking violation for ${payload.email} (IP: ${currentIp}, Country: ${country})`);
-                        await suspensionService.suspendForGeoblocking(payload.userId, country);
-
-                        // Update last_ip and country in DB for next check
-                        await query('UPDATE users SET last_ip = ?, last_detected_country = ? WHERE id = ?', [currentIp, country, payload.userId]);
-
-                        return res.status(403).json({
-                            error: 'Account restricted',
-                            code: 'ACCOUNT_SUSPENDED',
-                            status: 'suspended',
-                            user_name: rows[0].full_name,
-                            country: country
-                        });
-                    }
-                }
-            } catch (geoError) {
-                console.error('⚠️ [Auth Middleware] Geoblocking check failed (non-blocking):', geoError);
-            }
-        } else if (!isSystemActive) {
-            console.log(`🔓 [Auth Middleware] Suspension system is DISABLED. Allowing access for ${payload.email} (${userStatus})`);
-        }
 
         req.user = payload;
 

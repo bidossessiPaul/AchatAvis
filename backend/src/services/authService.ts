@@ -8,7 +8,7 @@ import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
 import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail } from './emailService';
-import { suspensionService } from './suspensionService';
+
 
 
 /**
@@ -116,8 +116,8 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
 
         // Auto-provision registration email to guide_gmail_accounts (Requirement for fiche Detail pre-selection)
         await connection.execute(
-            `INSERT INTO guide_gmail_accounts (user_id, email, trust_score_value, trust_level, account_level, is_active)
-             VALUES (?, ?, 10, 'BRONZE', 'nouveau', TRUE)`,
+            `INSERT INTO guide_gmail_accounts (user_id, email, trust_score_value, trust_level, is_active)
+             VALUES (?, ?, 10, 'BRONZE', TRUE)`,
             [userId, data.email]
         );
 
@@ -144,7 +144,6 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
                     email_validation_score = ?,
                     trust_score_value = ?,
                     trust_level = ?,
-                    account_level = ?,
                     trust_badge = ?,
                     max_reviews_per_month = ?,
                     monthly_quota_limit = ?,
@@ -160,7 +159,6 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
                     trustScoreResult.details.emailValidation.score,
                     trustScoreResult.finalScore,
                     trustScoreResult.trustLevel,
-                    trustScoreResult.trustLevel, // account_level synchro
                     trustScoreResult.badge,
                     trustScoreResult.maxReviewsPerMonth,
                     trustScoreResult.maxReviewsPerMonth, // monthly_quota_limit synchro
@@ -236,32 +234,7 @@ export const login = async (email: string, password: string) => {
         throw new Error('Invalid email or password');
     }
 
-    // Check if account is suspended
-    if (user.status === 'suspended' || user.status === 'rejected') {
-        const isSystemActive = await suspensionService.isSystemEnabled();
 
-        if (isSystemActive && user.role !== 'admin') {
-            // Get active suspension details
-            const suspensionQuery: any = await query(
-                `SELECT us.*, sl.level_name, sl.level_number, sl.badge_color, sl.icon_emoji
-                 FROM user_suspensions us
-                 JOIN suspension_levels sl ON us.suspension_level_id = sl.id
-                 WHERE us.user_id = ? AND us.is_active = true
-                 ORDER BY us.started_at DESC LIMIT 1`,
-                [user.id]
-            );
-
-            const suspension = suspensionQuery && suspensionQuery.length > 0 ? suspensionQuery[0] : null;
-
-            const error: any = new Error('Votre compte est suspendu. Veuillez contacter l\'administrateur.');
-            error.code = 'ACCOUNT_SUSPENDED';
-            error.suspension = suspension;
-            error.userName = user.full_name;
-            throw error;
-        } else if (!isSystemActive) {
-            console.log(`🔓 [Auth Service] Suspension system is DISABLED. Allowing login for suspended user: ${email}`);
-        }
-    }
 
 
     // Check if account is locked
@@ -632,13 +605,11 @@ export const refreshToken = async (token: string) => {
 
         // Get user to ensure they still exist and are active
         const user = await getUserById(payload.userId);
-        const isSystemActive = await suspensionService.isSystemEnabled();
-
         if (!user) {
             throw new Error('User not found');
         }
 
-        if (isSystemActive && user.role !== 'admin' && !['active', 'pending'].includes(user.status)) {
+        if (user.role !== 'admin' && !['active', 'pending'].includes(user.status)) {
             throw new Error(`User account is ${user.status}`);
         }
 

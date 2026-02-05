@@ -46,14 +46,22 @@ export const AntiDetectionRulesPage: React.FC = () => {
     const {
         rules,
         fetchAntiDetectionRules,
+        fetchGuideRecap,
         loading
     } = useAntiDetectionStore();
 
     const [expandedRule, setExpandedRule] = useState<number | null>(null);
+    const [hasInitialized, setHasInitialized] = useState(false);
 
     useEffect(() => {
-        fetchAntiDetectionRules();
-    }, [fetchAntiDetectionRules]);
+        // Only fetch once - use state to track instead of dependencies
+        if (!hasInitialized) {
+            setHasInitialized(true);
+            fetchAntiDetectionRules();
+            fetchGuideRecap(); // Fetch guide recap here instead of in SecurityRadar
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty deps: only check once on mount
 
     const toggleRule = (id: number) => {
         setExpandedRule(expandedRule === id ? null : id);

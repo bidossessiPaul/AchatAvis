@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import * as adminService from '../services/adminService';
-import { SUSPENSION_REASONS } from '../constants/suspensionReasons';
 
 /**
  * Get all artisans
@@ -434,7 +433,7 @@ export const getSuspensionReasons = async (_req: Request, res: Response) => {
     console.log('--- HIT getSuspensionReasons ---');
     return res.json({
         warnings: [],
-        suspensions: SUSPENSION_REASONS
+        suspensions: []
     });
 };
 

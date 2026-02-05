@@ -116,21 +116,38 @@ export class TrustScoreController {
      */
     static async getStatistics(_req: Request, res: Response) {
         try {
-            const stats: any = await pool.query('SELECT * FROM trust_score_statistics');
-            const statsRows = Array.isArray(stats) ? stats[0] : stats;
+            let statsRows: any = [];
+            try {
+                const stats: any = await pool.query('SELECT * FROM trust_score_statistics');
+                statsRows = Array.isArray(stats) ? stats[0] : stats;
+            } catch (e) {
+                console.warn('trust_score_statistics table missing');
+            }
 
-            const suspicious: any = await pool.query('SELECT COUNT(*) as count FROM suspicious_guide_accounts');
-            const suspiciousRows = Array.isArray(suspicious) ? suspicious[0] : suspicious;
+            let suspiciousCount = 0;
+            try {
+                const suspicious: any = await pool.query('SELECT COUNT(*) as count FROM suspicious_guide_accounts');
+                const suspiciousRows = Array.isArray(suspicious) ? suspicious[0] : suspicious;
+                suspiciousCount = parseInt(suspiciousRows[0]?.count || 0);
+            } catch (e) {
+                console.warn('suspicious_guide_accounts table missing');
+            }
 
-            const topPerformers: any = await pool.query('SELECT COUNT(*) as count FROM top_guide_performers');
-            const topPerformersRows = Array.isArray(topPerformers) ? topPerformers[0] : topPerformers;
+            let topPerformersCount = 0;
+            try {
+                const topPerformers: any = await pool.query('SELECT COUNT(*) as count FROM top_guide_performers');
+                const topPerformersRows = Array.isArray(topPerformers) ? topPerformers[0] : topPerformers;
+                topPerformersCount = parseInt(topPerformersRows[0]?.count || 0);
+            } catch (e) {
+                console.warn('top_guide_performers table missing');
+            }
 
             return res.json({
                 success: true,
                 data: {
                     levelDistribution: statsRows,
-                    suspiciousAccountsCount: parseInt(suspiciousRows[0]?.count || 0),
-                    topPerformersCount: parseInt(topPerformersRows[0]?.count || 0)
+                    suspiciousAccountsCount: suspiciousCount,
+                    topPerformersCount: topPerformersCount
                 }
             });
         } catch (error: any) {
@@ -301,7 +318,6 @@ export class TrustScoreController {
                 SELECT 
                     id, 
                     email, 
-                    trust_score,
                     trust_score_value, 
                     trust_level, 
                     COALESCE(google_maps_profile_url, maps_profile_url) as google_maps_profile_url,
@@ -413,7 +429,6 @@ export class TrustScoreController {
                 
                 trust_score_value = ?,
                 trust_level = ?,
-                account_level = ?,
                 trust_badge = ?,
                 is_blocked = ?,
                 max_reviews_per_month = ?,
@@ -449,7 +464,7 @@ export class TrustScoreController {
                 // Trust Score (19-26)
                 result.finalScore,
                 result.trustLevel,
-                result.trustLevel, // account_level synchro
+                result.trustLevel,
                 result.badge,
                 result.isBlocked,
                 result.maxReviewsPerMonth,
