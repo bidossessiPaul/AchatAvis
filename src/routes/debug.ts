@@ -345,4 +345,70 @@ router.get('/run-migrations', async (_req: any, res) => {
     }
 });
 
+
+/**
+ * DEBUG 11: Check User Info & Trust Score
+ * URL: /api/debug/user-info?email=user@example.com
+ */
+router.get('/user-info', async (req: any, res) => {
+    try {
+        const { email } = req.query;
+        if (!email) return res.status(400).json({ error: 'Email required' });
+
+        const { pool } = require('../config/database');
+
+        // 1. Check User table
+        const users = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+
+        // 2. Check Guide Gmail Accounts
+        const gmailAccounts = await pool.query(`
+            SELECT * FROM guide_gmail_accounts 
+            WHERE user_id = (SELECT id FROM users WHERE email = ?)
+            OR email = ?
+        `, [email, email]);
+
+        return res.json({
+            user: users[0] || 'Not found',
+            gmailAccounts: gmailAccounts || [],
+            message: 'Debug info retrieved'
+        });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+
+
+/**
+ * DEBUG 12: Emergency Unblock All Guides
+ * URL: /api/debug/emergency-unblock
+ */
+router.get('/emergency-unblock', async (_req: any, res) => {
+    try {
+        const { pool } = require('../config/database');
+
+        console.log('🚀 Executing Emergency Unblock...');
+        const log = [];
+
+        // 1. Unblock all guide_gmail_accounts
+        const result1 = await pool.query(`
+            UPDATE guide_gmail_accounts 
+            SET is_blocked = 0, trust_level = 'BRONZE' 
+            WHERE is_blocked = 1 OR trust_level = 'BLOCKED' OR trust_level IS NULL
+        `);
+        log.push(`✅ Unblocked/Reset ${result1.affectedRows} gmail accounts to BRONZE`);
+
+        // 2. Ensure users are active
+        const result2 = await pool.query(`
+            UPDATE users 
+            SET status = 'active' 
+            WHERE role = 'guide' AND status IN ('suspended', 'rejected', 'deactivated')
+        `);
+        log.push(`✅ Reactivated ${result2.affectedRows} guide users`);
+
+        return res.json({ success: true, log });
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;
