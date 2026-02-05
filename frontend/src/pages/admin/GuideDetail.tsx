@@ -49,6 +49,8 @@ interface GuideProfile {
     phone: string;
     whatsapp_number: string;
     city: string;
+    preferred_payout_method?: string;
+    payout_details?: any;
 }
 
 interface GmailAccount {
@@ -416,6 +418,65 @@ export const GuideDetail: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="premium-card">
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                    <h3 style={{ margin: 0 }}><Briefcase size={20} /> Moyen de paiement</h3>
+                                    {profile.preferred_payout_method && (
+                                        <div style={{
+                                            width: '32px', height: '32px', borderRadius: '50%', background: '#fffbeb',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706'
+                                        }}>
+                                            <Briefcase size={16} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {profile.preferred_payout_method ? (
+                                    <div className="premium-info-list">
+                                        <div style={{ marginBottom: '0.5rem' }}>
+                                            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Moyen de paiement</div>
+                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>
+                                                {profile.preferred_payout_method.charAt(0).toUpperCase() + profile.preferred_payout_method.slice(1).replace('_', ' ')}
+                                            </div>
+                                        </div>
+
+                                        {profile.payout_details && (
+                                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                {Object.entries(typeof profile.payout_details === 'string' ? JSON.parse(profile.payout_details) : profile.payout_details).map(([key, value]) => (
+                                                    <div key={key} style={{ display: 'flex', flexDirection: 'column', marginBottom: '0.5rem' }}>
+                                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>
+                                                            {key.replace(/_/g, ' ')}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
+                                                            {String(value)}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        <button
+                                            className="premium-action-btn"
+                                            style={{
+                                                marginTop: '1.5rem',
+                                                width: '100%',
+                                                justifyContent: 'center',
+                                                background: '#f8fafc',
+                                                color: '#0f172a',
+                                                border: '1px solid #e2e8f0'
+                                            }}
+                                            onClick={() => showInput('Modifier le détail', 'JSON brut (pour admin)', JSON.stringify(profile.payout_details))}
+                                        >
+                                            Modifier <span style={{ marginLeft: '0.5rem' }}>+</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                        Aucun moyen de paiement configuré.
+                                    </div>
+                                )}
                             </div>
                         </div>
 

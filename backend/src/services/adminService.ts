@@ -146,7 +146,8 @@ export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
-               gp.phone, gp.whatsapp_number, gp.city
+               gp.phone, gp.whatsapp_number, gp.city,
+               gp.preferred_payout_method, gp.payout_details
         FROM users u
         JOIN guides_profiles gp ON u.id = gp.user_id
         WHERE u.id = ? AND u.role = 'guide'
