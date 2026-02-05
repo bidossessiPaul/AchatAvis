@@ -1,5 +1,5 @@
 
-import { query } from '../config/database';
+// import { query } from '../config/database';
 
 async function run() {
     //    console.log('🚀 Enabling suspensions configuration...');

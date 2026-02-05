@@ -231,7 +231,7 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
 
     async addGmailAccount(req: Request, res: Response) {
         try {
-            const { email, maps_profile_url, local_guide_level, total_reviews_google, avatar_url } = req.body;
+            const { email, maps_profile_url, avatar_url } = req.body;
             const user_id = req.user?.userId;
 
             if (!user_id) {
