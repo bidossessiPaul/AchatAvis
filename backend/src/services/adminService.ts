@@ -40,23 +40,14 @@ export const getGuides = async () => {
  * Update user status (active, pending, suspended, rejected)
  */
 export const updateUserStatus = async (userId: string, status: string, reason?: string) => {
-    // If status is suspended, we use the suspension service to trigger the full flow
-    if (status === 'suspended') {
-        const { suspensionService } = await import('./suspensionService');
-        await suspensionService.detectAndSuspend(
-            userId,
-            'manual_admin',
-            reason || 'Suspension manuelle par un administrateur'
-        );
-        return { message: 'User suspended via suspension service' };
-    }
-
+    // NOTE: Automatic suspension system has been removed.
+    // Admins can still manually update user status (including 'suspended') via this function.
     const result = await query(
         `UPDATE users SET status = ? WHERE id = ?`,
         [status, userId]
     );
 
-    // Send notification email (for non-suspension updates)
+    // Send notification email
     try {
         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
         if (user && user.length > 0) {
@@ -248,25 +239,35 @@ export const getGlobalStats = async () => {
     `);
 
     // Top Sectors (for Bar Chart) - Based on orders
-    const sectorStats: any = await query(`
-        SELECT 
-            COALESCE(sd.sector_name, 'Autre') as label, 
-            COUNT(*) as value 
-        FROM reviews_orders o
-        LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
-        GROUP BY label 
-        ORDER BY value DESC 
-        LIMIT 6
-    `);
+    let sectorStats: any = [];
+    try {
+        sectorStats = await query(`
+            SELECT 
+                COALESCE(sd.sector_name, 'Autre') as label, 
+                COUNT(*) as value 
+            FROM reviews_orders o
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+            GROUP BY label 
+            ORDER BY value DESC 
+            LIMIT 6
+        `);
+    } catch (error) {
+        console.error('Failed to fetch sector stats:', error);
+    }
 
     // Trust Level Distribution (for Bar Chart) - From guide_gmail_accounts
-    const trustDistribution: any = await query(`
-        SELECT 
-            COALESCE(trust_level, 'BRONZE') as label, 
-            COUNT(*) as value 
-        FROM guide_gmail_accounts 
-        GROUP BY label
-    `);
+    let trustDistribution: any = [];
+    try {
+        trustDistribution = await query(`
+            SELECT 
+                COALESCE(trust_level, 'BRONZE') as label, 
+                COUNT(*) as value 
+            FROM guide_gmail_accounts 
+            GROUP BY label
+        `);
+    } catch (error) {
+        console.error('Failed to fetch trust distribution stats:', error);
+    }
 
     // User growth (last 12 months)
     const userGrowth: any = await query(`
@@ -494,12 +495,6 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
 
             if (rows && rows.length > 0) {
                 await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
-
-                // NOUVEAU : Vérifier rejets répététés si statut = rejected
-                if (status === 'rejected') {
-                    const { suspensionTriggers } = await import('./suspensionTriggers');
-                    await suspensionTriggers.checkRepeatedRejections(rows[0].guide_id, submissionId);
-                }
 
                 // SSE NOTIFICATION - Guide
                 notificationService.sendToUser(rows[0].guide_id, {

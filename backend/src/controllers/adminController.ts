@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import * as adminService from '../services/adminService';
-import { SUSPENSION_REASONS } from '../constants/suspensionReasons';
 
 /**
  * Get all artisans

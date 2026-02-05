@@ -1,0 +1,14 @@
+src/controllers/adminController.ts: * Get standardized reasons for warnings and suspensions
+src/controllers/adminController.ts: * GET /api/admin/suspension-reasons
+src/controllers/adminController.ts:        suspensions: SUSPENSION_REASONS
+src/routes/debug.ts:        console.log('🚀 Seeding suspension levels via Debug API...');
+src/routes/debug.ts:            { level: 2, name: 'Suspension temporaire (3j)', duration: 3, emoji: '⛔', color: 'orange', consequences: '["Accès bloqué 3 jours"]', requirements: '["Attendre fin suspension"]', auto_lift: true },
+src/routes/debug.ts:            const exists: any = await query('SELECT id FROM suspension_levels WHERE level_number = ?', [l.level]);
+src/routes/debug.ts:                await query(`INSERT INTO suspension_levels 
+src/routes/admin.ts:router.get('/suspension-reasons', adminController.getSuspensionReasons);
+src/services/emailService.ts:        console.error(`Error sending suspension email:`, error);
+src/services/emailService.ts:        console.error('Error sending admin suspension notice:', error);
+src/services/emailService.ts: * Send email when a suspension is lifted
+src/services/emailService.ts:        console.error(`Error sending suspension lifted email:`, error);
+src/services/emailService.ts:        ? "Bonne nouvelle ! Votre compte bénéficie désormais d'une protection avancée. Vous êtes exempté des suspensions automatiques liées à la géolocalisation ou aux activités suspectes standard."
+src/services/adminService.ts:    // NOTE: Automatic suspension system has been removed.
