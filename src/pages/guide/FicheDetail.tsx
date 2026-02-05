@@ -94,6 +94,8 @@ export const FicheDetail: React.FC = () => {
             } else if (message === 'fiche_LOCKED') {
                 setLockedByOther(true);
                 setError("Un autre guide est déjà en train de traiter cette fiche. Veuillez réessayer dans quelques minutes.");
+            } else if (message && message.includes('TRUST_SCORE_BLOCKED')) {
+                setError("Votre compte est restreint à cause d'un Score de Confiance insuffisant. Veuillez mettre à jour vos preuves ou contacter le support.");
             } else {
                 setError("Impossible de charger les détails de la fiche.");
             }
