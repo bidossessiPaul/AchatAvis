@@ -264,4 +264,85 @@ router.get('/dir-diag', async (_req: any, res) => {
     return res.json(diag);
 });
 
+
+/**
+ * DEBUG 10: Run Migrations Manually
+ * URL: /api/debug/run-migrations
+ */
+router.get('/run-migrations', async (_req: any, res) => {
+    try {
+        const fs = require('fs');
+        const path = require('path');
+        const { pool } = require('../config/database');
+
+        console.log('🚀 Manually running migrations...');
+        const log: string[] = [];
+
+        // Try to find migrations dir
+        const candidates = [
+            path.join(process.cwd(), 'migrations'),
+            path.join(process.cwd(), 'backend', 'migrations'),
+            path.join(__dirname, '..', '..', 'migrations'),
+            path.join(__dirname, '..', 'migrations')
+        ];
+
+        let migrationsDir: string | null = null;
+        for (const dir of candidates) {
+            if (fs.existsSync(dir)) {
+                migrationsDir = dir;
+                log.push(`✅ Found migrations dir: ${dir}`);
+                break;
+            } else {
+                log.push(`❌ Not found: ${dir}`);
+            }
+        }
+
+        if (!migrationsDir) {
+            return res.status(500).json({ error: 'Migrations directory not found', log });
+        }
+
+        const files = fs.readdirSync(migrationsDir)
+            .filter((file: string) => file.endsWith('.sql'))
+            .sort();
+
+        log.push(`Found ${files.length} migration files.`);
+
+        const connection = await pool.getConnection();
+        try {
+            for (const file of files) {
+                const filePath = path.join(migrationsDir, file);
+                const sql = fs.readFileSync(filePath, 'utf8');
+
+                log.push(`--- Processing: ${file} ---`);
+
+                const statements = sql
+                    .split(';')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => s.length > 0);
+
+                for (const statement of statements) {
+                    try {
+                        await connection.query(statement);
+                    } catch (err: any) {
+                        // Ignore common "already exists" errors to allow re-running
+                        if (!err.message.includes('already exists') &&
+                            !err.message.includes('Duplicate') &&
+                            !err.message.includes("check that it exists")) {
+                            log.push(`⚠️ Error in ${file}: ${err.message}`);
+                        }
+                    }
+                }
+            }
+        } finally {
+            connection.release();
+        }
+
+        return res.json({ success: true, message: 'Migrations execution finished', log });
+
+    } catch (error: any) {
+        console.error('Migration error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 export default router;
