@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle, ArrowRight, Loader2, Mail } from 'lucide-react';
+import Swal from 'sweetalert2';
+import { useAuthStore } from '../../../context/authStore';
+import { showSuccess, showError } from '../../../utils/Swal';
 
 interface Step4Props {
     order: ReviewOrder;
@@ -14,6 +17,50 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const navigate = useNavigate();
+
+    const [isSendingEmail, setIsSendingEmail] = useState(false);
+    const { user } = useAuthStore();
+
+    const handleSendEmail = async () => {
+        const { value: emails } = await Swal.fire({
+            title: 'Envoyer pour validation',
+            input: 'text',
+            inputLabel: 'Adresses email (séparées par des virgules)',
+            inputValue: user?.email || '',
+            showCancelButton: true,
+            confirmButtonText: 'Envoyer',
+            cancelButtonText: 'Annuler',
+            inputPlaceholder: 'exemple@mail.com, autre@mail.com',
+            confirmButtonColor: '#FF991F',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'Vous devez saisir au moins une adresse email !';
+                }
+                const emails = value.split(',').map(e => e.trim());
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                for (const email of emails) {
+                    if (!emailRegex.test(email)) {
+                        return `L'adresse "${email}" n'est pas valide.`;
+                    }
+                }
+                return null;
+            }
+        });
+
+        if (emails) {
+            setIsSendingEmail(true);
+            try {
+                const emailList = emails.split(',').map((e: string) => e.trim());
+                await artisanService.sendValidationEmail(order.id, emailList);
+                showSuccess('Email envoyé !', 'Les avis ont été envoyés avec succès pour validation.');
+            } catch (error: any) {
+                console.error("Email sending failed", error);
+                showError('Erreur', "Échec de l'envoi de l'email.");
+            } finally {
+                setIsSendingEmail(false);
+            }
+        }
+    };
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
@@ -111,22 +158,50 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
             </div>
 
             <div className="submission-actions">
-                <button type="button" onClick={onBack} className="btn-back" disabled={isSubmitting}>
+                <button type="button" onClick={onBack} className="btn-back" disabled={isSubmitting || isSendingEmail}>
                     Retour
                 </button>
-                <button
-                    type="button"
-                    onClick={handleSubmit}
-                    className="btn-next"
-                    disabled={isSubmitting}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                    {isSubmitting ? (
-                        <><Loader2 className="animate-spin" size={18} /> Traitement...</>
-                    ) : (
-                        <>Confirmer et Soumettre <ArrowRight size={18} /></>
-                    )}
-                </button>
+
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        type="button"
+                        onClick={handleSendEmail}
+                        className="btn-secondary"
+                        disabled={isSubmitting || isSendingEmail}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            backgroundColor: '#f3f4f6',
+                            color: '#4b5563',
+                            border: '1px solid #e5e7eb',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '0.75rem',
+                            fontWeight: 600,
+                            cursor: (isSubmitting || isSendingEmail) ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        {isSendingEmail ? (
+                            <><Loader2 className="animate-spin" size={18} /> Envoi...</>
+                        ) : (
+                            <><Mail size={18} /> Envoyer par email</>
+                        )}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="btn-next"
+                        disabled={isSubmitting || isSendingEmail}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        {isSubmitting ? (
+                            <><Loader2 className="animate-spin" size={18} /> Traitement...</>
+                        ) : (
+                            <>Confirmer et Soumettre <ArrowRight size={18} /></>
+                        )}
+                    </button>
+                </div>
             </div>
         </div>
     );

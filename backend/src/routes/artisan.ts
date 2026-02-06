@@ -32,6 +32,7 @@ router.post('/orders/:id/proposals/generate', artisanController.generateProposal
 router.post('/orders/:id/proposals', artisanController.generateProposals);
 router.put('/proposals/:id', artisanController.updateProposal);
 router.delete('/proposals/:id', artisanController.deleteProposal);
+router.post('/orders/:id/send-validation', artisanController.sendReviewValidationEmail);
 
 // AI Response Generation
 router.post('/submissions/generate-response', artisanController.generateReviewResponse);

@@ -17,6 +17,7 @@ import {
     Smartphone,
     MessageCircle
 } from 'lucide-react';
+import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { getFileUrl } from '../../utils/url';
 import { motion, AnimatePresence } from 'framer-motion';
 import { showConfirm, showSuccess, showError, showInput, showSelection } from '../../utils/Swal';
@@ -83,6 +84,7 @@ export const GuideDetail: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editFormData, setEditFormData] = useState<any>(null);
+    const [complianceData, setComplianceData] = useState<any>(null);
 
 
     useEffect(() => {
@@ -97,6 +99,7 @@ export const GuideDetail: React.FC = () => {
             setSubmissions(data.submissions);
             setGmailAccounts(data.gmail_accounts || []);
             setStats(data.stats);
+            setComplianceData(data.compliance_data);
 
             setEditFormData({
                 full_name: data.profile.full_name,
@@ -687,6 +690,12 @@ export const GuideDetail: React.FC = () => {
                     </div>
 
                     <div className="detail-sidebar-sticky">
+                        {complianceData && (
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <ComplianceWidget data={complianceData} />
+                            </div>
+                        )}
+
                         <div className="premium-card highlight">
                             <h3>Activité financière</h3>
                             <div className="stats-premium-grid">

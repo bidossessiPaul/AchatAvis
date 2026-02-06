@@ -11,10 +11,11 @@ import {
     Clock,
     Edit2,
     X,
-    Check
+    Check,
+    Mail
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { showConfirm, showSuccess, showError } from '../../utils/Swal';
+import Swal, { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
 
@@ -117,6 +118,43 @@ export const AdminFicheDetail: React.FC = () => {
         }
     };
 
+    const handleSendForValidation = async () => {
+        if (!orderId || !fiche) return;
+
+        const { value: emailsInput } = await Swal.fire({
+            title: 'Envoyer pour validation',
+            text: `Voulez-vous envoyer les ${fiche.proposals.length} avis générés à l'artisan ?`,
+            icon: 'question',
+            input: 'text',
+            inputValue: fiche.artisan_email,
+            inputLabel: 'Emails (séparés par des virgules)',
+            inputPlaceholder: 'email1@example.com, email2@example.com',
+            showCancelButton: true,
+            confirmButtonText: 'Envoyer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#ff3b6a',
+            cancelButtonColor: '#94a3b8',
+        });
+
+        if (emailsInput) {
+            const emails = emailsInput.split(',').map((e: string) => e.trim()).filter((e: string) => e !== '');
+            if (emails.length === 0) {
+                showError('Erreur', 'Au moins un email valide est requis');
+                return;
+            }
+
+            setIsSaving(true);
+            try {
+                await adminApi.sendReviewValidationEmail(orderId, emails);
+                showSuccess('Succès', 'Email de validation envoyé !');
+            } catch (error) {
+                showError('Erreur', "Échec de l'envoi de l'email");
+            } finally {
+                setIsSaving(false);
+            }
+        }
+    };
+
     const handleEditProposal = (proposalId: string, content: string) => {
         setEditingProposalId(proposalId);
         setEditedContent(content);
@@ -164,6 +202,15 @@ export const AdminFicheDetail: React.FC = () => {
                                 onClick={handleApprove}
                             >
                                 <CheckCircle2 size={20} /> Approuver & Publier
+                            </button>
+                        )}
+                        {fiche.status === 'submitted' && (
+                            <button
+                                className="btn-next btn-warning"
+                                onClick={handleSendForValidation}
+                                disabled={isSaving || fiche.proposals.length === 0}
+                            >
+                                <Mail size={20} /> Envoyer pour Validation
                             </button>
                         )}
                         <button

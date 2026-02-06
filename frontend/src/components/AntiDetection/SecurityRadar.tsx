@@ -26,6 +26,7 @@ import { BiShoppingBag } from 'react-icons/bi';
 import { BsBriefcase, BsBrush } from 'react-icons/bs';
 import { FiGlobe } from 'react-icons/fi';
 import { GmailHistoryTable } from './GmailHistoryTable';
+import { ComplianceWidget } from './ComplianceWidget';
 
 const getSectorIcon = (identifier: string) => {
     const s = identifier.toLowerCase().trim();
@@ -79,7 +80,7 @@ const getSectorIcon = (identifier: string) => {
 };
 
 export const SecurityRadar: React.FC = () => {
-    const { guideRecap, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
+    const { guideRecap, complianceData, gmailHistory, fetchGmailHistory, loading } = useAntiDetectionStore();
     const [expandedSector, setExpandedSector] = useState<string | null>(null);
     const [historyModalAccount, setHistoryModalAccount] = useState<{ account: any, sectorId: number | null, sectorName: string } | null>(null);
 
@@ -109,6 +110,13 @@ export const SecurityRadar: React.FC = () => {
 
     return (
         <div style={{ marginBottom: '3rem' }}>
+            {complianceData && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <ComplianceWidget data={complianceData} orientation="horizontal" />
+                </div>
+            )}
+
+            {/* Global Email Quotas Grid - The focus of the redesign */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <div style={{
