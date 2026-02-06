@@ -110,5 +110,9 @@ export const artisanService = {
     async generateReviewResponse(content: string, authorName: string): Promise<{ response: string }> {
         const response = await api.post('/artisan/submissions/generate-response', { content, author_name: authorName });
         return response.data;
+    },
+
+    async sendValidationEmail(orderId: string, emails: string[]): Promise<void> {
+        await api.post(`/artisan/orders/${orderId}/send-validation`, { emails });
     }
 };
