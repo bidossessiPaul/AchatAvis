@@ -437,6 +437,10 @@ export const adminApi = {
     updateProposal: async (proposalId: string, data: { content: string }): Promise<void> => {
         await api.put(`/admin/proposals/${proposalId}`, data);
     },
+
+    sendReviewValidationEmail: async (orderId: string, emails: string[]): Promise<void> => {
+        await api.post(`/admin/fiches/${orderId}/send-validation`, { emails });
+    },
 };
 
 // Suspension API

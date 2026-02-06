@@ -5,6 +5,8 @@ import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, Trend
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { GuideLevelProgress } from './GuideLevelProgress';
+import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
+import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { EarningsChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
 import { motion } from 'framer-motion';
 import './GuideDashboard.css';
@@ -13,12 +15,16 @@ export const GuideDashboard: React.FC = () => {
     const [fiches, setfiches] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const { complianceData, fetchComplianceData } = useAntiDetectionStore();
     const navigate = useNavigate();
     const { user } = useAuthStore();
 
     useEffect(() => {
         loadDashboardData();
-    }, []);
+        if (user?.id) {
+            fetchComplianceData(user.id);
+        }
+    }, [user?.id, fetchComplianceData]);
 
     const loadDashboardData = async () => {
         setIsLoading(true);
@@ -49,6 +55,13 @@ export const GuideDashboard: React.FC = () => {
                     <Star className="guide-dashboard-hero-icon" />
                 </div>
             </div>
+
+            {/* Compliance Widget */}
+            {complianceData && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <ComplianceWidget data={complianceData} orientation="horizontal" />
+                </div>
+            )}
 
             {/* Gamification Progress */}
             <GuideLevelProgress />

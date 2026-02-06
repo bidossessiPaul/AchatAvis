@@ -58,6 +58,7 @@ router.get('/fiches', adminController.getfiches);
 router.get('/fiches/pending', adminController.getPendingfiches);
 router.get('/fiches/:orderId', adminController.getAdminficheDetail);
 router.post('/fiches/:orderId/approve', adminController.approvefiche);
+router.post('/fiches/:orderId/send-validation', adminController.sendReviewValidationEmail);
 router.put('/fiches/:orderId', adminController.updatefiche);
 router.delete('/fiches/:orderId', adminController.deletefiche);
 router.put('/proposals/:proposalId', adminController.updateProposal);
