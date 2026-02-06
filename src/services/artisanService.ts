@@ -20,7 +20,7 @@ export const artisanService = {
         }
 
         const packs: any = await query(
-            'SELECT fiches_quota, fiches_used, amount FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
+            'SELECT fiches_quota, fiches_used, amount, review_credits FROM payments WHERE id = ? AND user_id = ? AND type = "subscription" AND status = "completed"',
             [payment_id, artisanId]
         );
 
@@ -58,6 +58,7 @@ export const artisanService = {
         const price = parseFloat(pack.amount);
 
         const orderId = uuidv4();
+        const orderQuantity = pack.review_credits || quantity;
 
         await query(
             `INSERT INTO reviews_orders (
@@ -67,7 +68,7 @@ export const artisanService = {
                 estimated_duration_days, client_cities, zones, initial_review_count
             ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                orderId, fiche_name, artisanId, quantity, price, company_name, company_context,
+                orderId, fiche_name, artisanId, orderQuantity, price, company_name, company_context,
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
                 estimated_duration_days, finalClientCities, data.zones || '', initial_review_count
@@ -177,24 +178,20 @@ export const artisanService = {
 
         let order = orders[0];
 
-        // STRICT: Override quantity based on pack definition
-        // This fixes legacy data issues where 'Croissance' might have 20 reviews stored
-        if (order.payment_description) {
-            const desc = order.payment_description.toLowerCase();
-            // Pack Expert = 20
-            if (desc.includes('expert')) {
-                order.quantity = 20;
-                order.pack_name = 'Pack Expert';
-            }
-            // Pack Croissance = 10 (Correction for legacy data)
-            else if (desc.includes('croissance') || desc.includes('growth')) {
-                order.quantity = 10;
-                order.pack_name = 'Pack Croissance';
-            }
-            // Pack Découverte = 5
-            else if (desc.includes('découverte') || desc.includes('discovery')) {
-                order.quantity = 5;
-                order.pack_name = 'Pack Découverte';
+        // DYNAMIC: Override quantity based on pack credits if available
+        if (order.payment_id) {
+            const [p]: any = await query('SELECT review_credits, description FROM payments WHERE id = ?', [order.payment_id]);
+            if (p) {
+                if (p.review_credits) {
+                    order.quantity = p.review_credits;
+                }
+
+                // Set human readable pack name for UI
+                const desc = p.description ? p.description.toLowerCase() : '';
+                if (desc.includes('expert')) order.pack_name = 'Pack Expert';
+                else if (desc.includes('croissance') || desc.includes('growth')) order.pack_name = 'Pack Croissance';
+                else if (desc.includes('découverte') || desc.includes('discovery')) order.pack_name = 'Pack Découverte';
+                else order.pack_name = p.description;
             }
         }
 
@@ -236,7 +233,7 @@ export const artisanService = {
      */
     async getArtisanOrders(artisanId: string) {
         const orders: any[] = await query(`
-            SELECT ro.*, p.description as payment_description, p.amount as payment_amount
+            SELECT ro.*, p.description as payment_description, p.amount as payment_amount, p.review_credits
             FROM reviews_orders ro
             LEFT JOIN payments p ON ro.payment_id = p.id
             WHERE ro.artisan_id = ? 
@@ -256,20 +253,26 @@ export const artisanService = {
 
                 if (matchedPack) {
                     packName = matchedPack.name;
-                    realQuantity = matchedPack.quantity; // Force quantity from pack definition
+                    // Use credits from payment record preferentially
+                    realQuantity = order.review_credits || matchedPack.quantity;
                 } else if (desc.includes('expert')) {
                     packName = 'Pack Expert';
-                    realQuantity = 20;
+                    realQuantity = order.review_credits || 20;
                 }
                 else if (desc.includes('croissance') || desc.includes('growth')) {
                     packName = 'Pack Croissance';
-                    realQuantity = 10;
+                    realQuantity = order.review_credits || 10;
                 }
                 else if (desc.includes('découverte') || desc.includes('discovery')) {
                     packName = 'Pack Découverte';
-                    realQuantity = 5;
+                    realQuantity = order.review_credits || 5;
                 }
                 else packName = order.payment_description;
+
+                // Final fallback/override to specific credits if they exist and are different
+                if (order.review_credits && order.review_credits !== realQuantity) {
+                    realQuantity = order.review_credits;
+                }
             }
 
             return {
@@ -295,14 +298,24 @@ export const artisanService = {
             await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
         }
 
+        if (proposals.length === 0) {
+            return query('SELECT * FROM review_proposals WHERE order_id = ?', [orderId]);
+        }
+
+        const values: any[] = [];
+        const placeholders: string[] = [];
+
         for (const p of proposals) {
             const id = uuidv4();
-            await query(
-                `INSERT INTO review_proposals (id, order_id, content, rating, author_name, status)
-                 VALUES (?, ?, ?, ?, ?, 'draft')`,
-                [id, orderId, p.content || '', p.rating || 5, p.author_name || 'Anonyme']
-            );
+            placeholders.push('(?, ?, ?, ?, ?, "draft")');
+            values.push(id, orderId, p.content || '', p.rating || 5, p.author_name || 'Anonyme');
         }
+
+        await query(
+            `INSERT INTO review_proposals (id, order_id, content, rating, author_name, status)
+             VALUES ${placeholders.join(', ')}`,
+            values
+        );
 
         return query('SELECT * FROM review_proposals WHERE order_id = ?', [orderId]);
     },

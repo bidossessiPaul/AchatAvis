@@ -46,11 +46,11 @@ export const sendResetPasswordEmail = async (email: string, token: string, baseU
                     .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
                     .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
                     .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 32px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
+                    .logo span { color: #FF991F; }
                     .title { font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 16px; text-align: center; text-transform: uppercase; letter-spacing: -0.025em; }
                     .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .button { background-color: #FF991F; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
                     .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #6b7280; }
                     .link-alt { font-size: 11px; color: #9ca3af; word-break: break-all; margin-top: 32px; text-align: center; padding: 16px; background: #f9fafb; border-radius: 8px; }
                     .divider { border: 0; border-top: 1px solid #eeeeee; margin: 32px 0; }
@@ -59,7 +59,7 @@ export const sendResetPasswordEmail = async (email: string, token: string, baseU
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Mot de passe oublié ?</h2>
                         <p class="text">
                             Bonjour,<br><br>
@@ -70,7 +70,7 @@ export const sendResetPasswordEmail = async (email: string, token: string, baseU
                             <a href="${resetUrl}" class="button">Réinitialiser maintenant</a>
                         </div>
                         
-                        <p class="text" style="font-size: 14px; margin-bottom: 0; color: #ff3b6a; font-weight: 600;">
+                        <p class="text" style="font-size: 14px; margin-bottom: 0; color: #FF991F; font-weight: 600;">
                             Ce lien expirera dans 1 heure.
                         </p>
                         
@@ -78,11 +78,11 @@ export const sendResetPasswordEmail = async (email: string, token: string, baseU
                         
                         <div class="link-alt">
                             Bouton inactif ? Copiez ce lien :<br>
-                            <a href="${resetUrl}" style="color: #ff3b6a;">${resetUrl}</a>
+                            <a href="${resetUrl}" style="color: #FF991F;">${resetUrl}</a>
                         </div>
                     </div>
                     <div class="footer">
-                        &copy; ${new Date().getFullYear()} AchatAvis. Noir • Rouge • Blanc.<br>
+                        &copy; ${new Date().getFullYear()} AchatAvis. Noir • Orange • Blanc.<br>
                         Gagnez la confiance de vos clients.
                     </div>
                 </div>
@@ -128,18 +128,18 @@ export const sendVerificationEmail = async (email: string, fullName: string, tok
                     .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
                     .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
                     .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 32px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
+                    .logo span { color: #FF991F; }
                     .title { font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 16px; text-align: center; text-transform: uppercase; }
                     .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 24px; text-align: center; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                    .button { background-color: #FF991F; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
                     .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #6b7280; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Vérifiez votre email</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
@@ -196,19 +196,19 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
                     .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
                     .card { background-color: #111827; border-radius: 20px; padding: 48px; color: #ffffff; }
                     .logo { font-size: 24px; font-weight: 800; color: #ffffff; margin-bottom: 32px; text-align: center; }
-                    .logo span { color: #ff3b6a; }
+                    .logo span { color: #FF991F; }
                     .title { font-size: 28px; font-weight: 800; color: #ffffff; margin-bottom: 16px; text-align: center; }
                     .text { font-size: 16px; color: #d1d5db; line-height: 1.6; margin-bottom: 32px; text-align: center; }
                     .button-container { text-align: center; margin: 40px 0; }
-                    .button { background-color: #ff3b6a; color: #ffffff !important; padding: 18px 40px; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .button { background-color: #FF991F; color: #ffffff !important; padding: 18px 40px; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; letter-spacing: 0.05em; }
                     .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
-                    .highlight { color: #ff3b6a; font-weight: 800; }
+                    .highlight { color: #FF991F; font-weight: 800; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Bienvenue, ${fullName} !</h2>
                         <p class="text">
                             Vous êtes désormais membre <span class="highlight">${roleText}</span>.<br><br>
@@ -241,8 +241,8 @@ export const sendWelcomeEmail = async (email: string, fullName: string, role: 'a
  * Send email when a pack is activated
  */
 export const sendPackActivationEmail = async (email: string, fullName: string, packName: string, fichesQuota: number, baseUrl?: string) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
@@ -273,7 +273,7 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Votre pack est prêt !</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
@@ -310,7 +310,7 @@ export const sendPackActivationEmail = async (email: string, fullName: string, p
 export const sendUserStatusUpdateEmail = async (email: string, fullName: string, status: string) => {
     let title = "";
     let message = "";
-    let color = "#ff3b6a";
+    let color = "#FF991F";
 
     switch (status) {
         case 'active':
@@ -326,7 +326,7 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
         case 'rejected':
             title = "Demande Refusée";
             message = "Votre demande d'inscription n'a pas pu être acceptée pour le moment.";
-            color = "#ff3b6a";
+            color = "#FF991F";
             break;
         default:
             return;
@@ -344,7 +344,7 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
                     .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
                     .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
                     .logo { font-size: 24px; font-weight: 800; color: #111827; margin-bottom: 24px; }
-                    .logo span { color: #ff3b6a; }
+                    .logo span { color: #FF991F; }
                     .title { font-size: 20px; font-weight: 800; color: ${color}; margin-bottom: 16px; text-transform: uppercase; }
                     .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 0; }
                     .status-box { padding: 24px; border-radius: 12px; background-color: #f9fafb; border-top: 4px solid ${color}; margin-top: 24px; }
@@ -353,7 +353,7 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">${title}</h2>
                         <div class="status-box">
                             <p class="text">
@@ -365,13 +365,13 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
                 </div>
             </body>
             </html>
-        `
+        `,
     };
 
     try {
         await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error(`Error sending status update email:`, error);
+        console.error(`Error sending user status update email:`, error);
     }
 };
 
@@ -381,8 +381,8 @@ export const sendUserStatusUpdateEmail = async (email: string, fullName: string,
 export const sendficheDecisionEmail = async (email: string, fullName: string, orderId: string, status: string, baseUrl?: string) => {
     if (status !== 'in_progress') return;
 
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
@@ -401,13 +401,13 @@ export const sendficheDecisionEmail = async (email: string, fullName: string, or
                     .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-transform: uppercase; }
                     .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 32px; }
                     .button-container { text-align: center; margin: 32px 0; }
-                    .button { background-color: ${brandRed}; color: #ffffff !important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
+                    .button { background-color: ${brandRed}; color: #ffffff!important; padding: 16px 36px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; display: inline-block; text-transform: uppercase; }
                 </style>
             </head>
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">fiche validée</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
@@ -434,18 +434,18 @@ export const sendficheDecisionEmail = async (email: string, fullName: string, or
  * Send email to guide when their submission is validated or rejected
  */
 export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
     let title = "";
     let message = "";
     let color = brandBlack;
 
     if (status === 'validated') {
-        title = "Soufiche Validée";
+        title = "Soumission Validée";
         message = "Félicitations ! Votre avis a été validé. Vos gains ont été crédités.";
         color = brandBlack;
     } else if (status === 'rejected') {
-        title = "Soufiche Refusée";
+        title = "Soumission Refusée";
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
         color = brandRed;
     } else {
@@ -455,7 +455,7 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
     const mailOptions = {
         from: emailConfig.from,
         to: email,
-        subject: `Décision sur votre soufiche - AchatAvis`,
+        subject: `Décision sur votre soumission - AchatAvis`,
         html: `
             <!DOCTYPE html>
             <html>
@@ -472,7 +472,7 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">${title}</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
@@ -498,8 +498,8 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
 export const sendTeamInvitationEmail = async (email: string, token: string, permissions: any, baseUrl?: string) => {
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
     const inviteUrl = `${frontendUrl}/admin/accept-invite?token=${token}`;
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
 
     // Format permissions for display
     const permissionLabels: Record<string, string> = {
@@ -539,7 +539,7 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Rejoignez l'Équipe</h2>
                         <p class="text">
                             Vous avez été invité à administrer <strong>AchatAvis</strong>.
@@ -575,8 +575,8 @@ export const sendTeamInvitationEmail = async (email: string, token: string, perm
 export const sendSuspensionEmail = async (email: string, fullName: string, level: any, reasonDetails: string, userAgent: string | null = null, baseUrl?: string) => {
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
     const dashboardUrl = `${frontendUrl}/suspended`;
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
 
     const { browser, device } = parseUserAgent(userAgent);
     const now = new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
@@ -667,7 +667,7 @@ export const sendAdminSuspensionNotice = async (userEmail: string, userFullName:
         subject: `🚨 [Alerte Admin] Suspension de compte : ${userFullName}`,
         html: `
             <div style="font-family: 'Segoe UI', sans-serif; padding: 32px; color: #111827; background-color: #f9fafb;">
-                <h2 style="color: #ff3b6a; text-transform: uppercase; letter-spacing: 0.05em;">Suspension Appliquée</h2>
+                <h2 style="color: #FF991F; text-transform: uppercase; letter-spacing: 0.05em;">Suspension Appliquée</h2>
                 <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb; margin-top: 24px;">
                     <p style="margin-top: 0;"><strong>Utilisateur :</strong> ${userFullName} (${userEmail})</p>
                     <p><strong>Niveau :</strong> ${level.level_number} - ${level.level_name}</p>
@@ -694,8 +694,8 @@ export const sendAdminSuspensionNotice = async (userEmail: string, userFullName:
  * Send email when a suspension is lifted
  */
 export const sendSuspensionLiftedEmail = async (email: string, fullName: string, reason: string) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
 
     const mailOptions = {
         from: emailConfig.from,
@@ -718,7 +718,7 @@ export const sendSuspensionLiftedEmail = async (email: string, fullName: string,
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">Compte Réactivé</h2>
                         <div class="success-banner">
                             <p class="text" style="color: #065f46; font-weight: 600; margin-bottom: 0;">
@@ -751,8 +751,8 @@ export const sendSuspensionLiftedEmail = async (email: string, fullName: string,
  * Send email when a user is whitelisted (exempted)
  */
 export const sendExemptionEmail = async (email: string, fullName: string, isExempted: boolean) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
 
     const title = isExempted ? "Compte Vérifié & Protégé" : "Mise à jour de protection";
     const statusText = isExempted ? "ACTIVÉ" : "DÉSACTIVÉ";
@@ -781,7 +781,7 @@ export const sendExemptionEmail = async (email: string, fullName: string, isExem
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">${title}</h2>
                         <div class="badge">STATUT : ${statusText}</div>
                         <p class="text">
@@ -808,8 +808,8 @@ export const sendExemptionEmail = async (email: string, fullName: string, isExem
  * Send email to artisan when a fiche is submitted for review
  */
 export const sendficheSubmittedArtisanEmail = async (email: string, fullName: string, companyName: string, orderId: string, baseUrl?: string) => {
-    const brandRed = '#ff3b6a';
-    const brandBlack = '#111827';
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
@@ -834,7 +834,7 @@ export const sendficheSubmittedArtisanEmail = async (email: string, fullName: st
             <body>
                 <div class="container">
                     <div class="card">
-                        <div class="logo">Achat<span>Avis</span></div>
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
                         <h2 class="title">fiche reçue</h2>
                         <p class="text">
                             Bonjour <strong>${fullName}</strong>,<br><br>
@@ -864,7 +864,7 @@ export const sendficheSubmittedArtisanEmail = async (email: string, fullName: st
  */
 export const sendficheSubmittedAdminEmail = async (artisanName: string, companyName: string, orderId: string, baseUrl?: string) => {
     const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
-    const brandRed = '#ff3b6a';
+    const brandRed = '#FF991F';
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
 
     const mailOptions = {
@@ -894,5 +894,81 @@ export const sendficheSubmittedAdminEmail = async (artisanName: string, companyN
         await transporter.sendMail(mailOptions);
     } catch (error) {
         console.error(`Error sending fiche submitted admin email:`, error);
+    }
+};
+
+/**
+ * Send email to artisan with generated reviews for verification
+ */
+export const sendReviewValidationEmail = async (emails: string[], fiche: any, proposals: any[]) => {
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
+
+    const reviewsHtml = proposals.map((p, index) => `
+        <div style="padding: 16px; border-bottom: 1px solid #eee; margin-bottom: 16px;">
+            <div style="font-weight: 800; color: ${brandRed}; margin-bottom: 8px;">Avis n°${index + 1} (${p.rating} ⭐)</div>
+            <div style="font-style: italic; color: #4b5563; font-size: 14px;">"${p.content}"</div>
+            <div style="margin-top: 8px; font-size: 12px; color: #9ca3af;">Auteur suggéré : ${p.author_name}</div>
+        </div>
+    `).join('');
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: emails.join(', '),
+        subject: `📋 Vérification de vos avis générés - ${fiche.company_name} - AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; text-align: center; }
+                    .logo span { color: ${brandRed}; }
+                    .title { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin-bottom: 16px; text-align: center; text-transform: uppercase; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; margin-bottom: 32px; }
+                    .infos-box { background-color: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 32px; font-size: 14px; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
+                        <h2 class="title">Vérification des avis</h2>
+                        <p class="text">
+                            Bonjour,<br><br>
+                            Nous avons généré les propositions d'avis pour votre fiche <strong>${fiche.company_name}</strong>. 
+                            Veuillez vérifier le contenu ci-dessous avant que nous ne les validions définitivement.
+                        </p>
+                        
+                        <div class="infos-box">
+                            <strong>Détails du projet :</strong><br>
+                            • Entreprise : ${fiche.company_name}<br>
+                            • Secteur : ${fiche.sector || 'N/A'}<br>
+                            • Quantité : ${proposals.length} avis
+                        </div>
+
+                        <div style="margin-top: 32px;">
+                            ${reviewsHtml}
+                        </div>
+
+                        <p class="text" style="margin-top: 32px; text-align: center; font-weight: 600;">
+                            Si tout vous semble correct, vous n'avez rien à faire. 
+                            Sinon, veuillez nous contacter pour toute modification.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Review validation email sent to ${emails.join(', ')}`);
+    } catch (error) {
+        console.error(`Error sending review validation email:`, error);
+        throw error;
     }
 };

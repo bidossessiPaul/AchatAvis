@@ -613,3 +613,31 @@ export const updateProposal = async (req: Request, res: Response) => {
         res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+
+/**
+ * Send review validation email to artisan
+ * POST /api/admin/fiches/:orderId/send-validation
+ */
+export const sendReviewValidationEmail = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    const { emails } = req.body;
+
+    if (!emails || !Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ error: 'At least one email is required' });
+    }
+
+    try {
+        const fiche = await adminService.getAdminficheDetail(orderId);
+        if (!fiche) {
+            return res.status(404).json({ error: 'fiche not found' });
+        }
+
+        const { sendReviewValidationEmail: sendEmail } = await import('../services/emailService');
+        await sendEmail(emails, fiche, fiche.proposals);
+
+        return res.json({ message: 'Validation email sent successfully' });
+    } catch (error: any) {
+        console.error('Send validation email error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};

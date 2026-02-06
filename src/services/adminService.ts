@@ -182,11 +182,29 @@ export const getGuideDetail = async (userId: string) => {
         SELECT *, GREATEST(20, COALESCE(monthly_quota_limit, 0)) as monthly_quota_limit FROM guide_gmail_accounts WHERE user_id = ? AND is_active = TRUE
     `, [userId]);
 
+    // Fetch compliance data
+    const { antiDetectionService } = await import('./antiDetectionService');
+    const complianceRaw = await antiDetectionService.getExtendedComplianceData(userId);
+
+    // Add visual meta (labels and colors)
+    let scoreColor = 'green';
+    let scoreLabel = 'Excellent';
+    if (complianceRaw.compliance_score < 50) { scoreColor = 'red'; scoreLabel = 'Critique'; }
+    else if (complianceRaw.compliance_score < 70) { scoreColor = 'orange'; scoreLabel = 'À améliorer'; }
+    else if (complianceRaw.compliance_score < 90) { scoreColor = 'blue'; scoreLabel = 'Bon'; }
+
+    const complianceData = {
+        ...complianceRaw,
+        score_color: scoreColor,
+        score_label: scoreLabel
+    };
+
     return {
         profile: profile[0],
         submissions,
         gmail_accounts: gmailAccounts,
-        stats: stats[0]
+        stats: stats[0],
+        compliance_data: complianceData
     };
 };
 

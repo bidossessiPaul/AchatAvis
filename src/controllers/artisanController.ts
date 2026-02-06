@@ -141,38 +141,42 @@ export const artisanController = {
                 };
 
                 try {
+                    console.log(`🤖 Batch ${totalCreated.length / batchSize + 1}: Appel AI pour ${currentBatchSize} avis...`);
                     const generated = await aiService.generateReviews(generationParams);
-                    const finalProposals = generated.slice(0, currentBatchSize);
 
-                    console.log(`💾 Sauvegarde de ${finalProposals.length} propositions...`);
-
-                    // If it's the first batch AND force is true, we don't append (it will clear existing)
-                    // Otherwise we always append to build up the total
-                    const shouldAppend = !(currentNeeded === needed && force);
-
-                    const batchCreated = await artisanService.createProposals(id, finalProposals, shouldAppend);
-                    totalCreated = batchCreated;
-
-                    currentNeeded -= finalProposals.length;
-
-                    // If AI generated fewer than requested but didn't error, we might be hitting a limit
-                    if (finalProposals.length === 0) {
-                        console.warn("⚠️ L'IA n'a généré aucun avis pour ce lot. Arrêt de la boucle.");
+                    if (!generated || generated.length === 0) {
+                        console.warn("⚠️ L'IA n'a retourné aucun avis.");
                         break;
                     }
+
+                    const finalProposals = generated.slice(0, currentBatchSize);
+                    console.log(`💾 Sauvegarde de ${finalProposals.length} avis dans la base de données...`);
+
+                    const shouldAppend = !(currentNeeded === needed && force);
+                    const batchCreated = await artisanService.createProposals(id, finalProposals, shouldAppend);
+
+                    totalCreated = batchCreated;
+                    currentNeeded -= finalProposals.length;
+
+                    console.log(`✨ Lot terminé. Progression: ${totalCreated.length}/${targetQuantity}`);
                 } catch (batchError: any) {
-                    console.error("❌ Erreur pendant un lot de génération:", batchError.message);
-                    // On s'arrête si une erreur critique survient (ex: API Quota)
-                    // Mais on a déjà sauvegardé les lots précédents
+                    console.error("❌ ERREUR LOT GENERATION:", batchError.message);
+                    // On bubble up l'erreur pour informer l'utilisateur si c'est le premier lot
+                    if (totalCreated.length === 0) throw batchError;
                     break;
                 }
             }
 
-            console.log(`✅ Generation terminée. Total: ${totalCreated.length}/${targetQuantity}`);
+            console.log(`✅ Generation terminée avec succès. Total final: ${totalCreated.length}/${targetQuantity}`);
             return res.json(totalCreated);
         } catch (error: any) {
-            console.error("❌ ERREUR FATALE GENERATION:", error);
-            return res.status(500).json({ error: 'Failed to generate proposals', message: error.message });
+            console.error("❌ ERREUR GENERATION PROPOSALS:", error);
+            const status = error.message.includes('AI') ? 502 : 500;
+            return res.status(status).json({
+                error: 'Erreur de génération',
+                message: error.message,
+                details: error.stack
+            });
         }
     },
 
@@ -319,6 +323,31 @@ export const artisanController = {
                 error: 'Failed to delete proposal',
                 message: error.message
             });
+        }
+    },
+
+    async sendReviewValidationEmail(req: Request, res: Response) {
+        const { id: orderId } = req.params;
+        const { emails } = req.body;
+        const user = req.user;
+
+        if (!emails || !Array.isArray(emails) || emails.length === 0) {
+            return res.status(400).json({ error: 'At least one email is required' });
+        }
+
+        try {
+            const order = await artisanService.getOrderById(orderId);
+            if (!order || order.artisan_id !== user!.userId) {
+                return res.status(404).json({ error: 'Order not found' });
+            }
+
+            const { sendReviewValidationEmail: sendEmail } = await import('../services/emailService');
+            await sendEmail(emails, order, order.proposals);
+
+            return res.json({ message: 'Validation email sent successfully' });
+        } catch (error: any) {
+            console.error('Send artisan validation email error:', error);
+            return res.status(500).json({ error: error.message || 'Internal server error' });
         }
     }
 };

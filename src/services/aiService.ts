@@ -44,6 +44,7 @@ TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME, DU RÉALISME BRUT ET DE LA COH�
 2. **COHÉRENCE** : L'avis doit avoir un sens. Évite le "faux grave" (phrases qui ne veulent rien dire ou qui sont absurdes).
 3. **ABRÉVIATIONS** : Tu peux utiliser des abréviations courantes de clients (ex: "rdv", "sup", "bcp", "tt"), mais l'avis doit rester compréhensible.
 4. **DÉTAILS** : Mentionne des aspects concrets de l'intervention (ponctualité, propreté du chantier, amabilité).
+5. **DISTINCTION NOM/ENTREPRISE** : Ne confonds JAMAIS le nom de l'entreprise avec une personne physique. Si l'entreprise s'appelle "Plomberie Dupont", n'écris pas "Monsieur Plomberie Dupont". Utilise le nom de l'entreprise pour l'entité, et les noms des collaborateurs (si fournis) pour les personnes. Ne mets pas "Mr" ou "Monsieur" devant un nom d'entreprise qui n'est pas manifestement un nom de famille seul.
 
 ⛔️ INTERDICTIONS FORMELLES (Si tu utilises ces phrases, tu échoues) :
 - "Intervention rapide et efficace"
@@ -89,7 +90,7 @@ GÉNÈRE UN MÉLANGE HÉTÉROGÈNE SELON CES PROFILS (Mélange l'ordre d'apparit
 
 4. 👴 **L'ANCIEN (15%)**
    - Poli, vouvoie, phrases longues et bien construites.
-   - "Monsieur [Nom] a été d'une politesse rare..."
+   - Exemple: "L'artisan de [Entreprise] a été d'une politesse rare..." ou "Monsieur [Nom d'un Collaborateur] a été exemplaire."
 
 5. 🧐 **LE POINTILLEUX (10%)**
    - Parle d'un détail technique précis (la marque du joint, la propreté du chantier après départ).
@@ -122,23 +123,31 @@ Format de sortie attendu (JSON) :
                 throw new Error("Réponse inattendue de Claude (pas de texte)");
             }
 
-            let rawContent = "{" + textBlock.text;
+            let rawContent = textBlock.text.trim();
 
-            // Robust extraction: find the last '}' to ignore any trailing chat text
-            const lastBraceIndex = rawContent.lastIndexOf('}');
-            if (lastBraceIndex !== -1) {
-                rawContent = rawContent.substring(0, lastBraceIndex + 1);
+            // Handle the case where the AI might have repeated the pre-filled '{'
+            if (!rawContent.startsWith('{')) {
+                rawContent = '{' + rawContent;
             }
+
+            // Robust JSON extraction: find the LAST '}' to ignore any trailing AI chatter
+            const lastBraceIndex = rawContent.lastIndexOf('}');
+            if (lastBraceIndex === -1) {
+                console.error("❌ JSON Error: No closing brace found", rawContent);
+                throw new Error("Format AI invalide (pas de JSON)");
+            }
+
+            rawContent = rawContent.substring(0, lastBraceIndex + 1);
 
             try {
                 const parsed = JSON.parse(rawContent);
-                console.log("✅ Réponse Claude reçue et parsée");
+                console.log("✅ Réponse AI reçue et parsée");
 
                 if (Array.isArray(parsed.reviews)) return parsed.reviews;
                 if (Array.isArray(parsed)) return parsed;
-                throw new Error("Format invalide (pas un tableau)");
+                throw new Error("Format JSON invalide (pas un tableau)");
             } catch (e) {
-                console.error("Erreur parsing JSON Claude:", rawContent);
+                console.error("❌ Erreur parsing JSON AI. Contenu brut:", rawContent);
                 throw e;
             }
 
