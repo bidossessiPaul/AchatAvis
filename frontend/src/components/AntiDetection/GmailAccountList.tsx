@@ -58,9 +58,6 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
                 if (!value) {
                     return 'Le lien est requis !';
                 }
-                if (!value.includes('google.com/maps/contrib')) {
-                    return 'Le lien doit provenir de Google Maps (google.com/maps/contrib/...)';
-                }
             }
         });
 
