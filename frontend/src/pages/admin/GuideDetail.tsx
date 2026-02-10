@@ -34,6 +34,8 @@ interface Submission {
     earnings: number;
     status: string;
     proof_url: string;
+    review_text?: string;
+    rating?: number;
 }
 
 interface GuideProfile {
@@ -553,9 +555,21 @@ export const GuideDetail: React.FC = () => {
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <a href={sub.proof_url} target="_blank" rel="noopener noreferrer" className="info-value link">
-                                                        <ExternalLink size={14} /> Voir la preuve
-                                                    </a>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <a href={sub.proof_url} target="_blank" rel="noopener noreferrer" className="info-value link" title="Voir la preuve">
+                                                            <ExternalLink size={14} /> Preuve
+                                                        </a>
+                                                        {sub.review_text && (
+                                                            <button
+                                                                onClick={() => showSuccess(`Avis (${sub.rating} ★)`, sub.review_text || '')}
+                                                                className="info-value link"
+                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#6366f1' }}
+                                                                title="Voir le texte de l'avis"
+                                                            >
+                                                                <MessageCircle size={14} /> Avis
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         )) : (
