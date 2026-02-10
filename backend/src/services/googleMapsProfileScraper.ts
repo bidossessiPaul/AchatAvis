@@ -270,8 +270,10 @@ export class GoogleMapsProfileScraper {
      * ✅ Validation URL profil Maps
      */
     private static isValidProfileUrl(url: string): boolean {
-        return url.includes('google.com/maps/contrib/') ||
-            url.includes('google.com/maps/@');
+        // Accept standard maps, regional maps, and short links
+        return (url.includes('google.') && url.includes('/maps/')) ||
+            url.includes('goo.gl/maps/') ||
+            url.includes('maps.app.goo.gl/');
     }
 
     /**
