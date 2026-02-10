@@ -17,17 +17,14 @@ class GoogleScraperService {
      */
     async fetchMapsProfileData(profileUrl: string, email?: string): Promise<GoogleProfileData> {
         try {
-            if (!profileUrl.includes('google.com/maps/contrib/')) {
-                throw new Error('URL de profil Google Maps invalide');
-            }
-
-            // Génération déterministe
-            const hash = profileUrl.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            // Accept ANY link - validation will be done manually by admin
+            // Generate deterministic data from the URL hash
+            const hash = (profileUrl || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
             const level = (hash % 9) + 1;
             const reviews = (hash % 200) + 5;
             const ageMonths = (hash % 60) + 6;
 
-            // Utiliser l'email pour les initiales si dispo, sinon "Local Guide"
+            // Use email for initials if available, otherwise "Local Guide"
             const name = email ? email.split('@')[0].replace(/[^a-zA-Z]/g, ' ') : 'Local Guide';
             const bgColor = email ? this.getColorFromEmail(email) : '0ea5e9';
 
