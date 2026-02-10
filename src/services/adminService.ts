@@ -159,10 +159,13 @@ export const getGuideDetail = async (userId: string) => {
         SELECT s.id, s.status, s.earnings, s.submitted_at as created_at, s.review_url as proof_url,
                s.artisan_id, s.order_id,
                ap.company_name as artisan_name,
-               ro.company_name as fiche_name
+               ro.company_name as fiche_name,
+               p.content as review_text,
+               p.rating
         FROM reviews_submissions s
         JOIN artisans_profiles ap ON s.artisan_id = ap.user_id
         JOIN reviews_orders ro ON s.order_id = ro.id
+        JOIN review_proposals p ON s.proposal_id = p.id
         WHERE s.guide_id = ?
         ORDER BY s.submitted_at DESC
         LIMIT 20
