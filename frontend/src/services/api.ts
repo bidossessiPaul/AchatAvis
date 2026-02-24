@@ -363,7 +363,7 @@ export const adminApi = {
         return response.data;
     },
 
-    updateSubmissionStatus: async (submissionId: string, data: { status: string, rejectionReason?: string, allowResubmit?: boolean }): Promise<void> => {
+    updateSubmissionStatus: async (submissionId: string, data: { status: string, rejectionReason?: string, allowResubmit?: boolean, allowAppeal?: boolean }): Promise<void> => {
         await api.patch(`/admin/submissions/${submissionId}/status`, data);
     },
 
