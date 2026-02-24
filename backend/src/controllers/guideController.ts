@@ -96,6 +96,19 @@ export const guideController = {
         }
     },
 
+    async getCorrectableSubmissions(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const submissions = await guideService.getCorrectableSubmissions(user.userId);
+            return res.json(submissions);
+        } catch (error: any) {
+            console.error('Error fetching correctable submissions:', error);
+            return res.status(500).json({ error: 'Failed to fetch correctable submissions', message: error.message });
+        }
+    },
+
     async getStats(req: Request, res: Response) {
         try {
             const user = (req as any).user;

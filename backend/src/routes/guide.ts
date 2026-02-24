@@ -11,6 +11,7 @@ router.use(authorize('guide'));
 router.get('/fiches/available', guideController.getAvailablefiches);
 router.get('/fiches/:id', guideController.getficheDetails);
 router.post('/fiches/:id/release-lock', guideController.releaseLock);
+router.get('/submissions/correctable', guideController.getCorrectableSubmissions);
 router.get('/submissions', guideController.getMySubmissions);
 router.post('/submissions', guideController.submitReviewProof);
 router.put('/submissions/:id', guideController.updateSubmission);

@@ -441,28 +441,31 @@ export const getArtisanSubmissions = async (artisanId: string) => {
 /**
  * Update review submission status (validate/reject)
  */
-export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, allowResubmit?: boolean) => {
     const connection = await pool.getConnection();
 
     try {
         await connection.beginTransaction();
 
         // 1. Update submission status
-        // We handle validated_at separately for clarity
         let validatedAtPart = "";
         if (status === 'validated') {
             validatedAtPart = ", validated_at = NOW()";
         }
 
+        const allowResubmitValue = (status === 'rejected' && allowResubmit) ? 1 : 0;
+
         await connection.query(`
             UPDATE reviews_submissions
-            SET status = :status, 
-                rejection_reason = :rejectionReason
+            SET status = :status,
+                rejection_reason = :rejectionReason,
+                allow_resubmit = :allowResubmitValue
                 ${validatedAtPart}
             WHERE id = :submissionId
         `, {
             status,
             rejectionReason: rejectionReason || null,
+            allowResubmitValue,
             submissionId
         });
 
@@ -516,14 +519,17 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             `, { submissionId });
 
             if (rows && rows.length > 0) {
-                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason);
+                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, allowResubmit);
 
                 // SSE NOTIFICATION - Guide
+                const rejectMsg = allowResubmit
+                    ? 'Votre avis a été rejeté, mais vous pouvez corriger le lien depuis la page Corrections.'
+                    : 'Désolé, votre soumission n\'a pas été retenue.';
                 notificationService.sendToUser(rows[0].guide_id, {
                     type: 'system',
                     title: status === 'validated' ? 'Avis Validé ! 🎉' : 'Avis Rejeté ❌',
-                    message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : 'Désolé, votre soufiche n\'a pas été retenue.',
-                    link: '/guide/dashboard'
+                    message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : rejectMsg,
+                    link: status === 'validated' ? '/guide/dashboard' : (allowResubmit ? '/guide/corrections' : '/guide/dashboard')
                 });
 
                 // SSE NOTIFICATION - Artisan (only if validated)

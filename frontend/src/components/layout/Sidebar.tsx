@@ -16,7 +16,8 @@ import {
     LogOut,
     Mail,
     Shield,
-    Layers
+    Layers,
+    RefreshCw
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import './Layout.css';
@@ -61,6 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },
                     { label: 'Toutes les fiches', path: '/guide/fiches', icon: <MapPin size={20} /> },
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
+                    { label: 'Corrections', path: '/guide/corrections', icon: <RefreshCw size={20} /> },
                     { label: 'Mes Gmails', path: '/profile?tab=gmail', icon: <Mail size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
