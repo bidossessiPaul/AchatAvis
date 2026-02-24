@@ -36,18 +36,29 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     }, [isGenerating]);
 
     const handleGenerate = async (force: boolean = false) => {
+        if (isGenerating) return;
         setIsGenerating(true);
         setLoadingMessageIndex(0);
         if (onError) onError(null);
         try {
-            // Save to backend - triggered with no proposals to use OpenAI on backend
-            // Pass force flag
-            const savedProposals = await artisanService.generateProposals(order.id, [], force);
-            setProposals(savedProposals);
+            const result = await artisanService.generateProposals(order.id, [], force);
+            setProposals(result.proposals);
+            if (result.warning && onError) {
+                onError(`Génération partielle : certains avis n'ont pas pu être générés. Vous pouvez compléter la génération.`);
+            }
         } catch (error: any) {
             console.error("Failed to generate", error);
             if (onError) {
-                onError("Erreur lors de la génération des avis. Veuillez réessayer.");
+                const serverMsg = error.response?.data?.message || error.response?.data?.error;
+                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                    onError("La génération a pris trop de temps. Veuillez réessayer.");
+                } else if (error.response?.status === 502) {
+                    onError("Le service IA est temporairement indisponible. Veuillez réessayer dans quelques instants.");
+                } else if (serverMsg) {
+                    onError(`Erreur : ${serverMsg}`);
+                } else {
+                    onError("Erreur lors de la génération des avis. Veuillez réessayer.");
+                }
             }
         } finally {
             setIsGenerating(false);
@@ -165,14 +176,14 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                             </div>
                         </div>
                         {(order.quantity || 0) > proposals.length ? (
-                            <button onClick={() => handleGenerate()} style={{ background: '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
-                                <Sparkles size={14} />
-                                Compléter la génération
+                            <button onClick={() => handleGenerate()} disabled={isGenerating} style={{ background: isGenerating ? '#9ca3af' : '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: isGenerating ? 'not-allowed' : 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: isGenerating ? 'none' : '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
+                                {isGenerating ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} />}
+                                {isGenerating ? 'Génération...' : 'Compléter la génération'}
                             </button>
                         ) : (
-                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} disabled={isGenerating} style={{ background: 'none', border: 'none', color: isGenerating ? '#d1d5db' : '#64748b', cursor: isGenerating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
                                 <RefreshCw size={12} />
-                                Tout régénérer
+                                {isGenerating ? 'Génération...' : 'Tout régénérer'}
                             </button>
                         )}
                     </div>

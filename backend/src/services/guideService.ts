@@ -334,10 +334,19 @@ export const guideService = {
     },
 
     async requestPayout(guideId: string) {
+        const existingPending: any = await query(`
+            SELECT COUNT(*) as count FROM payout_requests
+            WHERE guide_id = ? AND status IN ('pending', 'in_revision')
+        `, [guideId]);
+
+        if (existingPending[0].count > 0) {
+            throw new Error('Vous avez déjà une demande de retrait en attente.');
+        }
+
         const stats = await this.getEarningsStats(guideId);
 
-        if (stats.balance < 20) {
-            throw new Error('Le montant minimum pour un retrait est de 20€.');
+        if (stats.balance < 10) {
+            throw new Error('Le montant minimum pour un retrait est de 10€.');
         }
 
         const payoutId = crypto.randomUUID();

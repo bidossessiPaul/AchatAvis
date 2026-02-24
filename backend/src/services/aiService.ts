@@ -126,29 +126,41 @@ Format de sortie attendu (JSON) :
             let rawContent = textBlock.text.trim();
 
             // Handle the case where the AI might have repeated the pre-filled '{'
-            if (!rawContent.startsWith('{')) {
+            if (!rawContent.startsWith('{') && !rawContent.startsWith('[')) {
                 rawContent = '{' + rawContent;
             }
 
-            // Robust JSON extraction: find the LAST '}' to ignore any trailing AI chatter
-            const lastBraceIndex = rawContent.lastIndexOf('}');
-            if (lastBraceIndex === -1) {
-                console.error("❌ JSON Error: No closing brace found", rawContent);
-                throw new Error("Format AI invalide (pas de JSON)");
-            }
+            // Try to extract the JSON object containing "reviews" array
+            // Use a balanced brace approach to find the correct closing brace
+            const extractJSON = (str: string): string => {
+                let depth = 0;
+                let start = str.indexOf('{');
+                if (start === -1) throw new Error("Format AI invalide (pas de JSON)");
 
-            rawContent = rawContent.substring(0, lastBraceIndex + 1);
+                for (let i = start; i < str.length; i++) {
+                    if (str[i] === '{') depth++;
+                    else if (str[i] === '}') {
+                        depth--;
+                        if (depth === 0) return str.substring(start, i + 1);
+                    }
+                }
+                // Fallback: use lastIndexOf if balanced search fails
+                const lastBrace = str.lastIndexOf('}');
+                if (lastBrace === -1) throw new Error("Format AI invalide (pas de JSON)");
+                return str.substring(start, lastBrace + 1);
+            };
 
             try {
-                const parsed = JSON.parse(rawContent);
+                const jsonStr = extractJSON(rawContent);
+                const parsed = JSON.parse(jsonStr);
                 console.log("✅ Réponse AI reçue et parsée");
 
                 if (Array.isArray(parsed.reviews)) return parsed.reviews;
                 if (Array.isArray(parsed)) return parsed;
                 throw new Error("Format JSON invalide (pas un tableau)");
-            } catch (e) {
-                console.error("❌ Erreur parsing JSON AI. Contenu brut:", rawContent);
-                throw e;
+            } catch (e: any) {
+                console.error("❌ Erreur parsing JSON AI. Contenu brut:", rawContent.substring(0, 500));
+                throw new Error(`Erreur parsing réponse IA: ${e.message}`);
             }
 
         } catch (error: any) {
