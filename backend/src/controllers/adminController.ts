@@ -169,10 +169,10 @@ export const getAllSubmissions = async (_req: Request, res: Response) => {
  */
 export const updateSubmissionStatus = async (req: Request, res: Response) => {
     const { submissionId } = req.params;
-    const { status, rejectionReason } = req.body;
+    const { status, rejectionReason, allowResubmit } = req.body;
 
     try {
-        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason);
+        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason, allowResubmit);
         res.json({ message: `Submission status updated to ${status}` });
     } catch (error) {
         console.error('Update submission status error:', error);

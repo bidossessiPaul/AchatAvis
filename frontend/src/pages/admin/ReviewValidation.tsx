@@ -51,6 +51,7 @@ export const ReviewValidation: React.FC = () => {
     // Modal state
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
+    const [allowResubmit, setAllowResubmit] = useState(false);
     const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -75,10 +76,11 @@ export const ReviewValidation: React.FC = () => {
     const handleUpdateStatus = async (submissionId: string, status: 'validated' | 'rejected' | 'pending', reason?: string) => {
         setIsActionLoading(true);
         try {
-            await adminApi.updateSubmissionStatus(submissionId, { status, rejectionReason: reason });
-            showSuccess(status === 'validated' ? 'Avis validé !' : 'Avis rejeté.');
+            await adminApi.updateSubmissionStatus(submissionId, { status, rejectionReason: reason, allowResubmit: status === 'rejected' ? allowResubmit : undefined });
+            showSuccess(status === 'validated' ? 'Avis validé !' : (allowResubmit ? 'Avis rejeté. Le guide pourra corriger le lien.' : 'Avis rejeté.'));
             setShowRejectModal(false);
             setRejectionReason('');
+            setAllowResubmit(false);
             setSelectedSubmissionId(null);
             fetchData(true);
         } catch (error) {
@@ -437,9 +439,23 @@ export const ReviewValidation: React.FC = () => {
                                     value={rejectionReason}
                                     onChange={(e) => setRejectionReason(e.target.value)}
                                 ></textarea>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', cursor: 'pointer', fontSize: '0.875rem', color: '#374151' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={allowResubmit}
+                                        onChange={(e) => setAllowResubmit(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
+                                    />
+                                    Permettre au guide de corriger le lien
+                                </label>
+                                {allowResubmit && (
+                                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem', marginLeft: '1.75rem' }}>
+                                        Le guide recevra un email et pourra soumettre un nouveau lien depuis sa page "Corrections".
+                                    </p>
+                                )}
                             </div>
                             <div className="modal-footer">
-                                <button className="cancel-btn" onClick={() => setShowRejectModal(false)}>Annuler</button>
+                                <button className="cancel-btn" onClick={() => { setShowRejectModal(false); setAllowResubmit(false); }}>Annuler</button>
                                 <button
                                     className="confirm-btn"
                                     disabled={!rejectionReason.trim() || isActionLoading}

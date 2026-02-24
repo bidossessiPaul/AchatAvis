@@ -442,17 +442,22 @@ export const guideService = {
     },
 
     async updateSubmission(guideId: string, submissionId: string, data: { reviewUrl?: string, googleEmail?: string }) {
-        // 1. Verify submission exists and belongs to the guide, and is still pending
+        // 1. Verify submission exists and belongs to the guide
         const existing: any = await query(`
-            SELECT id, status FROM reviews_submissions 
-            WHERE id = ? AND guide_id = ?
+            SELECT s.id, s.status, s.allow_resubmit, p.order_id
+            FROM reviews_submissions s
+            LEFT JOIN review_proposals p ON s.proposal_id = p.id
+            WHERE s.id = ? AND s.guide_id = ?
         `, [submissionId, guideId]);
 
         if (!existing || existing.length === 0) {
             throw new Error('Soumission non trouvée ou non autorisée');
         }
 
-        if (existing[0].status !== 'pending') {
+        const submission = existing[0];
+        const isCorrection = submission.status === 'rejected' && submission.allow_resubmit === 1;
+
+        if (submission.status !== 'pending' && !isCorrection) {
             throw new Error('Seules les soumissions en attente peuvent être modifiées');
         }
 
@@ -472,15 +477,46 @@ export const guideService = {
 
         if (updates.length === 0) return { success: true, message: 'Aucune modification' };
 
+        // 3. If this is a correction, reset status to pending
+        if (isCorrection) {
+            updates.push('status = ?');
+            params.push('pending');
+            updates.push('allow_resubmit = ?');
+            params.push(0);
+            updates.push('rejection_reason = ?');
+            params.push(null);
+        }
+
         params.push(submissionId);
 
-        // 3. Perform update
+        // 4. Perform update
         await query(`
-            UPDATE reviews_submissions 
-            SET ${updates.join(', ')} 
+            UPDATE reviews_submissions
+            SET ${updates.join(', ')}
             WHERE id = ?
         `, params);
 
-        return { success: true, message: 'Soumission mise à jour avec succès' };
+        // 5. If correction, re-increment reviews_received on the order (was decremented on rejection)
+        if (isCorrection && submission.order_id) {
+            await query(`
+                UPDATE reviews_orders
+                SET reviews_received = COALESCE(reviews_received, 0) + 1
+                WHERE id = ?
+            `, [submission.order_id]);
+        }
+
+        return { success: true, message: isCorrection ? 'Avis relancé avec succès' : 'Soumission mise à jour avec succès' };
+    },
+
+    async getCorrectableSubmissions(guideId: string) {
+        return query(`
+            SELECT s.id, s.review_url, s.google_email, s.rejection_reason, s.submitted_at, s.earnings,
+                   ro.company_name as artisan_company, ro.sector
+            FROM reviews_submissions s
+            LEFT JOIN review_proposals p ON s.proposal_id = p.id
+            LEFT JOIN reviews_orders ro ON p.order_id = ro.id
+            WHERE s.guide_id = ? AND s.status = 'rejected' AND s.allow_resubmit = 1
+            ORDER BY s.submitted_at DESC
+        `, [guideId]);
     }
 };

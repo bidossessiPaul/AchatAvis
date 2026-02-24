@@ -25,6 +25,7 @@ import { Submissions } from './pages/guide/Submissions';
 import { MyEarnings } from './pages/guide/MyEarnings';
 import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
 import { QuizCertificationPage } from './pages/guide/QuizCertificationPage';
+import { Corrections } from './pages/guide/Corrections';
 
 
 import { OrdersList } from './pages/artisan/OrdersList';
@@ -223,6 +224,11 @@ function App() {
                 <Route path="/guide/submissions" element={
                     <ProtectedRoute allowedRoles={['guide']}>
                         <Submissions />
+                    </ProtectedRoute>
+                } />
+                <Route path="/guide/corrections" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <Corrections />
                     </ProtectedRoute>
                 } />
                 <Route path="/guide/earnings" element={
