@@ -444,7 +444,7 @@ export const guideService = {
     async updateSubmission(guideId: string, submissionId: string, data: { reviewUrl?: string, googleEmail?: string }) {
         // 1. Verify submission exists and belongs to the guide
         const existing: any = await query(`
-            SELECT s.id, s.status, s.allow_resubmit, p.order_id
+            SELECT s.id, s.status, s.allow_resubmit, s.allow_appeal, p.order_id
             FROM reviews_submissions s
             LEFT JOIN review_proposals p ON s.proposal_id = p.id
             WHERE s.id = ? AND s.guide_id = ?
@@ -456,8 +456,9 @@ export const guideService = {
 
         const submission = existing[0];
         const isCorrection = submission.status === 'rejected' && submission.allow_resubmit === 1;
+        const isAppeal = submission.status === 'rejected' && submission.allow_appeal === 1;
 
-        if (submission.status !== 'pending' && !isCorrection) {
+        if (submission.status !== 'pending' && !isCorrection && !isAppeal) {
             throw new Error('Seules les soumissions en attente peuvent être modifiées');
         }
 
@@ -477,11 +478,13 @@ export const guideService = {
 
         if (updates.length === 0) return { success: true, message: 'Aucune modification' };
 
-        // 3. If this is a correction, reset status to pending
-        if (isCorrection) {
+        // 3. If this is a correction or appeal, reset status to pending
+        if (isCorrection || isAppeal) {
             updates.push('status = ?');
             params.push('pending');
             updates.push('allow_resubmit = ?');
+            params.push(0);
+            updates.push('allow_appeal = ?');
             params.push(0);
             updates.push('rejection_reason = ?');
             params.push(null);
@@ -496,8 +499,8 @@ export const guideService = {
             WHERE id = ?
         `, params);
 
-        // 5. If correction, re-increment reviews_received on the order (was decremented on rejection)
-        if (isCorrection && submission.order_id) {
+        // 5. If correction/appeal, re-increment reviews_received on the order (was decremented on rejection)
+        if ((isCorrection || isAppeal) && submission.order_id) {
             await query(`
                 UPDATE reviews_orders
                 SET reviews_received = COALESCE(reviews_received, 0) + 1
@@ -505,17 +508,18 @@ export const guideService = {
             `, [submission.order_id]);
         }
 
-        return { success: true, message: isCorrection ? 'Avis relancé avec succès' : 'Soumission mise à jour avec succès' };
+        return { success: true, message: (isCorrection || isAppeal) ? 'Avis relancé avec succès' : 'Soumission mise à jour avec succès' };
     },
 
     async getCorrectableSubmissions(guideId: string) {
         return query(`
             SELECT s.id, s.review_url, s.google_email, s.rejection_reason, s.submitted_at, s.earnings,
+                   s.allow_resubmit, s.allow_appeal,
                    ro.company_name as artisan_company, ro.sector
             FROM reviews_submissions s
             LEFT JOIN review_proposals p ON s.proposal_id = p.id
             LEFT JOIN reviews_orders ro ON p.order_id = ro.id
-            WHERE s.guide_id = ? AND s.status = 'rejected' AND s.allow_resubmit = 1
+            WHERE s.guide_id = ? AND s.status = 'rejected' AND (s.allow_resubmit = 1 OR s.allow_appeal = 1)
             ORDER BY s.submitted_at DESC
         `, [guideId]);
     }
