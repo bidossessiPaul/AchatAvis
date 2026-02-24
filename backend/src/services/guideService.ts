@@ -336,8 +336,8 @@ export const guideService = {
     async requestPayout(guideId: string) {
         const stats = await this.getEarningsStats(guideId);
 
-        if (stats.balance < 20) {
-            throw new Error('Le montant minimum pour un retrait est de 20€.');
+        if (stats.balance < 10) {
+            throw new Error('Le montant minimum pour un retrait est de 10€.');
         }
 
         const payoutId = crypto.randomUUID();

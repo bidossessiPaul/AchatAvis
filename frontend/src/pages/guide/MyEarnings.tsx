@@ -67,8 +67,8 @@ export const MyEarnings: React.FC = () => {
     };
 
     const handleWithdrawRequest = async () => {
-        if (!stats || stats.balance < 20) {
-            showError('Montant insuffisant', 'Montant minimum de 20€ requis pour un retrait');
+        if (!stats || stats.balance < 10) {
+            showError('Montant insuffisant', 'Montant minimum de 10€ requis pour un retrait');
             return;
         }
 
@@ -149,8 +149,8 @@ export const MyEarnings: React.FC = () => {
                     <Calendar size={20} />
                     <div>
                         <p><strong>Information importante :</strong> Les paiements sont effectués chaque <strong>15</strong> et <strong>30</strong> du mois.</p>
-                        {stats && stats.balance > 0 && stats.balance < 20 && (
-                            <p style={{ marginTop: '4px', opacity: 0.8 }}>Si vous lancez un retrait inférieur à 20€ avant d'avoir atteint le seuil, il restera en attente jusqu'au prochain cycle.</p>
+                        {stats && stats.balance > 0 && stats.balance < 10 && (
+                            <p style={{ marginTop: '4px', opacity: 0.8 }}>Si vous lancez un retrait inférieur à 10€ avant d'avoir atteint le seuil, il restera en attente jusqu'au prochain cycle.</p>
                         )}
                     </div>
                 </div>
@@ -198,14 +198,14 @@ export const MyEarnings: React.FC = () => {
                         <button
                             className="withdraw-btn"
                             onClick={handleWithdrawRequest}
-                            disabled={isActionLoading || (stats?.balance || 0) < 20 || !paymentMethod}
+                            disabled={isActionLoading || (stats?.balance || 0) < 10 || !paymentMethod}
                         >
                             {isActionLoading ? 'Traitement...' : `Retirer ${stats?.balance.toFixed(2)}€`}
                         </button>
-                        {(stats?.balance || 0) < 20 && (
+                        {(stats?.balance || 0) < 10 && (
                             <p className="withdraw-amount-tip">
                                 <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                                Solde minimum de 20.00€ requis pour effectuer un retrait.
+                                Solde minimum de 10.00€ requis pour effectuer un retrait.
                             </p>
                         )}
                         {!paymentMethod && (
