@@ -87,7 +87,7 @@ export const GuideDashboard: React.FC = () => {
                     className="recap-card"
                 >
                     <span className="recap-label">En attente</span>
-                    <span className="recap-value" style={{ color: '#f59e0b' }}>{Number(stats?.pending || 0).toFixed(2)}€</span>
+                    <span className="recap-value" style={{ color: '#f59e0b' }}>{Number(stats?.totalPending || 0).toFixed(2)}€</span>
                     <div className="recap-subvalue" style={{ color: '#6b7280' }}>
                         <Clock size={14} />
                         <span>Vérification Google</span>

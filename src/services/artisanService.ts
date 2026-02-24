@@ -37,9 +37,13 @@ export const artisanService = {
     /**
      * Generate AI review proposals for an order
      */
-    async generateProposals(orderId: string, proposals?: Partial<ReviewProposal>[], force: boolean = false): Promise<ReviewProposal[]> {
+    async generateProposals(orderId: string, proposals?: Partial<ReviewProposal>[], force: boolean = false): Promise<{ proposals: ReviewProposal[], warning?: string }> {
         const response = await api.post(`/artisan/orders/${orderId}/proposals/generate`, { proposals, force });
-        return response.data;
+        // Handle partial success (207) vs full success (200)
+        if (response.status === 207) {
+            return { proposals: response.data.proposals, warning: response.data.warning };
+        }
+        return { proposals: response.data, warning: undefined };
     },
 
     /**
