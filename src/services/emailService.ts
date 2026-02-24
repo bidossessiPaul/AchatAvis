@@ -433,7 +433,7 @@ export const sendficheDecisionEmail = async (email: string, fullName: string, or
 /**
  * Send email to guide when their submission is validated or rejected
  */
-export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string) => {
+export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string, allowResubmit?: boolean) => {
     const brandRed = '#FF991F';
     const brandBlack = '#0a0a0a';
     let title = "";
@@ -447,6 +447,9 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
     } else if (status === 'rejected') {
         title = "Soumission Refusée";
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
+        if (allowResubmit) {
+            message += `<br><br><strong style="color: #10b981;">Bonne nouvelle :</strong> Vous avez la possibilité de corriger votre lien. Rendez-vous dans la rubrique <strong>Corrections</strong> de votre espace guide pour soumettre un nouveau lien valide.`;
+        }
         color = brandRed;
     } else {
         return;
