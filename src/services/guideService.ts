@@ -43,5 +43,10 @@ export const guideService = {
     async updateSubmission(id: string, data: { reviewUrl?: string, googleEmail?: string }): Promise<any> {
         const response = await api.put(`/guide/submissions/${id}`, data);
         return response.data;
+    },
+
+    async getCorrectableSubmissions(): Promise<any[]> {
+        const response = await api.get('/guide/submissions/correctable');
+        return response.data;
     }
 };
