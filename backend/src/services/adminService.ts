@@ -441,7 +441,7 @@ export const getArtisanSubmissions = async (artisanId: string) => {
 /**
  * Update review submission status (validate/reject)
  */
-export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, allowResubmit?: boolean) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, allowResubmit?: boolean, allowAppeal?: boolean) => {
     const connection = await pool.getConnection();
 
     try {
@@ -454,18 +454,21 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
         }
 
         const allowResubmitValue = (status === 'rejected' && allowResubmit) ? 1 : 0;
+        const allowAppealValue = (status === 'rejected' && allowAppeal) ? 1 : 0;
 
         await connection.query(`
             UPDATE reviews_submissions
             SET status = :status,
                 rejection_reason = :rejectionReason,
-                allow_resubmit = :allowResubmitValue
+                allow_resubmit = :allowResubmitValue,
+                allow_appeal = :allowAppealValue
                 ${validatedAtPart}
             WHERE id = :submissionId
         `, {
             status,
             rejectionReason: rejectionReason || null,
             allowResubmitValue,
+            allowAppealValue,
             submissionId
         });
 
@@ -519,17 +522,20 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             `, { submissionId });
 
             if (rows && rows.length > 0) {
-                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, allowResubmit);
+                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, allowResubmit, allowAppeal);
 
                 // SSE NOTIFICATION - Guide
                 const rejectMsg = allowResubmit
                     ? 'Votre avis a été rejeté, mais vous pouvez corriger le lien depuis la page Corrections.'
+                    : allowAppeal
+                    ? 'Votre avis a été rejeté. Vous pouvez faire appel depuis la page Corrections si l\'avis revient en ligne.'
                     : 'Désolé, votre soumission n\'a pas été retenue.';
+                const hasCorrection = allowResubmit || allowAppeal;
                 notificationService.sendToUser(rows[0].guide_id, {
                     type: 'system',
                     title: status === 'validated' ? 'Avis Validé ! 🎉' : 'Avis Rejeté ❌',
                     message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : rejectMsg,
-                    link: status === 'validated' ? '/guide/dashboard' : (allowResubmit ? '/guide/corrections' : '/guide/dashboard')
+                    link: status === 'validated' ? '/guide/dashboard' : (hasCorrection ? '/guide/corrections' : '/guide/dashboard')
                 });
 
                 // SSE NOTIFICATION - Artisan (only if validated)

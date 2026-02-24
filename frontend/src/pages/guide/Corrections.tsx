@@ -24,6 +24,8 @@ interface CorrectableSubmission {
     earnings: number;
     artisan_company: string;
     sector: string;
+    allow_resubmit: number;
+    allow_appeal: number;
 }
 
 export const Corrections: React.FC = () => {
@@ -55,6 +57,38 @@ export const Corrections: React.FC = () => {
             reviewUrl: item.review_url || '',
             googleEmail: item.google_email || ''
         });
+    };
+
+    const handleAppeal = async (item: CorrectableSubmission) => {
+        const result = await showConfirm(
+            'Relancer cet avis ?',
+            'Vous confirmez que votre avis est de nouveau visible sur Google. Il sera remis en attente de validation.'
+        );
+        if (!result.isConfirmed) return;
+
+        setIsSaving(true);
+        Swal.fire({
+            title: 'Relance en cours...',
+            text: 'Veuillez patienter',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            await guideService.updateSubmission(item.id, {
+                reviewUrl: item.review_url,
+                googleEmail: item.google_email
+            });
+            Swal.close();
+            showSuccess('Appel envoyé !', 'Votre avis a été remis en attente de validation.');
+            loadData();
+        } catch (err: any) {
+            console.error('Appeal failed:', err);
+            Swal.close();
+            showError('Erreur', err.response?.data?.message || 'Impossible de relancer la soumission.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -120,10 +154,10 @@ export const Corrections: React.FC = () => {
                     <AlertTriangle size={20} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} />
                     <div>
                         <p style={{ margin: 0, fontSize: '0.875rem', color: '#92400e', fontWeight: 600 }}>
-                            Les avis ci-dessous ont été rejetés mais vous pouvez corriger le lien et les relancer.
+                            Les avis ci-dessous ont été rejetés mais vous pouvez agir.
                         </p>
                         <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#a16207' }}>
-                            Vérifiez que votre avis est bien visible publiquement avant de soumettre le nouveau lien.
+                            <strong>Corriger :</strong> changez le lien si celui-ci était incorrect. <strong>Faire appel :</strong> relancez la validation si votre avis est de nouveau visible sur Google.
                         </p>
                     </div>
                 </div>
@@ -159,7 +193,15 @@ export const Corrections: React.FC = () => {
                                         <h4 style={{ margin: 0, fontWeight: 700, fontSize: '1rem', color: '#1e293b' }}>
                                             {item.artisan_company || 'Entreprise'}
                                         </h4>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                                            <span style={{
+                                                fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+                                                background: item.allow_resubmit ? '#fff7ed' : '#eff6ff',
+                                                color: item.allow_resubmit ? '#c2410c' : '#1d4ed8',
+                                                border: item.allow_resubmit ? '1px solid #fed7aa' : '1px solid #bfdbfe'
+                                            }}>
+                                                {item.allow_resubmit ? 'Correction lien' : 'Appel'}
+                                            </span>
                                             <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
                                                 <Clock size={12} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
                                                 {new Date(item.submitted_at).toLocaleDateString('fr-FR')}
@@ -174,25 +216,49 @@ export const Corrections: React.FC = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    <button
-                                        onClick={() => handleEdit(item)}
-                                        style={{
-                                            background: '#FF991F',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '0.5rem',
-                                            padding: '0.5rem 1rem',
-                                            fontSize: '0.8125rem',
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '0.375rem'
-                                        }}
-                                    >
-                                        <RefreshCw size={14} />
-                                        Corriger
-                                    </button>
+                                    {item.allow_resubmit ? (
+                                        <button
+                                            onClick={() => handleEdit(item)}
+                                            style={{
+                                                background: '#FF991F',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                padding: '0.5rem 1rem',
+                                                fontSize: '0.8125rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.375rem'
+                                            }}
+                                        >
+                                            <RefreshCw size={14} />
+                                            Corriger
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleAppeal(item)}
+                                            disabled={isSaving}
+                                            style={{
+                                                background: '#3b82f6',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.5rem',
+                                                padding: '0.5rem 1rem',
+                                                fontSize: '0.8125rem',
+                                                fontWeight: 700,
+                                                cursor: isSaving ? 'not-allowed' : 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.375rem',
+                                                opacity: isSaving ? 0.7 : 1
+                                            }}
+                                        >
+                                            <RefreshCw size={14} />
+                                            Faire appel
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Rejection Reason */}

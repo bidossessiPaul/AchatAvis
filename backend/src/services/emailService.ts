@@ -433,7 +433,7 @@ export const sendficheDecisionEmail = async (email: string, fullName: string, or
 /**
  * Send email to guide when their submission is validated or rejected
  */
-export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string, allowResubmit?: boolean) => {
+export const sendSubmissionDecisionEmail = async (email: string, fullName: string, status: string, rejectionReason?: string, allowResubmit?: boolean, allowAppeal?: boolean) => {
     const brandRed = '#FF991F';
     const brandBlack = '#0a0a0a';
     let title = "";
@@ -449,6 +449,8 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
         if (allowResubmit) {
             message += `<br><br><strong style="color: #10b981;">Bonne nouvelle :</strong> Vous avez la possibilité de corriger votre lien. Rendez-vous dans la rubrique <strong>Corrections</strong> de votre espace guide pour soumettre un nouveau lien valide.`;
+        } else if (allowAppeal) {
+            message += `<br><br><strong style="color: #3b82f6;">Faire appel :</strong> Si votre avis revient en ligne sur Google, vous pouvez relancer la validation depuis la rubrique <strong>Corrections</strong> de votre espace guide.`;
         }
         color = brandRed;
     } else {

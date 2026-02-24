@@ -52,6 +52,7 @@ export const ReviewValidation: React.FC = () => {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [rejectionReason, setRejectionReason] = useState('');
     const [allowResubmit, setAllowResubmit] = useState(false);
+    const [allowAppeal, setAllowAppeal] = useState(false);
     const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(20);
@@ -76,11 +77,17 @@ export const ReviewValidation: React.FC = () => {
     const handleUpdateStatus = async (submissionId: string, status: 'validated' | 'rejected' | 'pending', reason?: string) => {
         setIsActionLoading(true);
         try {
-            await adminApi.updateSubmissionStatus(submissionId, { status, rejectionReason: reason, allowResubmit: status === 'rejected' ? allowResubmit : undefined });
-            showSuccess(status === 'validated' ? 'Avis validé !' : (allowResubmit ? 'Avis rejeté. Le guide pourra corriger le lien.' : 'Avis rejeté.'));
+            await adminApi.updateSubmissionStatus(submissionId, {
+                status,
+                rejectionReason: reason,
+                allowResubmit: status === 'rejected' ? allowResubmit : undefined,
+                allowAppeal: status === 'rejected' ? allowAppeal : undefined
+            });
+            showSuccess(status === 'validated' ? 'Avis validé !' : (allowResubmit ? 'Avis rejeté. Le guide pourra corriger le lien.' : allowAppeal ? 'Avis rejeté. Le guide pourra faire appel.' : 'Avis rejeté.'));
             setShowRejectModal(false);
             setRejectionReason('');
             setAllowResubmit(false);
+            setAllowAppeal(false);
             setSelectedSubmissionId(null);
             fetchData(true);
         } catch (error) {
@@ -453,9 +460,23 @@ export const ReviewValidation: React.FC = () => {
                                         Le guide recevra un email et pourra soumettre un nouveau lien depuis sa page "Corrections".
                                     </p>
                                 )}
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem', cursor: 'pointer', fontSize: '0.875rem', color: '#374151' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={allowAppeal}
+                                        onChange={(e) => setAllowAppeal(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer' }}
+                                    />
+                                    Permettre au guide de faire appel
+                                </label>
+                                {allowAppeal && (
+                                    <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem', marginLeft: '1.75rem' }}>
+                                        Si l'avis revient en ligne, le guide pourra relancer la validation depuis sa page "Corrections".
+                                    </p>
+                                )}
                             </div>
                             <div className="modal-footer">
-                                <button className="cancel-btn" onClick={() => { setShowRejectModal(false); setAllowResubmit(false); }}>Annuler</button>
+                                <button className="cancel-btn" onClick={() => { setShowRejectModal(false); setAllowResubmit(false); setAllowAppeal(false); }}>Annuler</button>
                                 <button
                                     className="confirm-btn"
                                     disabled={!rejectionReason.trim() || isActionLoading}
