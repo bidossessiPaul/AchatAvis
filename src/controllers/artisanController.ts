@@ -122,6 +122,7 @@ export const artisanController = {
             const batchSize = 20;
             let totalCreated: any[] = [];
             let currentNeeded = needed;
+            let partialError: string | null = null;
 
             while (currentNeeded > 0) {
                 const currentBatchSize = Math.min(currentNeeded, batchSize);
@@ -141,11 +142,12 @@ export const artisanController = {
                 };
 
                 try {
-                    console.log(`🤖 Batch ${totalCreated.length / batchSize + 1}: Appel AI pour ${currentBatchSize} avis...`);
+                    console.log(`🤖 Batch ${Math.floor(totalCreated.length / batchSize) + 1}: Appel AI pour ${currentBatchSize} avis...`);
                     const generated = await aiService.generateReviews(generationParams);
 
                     if (!generated || generated.length === 0) {
                         console.warn("⚠️ L'IA n'a retourné aucun avis.");
+                        partialError = "L'IA n'a retourné aucun avis pour ce lot.";
                         break;
                     }
 
@@ -161,13 +163,23 @@ export const artisanController = {
                     console.log(`✨ Lot terminé. Progression: ${totalCreated.length}/${targetQuantity}`);
                 } catch (batchError: any) {
                     console.error("❌ ERREUR LOT GENERATION:", batchError.message);
-                    // On bubble up l'erreur pour informer l'utilisateur si c'est le premier lot
                     if (totalCreated.length === 0) throw batchError;
+                    partialError = `Génération partielle : ${batchError.message}`;
                     break;
                 }
             }
 
-            console.log(`✅ Generation terminée avec succès. Total final: ${totalCreated.length}/${targetQuantity}`);
+            console.log(`✅ Generation terminée. Total final: ${totalCreated.length}/${targetQuantity}${partialError ? ' (partiel)' : ''}`);
+
+            if (partialError && totalCreated.length > 0) {
+                return res.status(207).json({
+                    proposals: totalCreated,
+                    warning: partialError,
+                    generated: totalCreated.length,
+                    target: targetQuantity
+                });
+            }
+
             return res.json(totalCreated);
         } catch (error: any) {
             console.error("❌ ERREUR GENERATION PROPOSALS:", error);

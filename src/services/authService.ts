@@ -210,7 +210,7 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
 export const login = async (email: string, password: string) => {
     // Get user with password hash
     const rows: any = await query(
-        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified, 
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified,
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
@@ -220,6 +220,8 @@ export const login = async (email: string, password: string) => {
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
+                gp.local_guide_level,
+                (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id AND status = 'validated') as total_reviews_validated,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
@@ -363,7 +365,7 @@ export const disable2FA = async (userId: string) => {
  */
 export const verify2FA = async (userId: string, token: string) => {
     const rows: any = await query(
-        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, 
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified,
                 u.created_at, u.updated_at, u.last_login,
                 u.two_factor_enabled, u.two_factor_secret,
                 ap.company_name, ap.trade, ap.google_business_url,
@@ -374,6 +376,8 @@ export const verify2FA = async (userId: string, token: string) => {
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
+                gp.local_guide_level,
+                (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id AND status = 'validated') as total_reviews_validated,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
@@ -431,6 +435,8 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
                 COALESCE(ap.city, gp.city) as city,
                 COALESCE(ap.postal_code, '') as postal_code,
                 gp.google_email,
+                gp.local_guide_level,
+                (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id AND status = 'validated') as total_reviews_validated,
                 (SELECT COUNT(*) FROM reviews_orders WHERE artisan_id = u.id AND status != 'cancelled') as fiches_used
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
