@@ -10,7 +10,10 @@ import {
     Plus,
     X,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -37,6 +40,7 @@ export const GuidesList: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(20);
     const [currentPage, setCurrentPage] = useState(1);
+    const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -118,10 +122,18 @@ export const GuidesList: React.FC = () => {
         g.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const sortedGuides = sortOrder === 'none'
+        ? filteredGuides
+        : [...filteredGuides].sort((a, b) =>
+            sortOrder === 'asc'
+                ? (a.submitted_reviews_count || 0) - (b.submitted_reviews_count || 0)
+                : (b.submitted_reviews_count || 0) - (a.submitted_reviews_count || 0)
+        );
+
     // Pagination
-    const totalPages = Math.ceil(filteredGuides.length / itemsPerPage);
+    const totalPages = Math.ceil(sortedGuides.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedGuides = filteredGuides.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedGuides = sortedGuides.slice(startIndex, startIndex + itemsPerPage);
 
     useEffect(() => {
         setCurrentPage(1);
@@ -174,7 +186,17 @@ export const GuidesList: React.FC = () => {
                                         <th>Local Guide</th>
                                         <th>Email Compte</th>
                                         <th>Ville</th>
-                                        <th>Avis Postés</th>
+                                        <th
+                                            onClick={() => setSortOrder(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none')}
+                                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                Avis Postés
+                                                {sortOrder === 'none' && <ArrowUpDown size={14} style={{ opacity: 0.4 }} />}
+                                                {sortOrder === 'desc' && <ArrowDown size={14} style={{ color: '#0369a1' }} />}
+                                                {sortOrder === 'asc' && <ArrowUp size={14} style={{ color: '#0369a1' }} />}
+                                            </div>
+                                        </th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -276,7 +298,7 @@ export const GuidesList: React.FC = () => {
                         )}
                     </div>
 
-                    {!isLoading && filteredGuides.length > 0 && (
+                    {!isLoading && sortedGuides.length > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', padding: '1.5rem', backgroundColor: 'var(--gray-50)', borderRadius: '12px', flexWrap: 'wrap', gap: '1rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)', fontWeight: 500 }}>Afficher :</span>
@@ -286,7 +308,7 @@ export const GuidesList: React.FC = () => {
                                     <option value={100}>100 guides</option>
                                     <option value={200}>200 guides</option>
                                 </select>
-                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredGuides.length)} sur {filteredGuides.length}</span>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>{startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredGuides.length)} sur {sortedGuides.length}</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid var(--gray-300)', backgroundColor: currentPage === 1 ? 'var(--gray-100)' : 'white', color: currentPage === 1 ? 'var(--gray-400)' : 'var(--gray-700)', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.875rem', fontWeight: 600, transition: 'all 0.2s' }}><ChevronLeft size={16} />Précédent</button>
