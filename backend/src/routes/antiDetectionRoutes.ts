@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { antiDetectionController } from '../controllers/antiDetectionController';
 import { authenticate } from '../middleware/auth';
+import { uploadScreenshot } from '../middleware/upload';
 
 const router = Router();
 
@@ -31,5 +32,9 @@ router.post('/quiz/submit', authenticate, antiDetectionController.submitQuiz);
 
 // Tools
 router.post('/generate-cities', authenticate, antiDetectionController.generateCities);
+
+// Level Verification
+router.post('/level-verification/submit', authenticate, uploadScreenshot.single('screenshot'), antiDetectionController.submitLevelVerification);
+router.get('/level-verifications/mine', authenticate, antiDetectionController.getMyLevelVerifications);
 
 export default router;

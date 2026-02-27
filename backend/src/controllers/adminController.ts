@@ -615,6 +615,43 @@ export const updateProposal = async (req: Request, res: Response) => {
 };
 
 /**
+ * Get all level verification requests
+ * GET /api/admin/level-verifications
+ */
+export const getLevelVerifications = async (_req: Request, res: Response) => {
+    try {
+        const verifications = await adminService.getLevelVerifications();
+        res.json(verifications);
+    } catch (error) {
+        console.error('Get level verifications error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Review a level verification request (approve/reject)
+ * PATCH /api/admin/level-verifications/:verificationId
+ */
+export const reviewLevelVerification = async (req: Request, res: Response) => {
+    const { verificationId } = req.params;
+    const { status, admin_notes } = req.body;
+    const adminId = req.user?.userId;
+
+    try {
+        if (!['approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: 'Statut invalide' });
+        }
+        const result = await adminService.reviewLevelVerification(
+            parseInt(verificationId), status, admin_notes, adminId!
+        );
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Review level verification error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Send review validation email to artisan
  * POST /api/admin/fiches/:orderId/send-validation
  */
@@ -638,6 +675,40 @@ export const sendReviewValidationEmail = async (req: Request, res: Response) => 
         return res.json({ message: 'Validation email sent successfully' });
     } catch (error: any) {
         console.error('Send validation email error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Get all guides with their calculated balance (at least 1 validated review)
+ * GET /api/admin/guides-balances
+ */
+export const getGuidesWithBalance = async (_req: Request, res: Response) => {
+    try {
+        const guides = await adminService.getGuidesWithBalance();
+        res.json(guides);
+    } catch (error) {
+        console.error('Get guides balances error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Force pay a guide (encouragement payment, bypasses minimum)
+ * POST /api/admin/force-pay-guide
+ */
+export const forcePayGuide = async (req: Request, res: Response) => {
+    const { guideId, amount, adminNote } = req.body;
+
+    if (!guideId || !amount || amount <= 0) {
+        return res.status(400).json({ error: 'guideId et amount (> 0) sont requis' });
+    }
+
+    try {
+        const result = await adminService.forcePayGuide(guideId, amount, adminNote);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Force pay guide error:', error);
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };

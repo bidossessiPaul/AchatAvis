@@ -44,9 +44,14 @@
 
 /* Status Colors */
 .admin-badge.active,
-.subscription-badge.premium,
-.subscription-badge.pro,
 .premium-status-badge.active {
+    background-color: #ecfdf5;
+    color: #059669;
+    border-color: #a7f3d0;
+}
+
+.subscription-badge.premium,
+.subscription-badge.pro {
     background-color: #fff8e1;
     color: #FF991F;
     border-color: #FFE6A5;

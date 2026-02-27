@@ -379,6 +379,15 @@
     margin-bottom: 2rem;
 }
 
+.earnings-recap-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.recap-card-bonus {
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+    border-color: #a7f3d0;
+}
+
 .recap-card {
     background: white;
     padding: 1.25rem;
@@ -411,8 +420,20 @@
     gap: 0.25rem;
 }
 
+@media (max-width: 900px) {
+    .earnings-recap-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .guide-analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .earnings-recap-4 {
         grid-template-columns: 1fr;
     }
 }

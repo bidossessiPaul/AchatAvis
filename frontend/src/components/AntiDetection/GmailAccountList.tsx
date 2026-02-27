@@ -1,11 +1,26 @@
 import React, { useEffect } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { Trash2, Mail, AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import { Trash2, Mail, AlertTriangle, Link as LinkIcon, Trophy } from 'lucide-react';
+
+const LEVEL_BADGE_IMAGES: Record<number, string> = {
+    4: 'https://services.google.com/fh/files/helpcenter/points-badge_level_four.png',
+    5: 'https://services.google.com/fh/files/helpcenter/points-badges_level_five.png',
+    6: 'https://services.google.com/fh/files/helpcenter/points-badges_level_six.png',
+    7: 'https://services.google.com/fh/files/helpcenter/points-badges_level_seven.png',
+    8: 'https://services.google.com/fh/files/helpcenter/points-badges_level_eight.png',
+    9: 'https://services.google.com/fh/files/helpcenter/points-badges_level_nine.png',
+    10: 'https://services.google.com/fh/files/helpcenter/points-badges_level_ten.png',
+};
 import { Button } from '../common/Button';
 import Swal, { showConfirm, showSuccess, showError } from '../../utils/Swal';
 
-export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => {
+interface GmailAccountListProps {
+    onAddClick: () => void;
+    onVerifyLevel?: (accountId: number) => void;
+}
+
+export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, onVerifyLevel }) => {
     const { user } = useAuthStore();
     const { gmailAccounts, fetchGmailAccounts, deleteGmailAccount, updateGmailAccount, loading } = useAntiDetectionStore();
 
@@ -18,10 +33,29 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
     const handleDelete = async (accountId: number) => {
         if (!user) return;
 
-        const result = await showConfirm(
-            'Supprimer ce compte ?',
-            'Cette action est irréversible et supprimera également l\'historique associé.'
-        );
+        const result = await Swal.fire({
+            title: 'Supprimer ce compte Gmail ?',
+            html: `
+                <div style="text-align: left; font-size: 0.9rem; line-height: 1.6;">
+                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
+                        <p style="color: #991b1b; font-weight: 700; margin: 0 0 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                            ⚠️ Attention
+                        </p>
+                        <ul style="color: #7f1d1d; margin: 0; padding-left: 1.2rem; font-size: 0.85rem;">
+                            <li>Ce compte Gmail sera <strong>retiré</strong> de votre profil</li>
+                            <li>Les <strong>primes de niveau déjà reçues</strong> pour cet email ne pourront <strong>pas être réclamées à nouveau</strong>, même sur un autre compte guide</li>
+                            <li>Seule une montée de niveau supérieur permettra de recevoir une nouvelle prime</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Oui, supprimer',
+            cancelButtonText: 'Annuler',
+        });
 
         if (!result.isConfirmed) return;
 
@@ -113,7 +147,17 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
 
                             <div style={{ flex: 1 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{account.email}</span>
+                                    <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {account.email}
+                                        {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] && (
+                                            <img
+                                                src={LEVEL_BADGE_IMAGES[account.local_guide_level]}
+                                                alt={`Niveau ${account.local_guide_level}`}
+                                                title={`Local Guide Niveau ${account.local_guide_level}`}
+                                                style={{ width: '22px', height: '22px' }}
+                                            />
+                                        )}
+                                    </span>
                                     {(account.is_blocked || !account.maps_profile_url) && (
                                         <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                             <AlertTriangle size={12} />
@@ -149,8 +193,34 @@ export const GmailAccountList: React.FC<{ onAddClick: () => void }> = ({ onAddCl
                                         </button>
                                     </div>
                                 ) : (
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                        Compte actif • Prêt pour les avis
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] ? (
+                                                <img src={LEVEL_BADGE_IMAGES[account.local_guide_level]} alt="" style={{ width: '16px', height: '16px' }} />
+                                            ) : null}
+                                            Niveau {account.local_guide_level || 1} • Compte actif
+                                        </span>
+                                        {onVerifyLevel && (
+                                            <button
+                                                onClick={() => onVerifyLevel(account.id)}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.4rem',
+                                                    background: '#fef3c7',
+                                                    color: '#92400e',
+                                                    border: '1px solid #fde68a',
+                                                    padding: '0.25rem 0.6rem',
+                                                    borderRadius: '0.5rem',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <Trophy size={13} />
+                                                Vérifier mon niveau
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>

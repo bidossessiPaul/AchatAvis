@@ -48,5 +48,10 @@ export const guideService = {
     async getCorrectableSubmissions(): Promise<any[]> {
         const response = await api.get('/guide/submissions/correctable');
         return response.data;
+    },
+
+    async getLeaderboard(): Promise<any[]> {
+        const response = await api.get('/guide/leaderboard');
+        return response.data;
     }
 };

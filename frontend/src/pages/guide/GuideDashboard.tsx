@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, TrendingUp, Wallet } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, TrendingUp, Wallet, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { GuideLevelProgress } from './GuideLevelProgress';
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { EarningsChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
+import { GuideLeaderboard } from './GuideLeaderboard';
 import { motion } from 'framer-motion';
 import './GuideDashboard.css';
 
@@ -67,7 +68,7 @@ export const GuideDashboard: React.FC = () => {
             <GuideLevelProgress />
 
             {/* Earnings Recap */}
-            <div className="earnings-recap-grid">
+            <div className="earnings-recap-grid earnings-recap-4">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -100,10 +101,23 @@ export const GuideDashboard: React.FC = () => {
                     className="recap-card"
                 >
                     <span className="recap-label">Total Gagné</span>
-                    <span className="recap-value" style={{ color: '#FF6B35' }}>{Number((stats?.totalPaid || 0) + (stats?.balance || 0)).toFixed(2)}€</span>
+                    <span className="recap-value" style={{ color: '#FF6B35' }}>{Number(stats?.totalEarned || 0).toFixed(2)}€</span>
                     <div className="recap-subvalue">
                         <TrendingUp size={14} />
                         <span>Depuis le début</span>
+                    </div>
+                </motion.div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="recap-card recap-card-bonus"
+                >
+                    <span className="recap-label">Primes Niveau</span>
+                    <span className="recap-value" style={{ color: '#10b981' }}>{Number(stats?.totalBonuses || 0).toFixed(2)}€</span>
+                    <div className="recap-subvalue" style={{ color: '#059669' }}>
+                        <Trophy size={14} />
+                        <span>Local Guide</span>
                     </div>
                 </motion.div>
             </div>
@@ -122,6 +136,9 @@ export const GuideDashboard: React.FC = () => {
                     })) || []} />
                 </div>
             </div>
+
+            {/* Leaderboard */}
+            <GuideLeaderboard />
 
             {/* Anti-Detection Alert */}
             <div

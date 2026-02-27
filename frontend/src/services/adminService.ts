@@ -178,5 +178,21 @@ export const adminService = {
     deletePaymentStatus: async (paymentId: string) => {
         const response = await api.delete(`/admin/payments/${paymentId}/status`);
         return response.data;
+    },
+
+    /**
+     * Get all guides with their balance (at least 1 validated review)
+     */
+    getGuidesBalances: async () => {
+        const response = await api.get('/admin/guides-balances');
+        return response.data;
+    },
+
+    /**
+     * Force pay a guide (encouragement payment)
+     */
+    forcePayGuide: async (guideId: string, amount: number, adminNote?: string) => {
+        const response = await api.post('/admin/force-pay-guide', { guideId, amount, adminNote });
+        return response.data;
     }
 };

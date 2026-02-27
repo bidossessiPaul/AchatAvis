@@ -43,6 +43,11 @@ router.get('/subscriptions/stats', adminController.getSubscriptionStats);
 router.get('/submissions', adminController.getAllSubmissions);
 router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
+
+// Level Verifications
+router.get('/level-verifications', adminController.getLevelVerifications);
+router.patch('/level-verifications/:verificationId', adminController.reviewLevelVerification);
+
 router.patch('/users/:userId/status', adminController.updateUserStatus);
 // Warning system removed - route disabled
 // router.post('/users/:userId/warning', adminController.issueWarning);
@@ -69,6 +74,10 @@ router.get('/packs', adminController.getPacks);
 router.post('/packs', adminController.createPack);
 router.put('/packs/:id', adminController.updatePack);
 router.delete('/packs/:id', adminController.deletePack);
+
+// Guides balances & encouragement payments
+router.get('/guides-balances', adminController.getGuidesWithBalance);
+router.post('/force-pay-guide', adminController.forcePayGuide);
 
 // Sector management
 router.get('/sectors', adminController.getAllSectors);
