@@ -298,27 +298,35 @@ export const guideService = {
 
     async getEarningsStats(guideId: string) {
         const stats: any = await query(`
-            SELECT 
+            SELECT
                 COALESCE(SUM(CASE WHEN status = 'validated' THEN earnings ELSE 0 END), 0) as total_earned
             FROM reviews_submissions
             WHERE guide_id = ?
         `, [guideId]);
 
+        const bonuses: any = await query(`
+            SELECT COALESCE(SUM(amount), 0) as total_bonuses
+            FROM guide_bonuses
+            WHERE guide_id = ?
+        `, [guideId]);
+
         const payouts: any = await query(`
-            SELECT 
+            SELECT
                 COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
                 COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending
             FROM payout_requests
             WHERE guide_id = ?
         `, [guideId]);
 
-        const totalEarned = Number(stats[0].total_earned);
+        const totalEarned = Number(stats[0].total_earned) + Number(bonuses[0].total_bonuses);
+        const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
         const balance = totalEarned - totalPaid - totalPending;
 
         return {
             totalEarned,
+            totalBonuses,
             totalPaid,
             totalPending,
             balance: Math.max(0, balance)
@@ -522,5 +530,31 @@ export const guideService = {
             WHERE s.guide_id = ? AND s.status = 'rejected' AND (s.allow_resubmit = 1 OR s.allow_appeal = 1)
             ORDER BY s.submitted_at DESC
         `, [guideId]);
+    },
+
+    async getLeaderboard(currentGuideId: string) {
+        const rows: any = await query(`
+            SELECT
+                u.id,
+                u.full_name,
+                COUNT(s.id) as total_posted,
+                SUM(CASE WHEN s.status = 'validated' THEN 1 ELSE 0 END) as total_validated,
+                SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END) as total_pending
+            FROM users u
+            INNER JOIN reviews_submissions s ON s.guide_id = u.id
+            WHERE u.role = 'guide'
+            GROUP BY u.id, u.full_name
+            ORDER BY total_validated DESC, total_posted DESC
+            LIMIT 20
+        `);
+
+        return rows.map((row: any, index: number) => ({
+            rank: index + 1,
+            name: row.full_name || 'Guide Anonyme',
+            totalPosted: Number(row.total_posted),
+            totalValidated: Number(row.total_validated),
+            totalPending: Number(row.total_pending),
+            isCurrentUser: row.id === currentGuideId
+        }));
     }
 };

@@ -1577,3 +1577,205 @@ export const updateProposal = async (proposalId: string, data: { content: string
     return await query('UPDATE review_proposals SET content = ? WHERE id = ?', [data.content, proposalId]);
 };
 
+/**
+ * Get all level verification requests (admin)
+ */
+export const getLevelVerifications = async () => {
+    return await query(`
+        SELECT
+            v.*,
+            u.full_name as guide_name,
+            u.email as guide_email,
+            u.avatar_url as guide_avatar,
+            g.email as gmail_email,
+            g.local_guide_level as gmail_current_level,
+            g.maps_profile_url as gmail_maps_url,
+            reviewer.full_name as reviewer_name
+        FROM guide_level_verifications v
+        JOIN users u ON v.guide_id = u.id
+        JOIN guide_gmail_accounts g ON v.gmail_account_id = g.id
+        LEFT JOIN users reviewer ON v.reviewed_by = reviewer.id
+        ORDER BY
+            CASE v.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 WHEN 'rejected' THEN 2 END,
+            v.created_at DESC
+    `);
+};
+
+/**
+ * Review a level verification request (approve/reject)
+ */
+export const reviewLevelVerification = async (
+    verificationId: number,
+    status: 'approved' | 'rejected',
+    adminNotes: string | undefined,
+    adminId: string
+) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Get the verification request
+        const [verifications]: any = await connection.query(
+            'SELECT * FROM guide_level_verifications WHERE id = ?',
+            [verificationId]
+        );
+        if (!verifications || verifications.length === 0) {
+            throw new Error('Demande de vérification introuvable');
+        }
+        const verification = verifications[0];
+
+        if (verification.status !== 'pending') {
+            throw new Error('Cette demande a déjà été traitée');
+        }
+
+        // 2. Update the verification record
+        await connection.query(`
+            UPDATE guide_level_verifications
+            SET status = ?, admin_notes = ?, reviewed_by = ?, reviewed_at = NOW()
+            WHERE id = ?
+        `, [status, adminNotes || null, adminId, verificationId]);
+
+        // 3. If approved, update both gmail account level AND guide profile level + credit bonus
+        let bonusAmount = 0;
+        if (status === 'approved') {
+            // Update the specific Gmail account
+            await connection.query(
+                'UPDATE guide_gmail_accounts SET local_guide_level = ? WHERE id = ?',
+                [verification.claimed_level, verification.gmail_account_id]
+            );
+
+            // Update the guide profile to the max level across all their gmail accounts
+            const [maxLevel]: any = await connection.query(`
+                SELECT MAX(local_guide_level) as max_level
+                FROM guide_gmail_accounts
+                WHERE user_id = ? AND is_active = 1
+            `, [verification.guide_id]);
+
+            if (maxLevel && maxLevel.length > 0) {
+                await connection.query(
+                    'UPDATE guides_profiles SET local_guide_level = ? WHERE user_id = ?',
+                    [maxLevel[0].max_level, verification.guide_id]
+                );
+            }
+
+            // Credit level bonus to guide account
+            const level = verification.claimed_level;
+            if (level === 4) bonusAmount = 3;
+            else if (level === 5 || level === 6) bonusAmount = 5;
+            else if (level === 7 || level === 8) bonusAmount = 10;
+            else if (level >= 9) bonusAmount = 20;
+
+            if (bonusAmount > 0) {
+                await connection.query(`
+                    INSERT INTO guide_bonuses (guide_id, amount, reason, reference_id, reference_type, created_at)
+                    VALUES (?, ?, ?, ?, 'level_verification', NOW())
+                `, [verification.guide_id, bonusAmount, `Prime niveau ${level} Local Guide`, verificationId]);
+            }
+        }
+
+        await connection.commit();
+
+        // 4. Send notification to guide
+        try {
+            const bonusText = bonusAmount > 0 ? ` Une prime de ${bonusAmount}€ a été créditée sur votre compte.` : '';
+            notificationService.sendToUser(verification.guide_id, {
+                type: status === 'approved' ? 'success' : 'warning',
+                title: status === 'approved'
+                    ? 'Niveau Local Guide validé !'
+                    : 'Vérification de niveau refusée',
+                message: status === 'approved'
+                    ? `Votre niveau Local Guide a été mis à jour au niveau ${verification.claimed_level}.${bonusText}`
+                    : `Votre demande a été refusée. ${adminNotes || ''}`,
+                link: '/guide/my-gmails'
+            });
+        } catch (notifError) {
+            console.error('Notification error (non-blocking):', notifError);
+        }
+
+        return { success: true, message: `Vérification ${status === 'approved' ? 'approuvée' : 'rejetée'}` };
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Get all guides who have at least 1 validated review, with their calculated balance
+ */
+export const getGuidesWithBalance = async () => {
+    return await query(`
+        SELECT
+            u.id, u.full_name, u.email, u.avatar_url, u.status,
+            gp.google_email, gp.phone, gp.preferred_payout_method,
+            sub.validated_reviews_count,
+            sub.earned_from_reviews,
+            COALESCE(bon.total_bonuses, 0) as total_bonuses,
+            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0)) as total_earned,
+            COALESCE(pay.total_paid, 0) as total_paid,
+            COALESCE(pay.total_pending, 0) as total_pending,
+            GREATEST(
+                (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0))
+                - COALESCE(pay.total_paid, 0)
+                - COALESCE(pay.total_pending, 0),
+                0
+            ) as balance
+        FROM users u
+        JOIN guides_profiles gp ON u.id = gp.user_id
+        INNER JOIN (
+            SELECT guide_id,
+                   COUNT(*) as validated_reviews_count,
+                   COALESCE(SUM(earnings), 0) as earned_from_reviews
+            FROM reviews_submissions
+            WHERE status = 'validated'
+            GROUP BY guide_id
+        ) sub ON u.id = sub.guide_id
+        LEFT JOIN (
+            SELECT guide_id, COALESCE(SUM(amount), 0) as total_bonuses
+            FROM guide_bonuses
+            GROUP BY guide_id
+        ) bon ON u.id = bon.guide_id
+        LEFT JOIN (
+            SELECT guide_id,
+                   COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
+                   COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending
+            FROM payout_requests
+            GROUP BY guide_id
+        ) pay ON u.id = pay.guide_id
+        WHERE u.role = 'guide'
+        ORDER BY balance DESC
+    `);
+};
+
+/**
+ * Force pay a guide (admin encouragement payment, bypasses minimum amount)
+ */
+export const forcePayGuide = async (guideId: string, amount: number, adminNote?: string) => {
+    const crypto = require('crypto');
+    const payoutId = crypto.randomUUID();
+    const note = adminNote
+        ? `Paiement encouragement - ${adminNote}`
+        : 'Paiement encouragement';
+
+    await query(`
+        INSERT INTO payout_requests (id, guide_id, amount, status, requested_at, processed_at, admin_note)
+        VALUES (?, ?, ?, 'paid', NOW(), NOW(), ?)
+    `, [payoutId, guideId, amount, note]);
+
+    // Send notification to guide
+    try {
+        await notificationService.create({
+            userId: guideId,
+            type: 'payout_processed',
+            title: 'Paiement reçu !',
+            message: `Un paiement de ${amount.toFixed(2)}€ a été effectué sur votre compte.`,
+            data: { payoutId, amount }
+        });
+    } catch (notifError) {
+        console.error('Notification error (non-blocking):', notifError);
+    }
+
+    return { success: true, payoutId, amount };
+};
+

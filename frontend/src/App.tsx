@@ -26,6 +26,8 @@ import { MyEarnings } from './pages/guide/MyEarnings';
 import { AntiDetectionRulesPage } from './pages/guide/AntiDetectionRulesPage';
 import { QuizCertificationPage } from './pages/guide/QuizCertificationPage';
 import { Corrections } from './pages/guide/Corrections';
+import { CommunityRulesPage } from './pages/guide/CommunityRulesPage';
+import { MyGmailsPage } from './pages/guide/MyGmailsPage';
 
 
 import { OrdersList } from './pages/artisan/OrdersList';
@@ -49,6 +51,8 @@ import { AcceptAdminInvite } from './pages/admin/AcceptAdminInvite';
 
 import { TrustScoreManagement } from './pages/admin/TrustScoreManagement';
 import { SectorManagement } from './pages/admin/SectorManagement';
+import { AdminLevelVerifications } from './pages/admin/AdminLevelVerifications';
+import { GuidesBalances } from './pages/admin/GuidesBalances';
 import { Profile } from './pages/Profile';
 import { NotFound } from './pages/NotFound';
 
@@ -241,6 +245,16 @@ function App() {
                         <AntiDetectionRulesPage />
                     </ProtectedRoute>
                 } />
+                <Route path="/guide/community-rules" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <CommunityRulesPage />
+                    </ProtectedRoute>
+                } />
+                <Route path="/guide/my-gmails" element={
+                    <ProtectedRoute allowedRoles={['guide']}>
+                        <MyGmailsPage />
+                    </ProtectedRoute>
+                } />
                 <Route path="/guide/quiz" element={
                     <ProtectedRoute allowedRoles={['guide']}>
                         <QuizCertificationPage />
@@ -326,6 +340,13 @@ function App() {
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />
+                <Route path="/admin/level-verifications" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <AdminLevelVerifications />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
                 <Route path="/admin/fiches" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission={['can_manage_fiches', 'can_validate_fiches']}>
@@ -367,6 +388,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission="can_manage_sectors">
                             <SectorManagement />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/guides-balances" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission="can_view_payments">
+                            <GuidesBalances />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />

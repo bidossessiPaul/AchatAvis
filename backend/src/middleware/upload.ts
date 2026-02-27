@@ -13,8 +13,17 @@ const fileFilter = (_req: any, file: any, cb: any) => {
     }
 };
 
-// Multer instance
+// Multer instance for avatars
 export const uploadAvatar = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB
+    }
+});
+
+// Multer instance for screenshots (level verifications)
+export const uploadScreenshot = multer({
     storage,
     fileFilter,
     limits: {

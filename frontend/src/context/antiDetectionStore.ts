@@ -70,6 +70,9 @@ interface AntiDetectionState {
     deleteGmailAccount: (accountId: number, userId: string) => Promise<any>;
     checkficheCompatibility: (campaignId: string, gmailId: number) => Promise<any>;
     submitQuiz: (userId: string, score: number) => Promise<any>;
+    levelVerifications: any[];
+    fetchLevelVerifications: () => Promise<void>;
+    submitLevelVerification: (formData: FormData) => Promise<any>;
 }
 
 export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
@@ -79,6 +82,7 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
     gmailAccounts: [],
     guideRecap: null,
     gmailHistory: {},
+    levelVerifications: [],
     loading: false,
     error: null,
 
@@ -202,5 +206,21 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
             score
         });
         return response.data.data;
+    },
+
+    fetchLevelVerifications: async () => {
+        try {
+            const response = await api.get('/anti-detection/level-verifications/mine');
+            set({ levelVerifications: response.data.data });
+        } catch (error: any) {
+            console.error('Failed to fetch level verifications:', error);
+        }
+    },
+
+    submitLevelVerification: async (formData: FormData) => {
+        const response = await api.post('/anti-detection/level-verification/submit', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
     }
 }));

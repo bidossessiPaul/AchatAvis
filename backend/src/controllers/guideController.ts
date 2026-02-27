@@ -159,5 +159,21 @@ export const guideController = {
                 message: error.message
             });
         }
+    },
+
+    async getLeaderboard(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const leaderboard = await guideService.getLeaderboard(user.userId);
+            return res.json(leaderboard);
+        } catch (error: any) {
+            console.error('Error fetching leaderboard:', error);
+            return res.status(500).json({
+                error: 'Failed to fetch leaderboard',
+                message: error.message
+            });
+        }
     }
 };

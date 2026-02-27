@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '../context/authStore';
 import api, { authApi } from '../services/api';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Card } from '../components/common/Card';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
-import { Camera, Mail, Shield, Save, User as UserIcon, Settings, Globe, Loader, Smartphone, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Camera, Mail, Shield, Save, User as UserIcon, Globe, Loader, Smartphone, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../utils/Swal';
-import { GmailAccountList } from '../components/AntiDetection/GmailAccountList';
-import { AddGmailModal } from '../components/AntiDetection/AddGmailModal';
-import { useAntiDetectionStore } from '../context/antiDetectionStore';
 import './Profile.css';
 import { getFileUrl } from '../utils/url';
 
@@ -45,10 +41,6 @@ export const Profile: React.FC = () => {
         whatsappNumber: user?.whatsapp_number || '',
     });
     const [hasWhatsAppTested, setHasWhatsAppTested] = useState(false);
-    const [activeTab, setActiveTab] = useState<'info' | 'gmail'>('info');
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const { fetchGmailAccounts } = useAntiDetectionStore();
-    const location = useLocation();
 
     // Fix: Sync formData when user object becomes available or changes
     useEffect(() => {
@@ -87,14 +79,6 @@ export const Profile: React.FC = () => {
         };
         fetchSectors();
     }, []);
-
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const tab = params.get('tab');
-        if (tab === 'gmail') {
-            setActiveTab('gmail');
-        }
-    }, [location]);
 
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -297,25 +281,7 @@ export const Profile: React.FC = () => {
                             </div>
                         </Card>
 
-                        {user?.role === 'guide' && (
-                            <div className="profile-tabs">
-                                <button
-                                    onClick={() => setActiveTab('info')}
-                                    className={`profile-tab-btn ${activeTab === 'info' ? 'active' : ''}`}
-                                >
-                                    <Settings size={18} /> Informations & Sécurité
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('gmail')}
-                                    className={`profile-tab-btn ${activeTab === 'gmail' ? 'active' : ''}`}
-                                >
-                                    <Globe size={18} /> Gestion des Gmails
-                                </button>
-                            </div>
-                        )}
-
-                        {activeTab === 'info' ? (
-                            <>
+                        <>
                                 <Card className="profile-card">
                                     <h3 className="card-title">Informations Personnelles</h3>
                                     <form onSubmit={handleProfileSubmit} className="profile-form">
@@ -608,11 +574,6 @@ export const Profile: React.FC = () => {
                                     </div>
                                 </Card>
                             </>
-                        ) : (
-                            <Card className="profile-card">
-                                <GmailAccountList onAddClick={() => setIsAddModalOpen(true)} />
-                            </Card>
-                        )}
                     </div>
 
                     <div className="profile-sidebar">
@@ -677,11 +638,6 @@ export const Profile: React.FC = () => {
                     </div>
                 </div>
             </div>
-            <AddGmailModal
-                isOpen={isAddModalOpen}
-                onClose={() => setIsAddModalOpen(false)}
-                onSuccess={() => user && fetchGmailAccounts(user.id)}
-            />
         </DashboardLayout>
     );
 };

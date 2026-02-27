@@ -441,6 +441,16 @@ export const adminApi = {
     sendReviewValidationEmail: async (orderId: string, emails: string[]): Promise<void> => {
         await api.post(`/admin/fiches/${orderId}/send-validation`, { emails });
     },
+
+    // Level Verifications
+    getLevelVerifications: async (): Promise<any[]> => {
+        const response = await api.get('/admin/level-verifications');
+        return response.data;
+    },
+
+    reviewLevelVerification: async (verificationId: number, data: { status: 'approved' | 'rejected', admin_notes?: string }): Promise<void> => {
+        await api.patch(`/admin/level-verifications/${verificationId}`, data);
+    },
 };
 
 // Suspension API

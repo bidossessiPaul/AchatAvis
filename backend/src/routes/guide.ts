@@ -16,6 +16,7 @@ router.get('/submissions', guideController.getMySubmissions);
 router.post('/submissions', guideController.submitReviewProof);
 router.put('/submissions/:id', guideController.updateSubmission);
 router.get('/stats', guideController.getStats);
+router.get('/leaderboard', guideController.getLeaderboard);
 router.get('/fiches/:ficheId/gmail-quotas', guideController.getGmailQuotasForFiche);
 
 export default router;
