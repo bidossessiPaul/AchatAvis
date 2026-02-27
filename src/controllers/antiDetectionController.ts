@@ -91,7 +91,7 @@ SELECT * FROM sector_difficulty
             const { userId } = req.params;
 
             const accounts = await query(`
-SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
+SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1 AND deleted_at IS NULL
     `, [userId]);
 
             return res.json({ success: true, data: accounts });
@@ -242,9 +242,9 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
             }
 
-            // ✅ Check global email uniqueness (across all users)
+            // ✅ Check global email uniqueness (across all active users)
             const existingEmail: any = await query(
-                'SELECT user_id FROM guide_gmail_accounts WHERE email = ? AND user_id != ?',
+                'SELECT user_id FROM guide_gmail_accounts WHERE email = ? AND user_id != ? AND deleted_at IS NULL',
                 [email, user_id]
             );
             if (existingEmail && existingEmail.length > 0) {
@@ -257,7 +257,7 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
             // Check if maps_profile_url is already used by another user (if provided)
             if (maps_profile_url) {
                 const existing: any = await query(
-                    'SELECT user_id FROM guide_gmail_accounts WHERE maps_profile_url = ? AND user_id != ?',
+                    'SELECT user_id FROM guide_gmail_accounts WHERE maps_profile_url = ? AND user_id != ? AND deleted_at IS NULL',
                     [maps_profile_url, user_id]
                 );
                 if (existing && existing.length > 0) {
@@ -384,10 +384,12 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
 
             if (!user_id) return res.status(401).json({ error: 'User not found' });
 
+            // Soft delete: mark as deleted but keep in DB for blacklisting
             await query(`
-                DELETE FROM guide_gmail_accounts 
-                WHERE id = ? AND user_id = ?
-    `, [accountId, user_id]);
+                UPDATE guide_gmail_accounts
+                SET deleted_at = NOW(), deleted_by_user_id = ?, is_active = 0
+                WHERE id = ? AND user_id = ? AND deleted_at IS NULL
+            `, [user_id, accountId, user_id]);
 
             return res.json({ success: true, message: 'Compte supprimé' });
         } catch (error: any) {
@@ -417,6 +419,108 @@ SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1
         } catch (error: any) {
             console.error('City generation error:', error);
             // Fallback à un tableau vide ou erreur explicite
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async submitLevelVerification(req: Request, res: Response) {
+        try {
+            const user_id = req.user?.userId;
+            if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+            const { gmail_account_id, profile_link, claimed_level } = req.body;
+
+            if (!gmail_account_id || !profile_link || !claimed_level || !req.file) {
+                return res.status(400).json({ success: false, error: 'Données manquantes (capture d\'écran, lien profil, niveau requis)' });
+            }
+
+            const level = parseInt(claimed_level);
+            if (isNaN(level) || level < 1 || level > 10) {
+                return res.status(400).json({ success: false, error: 'Niveau invalide (1-10)' });
+            }
+
+            // Verify guide owns this gmail account
+            const account: any = await query(
+                'SELECT id, local_guide_level FROM guide_gmail_accounts WHERE id = ? AND user_id = ?',
+                [gmail_account_id, user_id]
+            );
+            if (!account || account.length === 0) {
+                return res.status(404).json({ success: false, error: 'Compte Gmail introuvable' });
+            }
+
+            // Check no pending request already exists for this account
+            const pending: any = await query(
+                'SELECT id FROM guide_level_verifications WHERE gmail_account_id = ? AND status = "pending"',
+                [gmail_account_id]
+            );
+            if (pending && pending.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Une demande de vérification est déjà en cours pour ce compte.'
+                });
+            }
+
+            // Anti-duplicate: check if this EMAIL has already received a bonus for this level or higher
+            // (across ALL accounts, even deleted ones, to prevent gaming the system)
+            const emailRow: any = await query('SELECT email FROM guide_gmail_accounts WHERE id = ?', [gmail_account_id]);
+            if (emailRow && emailRow.length > 0) {
+                const gmailEmail = emailRow[0].email;
+                const alreadyApproved: any = await query(`
+                    SELECT v.id, v.claimed_level
+                    FROM guide_level_verifications v
+                    JOIN guide_gmail_accounts g ON v.gmail_account_id = g.id
+                    WHERE g.email = ? AND v.status = 'approved' AND v.claimed_level >= ?
+                `, [gmailEmail, level]);
+
+                if (alreadyApproved && alreadyApproved.length > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Ce compte Gmail a déjà reçu une validation pour le niveau ${alreadyApproved[0].claimed_level}. Seule une montée vers un niveau supérieur permet de recevoir une nouvelle prime.`
+                    });
+                }
+            }
+
+            // Upload screenshot to Cloudinary
+            const { uploadToCloudinary } = require('../services/cloudinaryService');
+            const uploadResult = await uploadToCloudinary(req.file.buffer, 'level-verifications');
+
+            // Create verification request
+            await query(`
+                INSERT INTO guide_level_verifications
+                (guide_id, gmail_account_id, screenshot_url, profile_link, claimed_level, current_level)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `, [
+                user_id,
+                gmail_account_id,
+                uploadResult.secure_url,
+                profile_link,
+                level,
+                account[0].local_guide_level || 1
+            ]);
+
+            return res.json({ success: true, message: 'Demande de vérification soumise avec succès' });
+        } catch (error: any) {
+            console.error('Submit level verification error:', error);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    async getMyLevelVerifications(req: Request, res: Response) {
+        try {
+            const user_id = req.user?.userId;
+            if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+            const verifications = await query(`
+                SELECT v.*, g.email as gmail_email
+                FROM guide_level_verifications v
+                JOIN guide_gmail_accounts g ON v.gmail_account_id = g.id
+                WHERE v.guide_id = ?
+                ORDER BY v.created_at DESC
+            `, [user_id]);
+
+            return res.json({ success: true, data: verifications });
+        } catch (error: any) {
+            console.error('Get level verifications error:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
