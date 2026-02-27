@@ -1708,7 +1708,7 @@ export const getGuidesWithBalance = async () => {
     return await query(`
         SELECT
             u.id, u.full_name, u.email, u.avatar_url, u.status,
-            gp.google_email, gp.phone, gp.preferred_payout_method,
+            gp.google_email, gp.phone, gp.preferred_payout_method, gp.payout_details,
             sub.validated_reviews_count,
             sub.earned_from_reviews,
             COALESCE(bon.total_bonuses, 0) as total_bonuses,
