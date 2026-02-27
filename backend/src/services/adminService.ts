@@ -1765,8 +1765,7 @@ export const forcePayGuide = async (guideId: string, amount: number, adminNote?:
 
     // Send notification to guide
     try {
-        await notificationService.create({
-            userId: guideId,
+        notificationService.sendToUser(guideId, {
             type: 'payout_processed',
             title: 'Paiement reçu !',
             message: `Un paiement de ${amount.toFixed(2)}€ a été effectué sur votre compte.`,

@@ -706,9 +706,9 @@ export const forcePayGuide = async (req: Request, res: Response) => {
 
     try {
         const result = await adminService.forcePayGuide(guideId, amount, adminNote);
-        res.json(result);
+        return res.json(result);
     } catch (error: any) {
         console.error('Force pay guide error:', error);
-        res.status(500).json({ error: error.message || 'Internal server error' });
+        return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
