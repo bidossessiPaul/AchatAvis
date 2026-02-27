@@ -13,7 +13,10 @@ import {
     X,
     Building2,
     User,
-    MapPin
+    MapPin,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -42,6 +45,7 @@ export const ArtisansList: React.FC = () => {
     const [packs, setPacks] = useState<any[]>([]);
     const [itemsPerPage, setItemsPerPage] = useState(20);
     const [currentPage, setCurrentPage] = useState(1);
+    const [statusSort, setStatusSort] = useState<'none' | 'active_first' | 'pending_first' | 'inactive_first'>('none');
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -141,10 +145,26 @@ export const ArtisansList: React.FC = () => {
         a.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getStatusWeight = (status: string) => {
+        if (status === 'active') return 2;
+        if (status === 'pending') return 1;
+        return 0; // inactive
+    };
+
+    const sortedArtisans = statusSort === 'none'
+        ? filteredArtisans
+        : [...filteredArtisans].sort((a, b) => {
+            const targetStatus = statusSort === 'active_first' ? 'active' : statusSort === 'pending_first' ? 'pending' : 'inactive';
+            const aMatch = a.status === targetStatus ? 1 : 0;
+            const bMatch = b.status === targetStatus ? 1 : 0;
+            if (aMatch !== bMatch) return bMatch - aMatch;
+            return getStatusWeight(b.status) - getStatusWeight(a.status);
+        });
+
     // Pagination
-    const totalPages = Math.ceil(filteredArtisans.length / itemsPerPage);
+    const totalPages = Math.ceil(sortedArtisans.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedArtisans = filteredArtisans.slice(startIndex, startIndex + itemsPerPage);
+    const paginatedArtisans = sortedArtisans.slice(startIndex, startIndex + itemsPerPage);
 
     // Reset to first page when search changes
     useEffect(() => {
@@ -200,7 +220,18 @@ export const ArtisansList: React.FC = () => {
                                         <th>Email</th>
                                         <th>Métier</th>
                                         <th>Abonnement</th>
-                                        <th>Statut</th>
+                                        <th
+                                            onClick={() => setStatusSort(prev => prev === 'none' ? 'active_first' : prev === 'active_first' ? 'pending_first' : prev === 'pending_first' ? 'inactive_first' : 'none')}
+                                            style={{ cursor: 'pointer', userSelect: 'none' }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                Statut
+                                                {statusSort === 'none' && <ArrowUpDown size={14} style={{ opacity: 0.4 }} />}
+                                                {statusSort === 'active_first' && <ArrowDown size={14} style={{ color: '#10b981' }} />}
+                                                {statusSort === 'pending_first' && <ArrowDown size={14} style={{ color: '#f59e0b' }} />}
+                                                {statusSort === 'inactive_first' && <ArrowDown size={14} style={{ color: '#ef4444' }} />}
+                                            </div>
+                                        </th>
                                         <th className="text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -279,7 +310,7 @@ export const ArtisansList: React.FC = () => {
                     </div>
 
                     {/* Pagination Controls */}
-                    {!isLoading && filteredArtisans.length > 0 && (
+                    {!isLoading && sortedArtisans.length > 0 && (
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -315,7 +346,7 @@ export const ArtisansList: React.FC = () => {
                                     <option value={200}>200 artisans</option>
                                 </select>
                                 <span style={{ fontSize: '0.875rem', color: 'var(--gray-500)' }}>
-                                    {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredArtisans.length)} sur {filteredArtisans.length}
+                                    {startIndex + 1}-{Math.min(startIndex + itemsPerPage, sortedArtisans.length)} sur {sortedArtisans.length}
                                 </span>
                             </div>
 

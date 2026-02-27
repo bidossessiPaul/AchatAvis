@@ -29,6 +29,7 @@ interface Guide {
     last_seen: string | null;
     google_email: string;
     city: string;
+    phone: string;
     submitted_reviews_count: number;
 }
 
@@ -119,7 +120,8 @@ export const GuidesList: React.FC = () => {
 
     const filteredGuides = guides.filter(g =>
         g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.email.toLowerCase().includes(searchTerm.toLowerCase())
+        g.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        g.phone?.includes(searchTerm)
     );
 
     const sortedGuides = sortOrder === 'none'
@@ -166,7 +168,7 @@ export const GuidesList: React.FC = () => {
                                 <Search size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Rechercher un email..."
+                                    placeholder="Rechercher par email ou téléphone..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
