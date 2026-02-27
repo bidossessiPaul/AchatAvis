@@ -14,6 +14,7 @@ import {
     X,
     DollarSign
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -28,6 +29,7 @@ interface GuideBalance {
     google_email: string;
     phone: string;
     preferred_payout_method: string;
+    payout_details: any;
     validated_reviews_count: number;
     total_earned: number;
     total_paid: number;
@@ -46,6 +48,7 @@ export const GuidesBalances: React.FC = () => {
     const [selectedGuide, setSelectedGuide] = useState<GuideBalance | null>(null);
     const [adminNote, setAdminNote] = useState('');
     const [isPaying, setIsPaying] = useState(false);
+    const navigate = useNavigate();
 
     useEffect(() => {
         loadGuides();
@@ -189,7 +192,7 @@ export const GuidesBalances: React.FC = () => {
                                 <thead>
                                     <tr>
                                         <th>Guide</th>
-                                        <th>Email Compte</th>
+                                        <th>Coordonnées Paiement</th>
                                         <th>Avis Validés</th>
                                         <th>Total Gagné</th>
                                         <th>Déjà Payé</th>
@@ -218,7 +221,10 @@ export const GuidesBalances: React.FC = () => {
                                     ) : paginatedGuides.map(guide => (
                                         <tr key={guide.id}>
                                             <td className="font-medium">
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                                                <div
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', cursor: 'pointer' }}
+                                                    onClick={() => navigate(`/admin/guides/${guide.id}`)}
+                                                >
                                                     {guide.avatar_url ? (
                                                         <img src={getFileUrl(guide.avatar_url)} alt="" style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
                                                     ) : (
@@ -227,14 +233,56 @@ export const GuidesBalances: React.FC = () => {
                                                         </div>
                                                     )}
                                                     <div>
-                                                        <div style={{ fontWeight: 600 }}>{guide.google_email}</div>
+                                                        <div style={{ fontWeight: 600, color: '#0369a1', textDecoration: 'underline' }}>{guide.google_email}</div>
                                                         {guide.full_name && (
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{guide.full_name}</div>
                                                         )}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="text-gray-500">{guide.email}</td>
+                                            <td>
+                                                {(() => {
+                                                    const details = typeof guide.payout_details === 'string'
+                                                        ? (() => { try { return JSON.parse(guide.payout_details); } catch { return null; } })()
+                                                        : guide.payout_details;
+                                                    if (!details || Object.keys(details).length === 0) {
+                                                        return <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontStyle: 'italic' }}>Non renseigné</span>;
+                                                    }
+                                                    const method = guide.preferred_payout_method;
+                                                    if (method === 'bank_transfer') {
+                                                        return (
+                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
+                                                                {details.account_name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{details.account_name}</div>}
+                                                                {details.iban && <div style={{ color: 'var(--gray-600)' }}>IBAN: <span style={{ fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.5px' }}>{details.iban}</span></div>}
+                                                                {details.bic && <div style={{ color: 'var(--gray-500)' }}>BIC: <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{details.bic}</span></div>}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (method === 'paypal') {
+                                                        return (
+                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
+                                                                <div style={{ color: 'var(--gray-600)' }}>{details.email || details.paypal_email}</div>
+                                                            </div>
+                                                        );
+                                                    }
+                                                    if (method === 'mobile_money' || method === 'wave') {
+                                                        return (
+                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
+                                                                {details.full_name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{details.full_name}</div>}
+                                                                {(details.phone || details.phone_number) && <div style={{ color: 'var(--gray-600)', fontFamily: 'monospace' }}>{details.phone || details.phone_number}</div>}
+                                                            </div>
+                                                        );
+                                                    }
+                                                    // Fallback: show raw keys
+                                                    return (
+                                                        <div style={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'var(--gray-600)' }}>
+                                                            {Object.entries(details).map(([key, val]) => (
+                                                                <div key={key}>{key}: {String(val)}</div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
                                             <td>
                                                 <span style={{
                                                     padding: '0.3rem 0.7rem',
