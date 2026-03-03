@@ -194,5 +194,15 @@ export const adminService = {
     forcePayGuide: async (guideId: string, amount: number, adminNote?: string) => {
         const response = await api.post('/admin/force-pay-guide', { guideId, amount, adminNote });
         return response.data;
+    },
+
+    getGmailAccounts: async () => {
+        const response = await api.get('/admin/gmail-accounts');
+        return response.data;
+    },
+
+    toggleGmailBlock: async (accountId: number, block: boolean, reason?: string) => {
+        const response = await api.patch(`/admin/gmail-accounts/${accountId}/block`, { block, reason });
+        return response.data;
     }
 };
