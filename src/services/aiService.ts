@@ -108,7 +108,7 @@ Format de sortie attendu (JSON) :
         try {
             console.log("🤖 Appel Claude pour generation d'avis...");
             const response = await anthropic.messages.create({
-                model: "claude-3-5-haiku-20241022",
+                model: "claude-haiku-4-5-20251001",
                 max_tokens: 4096,
                 system: systemPrompt,
                 messages: [
@@ -187,7 +187,7 @@ Format de sortie attendu (JSON) :
         try {
             console.log("🤖 Appel Claude pour generation de villes pour:", baseCity);
             const response = await anthropic.messages.create({
-                model: "claude-3-5-haiku-20241022",
+                model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
                 system: systemPrompt,
                 messages: [
@@ -229,7 +229,7 @@ Format de sortie attendu (JSON) :
         try {
             console.log("🤖 Génération de réponse IA pour l'avis de:", authorName);
             const response = await anthropic.messages.create({
-                model: "claude-3-5-haiku-20241022",
+                model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
                 system: systemPrompt,
                 messages: [
