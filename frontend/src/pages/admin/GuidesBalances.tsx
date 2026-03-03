@@ -12,7 +12,8 @@ import {
     Wallet,
     CheckCircle,
     X,
-    DollarSign
+    DollarSign,
+    Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getFileUrl } from '../../utils/url';
@@ -122,6 +123,70 @@ export const GuidesBalances: React.FC = () => {
         setCurrentPage(1);
     }, [searchTerm]);
 
+    const exportCSV = () => {
+        const dataToExport = sortedGuides;
+        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'Solde (€)'];
+
+        const escapeCSV = (value: string) => {
+            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        };
+
+        const getPayoutDetailsText = (guide: GuideBalance): string => {
+            const details = typeof guide.payout_details === 'string'
+                ? (() => { try { return JSON.parse(guide.payout_details); } catch { return null; } })()
+                : guide.payout_details;
+            if (!details || Object.keys(details).length === 0) return '';
+            const method = guide.preferred_payout_method;
+            if (method === 'bank_transfer') {
+                const parts = [];
+                if (details.account_name) parts.push(details.account_name);
+                if (details.iban) parts.push(`IBAN: ${details.iban}`);
+                if (details.bic) parts.push(`BIC: ${details.bic}`);
+                return parts.join(' | ');
+            }
+            if (method === 'paypal') return details.email || details.paypal_email || '';
+            if (method === 'mobile_money' || method === 'wave') {
+                const parts = [];
+                if (details.full_name) parts.push(details.full_name);
+                if (details.phone || details.phone_number) parts.push(details.phone || details.phone_number);
+                return parts.join(' | ');
+            }
+            return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(' | ');
+        };
+
+        const getMethodLabel = (method: string): string => {
+            if (method === 'bank_transfer') return 'Virement';
+            if (method === 'paypal') return 'PayPal';
+            if (method === 'mobile_money') return 'Mobile Money';
+            if (method === 'wave') return 'Wave';
+            return method || '';
+        };
+
+        const rows = dataToExport.map(guide => [
+            escapeCSV(guide.full_name || ''),
+            escapeCSV(guide.google_email || guide.email || ''),
+            escapeCSV(guide.phone || ''),
+            escapeCSV(getMethodLabel(guide.preferred_payout_method)),
+            escapeCSV(getPayoutDetailsText(guide)),
+            String(guide.validated_reviews_count),
+            Number(guide.total_earned).toFixed(2),
+            Number(guide.total_paid).toFixed(2),
+            Number(guide.balance).toFixed(2),
+        ].join(','));
+
+        const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `soldes-guides-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     // Stats
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
     const guidesWithBalance = guides.filter(g => Number(g.balance) > 0).length;
@@ -179,6 +244,29 @@ export const GuidesBalances: React.FC = () => {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
+                            <button
+                                onClick={exportCSV}
+                                disabled={isLoading || sortedGuides.length === 0}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '0.5rem 1rem',
+                                    background: 'linear-gradient(135deg, #0369a1, #0284c7)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    cursor: isLoading || sortedGuides.length === 0 ? 'not-allowed' : 'pointer',
+                                    opacity: isLoading || sortedGuides.length === 0 ? 0.5 : 1,
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                <Download size={16} />
+                                Exporter CSV
+                            </button>
                         </div>
                     </div>
 
