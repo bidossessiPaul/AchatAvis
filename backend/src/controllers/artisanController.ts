@@ -62,8 +62,9 @@ export const artisanController = {
         const { id } = req.params;
         console.log(`🚀 START Generation pour orderId: ${id}`);
         try {
-            const { proposals } = req.body;
+            const { proposals, force } = req.body;
 
+            // Manual proposals path (unchanged)
             if (proposals && Array.isArray(proposals) && proposals.length > 0) {
                 console.log("📝 Utilisation de propositions manuelles");
                 const order = await artisanService.getOrderById(id);
@@ -72,118 +73,79 @@ export const artisanController = {
                 }
                 const finalProposals = proposals.slice(0, order.quantity);
                 const created = await artisanService.createProposals(id, finalProposals);
-                return res.json(created);
+                return res.json({ proposals: created, generated: created.length, target: order.quantity, complete: true });
             }
 
-            console.log("🤖 Récupération de l'ordre pour OpenAI...");
+            // AI generation path — generates ONE batch per request
             const order = await artisanService.getOrderById(id);
             if (!order) {
-                console.error(`❌ Commande ${id} non trouvée`);
                 return res.status(404).json({ error: 'Order not found' });
             }
 
-            console.log("👤 Récupération du profil artisan pour contexte...");
             const artisanProfile: any = await artisanService.getArtisanProfileByUserId(order.artisan_id);
-
-            // Count existing proposals to determine how many more are needed
-            const existingProposals: any = await query('SELECT COUNT(*) as count FROM review_proposals WHERE order_id = ?', [id]);
-            const existingCount = existingProposals[0]?.count || 0;
             const targetQuantity = order.quantity || 1;
 
-            const { force } = req.body;
-            let needed = targetQuantity - existingCount;
-
+            // If force, delete all existing proposals first
             if (force) {
-                console.log("⚠️ Force regeneration requested. Resetting all reviews.");
-                needed = targetQuantity;
-            } else {
-                if (needed <= 0) {
-                    console.log(`✅ Déjà ${existingCount}/${targetQuantity} avis générés. Pas d'action requise.`);
-                    // Fetch and return existing
-                    const current = await artisanService.createProposals(id, [], true); // effectively just gets
-                    return res.json(current);
-                }
+                console.log("⚠️ Force regeneration: suppression des avis existants.");
+                await query('DELETE FROM review_proposals WHERE order_id = ?', [id]);
             }
 
-            // If we are forcing regeneration (e.g. user clicked "Regenerate All"), we might handle that via a query param in future, 
-            // but for now, the user requested "Generate Remaining" logic.
-            // However, the standard behavior of "Generate" button usually implies "Do the work".
-            // If we have 0, needed = target. If we have 5/10, needed = 5.
-            // If needed <= 0, we might just return existing.
+            // Count existing proposals after potential deletion
+            const existingProposals: any = await query('SELECT COUNT(*) as count FROM review_proposals WHERE order_id = ?', [id]);
+            const existingCount = existingProposals[0]?.count || 0;
+            const needed = targetQuantity - existingCount;
 
-            // To support "Regenerate all", the frontend should probably delete first or we add a flag.
-            // For this specific request: "default generate all, if fail, button to generate rest".
-            // So if I call this and I have 5/10, I expect 5 more.
+            if (needed <= 0) {
+                console.log(`✅ Déjà ${existingCount}/${targetQuantity} avis générés.`);
+                const allProposals: any = await query('SELECT * FROM review_proposals WHERE order_id = ? ORDER BY created_at ASC', [id]);
+                return res.json({ proposals: allProposals, generated: existingCount, target: targetQuantity, complete: true });
+            }
 
-
-
-            console.log(`📊 Etat actuel: ${existingCount}/${targetQuantity}. Reste à générer: ${needed}`);
-
+            // Generate ONE batch (max 10 reviews)
             const batchSize = 10;
-            let totalCreated: any[] = [];
-            let currentNeeded = needed;
-            let partialError: string | null = null;
+            const currentBatchSize = Math.min(needed, batchSize);
+            console.log(`📊 Etat: ${existingCount}/${targetQuantity}. Génération de ${currentBatchSize} avis...`);
 
-            while (currentNeeded > 0) {
-                const currentBatchSize = Math.min(currentNeeded, batchSize);
-                console.log(`🤖 Génération d'un lot de ${currentBatchSize} avis...`);
+            const generationParams = {
+                companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
+                ficheName: order.fiche_name,
+                trade: artisanProfile?.trade || 'Artisan',
+                quantity: currentBatchSize,
+                context: order.company_context,
+                sector: order.sector,
+                zones: order.zones,
+                services: order.services,
+                staffNames: order.staff_names,
+                specificInstructions: order.specific_instructions
+            };
 
-                const generationParams = {
-                    companyName: order.company_name || artisanProfile?.company_name || 'Artisan',
-                    ficheName: order.fiche_name,
-                    trade: artisanProfile?.trade || 'Artisan',
-                    quantity: currentBatchSize,
-                    context: order.company_context,
-                    sector: order.sector,
-                    zones: order.zones,
-                    services: order.services,
-                    staffNames: order.staff_names,
-                    specificInstructions: order.specific_instructions
-                };
+            const generated = await aiService.generateReviews(generationParams);
 
-                try {
-                    console.log(`🤖 Batch ${Math.floor(totalCreated.length / batchSize) + 1}: Appel AI pour ${currentBatchSize} avis...`);
-                    const generated = await aiService.generateReviews(generationParams);
-
-                    if (!generated || generated.length === 0) {
-                        console.warn("⚠️ L'IA n'a retourné aucun avis.");
-                        partialError = "L'IA n'a retourné aucun avis pour ce lot.";
-                        break;
-                    }
-
-                    const finalProposals = generated.slice(0, currentBatchSize);
-                    console.log(`💾 Sauvegarde de ${finalProposals.length} avis dans la base de données...`);
-
-                    const shouldAppend = !(currentNeeded === needed && force);
-                    const batchCreated = await artisanService.createProposals(id, finalProposals, shouldAppend);
-
-                    totalCreated = batchCreated;
-                    currentNeeded -= finalProposals.length;
-
-                    console.log(`✨ Lot terminé. Progression: ${totalCreated.length}/${targetQuantity}`);
-                } catch (batchError: any) {
-                    console.error("❌ ERREUR LOT GENERATION:", batchError.message);
-                    if (totalCreated.length === 0) throw batchError;
-                    partialError = `Génération partielle : ${batchError.message}`;
-                    break;
-                }
+            if (!generated || generated.length === 0) {
+                console.warn("⚠️ L'IA n'a retourné aucun avis.");
+                const allProposals: any = await query('SELECT * FROM review_proposals WHERE order_id = ? ORDER BY created_at ASC', [id]);
+                return res.json({ proposals: allProposals, generated: existingCount, target: targetQuantity, complete: existingCount >= targetQuantity });
             }
 
-            console.log(`✅ Generation terminée. Total final: ${totalCreated.length}/${targetQuantity}${partialError ? ' (partiel)' : ''}`);
+            const finalProposals = generated.slice(0, currentBatchSize);
+            console.log(`💾 Sauvegarde de ${finalProposals.length} avis...`);
 
-            if (partialError && totalCreated.length > 0) {
-                return res.status(207).json({
-                    proposals: totalCreated,
-                    warning: partialError,
-                    generated: totalCreated.length,
-                    target: targetQuantity
-                });
-            }
+            const allProposals = await artisanService.createProposals(id, finalProposals, true); // always append
+            const newCount = allProposals.length;
+            const isComplete = newCount >= targetQuantity;
 
-            return res.json(totalCreated);
+            console.log(`✅ Batch terminé: ${newCount}/${targetQuantity}${isComplete ? ' (complet)' : ' (suite nécessaire)'}`);
+
+            return res.json({
+                proposals: allProposals,
+                generated: newCount,
+                target: targetQuantity,
+                complete: isComplete
+            });
         } catch (error: any) {
             console.error("❌ ERREUR GENERATION PROPOSALS:", error);
-            const status = error.message.includes('AI') ? 502 : 500;
+            const status = error.message?.includes('AI') ? 502 : 500;
             return res.status(status).json({
                 error: 'Erreur de génération',
                 message: error.message,

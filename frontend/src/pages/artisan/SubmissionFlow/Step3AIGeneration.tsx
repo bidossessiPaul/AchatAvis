@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
 import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
@@ -17,56 +17,63 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     const [isGenerating, setIsGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState("");
-    const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-    const loadingMessages = [
-        "L'IA analyse vos informations...",
-        "Optimisation du ton et du style...",
-        "Rédaction de vos avis personnalisés...",
-        "Finalisation des propositions..."
-    ];
-
-    useEffect(() => {
-        let interval: any;
-        if (isGenerating) {
-            interval = setInterval(() => {
-                setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
-            }, 2500);
-        }
-        return () => clearInterval(interval);
-    }, [isGenerating]);
+    const [progress, setProgress] = useState<{ current: number, target: number } | null>(null);
+    const abortRef = useRef(false);
 
     const handleGenerate = async (force: boolean = false) => {
         if (isGenerating) return;
         setIsGenerating(true);
-        setLoadingMessageIndex(0);
+        abortRef.current = false;
         if (onError) onError(null);
-        try {
-            const result = await artisanService.generateProposals(order.id, [], force);
-            setProposals(result.proposals);
-            if (result.warning && onError) {
-                onError(`Génération partielle : certains avis n'ont pas pu être générés. Vous pouvez compléter la génération.`);
-            }
-        } catch (error: any) {
-            console.error("Failed to generate", error);
-            if (onError) {
-                const serverMsg = error.response?.data?.message || error.response?.data?.error;
-                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-                    onError("La génération a pris trop de temps. Veuillez réessayer.");
-                } else if (error.response?.status === 502) {
-                    onError("Le service IA est temporairement indisponible. Veuillez réessayer dans quelques instants.");
-                } else if (serverMsg) {
-                    onError(`Erreur : ${serverMsg}`);
-                } else {
-                    onError("Erreur lors de la génération des avis. Veuillez réessayer.");
+
+        const target = order.quantity || 1;
+        setProgress({ current: force ? 0 : proposals.length, target });
+
+        let isForce = force;
+        let retries = 0;
+        const maxRetries = 2;
+
+        while (!abortRef.current) {
+            try {
+                const result = await artisanService.generateBatch(order.id, isForce);
+                setProposals(result.proposals);
+                setProgress({ current: result.generated, target: result.target });
+                isForce = false; // Only force on first call
+
+                if (result.complete) {
+                    // All done
+                    retries = 0;
+                    break;
                 }
+                retries = 0; // Reset retries on success
+            } catch (error: any) {
+                console.error("Batch generation error:", error);
+                retries++;
+                if (retries > maxRetries) {
+                    // After max retries, stop but don't show error if some reviews exist
+                    if (onError) {
+                        const serverMsg = error.response?.data?.message || error.response?.data?.error;
+                        if (error.response?.status === 502) {
+                            onError("Le service IA est temporairement indisponible. Cliquez sur 'Compléter' pour réessayer.");
+                        } else if (serverMsg) {
+                            onError(`Erreur : ${serverMsg}`);
+                        } else {
+                            onError("Erreur lors de la génération. Cliquez sur 'Compléter la génération' pour reprendre.");
+                        }
+                    }
+                    break;
+                }
+                // Wait before retry
+                await new Promise(r => setTimeout(r, 2000));
             }
-        } finally {
-            setIsGenerating(false);
         }
+
+        setIsGenerating(false);
+        setProgress(null);
     };
 
     const handleDelete = async (p: ReviewProposal) => {
-        if (p.submission_id) return; // Cannot delete published reviews
+        if (p.submission_id) return;
         try {
             await artisanService.deleteProposal(p.id);
             setProposals(prev => prev.filter(item => item.id !== p.id));
@@ -76,7 +83,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     };
 
     const handleEdit = (p: ReviewProposal) => {
-        if (p.submission_id) return; // Cannot edit published reviews
+        if (p.submission_id) return;
         setEditingId(p.id);
         setEditValue(p.content);
     };
@@ -107,6 +114,51 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         onNext();
     };
 
+    // Progress bar component
+    const ProgressBar = () => {
+        if (!progress) return null;
+        const percent = progress.target > 0 ? Math.round((progress.current / progress.target) * 100) : 0;
+        return (
+            <div style={{
+                backgroundColor: '#eff6ff',
+                border: '1px solid #93c5fd',
+                padding: '1rem',
+                borderRadius: '0.75rem',
+                marginBottom: '1.5rem'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <RefreshCw size={16} className="spin" style={{ color: '#2563eb' }} />
+                        <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e40af' }}>
+                            Génération en cours...
+                        </span>
+                    </div>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e40af' }}>
+                        {progress.current}/{progress.target} avis
+                    </span>
+                </div>
+                <div style={{
+                    width: '100%',
+                    height: '8px',
+                    backgroundColor: '#dbeafe',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        width: `${percent}%`,
+                        height: '100%',
+                        backgroundColor: '#2563eb',
+                        borderRadius: '4px',
+                        transition: 'width 0.5s ease'
+                    }} />
+                </div>
+            </div>
+        );
+    };
+
+    // Initial state: no proposals, not generating — show launch button + spinner area
+    const showInitialSpinner = isGenerating && proposals.length === 0;
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -119,7 +171,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                 )}
             </div>
 
-            {isGenerating ? (
+            {showInitialSpinner ? (
                 <div className="ai-loader-container">
                     <div className="ai-loader-visual">
                         <div className="ai-loader-ring"></div>
@@ -131,62 +183,81 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                     </div>
                     <div className="ai-loader-text-container">
                         <h3 className="ai-loader-title">Génération en cours</h3>
-                        <p className="ai-loader-subtitle">{loadingMessages[loadingMessageIndex]}</p>
-                        <div className="ai-loader-progress-dots">
-                            <div className="ai-dot"></div>
-                            <div className="ai-dot"></div>
-                            <div className="ai-dot"></div>
+                        <p className="ai-loader-subtitle">
+                            {progress ? `${progress.current}/${progress.target} avis générés...` : "L'IA analyse vos informations..."}
+                        </p>
+                        <div style={{
+                            width: '200px',
+                            height: '6px',
+                            backgroundColor: '#e5e7eb',
+                            borderRadius: '3px',
+                            overflow: 'hidden',
+                            margin: '1rem auto 0'
+                        }}>
+                            <div style={{
+                                width: progress ? `${Math.round((progress.current / progress.target) * 100)}%` : '0%',
+                                height: '100%',
+                                backgroundColor: '#10b981',
+                                borderRadius: '3px',
+                                transition: 'width 0.5s ease'
+                            }} />
                         </div>
                     </div>
                 </div>
             ) : proposals.length > 0 ? (
                 <div className="proposals-list">
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        backgroundColor: (order.quantity || 0) > proposals.length ? '#fffbeb' : '#f0fdf4',
-                        padding: '1rem',
-                        borderRadius: '0.75rem',
-                        marginBottom: '1.5rem',
-                        border: (order.quantity || 0) > proposals.length ? '1px solid #fcd34d' : '1px solid #86efac'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
-                                backgroundColor: (order.quantity || 0) > proposals.length ? '#fef3c7' : '#dcfce7',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: (order.quantity || 0) > proposals.length ? '#b45309' : '#15803d'
-                            }}>
-                                {(order.quantity || 0) > proposals.length ? <AlertCircle size={20} /> : <Check size={20} />}
+                    {/* Progress bar during incremental generation */}
+                    {isGenerating && <ProgressBar />}
+
+                    {/* Status banner (only when NOT generating) */}
+                    {!isGenerating && (
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            backgroundColor: (order.quantity || 0) > proposals.length ? '#fffbeb' : '#f0fdf4',
+                            padding: '1rem',
+                            borderRadius: '0.75rem',
+                            marginBottom: '1.5rem',
+                            border: (order.quantity || 0) > proposals.length ? '1px solid #fcd34d' : '1px solid #86efac'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    backgroundColor: (order.quantity || 0) > proposals.length ? '#fef3c7' : '#dcfce7',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: (order.quantity || 0) > proposals.length ? '#b45309' : '#15803d'
+                                }}>
+                                    {(order.quantity || 0) > proposals.length ? <AlertCircle size={20} /> : <Check size={20} />}
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: '0.9375rem', color: '#1e293b', fontWeight: 700, display: 'block' }}>
+                                        {proposals.length} avis générés sur {order.quantity}
+                                    </span>
+                                    <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
+                                        {(order.quantity || 0) > proposals.length
+                                            ? `Il manque ${(order.quantity || 0) - proposals.length} avis pour compléter votre pack.`
+                                            : "Tous les avis requis ont été générés avec succès."}
+                                    </span>
+                                </div>
                             </div>
-                            <div>
-                                <span style={{ fontSize: '0.9375rem', color: '#1e293b', fontWeight: 700, display: 'block' }}>
-                                    {proposals.length} avis générés sur {order.quantity}
-                                </span>
-                                <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
-                                    {(order.quantity || 0) > proposals.length
-                                        ? `Il manque ${(order.quantity || 0) - proposals.length} avis pour compléter votre pack.`
-                                        : "Tous les avis requis ont été générés avec succès."}
-                                </span>
-                            </div>
+                            {(order.quantity || 0) > proposals.length ? (
+                                <button onClick={() => handleGenerate()} disabled={isGenerating} style={{ background: '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
+                                    <Sparkles size={14} />
+                                    Compléter la génération
+                                </button>
+                            ) : (
+                                <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} disabled={isGenerating} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    <RefreshCw size={12} />
+                                    Tout régénérer
+                                </button>
+                            )}
                         </div>
-                        {(order.quantity || 0) > proposals.length ? (
-                            <button onClick={() => handleGenerate()} disabled={isGenerating} style={{ background: isGenerating ? '#9ca3af' : '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: isGenerating ? 'not-allowed' : 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: isGenerating ? 'none' : '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
-                                {isGenerating ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} />}
-                                {isGenerating ? 'Génération...' : 'Compléter la génération'}
-                            </button>
-                        ) : (
-                            <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} disabled={isGenerating} style={{ background: 'none', border: 'none', color: isGenerating ? '#d1d5db' : '#64748b', cursor: isGenerating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                                <RefreshCw size={12} />
-                                {isGenerating ? 'Génération...' : 'Tout régénérer'}
-                            </button>
-                        )}
-                    </div>
+                    )}
 
                     <div className="proposals-table-wrapper" style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
@@ -216,7 +287,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                         alignItems: 'center',
                                                         gap: '2px'
                                                     }}>
-                                                        <Check size={10} /> PUBLLIÉ
+                                                        <Check size={10} /> PUBLIÉ
                                                     </span>
                                                 )}
                                             </div>
