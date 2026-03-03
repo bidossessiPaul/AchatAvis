@@ -53,6 +53,7 @@ import { TrustScoreManagement } from './pages/admin/TrustScoreManagement';
 import { SectorManagement } from './pages/admin/SectorManagement';
 import { AdminLevelVerifications } from './pages/admin/AdminLevelVerifications';
 import { GuidesBalances } from './pages/admin/GuidesBalances';
+import { GmailAccountsList } from './pages/admin/GmailAccountsList';
 import { Profile } from './pages/Profile';
 import { NotFound } from './pages/NotFound';
 
@@ -395,6 +396,13 @@ function App() {
                     <ProtectedRoute allowedRoles={['admin']}>
                         <PermissionGuard requiredPermission="can_view_payments">
                             <GuidesBalances />
+                        </PermissionGuard>
+                    </ProtectedRoute>
+                } />
+                <Route path="/admin/gmail-accounts" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                        <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                            <GmailAccountsList />
                         </PermissionGuard>
                     </ProtectedRoute>
                 } />

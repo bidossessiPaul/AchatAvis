@@ -977,3 +977,134 @@ export const sendReviewValidationEmail = async (emails: string[], fiche: any, pr
         throw error;
     }
 };
+
+/**
+ * Send Gmail account blocked notification to the blocked email
+ */
+export const sendGmailBlockedEmail = async (gmailEmail: string, reason: string) => {
+    const brandBlack = '#0a0a0a';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: gmailEmail,
+        subject: '🚫 Compte Gmail bloqué - AchatAvis',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 2px solid ${brandBlack}; border-radius: 20px; padding: 0; overflow: hidden; }
+                    .header { background-color: #dc2626; color: white; padding: 32px; text-align: center; }
+                    .content { padding: 40px; }
+                    .title { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .text { font-size: 16px; color: #1f2937; line-height: 1.6; margin-bottom: 24px; }
+                    .reason-box { background-color: #fef2f2; padding: 24px; border-radius: 12px; border-left: 6px solid #dc2626; margin: 24px 0; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header">
+                            <h2 class="title">COMPTE GMAIL BLOQUÉ</h2>
+                        </div>
+                        <div class="content">
+                            <p class="text">
+                                L'adresse Gmail <strong>${gmailEmail}</strong> a été bloquée sur la plateforme AchatAvis et ne peut plus être utilisée pour soumettre des avis.
+                            </p>
+
+                            <div class="reason-box">
+                                <p style="margin: 0; font-weight: 800; color: ${brandBlack}; text-transform: uppercase; font-size: 14px;">Motif du blocage :</p>
+                                <p style="margin: 12px 0 0 0; color: #4b5563; font-style: italic;">"${reason}"</p>
+                            </div>
+
+                            <p class="text">
+                                Si vous pensez qu'il s'agit d'une erreur, veuillez contacter l'équipe AchatAvis.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error('Error sending gmail blocked email:', error);
+    }
+};
+
+/**
+ * Send notification to the guide that one of their Gmail accounts was blocked
+ */
+export const sendGuideGmailBlockedNotification = async (guideEmail: string, guideName: string, gmailEmail: string, reason: string) => {
+    const brandBlack = '#0a0a0a';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: guideEmail,
+        subject: '⚠️ Un de vos comptes Gmail a été bloqué - AchatAvis',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 2px solid ${brandBlack}; border-radius: 20px; padding: 0; overflow: hidden; }
+                    .header { background-color: ${brandBlack}; color: white; padding: 32px; text-align: center; }
+                    .content { padding: 40px; }
+                    .title { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .text { font-size: 16px; color: #1f2937; line-height: 1.6; margin-bottom: 24px; }
+                    .reason-box { background-color: #fff7ed; padding: 24px; border-radius: 12px; border-left: 6px solid #f59e0b; margin: 24px 0; }
+                    .email-box { background-color: #f9fafb; padding: 16px; border-radius: 12px; text-align: center; margin: 16px 0; border: 1px solid #e5e7eb; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header">
+                            <h2 class="title">COMPTE GMAIL BLOQUÉ</h2>
+                        </div>
+                        <div class="content">
+                            <p class="text">
+                                Bonjour <strong>${guideName}</strong>,<br><br>
+                                Nous vous informons qu'un de vos comptes Gmail a été bloqué par l'administration. Ce compte ne pourra plus être utilisé pour soumettre des avis sur la plateforme.
+                            </p>
+
+                            <div class="email-box">
+                                <p style="margin: 0; font-size: 13px; color: #6b7280; font-weight: 600;">Compte concerné</p>
+                                <p style="margin: 8px 0 0 0; font-size: 18px; font-weight: 800; color: #111827;">${gmailEmail}</p>
+                            </div>
+
+                            <div class="reason-box">
+                                <p style="margin: 0; font-weight: 800; color: ${brandBlack}; text-transform: uppercase; font-size: 14px;">Motif :</p>
+                                <p style="margin: 12px 0 0 0; color: #4b5563; font-style: italic;">"${reason}"</p>
+                            </div>
+
+                            <p class="text">
+                                Vos autres comptes Gmail restent actifs. Si vous pensez qu'il s'agit d'une erreur, veuillez contacter l'équipe AchatAvis.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error('Error sending guide gmail blocked notification:', error);
+    }
+};

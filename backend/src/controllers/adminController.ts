@@ -712,3 +712,34 @@ export const forcePayGuide = async (req: Request, res: Response) => {
         return res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };
+
+export const getGmailAccounts = async (_req: Request, res: Response) => {
+    try {
+        const accounts = await adminService.getAllGmailAccounts();
+        res.json(accounts);
+    } catch (error) {
+        console.error('Get gmail accounts error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+export const toggleGmailBlock = async (req: Request, res: Response) => {
+    const { accountId } = req.params;
+    const { block, reason } = req.body;
+
+    if (typeof block !== 'boolean') {
+        return res.status(400).json({ error: 'Le champ "block" (boolean) est requis' });
+    }
+
+    if (block && !reason) {
+        return res.status(400).json({ error: 'La raison du blocage est requise' });
+    }
+
+    try {
+        const result = await adminService.toggleGmailAccountBlock(parseInt(accountId), block, reason);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Toggle gmail block error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
