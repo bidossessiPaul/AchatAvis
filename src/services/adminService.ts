@@ -1778,3 +1778,77 @@ export const forcePayGuide = async (guideId: string, amount: number, adminNote?:
     return { success: true, payoutId, amount };
 };
 
+/**
+ * Get all Gmail accounts used by guides
+ */
+export const getAllGmailAccounts = async () => {
+    return await query(`
+        SELECT
+            gga.id,
+            gga.user_id,
+            gga.email,
+            gga.maps_profile_url,
+            gga.local_guide_level,
+            gga.is_verified,
+            gga.is_active,
+            gga.is_blocked,
+            gga.trust_level,
+            gga.monthly_reviews_posted,
+            gga.monthly_quota_limit,
+            gga.total_reviews_posted,
+            gga.last_review_posted_at,
+            gga.created_at,
+            u.full_name AS guide_name,
+            u.email AS guide_account_email,
+            u.avatar_url AS guide_avatar,
+            u.status AS guide_status,
+            gp.phone AS guide_phone,
+            gp.city AS guide_city
+        FROM guide_gmail_accounts gga
+        JOIN users u ON gga.user_id = u.id
+        LEFT JOIN guides_profiles gp ON u.id = gp.user_id
+        WHERE gga.deleted_at IS NULL
+        ORDER BY gga.created_at DESC
+    `);
+};
+
+/**
+ * Toggle block status on a Gmail account
+ */
+export const toggleGmailAccountBlock = async (accountId: number, block: boolean, reason?: string) => {
+    // Get the gmail account info + guide info for emails
+    const [account] = await query(
+        `SELECT gga.email, gga.user_id, u.full_name, u.email AS guide_email
+         FROM guide_gmail_accounts gga
+         JOIN users u ON gga.user_id = u.id
+         WHERE gga.id = ?`,
+        [accountId]
+    ) as any[];
+
+    if (!account) {
+        throw new Error('Compte Gmail introuvable');
+    }
+
+    if (block) {
+        await query(
+            `UPDATE guide_gmail_accounts SET is_blocked = TRUE, trust_level = 'BLOCKED' WHERE id = ?`,
+            [accountId]
+        );
+
+        // Send emails if blocking with a reason
+        if (reason) {
+            const { sendGmailBlockedEmail, sendGuideGmailBlockedNotification } = await import('./emailService');
+            // Email to the blocked gmail
+            sendGmailBlockedEmail(account.email, reason);
+            // Email to the guide's account
+            sendGuideGmailBlockedNotification(account.guide_email, account.full_name || account.guide_email, account.email, reason);
+        }
+    } else {
+        await query(
+            `UPDATE guide_gmail_accounts SET is_blocked = FALSE, trust_level = 'BRONZE' WHERE id = ?`,
+            [accountId]
+        );
+    }
+    return { success: true, message: block ? 'Compte Gmail bloqué' : 'Compte Gmail débloqué' };
+};
+

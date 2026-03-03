@@ -79,6 +79,10 @@ router.delete('/packs/:id', adminController.deletePack);
 router.get('/guides-balances', adminController.getGuidesWithBalance);
 router.post('/force-pay-guide', adminController.forcePayGuide);
 
+// Gmail accounts management
+router.get('/gmail-accounts', adminController.getGmailAccounts);
+router.patch('/gmail-accounts/:accountId/block', adminController.toggleGmailBlock);
+
 // Sector management
 router.get('/sectors', adminController.getAllSectors);
 router.post('/sectors', adminController.createSector);
