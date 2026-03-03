@@ -119,7 +119,7 @@ export const artisanController = {
 
             console.log(`📊 Etat actuel: ${existingCount}/${targetQuantity}. Reste à générer: ${needed}`);
 
-            const batchSize = 20;
+            const batchSize = 10;
             let totalCreated: any[] = [];
             let currentNeeded = needed;
             let partialError: string | null = null;

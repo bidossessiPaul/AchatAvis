@@ -109,13 +109,18 @@ Format de sortie attendu (JSON) :
             console.log("🤖 Appel Claude pour generation d'avis...");
             const response = await anthropic.messages.create({
                 model: "claude-haiku-4-5-20251001",
-                max_tokens: 4096,
+                max_tokens: 8192,
                 system: systemPrompt,
                 messages: [
                     { role: "user", content: userPrompt },
                     { role: "assistant", content: "{" }
                 ]
             });
+
+            // Check for truncation
+            if (response.stop_reason === 'max_tokens') {
+                console.warn("⚠️ Réponse AI tronquée (max_tokens atteint). Tentative de parsing partiel...");
+            }
 
             // Handle the content block safely
             const textBlock = response.content[0];
@@ -159,6 +164,22 @@ Format de sortie attendu (JSON) :
                 if (Array.isArray(parsed)) return parsed;
                 throw new Error("Format JSON invalide (pas un tableau)");
             } catch (e: any) {
+                // If truncated, try to salvage complete review objects
+                if (response.stop_reason === 'max_tokens') {
+                    console.warn("⚠️ Tentative de récupération des avis complets depuis JSON tronqué...");
+                    try {
+                        // Find all complete review objects using regex
+                        const reviewRegex = /\{\s*"author_name"\s*:\s*"[^"]*"\s*,\s*"content"\s*:\s*"[^"]*"\s*,\s*"rating"\s*:\s*\d+\s*\}/g;
+                        const matches = rawContent.match(reviewRegex);
+                        if (matches && matches.length > 0) {
+                            const salvaged = matches.map(m => JSON.parse(m));
+                            console.log(`✅ ${salvaged.length} avis récupérés depuis réponse tronquée`);
+                            return salvaged;
+                        }
+                    } catch (salvageErr) {
+                        console.error("❌ Récupération impossible:", salvageErr);
+                    }
+                }
                 console.error("❌ Erreur parsing JSON AI. Contenu brut:", rawContent.substring(0, 500));
                 throw new Error(`Erreur parsing réponse IA: ${e.message}`);
             }
