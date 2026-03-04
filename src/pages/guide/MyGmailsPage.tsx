@@ -11,7 +11,6 @@ import {
     Star,
     Camera,
     MessageSquare,
-    MapPin,
     CheckCircle2,
     XCircle,
     Clock,
@@ -29,6 +28,7 @@ import {
     Tablet,
     ExternalLink
 } from 'lucide-react';
+import './MyGmails.css';
 
 const POINTS_TABLE = [
     { action: 'Avis', points: 10, bonus: 'Bonus +10pts si > 200 caractères', icon: <Star size={16} /> },
@@ -84,13 +84,7 @@ export const MyGmailsPage: React.FC = () => {
     return (
         <DashboardLayout title="Mes Comptes Gmail">
             {/* Section 1: Gmail Accounts */}
-            <div style={{
-                background: 'white',
-                borderRadius: '1.25rem',
-                border: '1px solid #e2e8f0',
-                padding: '1.5rem',
-                marginBottom: '2rem'
-            }}>
+            <div className="gmails-section">
                 <GmailAccountList
                     onAddClick={() => setIsAddModalOpen(true)}
                     onVerifyLevel={(accountId) => setVerificationModal({ isOpen: true, accountId })}
@@ -99,13 +93,7 @@ export const MyGmailsPage: React.FC = () => {
 
             {/* Section 2: Verification History */}
             {levelVerifications.length > 0 && (
-                <div style={{
-                    background: 'white',
-                    borderRadius: '1.25rem',
-                    border: '1px solid #e2e8f0',
-                    padding: '1.5rem',
-                    marginBottom: '2rem'
-                }}>
+                <div className="gmails-section">
                     <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Trophy size={20} color="#f59e0b" /> Mes demandes de vérification
                     </h3>
@@ -113,18 +101,10 @@ export const MyGmailsPage: React.FC = () => {
                         {levelVerifications.map((v: any) => {
                             const config = statusConfig[v.status] || statusConfig.pending;
                             return (
-                                <div key={v.id} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '1rem',
-                                    padding: '1rem',
-                                    background: '#f8fafc',
-                                    borderRadius: '0.75rem',
-                                    border: '1px solid #f1f5f9'
-                                }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a' }}>
+                                <div key={v.id} className="gmails-verification-item">
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div className="gmails-verification-info">
+                                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a', wordBreak: 'break-all' }}>
                                                 {v.gmail_email}
                                             </span>
                                             <span style={{
@@ -136,7 +116,8 @@ export const MyGmailsPage: React.FC = () => {
                                                 color: config.color,
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '0.25rem'
+                                                gap: '0.25rem',
+                                                whiteSpace: 'nowrap'
                                             }}>
                                                 {config.icon} {config.label}
                                             </span>
@@ -161,7 +142,8 @@ export const MyGmailsPage: React.FC = () => {
                                             fontSize: '0.75rem',
                                             color: '#2383e2',
                                             fontWeight: 600,
-                                            textDecoration: 'none'
+                                            textDecoration: 'none',
+                                            whiteSpace: 'nowrap'
                                         }}
                                     >
                                         Voir capture
@@ -174,7 +156,7 @@ export const MyGmailsPage: React.FC = () => {
             )}
 
             {/* Section 3: Points System + Levels */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="gmails-two-col">
                 {/* Points Table */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -201,13 +183,13 @@ export const MyGmailsPage: React.FC = () => {
                                 background: i % 2 === 0 ? '#f8fafc' : 'white',
                                 borderRadius: '0.5rem'
                             }}>
-                                <div style={{ color: '#64748b', width: '24px', display: 'flex', justifyContent: 'center' }}>
+                                <div style={{ color: '#64748b', width: '24px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
                                     {item.icon}
                                 </div>
-                                <span style={{ flex: 1, fontSize: '0.85rem', color: '#0f172a', fontWeight: 500 }}>
+                                <span style={{ flex: 1, fontSize: '0.85rem', color: '#0f172a', fontWeight: 500, minWidth: 0 }}>
                                     {item.action}
                                 </span>
-                                <div style={{ textAlign: 'right' }}>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                     <span style={{
                                         fontSize: '0.85rem',
                                         fontWeight: 700,
@@ -283,7 +265,7 @@ export const MyGmailsPage: React.FC = () => {
                                         {item.level}
                                     </div>
                                 )}
-                                <div style={{ flex: 1 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
                                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#0f172a' }}>
                                         Niveau {item.level}
                                     </span>
@@ -304,7 +286,8 @@ export const MyGmailsPage: React.FC = () => {
                                 <span style={{
                                     fontSize: '0.8rem',
                                     fontWeight: 700,
-                                    color: item.badge ? '#92400e' : '#64748b'
+                                    color: item.badge ? '#92400e' : '#64748b',
+                                    whiteSpace: 'nowrap'
                                 }}>
                                     {item.points.toLocaleString('fr-FR')} pts
                                 </span>
@@ -317,12 +300,13 @@ export const MyGmailsPage: React.FC = () => {
                                         padding: '0.2rem 0.5rem',
                                         borderRadius: '0.375rem',
                                         minWidth: '50px',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
+                                        flexShrink: 0
                                     }}>
                                         +{item.bonus}€
                                     </span>
                                 ) : (
-                                    <span style={{ minWidth: '50px' }} />
+                                    <span style={{ minWidth: '50px', flexShrink: 0 }} />
                                 )}
                             </div>
                         ))}
@@ -335,20 +319,14 @@ export const MyGmailsPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                style={{
-                    background: 'white',
-                    borderRadius: '1.25rem',
-                    border: '1px solid #e2e8f0',
-                    padding: '1.5rem',
-                    marginBottom: '2rem'
-                }}
+                className="gmails-section"
             >
                 <h3 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <HelpCircle size={20} color="#2383e2" /> Comment vérifier votre niveau Local Guide ?
                 </h3>
 
                 {/* Platform tabs */}
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '2px solid #f1f5f9', paddingBottom: '0' }}>
+                <div className="gmails-platform-tabs">
                     {[
                         { key: 'desktop' as const, label: 'Ordinateur', icon: <Monitor size={16} /> },
                         { key: 'android' as const, label: 'Android', icon: <Smartphone size={16} /> },

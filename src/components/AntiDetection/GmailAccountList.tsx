@@ -13,7 +13,7 @@ const LEVEL_BADGE_IMAGES: Record<number, string> = {
     10: 'https://services.google.com/fh/files/helpcenter/points-badges_level_ten.png',
 };
 import { Button } from '../common/Button';
-import Swal, { showConfirm, showSuccess, showError } from '../../utils/Swal';
+import Swal, { showSuccess, showError } from '../../utils/Swal';
 
 interface GmailAccountListProps {
     onAddClick: () => void;
@@ -112,7 +112,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
 
     return (
         <div className="gmail-account-list">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div className="gmails-header">
                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Comptes Gmail Enregistrés</h3>
                 <Button variant="secondary" size="sm" onClick={onAddClick}>Ajouter un compte</Button>
             </div>
@@ -125,17 +125,8 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
             ) : (
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {gmailAccounts.map((account) => (
-                        <div key={account.id} style={{
-                            background: 'white',
-                            padding: '1.25rem',
-                            borderRadius: '1rem',
-                            border: '1px solid #e2e8f0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '1.5rem',
-                            transition: 'all 0.2s'
-                        }}>
-                            <div style={{ position: 'relative' }}>
+                        <div key={account.id} className="gmail-account-card">
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
                                 {account.avatar_url ? (
                                     <img src={account.avatar_url} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
                                 ) : (
@@ -145,21 +136,21 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                 )}
                             </div>
 
-                            <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-                                    <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="gmail-account-email-row">
+                                    <span style={{ fontWeight: 600, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '0.5rem', wordBreak: 'break-all' }}>
                                         {account.email}
                                         {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] && (
                                             <img
                                                 src={LEVEL_BADGE_IMAGES[account.local_guide_level]}
                                                 alt={`Niveau ${account.local_guide_level}`}
                                                 title={`Local Guide Niveau ${account.local_guide_level}`}
-                                                style={{ width: '22px', height: '22px' }}
+                                                style={{ width: '22px', height: '22px', flexShrink: 0 }}
                                             />
                                         )}
                                     </span>
                                     {(account.is_blocked || !account.maps_profile_url) && (
-                                        <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <span style={{ fontSize: '0.75rem', background: '#fee2e2', color: '#ef4444', padding: '0.1rem 0.5rem', borderRadius: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap' }}>
                                             <AlertTriangle size={12} />
                                             Bloqué
                                         </span>
@@ -193,7 +184,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                         </button>
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <div className="gmail-account-status-row">
                                         <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                             {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] ? (
                                                 <img src={LEVEL_BADGE_IMAGES[account.local_guide_level]} alt="" style={{ width: '16px', height: '16px' }} />
@@ -214,7 +205,8 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                                     borderRadius: '0.5rem',
                                                     fontSize: '0.75rem',
                                                     fontWeight: 600,
-                                                    cursor: 'pointer'
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap'
                                                 }}
                                             >
                                                 <Trophy size={13} />
@@ -225,7 +217,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
                                 <button
                                     onClick={() => handleDelete(account.id)}
                                     style={{ color: '#ef4444', padding: '0.5rem', borderRadius: '0.5rem', background: 'transparent', border: 'none', cursor: 'pointer' }}

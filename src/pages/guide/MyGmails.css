@@ -1,0 +1,143 @@
+.gmails-section {
+    background: white;
+    border-radius: 1.25rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Two-column grid for Points + Levels tables */
+.gmails-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Verification history item */
+.gmails-verification-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    border: 1px solid #f1f5f9;
+}
+
+.gmails-verification-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+/* Gmail account card */
+.gmail-account-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: all 0.2s;
+}
+
+.gmail-account-email-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.gmail-account-status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Platform tabs */
+.gmails-platform-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 0;
+}
+
+/* Header with button */
+.gmails-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .gmails-section {
+        padding: 1rem;
+        border-radius: 0.75rem;
+    }
+
+    .gmails-two-col {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .gmails-verification-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .gmails-verification-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .gmail-account-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .gmail-account-card > div:last-child {
+        align-self: flex-end;
+    }
+
+    .gmail-account-email-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .gmail-account-status-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .gmails-platform-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gmails-platform-tabs button {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.78rem !important;
+        padding: 0.5rem 0.75rem !important;
+    }
+
+    .gmails-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+}
