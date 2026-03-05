@@ -118,9 +118,9 @@ class AntiDetectionService {
 
         let complianceScore = 0;
         if (!complianceResult || complianceResult.length === 0) {
-            // Initialiser à 100 pour les nouveaux
+            // Initialiser à 100 pour les nouveaux (INSERT IGNORE to avoid race condition duplicates)
             await query(`
-                INSERT INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
+                INSERT IGNORE INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
             `, [userId]);
             complianceScore = 100;
         } else {
@@ -141,9 +141,15 @@ class AntiDetectionService {
         // Les niveaux sont gardés uniquement pour les badges/affichage et quotas mensuels globaux.
 
         // b) Quota mensuel secteur (CRITIQUE - limite par secteur par mois)
-        const activityLog = typeof gmail.sector_activity_log === 'string'
-            ? JSON.parse(gmail.sector_activity_log)
-            : gmail.sector_activity_log || {};
+        let activityLog: any = {};
+        try {
+            activityLog = typeof gmail.sector_activity_log === 'string'
+                ? JSON.parse(gmail.sector_activity_log)
+                : gmail.sector_activity_log || {};
+        } catch {
+            console.warn(`⚠️ sector_activity_log corrompu pour gmail ${gmailAccountId}, reset à {}`);
+            activityLog = {};
+        }
 
         // Default to 'general' if sector_slug is missing (e.g. left join failed)
         const sectorSlug = campaign.sector_slug || 'general';
