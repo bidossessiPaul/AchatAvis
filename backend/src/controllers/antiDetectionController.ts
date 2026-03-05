@@ -76,12 +76,13 @@ SELECT * FROM sector_difficulty
             const user_id = req.user?.userId;
 
             if (!user_id || !campaign_id || !gmail_account_id) {
-                return res.status(400).json({ success: false, error: 'Missing parameters' });
+                return res.status(400).json({ success: false, error: `Missing parameters: user=${!!user_id}, campaign=${!!campaign_id}, gmail=${!!gmail_account_id}` });
             }
 
             const result = await antiDetectionService.canTakefiche(user_id, campaign_id, gmail_account_id);
             return res.json({ success: true, data: result });
         } catch (error: any) {
+            console.error("❌ checkficheCompatibility ERROR:", error.message, error.stack);
             return res.status(500).json({ success: false, error: error.message });
         }
     },
