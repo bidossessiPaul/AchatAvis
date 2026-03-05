@@ -111,20 +111,24 @@ class AntiDetectionService {
             };
         }
 
-        // 3. Récupérer score de conformité du guide
-        let complianceResult: any = await query(`
-            SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
-        `, [userId]);
-
-        let complianceScore = 0;
-        if (!complianceResult || complianceResult.length === 0) {
-            // Initialiser à 100 pour les nouveaux
-            await query(`
-                INSERT INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
+        // 3. Récupérer score de conformité du guide (défensif - table peut ne pas exister)
+        let complianceScore = 100; // Default: allow
+        try {
+            let complianceResult: any = await query(`
+                SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
             `, [userId]);
-            complianceScore = 100;
-        } else {
-            complianceScore = complianceResult[0].compliance_score || 0;
+
+            if (!complianceResult || complianceResult.length === 0) {
+                await query(`
+                    INSERT IGNORE INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
+                `, [userId]);
+                complianceScore = 100;
+            } else {
+                complianceScore = complianceResult[0].compliance_score || 0;
+            }
+        } catch (compErr: any) {
+            console.warn(`⚠️ guide_compliance_scores error for user ${userId}:`, compErr.message);
+            complianceScore = 100; // Allow by default if table has issues
         }
 
         if (complianceScore < 50) {
@@ -141,9 +145,15 @@ class AntiDetectionService {
         // Les niveaux sont gardés uniquement pour les badges/affichage et quotas mensuels globaux.
 
         // b) Quota mensuel secteur (CRITIQUE - limite par secteur par mois)
-        const activityLog = typeof gmail.sector_activity_log === 'string'
-            ? JSON.parse(gmail.sector_activity_log)
-            : gmail.sector_activity_log || {};
+        let activityLog: any = {};
+        try {
+            activityLog = typeof gmail.sector_activity_log === 'string'
+                ? JSON.parse(gmail.sector_activity_log)
+                : gmail.sector_activity_log || {};
+        } catch {
+            console.warn(`⚠️ sector_activity_log corrompu pour gmail ${gmailAccountId}, reset à {}`);
+            activityLog = {};
+        }
 
         // Default to 'general' if sector_slug is missing (e.g. left join failed)
         const sectorSlug = campaign.sector_slug || 'general';

@@ -122,8 +122,10 @@ export const FicheDetail: React.FC = () => {
             } else {
                 setIsCompModalOpen(true); // Show the error modal
             }
-        } catch (error) {
-            showError('Erreur', "Erreur lors de la vérification de compatibilité");
+        } catch (error: any) {
+            const serverMsg = error.response?.data?.error;
+            console.error("❌ Compatibility check failed:", serverMsg || error.message);
+            showError('Erreur', serverMsg || "Erreur lors de la vérification de compatibilité");
         }
     };
 
