@@ -38,22 +38,30 @@ export const guideService = {
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
-        // 🎯 TRUST SCORE: Vérifier l'éligibilité du guide
-        const guideAccountResult: any = await query(`
-            SELECT gga.*, u.email
-            FROM users u
-            JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
-            WHERE u.id = ?
-            LIMIT 1
-        `, [guide_id]);
+        // 🎯 TRUST SCORE: Vérifier l'éligibilité du guide (défensif)
+        let guideAccountResult: any = [];
+        try {
+            guideAccountResult = await query(`
+                SELECT gga.*, u.email
+                FROM users u
+                JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
+                WHERE u.id = ?
+                LIMIT 1
+            `, [guide_id]);
 
-        if (guideAccountResult && guideAccountResult.length > 0) {
-            const guideAccount = guideAccountResult[0];
+            if (guideAccountResult && guideAccountResult.length > 0) {
+                const guideAccount = guideAccountResult[0];
 
-            // Vérifier si le compte est bloqué
-            if (guideAccount.is_blocked === true || guideAccount.trust_level === 'BLOCKED') {
-                throw new Error('TRUST_SCORE_BLOCKED: Votre compte est bloqué. Score Trust insuffisant. Contactez le support.');
+                // Vérifier si le compte est bloqué
+                if (guideAccount.is_blocked === true || guideAccount.is_blocked === 1 || guideAccount.trust_level === 'BLOCKED') {
+                    throw new Error('TRUST_SCORE_BLOCKED: Votre compte est bloqué. Score Trust insuffisant. Contactez le support.');
+                }
             }
+        } catch (trustErr: any) {
+            // Re-throw trust block errors, but swallow DB errors
+            if (trustErr.message?.includes('TRUST_SCORE_BLOCKED')) throw trustErr;
+            console.warn(`⚠️ Trust check failed for guide ${guide_id}:`, trustErr.message);
+            guideAccountResult = [];
         }
 
         // Fetch order basic info
