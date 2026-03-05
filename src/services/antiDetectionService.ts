@@ -111,20 +111,24 @@ class AntiDetectionService {
             };
         }
 
-        // 3. Récupérer score de conformité du guide
-        let complianceResult: any = await query(`
-            SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
-        `, [userId]);
-
-        let complianceScore = 0;
-        if (!complianceResult || complianceResult.length === 0) {
-            // Initialiser à 100 pour les nouveaux (INSERT IGNORE to avoid race condition duplicates)
-            await query(`
-                INSERT IGNORE INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
+        // 3. Récupérer score de conformité du guide (défensif - table peut ne pas exister)
+        let complianceScore = 100; // Default: allow
+        try {
+            let complianceResult: any = await query(`
+                SELECT compliance_score FROM guide_compliance_scores WHERE user_id = ?
             `, [userId]);
-            complianceScore = 100;
-        } else {
-            complianceScore = complianceResult[0].compliance_score || 0;
+
+            if (!complianceResult || complianceResult.length === 0) {
+                await query(`
+                    INSERT IGNORE INTO guide_compliance_scores (user_id, compliance_score) VALUES (?, 100)
+                `, [userId]);
+                complianceScore = 100;
+            } else {
+                complianceScore = complianceResult[0].compliance_score || 0;
+            }
+        } catch (compErr: any) {
+            console.warn(`⚠️ guide_compliance_scores error for user ${userId}:`, compErr.message);
+            complianceScore = 100; // Allow by default if table has issues
         }
 
         if (complianceScore < 50) {
