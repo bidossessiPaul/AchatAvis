@@ -106,9 +106,10 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
     const [editForm, setEditForm] = useState({ reviewUrl: '', googleEmail: '' });
     const [isSaving, setIsSaving] = useState(false);
 
-    const filteredHistory = history.filter(item => {
+    const safeHistory = Array.isArray(history) ? history : [];
+    const filteredHistory = safeHistory.filter(item => {
         const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-        const matchesSearch = item.artisan_company.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (item.artisan_company || '').toLowerCase().includes(searchQuery.toLowerCase());
         return matchesStatus && matchesSearch;
     });
 
