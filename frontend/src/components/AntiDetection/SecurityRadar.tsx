@@ -105,7 +105,8 @@ export const SecurityRadar: React.FC = () => {
 
     if (!guideRecap) return null;
 
-    const { sectors, global_accounts } = guideRecap;
+    const sectors = guideRecap.sectors || {};
+    const global_accounts = guideRecap.global_accounts || [];
     const sectorEntries = Object.entries(sectors);
 
     return (
@@ -161,8 +162,11 @@ export const SecurityRadar: React.FC = () => {
                     gap: '1.25rem'
                 }}>
                     {global_accounts.map((acc: any) => {
-                        const { used, max, remaining } = acc.global_quota;
-                        const progress = (used / max) * 100;
+                        const quota = acc.global_quota || { used: 0, max: 20, remaining: 20 };
+                        const used = quota.used || 0;
+                        const max = quota.max || 20;
+                        const remaining = quota.remaining ?? (max - used);
+                        const progress = max > 0 ? (used / max) * 100 : 0;
                         const isLow = remaining <= 2;
                         const isEmpty = remaining === 0;
 
@@ -314,8 +318,9 @@ export const SecurityRadar: React.FC = () => {
                         </thead>
                         <tbody>
                             {sectorEntries.map(([slug, data]: [string, any]) => {
-                                const availableAccounts = data.accounts.filter((a: any) => a.status === 'ready').length;
-                                const totalAccounts = data.accounts.length;
+                                const accounts = data?.accounts || [];
+                                const availableAccounts = accounts.filter((a: any) => a.status === 'ready').length;
+                                const totalAccounts = accounts.length;
                                 const readyPercentage = totalAccounts > 0 ? (availableAccounts / totalAccounts) * 100 : 0;
                                 const isExpanded = expandedSector === slug;
 
@@ -348,10 +353,10 @@ export const SecurityRadar: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '1rem' }}>
-                                                            {data.sector_name}
+                                                            {data?.sector_name || slug}
                                                         </div>
                                                         <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
-                                                            Max {data.max_per_month} avis / mois / email
+                                                            Max {data?.max_per_month || '?'} avis / mois / email
                                                         </div>
                                                     </div>
                                                 </div>
@@ -386,7 +391,7 @@ export const SecurityRadar: React.FC = () => {
                                             <td style={{ padding: '1.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontWeight: 700, fontSize: '0.85rem' }}>
                                                     <Clock size={16} color="#f59e0b" />
-                                                    <span>{data.cooldown_days} jours</span>
+                                                    <span>{data?.cooldown_days || '?'} jours</span>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '1.5rem', textAlign: 'center' }}>
@@ -409,7 +414,7 @@ export const SecurityRadar: React.FC = () => {
                                                         >
                                                             <div style={{ padding: '1.5rem 2rem', borderBottom: '2px solid #f1f5f9' }}>
                                                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                                                                    {data.accounts.map((acc: any) => (
+                                                                    {accounts.map((acc: any) => (
                                                                         <div
                                                                             key={acc.id}
                                                                             style={{
@@ -442,7 +447,7 @@ export const SecurityRadar: React.FC = () => {
                                                                                     </div>
                                                                                 </div>
                                                                                 <button
-                                                                                    onClick={(e) => handleOpenHistory(e, acc, data.sector_id || null, data.sector_name)}
+                                                                                    onClick={(e) => handleOpenHistory(e, acc, data?.sector_id || null, data?.sector_name || slug)}
                                                                                     style={{
                                                                                         fontSize: '0.7rem',
                                                                                         fontWeight: 800,
@@ -473,7 +478,7 @@ export const SecurityRadar: React.FC = () => {
                                                                                 </div>
                                                                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
                                                                                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
-                                                                                        Secteur : {acc.used_this_month} / {data.max_per_month}
+                                                                                        Secteur : {acc.used_this_month || 0} / {data?.max_per_month || '?'}
                                                                                     </div>
                                                                                     {acc.global_quota && (
                                                                                         <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#94a3b8' }}>
