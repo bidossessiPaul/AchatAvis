@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Component, ErrorInfo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
@@ -27,6 +27,28 @@ import {
     Trophy,
     RotateCcw
 } from 'lucide-react';
+
+class SecurityRadarErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error: Error, info: ErrorInfo) {
+        console.error('SecurityRadar crashed:', error, info);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: '2rem', textAlign: 'center', background: '#fef2f2', borderRadius: '1rem', border: '1px solid #fecaca', marginBottom: '2rem' }}>
+                    <AlertTriangle size={24} color="#ef4444" style={{ marginBottom: '0.5rem' }} />
+                    <p style={{ color: '#991b1b', fontWeight: 600, margin: 0 }}>Impossible de charger le module Quotas & Anti-Détection.</p>
+                    <button onClick={() => this.setState({ hasError: false })} style={{ marginTop: '0.75rem', padding: '0.4rem 1rem', borderRadius: '0.5rem', border: '1px solid #fecaca', background: 'white', color: '#991b1b', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem' }}>
+                        Réessayer
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
 const ruleIconMap: Record<string, React.ReactNode> = {
     'gmail_reel': <User size={24} />,
@@ -79,7 +101,9 @@ export const AntiDetectionRulesPage: React.FC = () => {
 
     return (
         <DashboardLayout title="Protocoles de Sécurité">
-            <SecurityRadar />
+            <SecurityRadarErrorBoundary>
+                <SecurityRadar />
+            </SecurityRadarErrorBoundary>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem', alignItems: 'start', marginBottom: '3rem' }}>
                 <div id="rules-section">

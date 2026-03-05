@@ -90,7 +90,15 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
         set({ loading: true });
         try {
             const response = await api.get('/anti-detection/guide-recap');
-            set({ guideRecap: response.data.data, loading: false });
+            const data = response.data?.data;
+            // Ensure data has required shape to prevent SecurityRadar crash
+            set({
+                guideRecap: data ? {
+                    sectors: data.sectors || {},
+                    global_accounts: Array.isArray(data.global_accounts) ? data.global_accounts : []
+                } : null,
+                loading: false
+            });
         } catch (error: any) {
             console.error('Failed to fetch guide recap:', error);
             set({ loading: false });
@@ -101,7 +109,7 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
         set({ loading: true });
         try {
             const response = await api.get('/anti-detection/rules');
-            set({ rules: response.data.data.rules, loading: false });
+            set({ rules: response.data?.data?.rules || [], loading: false });
         } catch (error: any) {
             set({ error: error.message, loading: false });
         }
@@ -161,7 +169,10 @@ export const useAntiDetectionStore = create<AntiDetectionState>((set) => ({
             });
             // Refresh recap after activity update
             const response = await api.get('/anti-detection/guide-recap');
-            set({ guideRecap: response.data.data });
+            const data = response.data?.data;
+            if (data) {
+                set({ guideRecap: { sectors: data.sectors || {}, global_accounts: Array.isArray(data.global_accounts) ? data.global_accounts : [] } });
+            }
         } catch (error: any) {
             console.error('Failed to update activity:', error);
         }
