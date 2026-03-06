@@ -19,6 +19,10 @@ router.get('/submissions', artisanController.getMySubmissions);
 router.get('/available-packs', artisanController.getAvailablePacks);
 router.get('/stats', artisanController.getStats);
 
+// Modification des propositions existantes — pas besoin d'abonnement actif
+router.put('/proposals/:id', artisanController.updateProposal);
+router.delete('/proposals/:id', artisanController.deleteProposal);
+
 // Toutes les routes suivantes demandent un abonnement actif (actions d'écriture)
 router.use(requireActiveSubscription);
 
@@ -30,8 +34,6 @@ router.delete('/orders/:id', artisanController.deleteOrder);
 // Proposals
 router.post('/orders/:id/proposals/generate', artisanController.generateProposals);
 router.post('/orders/:id/proposals', artisanController.generateProposals);
-router.put('/proposals/:id', artisanController.updateProposal);
-router.delete('/proposals/:id', artisanController.deleteProposal);
 router.post('/orders/:id/send-validation', artisanController.sendReviewValidationEmail);
 
 // AI Response Generation
