@@ -619,64 +619,33 @@ export const FicheDetail: React.FC = () => {
 
             {/* Modal avertissement étoiles */}
             {showStarsWarning && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 9999,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '1rem'
-                }}>
+                <div className="stars-warning-overlay">
                     <div
+                        className="stars-warning-backdrop"
                         onClick={() => setShowStarsWarning(false)}
-                        style={{
-                            position: 'fixed', inset: 0,
-                            background: 'rgba(15, 23, 42, 0.6)',
-                            backdropFilter: 'blur(4px)'
-                        }}
                     />
-                    <div style={{
-                        position: 'relative', zIndex: 10000,
-                        background: 'white', borderRadius: '1.5rem',
-                        maxWidth: '480px', width: '100%',
-                        padding: '2.5rem 2rem',
-                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                        textAlign: 'center',
-                        animation: 'fadeInScale 0.3s ease'
-                    }}>
-                        <div style={{
-                            width: '64px', height: '64px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #fef3c7, #fff7ed)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            margin: '0 auto 1.25rem', border: '3px solid #f59e0b'
-                        }}>
+                    <div className="stars-warning-modal">
+                        <div className="stars-warning-icon-circle">
                             <AlertTriangle size={32} color="#f59e0b" />
                         </div>
 
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 0.5rem' }}>
+                        <h3 className="stars-warning-title">
                             Obligation importante
                         </h3>
 
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', margin: '1rem 0' }}>
+                        <div className="stars-warning-stars">
                             {[1, 2, 3, 4, 5].map((s) => (
                                 <Star key={s} size={28} fill="#f59e0b" color="#f59e0b" />
                             ))}
                         </div>
 
-                        <p style={{
-                            fontSize: '0.95rem', color: '#334155', lineHeight: 1.7,
-                            margin: '0 0 1.5rem', fontWeight: 500
-                        }}>
+                        <p className="stars-warning-text">
                             Respectez <strong style={{ color: '#b45309' }}>obligatoirement</strong> le nombre d'étoiles indiqué sur chaque avis lors de la publication, <strong style={{ color: '#b45309' }}>même s'il s'agit d'une seule étoile</strong>. Le non-respect entraînera le <strong style={{ color: '#dc2626' }}>rejet de l'avis</strong>.
                         </p>
 
                         <button
+                            className="stars-warning-btn"
                             onClick={() => setShowStarsWarning(false)}
-                            style={{
-                                width: '100%', padding: '0.85rem',
-                                borderRadius: '0.75rem', border: 'none',
-                                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                                color: 'white', fontWeight: 800, fontSize: '1rem',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)'
-                            }}
                         >
                             J'ai compris, je respecterai les étoiles
                         </button>
