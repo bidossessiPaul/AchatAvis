@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
-import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle, Star } from 'lucide-react';
 import { showConfirm } from '../../../utils/Swal';
 
 interface Step3Props {
@@ -17,6 +17,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
     const [isGenerating, setIsGenerating] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editValue, setEditValue] = useState("");
+    const [editRating, setEditRating] = useState<number>(5);
     const [progress, setProgress] = useState<{ current: number, target: number } | null>(null);
     const abortRef = useRef(false);
 
@@ -86,12 +87,13 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         if (p.submission_id) return;
         setEditingId(p.id);
         setEditValue(p.content);
+        setEditRating(p.rating || 5);
     };
 
     const handleSaveEdit = async (id: string) => {
         try {
-            await artisanService.updateProposal(id, { content: editValue });
-            setProposals(prev => prev.map(p => p.id === id ? { ...p, content: editValue } : p));
+            await artisanService.updateProposal(id, { content: editValue, rating: editRating });
+            setProposals(prev => prev.map(p => p.id === id ? { ...p, content: editValue, rating: editRating } : p));
             setEditingId(null);
         } catch (error) {
             console.error("Edit failed", error);
@@ -264,6 +266,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                             <thead style={{ backgroundColor: '#f9fafb' }}>
                                 <tr>
                                     <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Auteur</th>
+                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb', width: '120px' }}>Étoiles</th>
                                     <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Contenu</th>
                                     <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Actions</th>
                                 </tr>
@@ -291,6 +294,33 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                     </span>
                                                 )}
                                             </div>
+                                        </td>
+                                        <td style={{ padding: '1.25rem 0.5rem', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top', textAlign: 'center' }}>
+                                            {editingId === p.id ? (
+                                                <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <Star
+                                                            key={star}
+                                                            size={20}
+                                                            fill={star <= editRating ? '#f59e0b' : 'none'}
+                                                            color={star <= editRating ? '#f59e0b' : '#d1d5db'}
+                                                            style={{ cursor: 'pointer' }}
+                                                            onClick={() => setEditRating(star)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <Star
+                                                            key={star}
+                                                            size={16}
+                                                            fill={star <= (p.rating || 5) ? '#f59e0b' : 'none'}
+                                                            color={star <= (p.rating || 5) ? '#f59e0b' : '#d1d5db'}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', fontSize: '0.9375rem', color: '#1a1a1a', lineHeight: 1.6 }}>
                                             {editingId === p.id ? (
