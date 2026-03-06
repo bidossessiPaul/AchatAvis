@@ -358,6 +358,15 @@ export const FicheDetail: React.FC = () => {
                                     <Clock size={24} color="var(--guide-primary)" /> Avis en attente ({pendingProposals.length})
                                 </h3>
 
+                                {pendingProposals.length > 0 && (
+                                    <div className="stars-instruction-banner">
+                                        <Star size={20} fill="currentColor" />
+                                        <div>
+                                            <strong>Obligation :</strong> Respectez <strong>obligatoirement</strong> le nombre d'étoiles indiqué sur chaque avis lors de la publication, même s'il s'agit d'un seul étoile. Le non-respect entraînera le rejet de l'avis.
+                                        </div>
+                                    </div>
+                                )}
+
                                 {pendingProposals.length > 0 ? (
                                     <div className="reviews-stack">
                                         {pendingProposals.map((proposal) => (
