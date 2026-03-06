@@ -213,34 +213,16 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
 
                     {/* Status banner (only when NOT generating) */}
                     {!isGenerating && (
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            backgroundColor: (order.quantity || 0) > proposals.length ? '#fffbeb' : '#f0fdf4',
-                            padding: '1rem',
-                            borderRadius: '0.75rem',
-                            marginBottom: '1.5rem',
-                            border: (order.quantity || 0) > proposals.length ? '1px solid #fcd34d' : '1px solid #86efac'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '50%',
-                                    backgroundColor: (order.quantity || 0) > proposals.length ? '#fef3c7' : '#dcfce7',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: (order.quantity || 0) > proposals.length ? '#b45309' : '#15803d'
-                                }}>
+                        <div className={`proposals-status-banner ${(order.quantity || 0) > proposals.length ? 'incomplete' : 'complete'}`}>
+                            <div className="psb-left">
+                                <div className={`psb-icon ${(order.quantity || 0) > proposals.length ? 'incomplete' : 'complete'}`}>
                                     {(order.quantity || 0) > proposals.length ? <AlertCircle size={20} /> : <Check size={20} />}
                                 </div>
                                 <div>
-                                    <span style={{ fontSize: '0.9375rem', color: '#1e293b', fontWeight: 700, display: 'block' }}>
+                                    <span className="psb-title">
                                         {proposals.length} avis générés sur {order.quantity}
                                     </span>
-                                    <span style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
+                                    <span className="psb-subtitle">
                                         {(order.quantity || 0) > proposals.length
                                             ? `Il manque ${(order.quantity || 0) - proposals.length} avis pour compléter votre pack.`
                                             : "Tous les avis requis ont été générés avec succès."}
@@ -248,56 +230,46 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                 </div>
                             </div>
                             {(order.quantity || 0) > proposals.length ? (
-                                <button onClick={() => handleGenerate()} disabled={isGenerating} style={{ background: '#10b981', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, boxShadow: '0 4px 6px rgba(16, 185, 129, 0.2)' }}>
+                                <button onClick={() => handleGenerate()} disabled={isGenerating} className="psb-btn-complete">
                                     <Sparkles size={14} />
-                                    Compléter la génération
+                                    <span>Compléter</span>
                                 </button>
                             ) : (
-                                <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} disabled={isGenerating} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
+                                <button onClick={() => { if (window.confirm('Voulez-vous vraiment tout régénérer ? Les avis actuels seront supprimés.')) { handleGenerate(true); } }} disabled={isGenerating} className="psb-btn-regen">
                                     <RefreshCw size={12} />
-                                    Tout régénérer
+                                    <span>Tout régénérer</span>
                                 </button>
                             )}
                         </div>
                     )}
 
-                    <div className="proposals-table-wrapper" style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
-                            <thead style={{ backgroundColor: '#f9fafb' }}>
+                    {/* Desktop: Table layout */}
+                    <div className="proposals-table-wrapper proposals-desktop">
+                        <table className="proposals-table">
+                            <thead>
                                 <tr>
-                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Auteur</th>
-                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb', width: '120px' }}>Étoiles</th>
-                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Contenu</th>
-                                    <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>Actions</th>
+                                    <th className="pt-author">Auteur</th>
+                                    <th className="pt-stars">Étoiles</th>
+                                    <th className="pt-content">Contenu</th>
+                                    <th className="pt-actions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {proposals.map((p) => (
                                     <tr key={p.id}>
-                                        <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top', width: '20%' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                                <span style={{ fontWeight: 700, fontSize: '0.875rem', color: '#000' }}>{p.author_name}</span>
+                                        <td className="pt-cell pt-cell-author">
+                                            <div className="pt-author-info">
+                                                <span className="pt-author-name">{p.author_name}</span>
                                                 {p.submission_id && (
-                                                    <span style={{
-                                                        fontSize: '0.625rem',
-                                                        backgroundColor: '#ecfdf5',
-                                                        color: '#059669',
-                                                        padding: '2px 6px',
-                                                        borderRadius: '4px',
-                                                        fontWeight: 700,
-                                                        width: 'fit-content',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '2px'
-                                                    }}>
+                                                    <span className="pt-published-badge">
                                                         <Check size={10} /> PUBLIÉ
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
-                                        <td style={{ padding: '1.25rem 0.5rem', borderBottom: '1px solid #f3f4f6', verticalAlign: 'top', textAlign: 'center' }}>
+                                        <td className="pt-cell pt-cell-stars">
                                             {editingId === p.id ? (
-                                                <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                <div className="pt-stars-row">
                                                     {[1, 2, 3, 4, 5].map((star) => (
                                                         <Star
                                                             key={star}
@@ -310,7 +282,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                                <div className="pt-stars-row">
                                                     {[1, 2, 3, 4, 5].map((star) => (
                                                         <Star
                                                             key={star}
@@ -322,7 +294,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                 </div>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1.25rem 1rem', borderBottom: '1px solid #f3f4f6', fontSize: '0.9375rem', color: '#1a1a1a', lineHeight: 1.6 }}>
+                                        <td className="pt-cell pt-cell-content">
                                             {editingId === p.id ? (
                                                 <textarea
                                                     className="form-textarea"
@@ -334,15 +306,15 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                 <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', textAlign: 'right', verticalAlign: 'top', width: '15%' }}>
+                                        <td className="pt-cell pt-cell-actions">
                                             {!p.submission_id && (
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                <div className="pt-action-btns">
                                                     {editingId === p.id ? (
-                                                        <button onClick={() => handleSaveEdit(p.id)} style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer' }}><Check size={18} /></button>
+                                                        <button onClick={() => handleSaveEdit(p.id)} className="pt-btn-save"><Check size={18} /></button>
                                                     ) : (
-                                                        <button onClick={() => handleEdit(p)} style={{ color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}><Edit2 size={16} /></button>
+                                                        <button onClick={() => handleEdit(p)} className="pt-btn-edit"><Edit2 size={16} /></button>
                                                     )}
-                                                    <button onClick={() => handleDelete(p)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                                                    <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
                                                 </div>
                                             )}
                                         </td>
@@ -350,6 +322,73 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+
+                    {/* Mobile: Card layout */}
+                    <div className="proposals-mobile">
+                        {proposals.map((p) => (
+                            <div key={p.id} className="proposal-card-mobile">
+                                <div className="pcm-header">
+                                    <div className="pcm-author-row">
+                                        <span className="pt-author-name">{p.author_name}</span>
+                                        {p.submission_id && (
+                                            <span className="pt-published-badge">
+                                                <Check size={10} /> PUBLIÉ
+                                            </span>
+                                        )}
+                                    </div>
+                                    {!p.submission_id && (
+                                        <div className="pt-action-btns">
+                                            {editingId === p.id ? (
+                                                <button onClick={() => handleSaveEdit(p.id)} className="pt-btn-save"><Check size={18} /></button>
+                                            ) : (
+                                                <button onClick={() => handleEdit(p)} className="pt-btn-edit"><Edit2 size={16} /></button>
+                                            )}
+                                            <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="pcm-stars">
+                                    {editingId === p.id ? (
+                                        <div className="pt-stars-row">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    size={22}
+                                                    fill={star <= editRating ? '#f59e0b' : 'none'}
+                                                    color={star <= editRating ? '#f59e0b' : '#d1d5db'}
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => setEditRating(star)}
+                                                />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="pt-stars-row">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <Star
+                                                    key={star}
+                                                    size={18}
+                                                    fill={star <= (p.rating || 5) ? '#f59e0b' : 'none'}
+                                                    color={star <= (p.rating || 5) ? '#f59e0b' : '#d1d5db'}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="pcm-content">
+                                    {editingId === p.id ? (
+                                        <textarea
+                                            className="form-textarea"
+                                            value={editValue}
+                                            onChange={(e) => setEditValue(e.target.value)}
+                                            style={{ minHeight: '100px', marginBottom: 0, color: '#000' }}
+                                        />
+                                    ) : (
+                                        <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             ) : (
