@@ -220,6 +220,7 @@ export const ArtisansList: React.FC = () => {
                                         <th>Email</th>
                                         <th>Métier</th>
                                         <th>Abonnement</th>
+                                        <th>Inscrit le</th>
                                         <th
                                             onClick={() => setStatusSort(prev => prev === 'none' ? 'active_first' : prev === 'active_first' ? 'pending_first' : prev === 'pending_first' ? 'inactive_first' : 'none')}
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -276,6 +277,9 @@ export const ArtisansList: React.FC = () => {
                                                 </span>
                                             </td>
 
+                                            <td className="text-gray-500" style={{ whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
+                                                {artisan.created_at ? new Date(artisan.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                                            </td>
                                             <td>
                                                 <span className={`admin-badge ${artisan.status || 'inactive'}`}>
                                                     {artisan.status}

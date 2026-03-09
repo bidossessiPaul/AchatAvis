@@ -219,6 +219,65 @@
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
+/* Payment info banner */
+.plan-payment-info-banner {
+    background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
+    border: 1px solid #93c5fd;
+    color: #1e40af;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-xl);
+    text-align: center;
+    margin-bottom: 2rem;
+    max-width: 1000px;
+    width: 100%;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Plan button as link */
+.plan-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+/* Floating WhatsApp button */
+.whatsapp-fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: #25d366;
+    color: #fff;
+    padding: 0.875rem 1.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    animation: whatsapp-pulse 2s infinite;
+}
+
+.whatsapp-fab:hover {
+    background-color: #1ebe57;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(37, 211, 102, 0.5);
+}
+
+.whatsapp-fab-label {
+    white-space: nowrap;
+}
+
+@keyframes whatsapp-pulse {
+    0%, 100% { box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); }
+    50% { box-shadow: 0 6px 30px rgba(37, 211, 102, 0.7); }
+}
+
 @media (max-width: 640px) {
     .active-pack-alert {
         flex-direction: column;
@@ -227,5 +286,26 @@
 
     .btn-submit-mission {
         width: 100%;
+    }
+
+    .whatsapp-fab {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .whatsapp-fab-label {
+        display: none;
+    }
+
+    .whatsapp-fab {
+        border-radius: 50%;
+        padding: 1rem;
+    }
+
+    .plan-payment-info-banner {
+        font-size: 0.85rem;
+        padding: 0.75rem 1rem;
     }
 }
