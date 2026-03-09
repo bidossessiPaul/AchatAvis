@@ -1108,3 +1108,267 @@ export const sendGuideGmailBlockedNotification = async (guideEmail: string, guid
         console.error('Error sending guide gmail blocked notification:', error);
     }
 };
+
+/**
+ * Send notification email to all guides when a new fiche is approved
+ */
+export const sendNewFicheToGuidesEmail = async (
+    guideEmails: string[],
+    newFiche: { id: string; company_name: string; sector?: string; quantity: number; city?: string },
+    recentFiches: { id: string; company_name: string; sector?: string; quantity: number; city?: string }[],
+    baseUrl?: string
+) => {
+    if (guideEmails.length === 0) return;
+
+    const brandOrange = '#FF991F';
+    const brandBlack = '#0a0a0a';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+
+    const recentFichesHtml = recentFiches.map(f => `
+        <tr>
+            <td style="padding: 16px; border-bottom: 1px solid #f3f4f6;">
+                <div style="font-weight: 700; color: ${brandBlack}; font-size: 15px;">${f.company_name}</div>
+                <div style="font-size: 13px; color: #6b7280; margin-top: 4px;">${f.sector || 'Autre'} ${f.city ? '• ' + f.city : ''}</div>
+            </td>
+            <td style="padding: 16px; border-bottom: 1px solid #f3f4f6; text-align: center;">
+                <span style="font-weight: 700; color: ${brandBlack};">${f.quantity} avis</span>
+            </td>
+            <td style="padding: 16px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                <a href="${frontendUrl}/guide/fiches/${f.id}"
+                   style="color: ${brandOrange}; font-weight: 700; text-decoration: none; font-size: 14px;">
+                   Voir →
+                </a>
+            </td>
+        </tr>
+    `).join('');
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: emailConfig.from,
+        bcc: guideEmails.join(', '),
+        subject: `🔥 Nouvelle fiche disponible : ${newFiche.company_name} — Gagnez rapidement !`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 2px solid ${brandBlack}; }
+                    .header { background-color: ${brandBlack}; color: white; padding: 32px; text-align: center; }
+                    .title { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .content { padding: 32px; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
+                    .new-fiche-box { background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%); border: 2px solid ${brandOrange}; border-radius: 16px; padding: 28px; margin: 24px 0; position: relative; }
+                    .badge-new { position: absolute; top: -12px; left: 20px; background-color: ${brandOrange}; color: white; font-size: 12px; font-weight: 800; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .fiche-name { font-size: 20px; font-weight: 800; color: ${brandBlack}; margin-top: 8px; }
+                    .fiche-meta { font-size: 14px; color: #6b7280; margin-top: 8px; }
+                    .btn-primary { display: inline-block; background-color: ${brandOrange}; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; text-transform: uppercase; margin-top: 16px; }
+                    .section-title { font-size: 16px; font-weight: 800; color: ${brandBlack}; text-transform: uppercase; margin: 32px 0 16px 0; letter-spacing: 0.05em; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header">
+                            <img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 40px; margin-bottom: 12px;">
+                            <h2 class="title">Nouvelle mission disponible !</h2>
+                        </div>
+                        <div class="content">
+                            <p class="text">
+                                Une nouvelle fiche vient d'être validée et attend vos avis. Soyez parmi les premiers à la prendre en charge !
+                            </p>
+
+                            <div class="new-fiche-box">
+                                <div class="badge-new">🔥 Nouvelle</div>
+                                <div class="fiche-name">${newFiche.company_name}</div>
+                                <div class="fiche-meta">
+                                    ${newFiche.sector || 'Autre'} ${newFiche.city ? '• ' + newFiche.city : ''} • <strong>${newFiche.quantity} avis</strong> demandés
+                                </div>
+                                <div style="text-align: center;">
+                                    <a href="${frontendUrl}/guide/fiches/${newFiche.id}" class="btn-primary">
+                                        Voir la fiche →
+                                    </a>
+                                </div>
+                            </div>
+
+                            ${recentFiches.length > 0 ? `
+                                <div class="section-title">📋 Autres fiches disponibles</div>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    ${recentFichesHtml}
+                                </table>
+                            ` : ''}
+
+                            <div style="text-align: center; margin-top: 32px;">
+                                <a href="${frontendUrl}/guide/fiches" class="btn-primary" style="background-color: ${brandBlack};">
+                                    Voir toutes les fiches
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis — Ne ratez aucune opportunité.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`New fiche notification sent to ${guideEmails.length} guides`);
+    } catch (error) {
+        console.error('Error sending new fiche notification to guides:', error);
+    }
+};
+
+/**
+ * Send admin notification when a new user registers
+ */
+export const sendNewUserRegistrationAdminEmail = async (
+    userName: string,
+    userEmail: string,
+    userRole: 'artisan' | 'guide',
+    extraInfo?: { companyName?: string; city?: string; trade?: string },
+    baseUrl?: string
+) => {
+    const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
+    const brandOrange = '#FF991F';
+    const brandBlack = '#0a0a0a';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+
+    const isArtisan = userRole === 'artisan';
+    const roleBadge = isArtisan ? '🏗️ Artisan' : '🧭 Guide Local';
+    const roleColor = isArtisan ? brandOrange : '#2383e2';
+
+    const detailsHtml = extraInfo ? `
+        <div style="background-color: #f9fafb; padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid #e5e7eb;">
+            ${extraInfo.companyName ? `<p style="margin: 4px 0;"><strong>Entreprise :</strong> ${extraInfo.companyName}</p>` : ''}
+            ${extraInfo.trade ? `<p style="margin: 4px 0;"><strong>Métier :</strong> ${extraInfo.trade}</p>` : ''}
+            ${extraInfo.city ? `<p style="margin: 4px 0;"><strong>Ville :</strong> ${extraInfo.city}</p>` : ''}
+        </div>
+    ` : '';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: `👤 Nouvel inscrit ${roleBadge} : ${userName}`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 20px; color: #111827; background-color: #f9fafb; }
+                    .card { background: white; padding: 32px; border-radius: 16px; border: 1px solid #e5e7eb; }
+                    .header-badge { display: inline-block; background-color: ${roleColor}; color: white; font-size: 13px; font-weight: 800; padding: 6px 16px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .user-name { font-size: 22px; font-weight: 800; color: ${brandBlack}; margin: 16px 0 4px 0; }
+                    .user-email { font-size: 15px; color: #6b7280; margin: 0; }
+                    .btn { display: inline-block; background-color: ${brandBlack}; color: #ffffff !important; padding: 12px 24px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; margin-top: 20px; }
+                    .footer { margin-top: 24px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header-badge">${roleBadge}</div>
+                        <h2 class="user-name">${userName}</h2>
+                        <p class="user-email">${userEmail}</p>
+                        ${detailsHtml}
+                        <a href="${frontendUrl}/admin/${isArtisan ? 'artisans' : 'guides'}" class="btn">
+                            Voir dans le dashboard →
+                        </a>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis — Notification admin
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error('Error sending new user registration admin email:', error);
+    }
+};
+
+/**
+ * Generic admin event notification email
+ * Used for all major system events (review submitted, order completed, payout request, payment, etc.)
+ */
+export const sendAdminEventNotification = async (
+    event: {
+        emoji: string;
+        title: string;
+        details: { label: string; value: string }[];
+        ctaLabel?: string;
+        ctaUrl?: string;
+    },
+    baseUrl?: string
+) => {
+    const adminEmail = process.env.ADMIN_EMAIL || emailConfig.from;
+    const brandBlack = '#0a0a0a';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+
+    const detailsHtml = event.details.map(d => `
+        <tr>
+            <td style="padding: 8px 12px; color: #6b7280; font-size: 14px; border-bottom: 1px solid #f3f4f6;">${d.label}</td>
+            <td style="padding: 8px 12px; font-weight: 700; color: ${brandBlack}; font-size: 14px; border-bottom: 1px solid #f3f4f6;">${d.value}</td>
+        </tr>
+    `).join('');
+
+    const ctaHtml = event.ctaUrl ? `
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="${frontendUrl}${event.ctaUrl}"
+               style="display: inline-block; background-color: ${brandBlack}; color: #ffffff !important; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px;">
+                ${event.ctaLabel || 'Voir dans le dashboard'} →
+            </a>
+        </div>
+    ` : '';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: `${event.emoji} ${event.title}`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 20px; background-color: #f9fafb; }
+                    .card { background: white; border-radius: 16px; overflow: hidden; border: 1px solid #e5e7eb; }
+                    .card-header { background-color: ${brandBlack}; color: white; padding: 20px 28px; }
+                    .card-header h2 { margin: 0; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+                    .card-body { padding: 28px; }
+                    .footer { margin-top: 20px; text-align: center; font-size: 12px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2>${event.emoji} ${event.title}</h2>
+                        </div>
+                        <div class="card-body">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                ${detailsHtml}
+                            </table>
+                            ${ctaHtml}
+                        </div>
+                    </div>
+                    <div class="footer">&copy; ${new Date().getFullYear()} AchatAvis</div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending admin event notification [${event.title}]:`, error);
+    }
+};
