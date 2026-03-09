@@ -13,7 +13,8 @@ import {
     ChevronRight,
     ArrowUpDown,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    LogIn
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -115,6 +116,16 @@ export const GuidesList: React.FC = () => {
             loadGuides(true);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la suppression');
+        }
+    };
+
+    const handleImpersonate = async (userId: string) => {
+        try {
+            const { accessToken, user } = await adminService.impersonateUser(userId);
+            const role = user.role || 'guide';
+            window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
+        } catch {
+            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 
@@ -274,6 +285,14 @@ export const GuidesList: React.FC = () => {
                                                         title="Voir détails"
                                                     >
                                                         <Eye size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleImpersonate(guide.id)}
+                                                        className="action-btn"
+                                                        title="Se connecter en tant que"
+                                                        style={{ color: '#2383e2' }}
+                                                    >
+                                                        <LogIn size={18} />
                                                     </button>
                                                     {guide.status !== 'active' && (
                                                         <button

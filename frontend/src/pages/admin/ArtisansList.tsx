@@ -16,7 +16,8 @@ import {
     MapPin,
     ArrowUpDown,
     ArrowUp,
-    ArrowDown
+    ArrowDown,
+    LogIn
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -135,6 +136,16 @@ export const ArtisansList: React.FC = () => {
             loadArtisans(true);
         } catch (error) {
             showError('Erreur', 'Erreur lors de la suppression');
+        }
+    };
+
+    const handleImpersonate = async (userId: string) => {
+        try {
+            const { accessToken, user } = await adminService.impersonateUser(userId);
+            const role = user.role || 'artisan';
+            window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
+        } catch {
+            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 
@@ -287,16 +298,21 @@ export const ArtisansList: React.FC = () => {
                                             </td>
                                             <td className="actions-cell">
                                                 <div className="action-buttons">
-                                                    <>
-                                                        <button
-                                                            onClick={() => (window.location.href = `/admin/artisans/${artisan.id}`)}
-                                                            className="action-btn"
-                                                            title="Voir détails"
-                                                        >
-                                                            <Eye size={18} />
-                                                        </button>
-                                                    </>
-
+                                                    <button
+                                                        onClick={() => (window.location.href = `/admin/artisans/${artisan.id}`)}
+                                                        className="action-btn"
+                                                        title="Voir détails"
+                                                    >
+                                                        <Eye size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleImpersonate(artisan.id)}
+                                                        className="action-btn"
+                                                        title="Se connecter en tant que"
+                                                        style={{ color: '#2383e2' }}
+                                                    >
+                                                        <LogIn size={18} />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDelete(artisan.id)}
                                                         className="action-btn delete-btn"

@@ -1,6 +1,9 @@
 import { query, pool } from '../config/database';
 import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail, sendNewFicheToGuidesEmail } from './emailService';
 import { notificationService } from './notificationService';
+import { TokenPayload } from '../utils/token';
+import jwt from 'jsonwebtoken';
+import { jwtConfig } from '../config/jwt';
 
 /**
  * Get all artisans with their profiles
@@ -1887,5 +1890,58 @@ export const toggleGmailAccountBlock = async (accountId: number, block: boolean,
         );
     }
     return { success: true, message: block ? 'Compte Gmail bloqué' : 'Compte Gmail débloqué' };
+};
+
+/**
+ * Impersonate a user — generate a temporary access token for the target user
+ */
+export const impersonateUser = async (adminId: string, targetUserId: string) => {
+    // Fetch target user
+    const rows: any = await query(`
+        SELECT u.id, u.email, u.full_name, u.role, u.status, u.permissions,
+               ap.company_name, ap.trade, ap.google_business_url,
+               ap.subscription_status, ap.subscription_end_date, ap.subscription_tier,
+               ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
+               COALESCE(ap.phone, gp.phone) as phone,
+               COALESCE(ap.city, gp.city) as city,
+               gp.google_email, gp.local_guide_level
+        FROM users u
+        LEFT JOIN artisans_profiles ap ON u.id = ap.user_id
+        LEFT JOIN guides_profiles gp ON u.id = gp.user_id
+        WHERE u.id = ?
+    `, [targetUserId]);
+
+    if (!rows || rows.length === 0) {
+        throw new Error('Utilisateur non trouvé');
+    }
+
+    const user = rows[0];
+
+    if (user.role === 'admin') {
+        throw new Error('Impossible d\'impersonifier un admin');
+    }
+
+    // Generate a 1-hour access token for the target user
+    const payload: TokenPayload = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        permissions: user.permissions,
+    };
+
+    const accessToken = jwt.sign(payload, jwtConfig.accessTokenSecret as string, {
+        expiresIn: '1h',
+    });
+
+    console.log(`[ADMIN IMPERSONATE] Admin ${adminId} is impersonating user ${targetUserId} (${user.email}, ${user.role})`);
+
+    // Build user response (same shape as login response)
+    const { password_hash, two_factor_secret, ...safeUser } = user;
+
+    return {
+        accessToken,
+        user: safeUser,
+    };
 };
 

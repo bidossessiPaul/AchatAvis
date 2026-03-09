@@ -15,7 +15,8 @@ import {
     Shield,
     Briefcase,
     Smartphone,
-    MessageCircle
+    MessageCircle,
+    LogIn
 } from 'lucide-react';
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { getFileUrl } from '../../utils/url';
@@ -148,6 +149,16 @@ export const GuideDetail: React.FC = () => {
     };
 
 
+
+    const handleImpersonate = async () => {
+        try {
+            const { accessToken, user } = await adminService.impersonateUser(id!);
+            const role = user.role || 'guide';
+            window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
+        } catch {
+            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+        }
+    };
 
     const handleStatusUpdate = async (newStatus: string) => {
         const action = newStatus === 'suspended' ? 'suspendre' : 'activer';
@@ -727,6 +738,10 @@ export const GuideDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Contrôle du compte</h3>
                             <div className="action-premium-stack" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
+                                    <LogIn size={18} />
+                                    Se connecter en tant que
+                                </button>
                                 {profile.status === 'active' ? (
                                     <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
                                         <XCircle size={18} />

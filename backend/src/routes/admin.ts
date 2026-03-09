@@ -79,6 +79,9 @@ router.delete('/packs/:id', adminController.deletePack);
 router.get('/guides-balances', adminController.getGuidesWithBalance);
 router.post('/force-pay-guide', adminController.forcePayGuide);
 
+// Impersonation
+router.post('/impersonate/:userId', adminController.impersonateUser);
+
 // Gmail accounts management
 router.get('/gmail-accounts', adminController.getGmailAccounts);
 router.patch('/gmail-accounts/:accountId/block', adminController.toggleGmailBlock);
