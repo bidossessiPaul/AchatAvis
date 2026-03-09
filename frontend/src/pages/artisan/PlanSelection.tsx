@@ -1,17 +1,25 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, MessageCircle } from 'lucide-react';
 import './PlanSelection.css';
 
 import { artisanService } from '../../services/artisanService';
 import { SubscriptionPack } from '../../types';
-import { showError, showConfirm } from '../../utils/Swal';
+
+const STRIPE_LINKS: Record<number, string> = {
+    29900: 'https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13',
+    23500: 'https://buy.stripe.com/aFabJ270L4Zw3kq4vW7Re12',
+    49900: 'https://buy.stripe.com/14A3cw5WHbnU1cifaA7Re14',
+};
+
+const WHATSAPP_NUMBER = '33644678642';
+const WHATSAPP_MESSAGE = encodeURIComponent(
+    "Bonjour, je viens d'effectuer le paiement de mon pack AchatAvis. Merci d'activer mon abonnement."
+);
 
 export const PlanSelection: React.FC = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const [isLoading, setIsLoading] = useState<string | null>(null);
     const [packs, setPacks] = useState<SubscriptionPack[]>([]);
     const [availablePacks, setAvailablePacks] = useState<any[]>([]);
     const [isFetching, setIsFetching] = useState(true);
@@ -35,34 +43,6 @@ export const PlanSelection: React.FC = () => {
         }
     };
 
-    const handleSubscribe = async (planId: string) => {
-        if (availablePacks.length > 0) {
-            const result = await showConfirm(
-                'Pack déjà actif',
-                `Vous avez encore des crédits disponibles. Voulez-vous vraiment acheter un nouveau pack ?`
-            );
-            if (!result.isConfirmed) return;
-        }
-
-        const redirectBack = searchParams.get('redirect_back');
-        if (redirectBack) {
-            localStorage.setItem('redirect_after_payment', redirectBack);
-        } else {
-            localStorage.removeItem('redirect_after_payment');
-        }
-
-        setIsLoading(planId);
-        try {
-            const { url } = await artisanService.createCheckoutSession(planId);
-            // Redirect to Stripe Checkout
-            window.location.href = url;
-        } catch (error) {
-            console.error("Payment error", error);
-            showError('Erreur', "Une erreur est survenue lors de l'initialisation du paiement.");
-            setIsLoading(null);
-        }
-    };
-
     return (
         <div className="plan-selection-container">
             <div className="plan-header">
@@ -74,20 +54,8 @@ export const PlanSelection: React.FC = () => {
                 </p>
             </div>
 
-            <div style={{
-                backgroundColor: '#fff1f2',
-                border: '2px solid #ef4444',
-                color: '#ef4444',
-                padding: '1.5rem',
-                borderRadius: '1rem',
-                textAlign: 'center',
-                marginBottom: '2rem',
-                fontWeight: 900,
-                fontSize: '1.5rem',
-                boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1)'
-            }}>
-                ⚠️ MODE TEST ACTIVÉ : NE PAS UTILISER DE VRAIE CARTE BANCAIRE.<br />
-                <span style={{ fontSize: '1rem', fontWeight: 600 }}>Le site est en cours de développement. Les paiements réels ne sont pas encore supportés.</span>
+            <div className="plan-payment-info-banner">
+                <p>Après le paiement, cliquez sur le bouton WhatsApp en bas à droite pour confirmer et demander l'activation de votre pack.</p>
             </div>
 
             {availablePacks.length > 0 && (
@@ -128,13 +96,14 @@ export const PlanSelection: React.FC = () => {
                             ))}
                         </ul>
 
-                        <button
-                            onClick={() => handleSubscribe(plan.id)}
-                            disabled={isLoading !== null}
+                        <a
+                            href={STRIPE_LINKS[plan.price_cents] || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className={`plan-button ${plan.color}`}
                         >
-                            {isLoading === plan.id ? 'Chargement...' : 'Choisir ce plan'}
-                        </button>
+                            Payer {plan.price_cents / 100}€
+                        </a>
                     </div>
                 ))}
             </div>
@@ -147,6 +116,18 @@ export const PlanSelection: React.FC = () => {
                     Retour au tableau de bord
                 </button>
             </div>
+
+            {/* Floating WhatsApp button */}
+            <a
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="whatsapp-fab"
+                title="Confirmer mon paiement via WhatsApp"
+            >
+                <MessageCircle size={28} />
+                <span className="whatsapp-fab-label">J'ai payé, activer mon pack</span>
+            </a>
         </div>
     );
 };
