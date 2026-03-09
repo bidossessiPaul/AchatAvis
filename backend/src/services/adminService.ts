@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail } from './emailService';
+import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail, sendNewFicheToGuidesEmail } from './emailService';
 import { notificationService } from './notificationService';
 
 /**
@@ -779,7 +779,7 @@ export const approvefiche = async (orderId: string, baseUrl?: string) => {
                 await sendficheDecisionEmail(rows[0].email, rows[0].full_name, orderId, 'in_progress', baseUrl);
 
                 // SSE NOTIFICATION
-                notificationService.sendToUser(rows[0].artisan_id || rows[0].id, { // Fallback to id if needed
+                notificationService.sendToUser(rows[0].artisan_id || rows[0].id, {
                     type: 'new_fiche',
                     title: 'fiche Validée ! 🎈',
                     message: 'Votre fiche est maintenant visible par nos Guides Locaux.',
@@ -788,6 +788,43 @@ export const approvefiche = async (orderId: string, baseUrl?: string) => {
             }
         } catch (error) {
             console.error('Error sending fiche decision email:', error);
+        }
+
+        // 4. Notify all active guides by email
+        try {
+            // Get the approved fiche details
+            const [ficheRows]: any = await pool.query(`
+                SELECT o.id, o.company_name, o.quantity, o.city,
+                       sd.sector_name as sector
+                FROM reviews_orders o
+                LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+                WHERE o.id = ?
+            `, [orderId]);
+
+            // Get all active guides' emails
+            const [guides]: any = await pool.query(
+                `SELECT email FROM users WHERE role = 'guide' AND status = 'active'`
+            );
+
+            if (ficheRows.length > 0 && guides.length > 0) {
+                // Get the 10 most recent available fiches (excluding the one just approved)
+                const [recentFiches]: any = await pool.query(`
+                    SELECT o.id, o.company_name, o.quantity, o.city,
+                           sd.sector_name as sector
+                    FROM reviews_orders o
+                    LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+                    WHERE o.status = 'in_progress'
+                      AND o.reviews_received < o.quantity
+                      AND o.id != ?
+                    ORDER BY o.published_at DESC
+                    LIMIT 10
+                `, [orderId]);
+
+                const guideEmails = guides.map((g: any) => g.email);
+                await sendNewFicheToGuidesEmail(guideEmails, ficheRows[0], recentFiches, baseUrl);
+            }
+        } catch (error) {
+            console.error('Error sending new fiche notification to guides:', error);
         }
     } catch (error) {
         await connection.rollback();

@@ -2,6 +2,7 @@ import { query } from '../config/database';
 import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
+import { sendAdminEventNotification } from './emailService';
 
 export const guideService = {
     /**
@@ -301,6 +302,42 @@ export const guideService = {
             link: '/artisan/dashboard'
         });
 
+        // 8. Notify Admin — new review proof submitted
+        const orderDetails: any = await query(
+            `SELECT company_name, quantity, reviews_received FROM reviews_orders WHERE id = ?`,
+            [data.orderId]
+        );
+        const guideInfo: any = await query('SELECT full_name FROM users WHERE id = ?', [guideId]);
+        const od = orderDetails?.[0];
+        const guideName = guideInfo?.[0]?.full_name || 'Guide';
+
+        sendAdminEventNotification({
+            emoji: '📝',
+            title: `Nouvel avis soumis — ${od?.company_name || 'Fiche'}`,
+            details: [
+                { label: 'Guide', value: guideName },
+                { label: 'Email Google', value: data.googleEmail },
+                { label: 'Entreprise', value: od?.company_name || '—' },
+                { label: 'Progression', value: `${od?.reviews_received || '?'}/${od?.quantity || '?'} avis` },
+            ],
+            ctaLabel: 'Voir les soumissions',
+            ctaUrl: '/admin/submissions',
+        }, data.baseUrl).catch(() => {});
+
+        // 9. Notify Admin if order just completed
+        if (od && od.reviews_received >= od.quantity) {
+            sendAdminEventNotification({
+                emoji: '✅',
+                title: `Fiche complétée — ${od.company_name}`,
+                details: [
+                    { label: 'Entreprise', value: od.company_name },
+                    { label: 'Total avis', value: `${od.quantity}` },
+                ],
+                ctaLabel: 'Voir les fiches',
+                ctaUrl: '/admin/fiches',
+            }, data.baseUrl).catch(() => {});
+        }
+
         return { id: submissionId, success: true };
     },
 
@@ -370,6 +407,21 @@ export const guideService = {
             INSERT INTO payout_requests (id, guide_id, amount, status, requested_at)
             VALUES (?, ?, ?, 'pending', NOW())
         `, [payoutId, guideId, stats.balance]);
+
+        // Notify admin of payout request
+        const guideUser: any = await query('SELECT full_name, email FROM users WHERE id = ?', [guideId]);
+        const gu = guideUser?.[0];
+        sendAdminEventNotification({
+            emoji: '💰',
+            title: `Demande de retrait — ${gu?.full_name || 'Guide'}`,
+            details: [
+                { label: 'Guide', value: gu?.full_name || '—' },
+                { label: 'Email', value: gu?.email || '—' },
+                { label: 'Montant', value: `${stats.balance.toFixed(2)}€` },
+            ],
+            ctaLabel: 'Gérer les retraits',
+            ctaUrl: '/admin/payouts',
+        }).catch(() => {});
 
         return {
             id: payoutId,

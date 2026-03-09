@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { query } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
-import { sendPackActivationEmail } from './emailService';
+import { sendPackActivationEmail, sendAdminEventNotification } from './emailService';
 
 dotenv.config();
 
@@ -123,11 +123,25 @@ export const stripeService = {
                         quantity
                     ]);
 
-                    // Send activation email
+                    // Send activation email + admin notification
                     try {
                         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
                         if (user && user.length > 0) {
                             await sendPackActivationEmail(user[0].email, user[0].full_name, planId, quantity);
+
+                            sendAdminEventNotification({
+                                emoji: '💳',
+                                title: `Paiement reçu — ${user[0].full_name}`,
+                                details: [
+                                    { label: 'Artisan', value: user[0].full_name },
+                                    { label: 'Email', value: user[0].email },
+                                    { label: 'Pack', value: packName },
+                                    { label: 'Montant', value: `${amount}€` },
+                                    { label: 'Crédits avis', value: `${quantity}` },
+                                ],
+                                ctaLabel: 'Voir les artisans',
+                                ctaUrl: '/admin/artisans',
+                            }).catch(() => {});
                         }
                     } catch (emailError) {
                         console.error('Failed to send pack activation email:', emailError);
@@ -166,6 +180,25 @@ export const stripeService = {
                      WHERE stripe_subscription_id = ?`,
                     [subscription.id]
                 );
+
+                // Notify admin of cancellation
+                const cancelledUser: any = await query(
+                    `SELECT u.full_name, u.email FROM users u JOIN artisans_profiles ap ON u.id = ap.user_id WHERE ap.stripe_subscription_id = ?`,
+                    [subscription.id]
+                );
+                if (cancelledUser?.[0]) {
+                    sendAdminEventNotification({
+                        emoji: '❌',
+                        title: `Abonnement annulé — ${cancelledUser[0].full_name}`,
+                        details: [
+                            { label: 'Artisan', value: cancelledUser[0].full_name },
+                            { label: 'Email', value: cancelledUser[0].email },
+                        ],
+                        ctaLabel: 'Voir les artisans',
+                        ctaUrl: '/admin/artisans',
+                    }).catch(() => {});
+                }
+
                 console.log(`Cancelled subscription ${subscription.id}`);
                 break;
             }
