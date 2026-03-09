@@ -204,5 +204,10 @@ export const adminService = {
     toggleGmailBlock: async (accountId: number, block: boolean, reason?: string) => {
         const response = await api.patch(`/admin/gmail-accounts/${accountId}/block`, { block, reason });
         return response.data;
+    },
+
+    impersonateUser: async (userId: string) => {
+        const response = await api.post(`/admin/impersonate/${userId}`);
+        return response.data;
     }
 };

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/auth/Login';
+import { ImpersonateLanding } from './pages/auth/ImpersonateLanding';
 import { RegisterArtisan } from './pages/auth/RegisterArtisan';
 import { RegisterGuide } from './pages/auth/RegisterGuide';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
@@ -88,6 +89,7 @@ function App() {
                         <Login />
                     </PublicRoute>
                 } />
+                <Route path="/auth/impersonate" element={<ImpersonateLanding />} />
                 <Route path="/register/artisan" element={
                     <PublicRoute>
                         <RegisterArtisan />
