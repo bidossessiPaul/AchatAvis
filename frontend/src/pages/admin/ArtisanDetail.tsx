@@ -21,7 +21,8 @@ import {
     MessageSquare,
     MessageCircle,
     User,
-    Smartphone
+    Smartphone,
+    LogIn
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError, showInput, showSelection } from '../../utils/Swal';
@@ -279,6 +280,16 @@ export const ArtisanDetail: React.FC = () => {
     };
 
 
+
+    const handleImpersonate = async () => {
+        try {
+            const { accessToken, user } = await adminService.impersonateUser(id!);
+            const role = user.role || 'artisan';
+            window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
+        } catch {
+            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+        }
+    };
 
     const handleDeleteUser = async () => {
         if (!data) return;
@@ -879,6 +890,10 @@ export const ArtisanDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Actions Admin</h3>
                             <div className="action-premium-stack">
+                                <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
+                                    <LogIn size={18} />
+                                    Se connecter en tant que
+                                </button>
                                 {profile.status === 'active' ? (
                                     <>
                                         <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">

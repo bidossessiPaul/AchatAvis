@@ -258,11 +258,11 @@ export const guideService = {
             throw new Error('Vous avez déjà soumis une preuve pour cet avis.');
         }
 
-        // 2. Check if this Google email was already used for this Artisan (business)
+        // 2. Check if this Google email was already used for this specific fiche (order)
         const existingEmail: any = await query(`
             SELECT id FROM reviews_submissions
-            WHERE artisan_id = ? AND google_email = ?
-        `, [data.artisanId, data.googleEmail]);
+            WHERE order_id = ? AND google_email = ?
+        `, [data.orderId, data.googleEmail]);
 
         if (existingEmail && existingEmail.length > 0) {
             throw new Error('ce compte mail a déjà été utiliser pour ce projet.');

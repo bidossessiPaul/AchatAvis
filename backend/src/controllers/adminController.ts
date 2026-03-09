@@ -723,6 +723,26 @@ export const getGmailAccounts = async (_req: Request, res: Response) => {
     }
 };
 
+/**
+ * Impersonate a user (login as them)
+ * POST /api/admin/impersonate/:userId
+ */
+export const impersonateUser = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const adminId = req.user?.userId;
+
+    try {
+        console.log(`[ADMIN] Impersonate request: admin ${adminId} → user ${userId}`);
+        const result = await adminService.impersonateUser(adminId!, userId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Impersonate user error:', error);
+        res.status(error.message === 'Utilisateur non trouvé' ? 404 : 500).json({
+            error: error.message || 'Internal server error'
+        });
+    }
+};
+
 export const toggleGmailBlock = async (req: Request, res: Response) => {
     const { accountId } = req.params;
     const { block, reason } = req.body;
