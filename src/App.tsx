@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/auth/Login';
 import { ImpersonateLanding } from './pages/auth/ImpersonateLanding';
 import { RegisterArtisan } from './pages/auth/RegisterArtisan';
@@ -77,6 +78,7 @@ function App() {
     }
 
     return (
+        <ErrorBoundary>
         <BrowserRouter>
 
             <Toaster position="top-right" reverseOrder={false} />
@@ -413,6 +415,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
             </Routes>
         </BrowserRouter>
+        </ErrorBoundary>
     );
 }
 
