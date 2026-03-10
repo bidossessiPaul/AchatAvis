@@ -1,47 +1,36 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '../context/authStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import toast from 'react-hot-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 10000; // 10 seconds between retries
 
 export const useNotifications = () => {
     const { user, isAuthenticated } = useAuthStore();
     const { addNotification } = useNotificationStore();
     const eventSourceRef = useRef<EventSource | null>(null);
+    const retriesRef = useRef(0);
+    const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => {
-        if (!isAuthenticated || !user) {
-            if (eventSourceRef.current) {
-                eventSourceRef.current.close();
-                eventSourceRef.current = null;
-            }
-            return;
-        }
-
+    const connect = useCallback(() => {
         const token = localStorage.getItem('accessToken');
         if (!token) return;
 
-        //SSE connection with auth token
         const url = `${API_BASE_URL}/notifications/stream?token=${token}`;
-
-        // Note: Standard EventSource doesn't support headers easily.
-        // We pass the token in query param and verify in middleware.
-        // OR we'd need a polyfill/custom implementation. 
-        // For now, let's use the query param approach as it's simplest for native EventSource.
-
-        console.log("🔗 Connecting to SSE...");
         const es = new EventSource(url);
         eventSourceRef.current = es;
+
+        es.onopen = () => {
+            retriesRef.current = 0; // Reset retries on successful connection
+        };
 
         es.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log("📩 SSE Message Received:", data);
-
                 if (data.type === 'connected') return;
 
-                // Add to store
                 addNotification({
                     type: data.type || 'system',
                     title: data.title || 'Notification',
@@ -50,28 +39,53 @@ export const useNotifications = () => {
                     data: data.data
                 });
 
-                // Trigger toast
                 toast.success(data.message, {
                     duration: 5000,
                     position: 'top-right',
-                    icon: '🔔'
+                    icon: '\uD83D\uDD14'
                 });
-
             } catch (err) {
-                console.error("❌ Error parsing SSE data:", err);
+                // Ignore parse errors silently
             }
         };
 
-        es.onerror = (err) => {
-            console.error("❌ SSE Connection Error:", err);
-            // Browser automatically tries to reconnect SSE
+        es.onerror = () => {
+            es.close();
+            eventSourceRef.current = null;
+
+            // Only retry up to MAX_RETRIES times
+            if (retriesRef.current < MAX_RETRIES) {
+                retriesRef.current++;
+                retryTimeoutRef.current = setTimeout(() => {
+                    connect();
+                }, RETRY_DELAY);
+            }
         };
+    }, [addNotification]);
+
+    useEffect(() => {
+        if (!isAuthenticated || !user) {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
+            }
+            retriesRef.current = 0;
+            return;
+        }
+
+        connect();
 
         return () => {
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
                 eventSourceRef.current = null;
             }
+            if (retryTimeoutRef.current) {
+                clearTimeout(retryTimeoutRef.current);
+            }
         };
-    }, [isAuthenticated, user, addNotification]);
+    }, [isAuthenticated, user, connect]);
 };
