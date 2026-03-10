@@ -502,11 +502,17 @@ export const guideService = {
     },
 
     async updatePaymentMethod(userId: string, method: string, details: any) {
-        return await query(`
-            UPDATE guides_profiles 
+        const result: any = await query(`
+            UPDATE guides_profiles
             SET preferred_payout_method = ?, payout_details = ?
             WHERE user_id = ?
         `, [method, JSON.stringify(details), userId]);
+
+        if (result && result.affectedRows === 0) {
+            throw new Error('Profil guide introuvable. Veuillez contacter le support.');
+        }
+
+        return result;
     },
 
     async updateSubmission(guideId: string, submissionId: string, data: { reviewUrl?: string, googleEmail?: string }) {
