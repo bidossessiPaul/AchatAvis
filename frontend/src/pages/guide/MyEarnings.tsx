@@ -67,14 +67,14 @@ export const MyEarnings: React.FC = () => {
     };
 
     const handleWithdrawRequest = async () => {
-        if (!stats || stats.balance < 10) {
+        if (!stats || Number(stats.balance) < 10) {
             showError('Montant insuffisant', 'Montant minimum de 10€ requis pour un retrait');
             return;
         }
 
         const result = await showConfirm(
             'Demande de retrait',
-            `Voulez-vous lancer une demande de retrait pour la totalité de votre solde (${stats.balance.toFixed(2)}€) ?`
+            `Voulez-vous lancer une demande de retrait pour la totalité de votre solde (${Number(stats.balance).toFixed(2)}€) ?`
         );
 
         if (!result.isConfirmed) return;
@@ -149,7 +149,7 @@ export const MyEarnings: React.FC = () => {
                     <Calendar size={20} />
                     <div>
                         <p><strong>Information importante :</strong> Les paiements sont effectués chaque <strong>15</strong> et <strong>30</strong> du mois.</p>
-                        {stats && stats.balance > 0 && stats.balance < 10 && (
+                        {stats && Number(stats.balance) > 0 && Number(stats.balance) < 10 && (
                             <p style={{ marginTop: '4px', opacity: 0.8 }}>Si vous lancez un retrait inférieur à 10€ avant d'avoir atteint le seuil, il restera en attente jusqu'au prochain cycle.</p>
                         )}
                     </div>
@@ -163,7 +163,7 @@ export const MyEarnings: React.FC = () => {
                         </div>
                         <div className="stat-info">
                             <p className="stat-label">Solde disponible</p>
-                            <h3 className="stat-value">{stats?.balance.toFixed(2)}€</h3>
+                            <h3 className="stat-value">{Number(stats?.balance || 0).toFixed(2)}€</h3>
                         </div>
                     </div>
 
@@ -173,7 +173,7 @@ export const MyEarnings: React.FC = () => {
                         </div>
                         <div className="stat-info">
                             <p className="stat-label">Cumul des gains</p>
-                            <h3 className="stat-value">{stats?.totalEarned.toFixed(2)}€</h3>
+                            <h3 className="stat-value">{Number(stats?.totalEarned || 0).toFixed(2)}€</h3>
                         </div>
                     </div>
 
@@ -183,7 +183,7 @@ export const MyEarnings: React.FC = () => {
                         </div>
                         <div className="stat-info">
                             <p className="stat-label">En attente de paiement</p>
-                            <h3 className="stat-value">{stats?.totalPending.toFixed(2)}€</h3>
+                            <h3 className="stat-value">{Number(stats?.totalPending || 0).toFixed(2)}€</h3>
                         </div>
                     </div>
                 </div>
@@ -198,11 +198,11 @@ export const MyEarnings: React.FC = () => {
                         <button
                             className="withdraw-btn"
                             onClick={handleWithdrawRequest}
-                            disabled={isActionLoading || (stats?.balance || 0) < 10 || !paymentMethod}
+                            disabled={isActionLoading || Number(stats?.balance || 0) < 10 || !paymentMethod}
                         >
-                            {isActionLoading ? 'Traitement...' : `Retirer ${stats?.balance.toFixed(2)}€`}
+                            {isActionLoading ? 'Traitement...' : `Retirer ${Number(stats?.balance || 0).toFixed(2)}€`}
                         </button>
-                        {(stats?.balance || 0) < 10 && (
+                        {Number(stats?.balance || 0) < 10 && (
                             <p className="withdraw-amount-tip">
                                 <AlertCircle size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
                                 Solde minimum de 10.00€ requis pour effectuer un retrait.
@@ -345,7 +345,7 @@ export const MyEarnings: React.FC = () => {
                                     return (
                                         <tr key={payout.id}>
                                             <td data-label="Date">{new Date(payout.requested_at).toLocaleDateString()}</td>
-                                            <td data-label="Montant" className="earnings-amount success">+{payout.amount.toFixed(2)}€</td>
+                                            <td data-label="Montant" className="earnings-amount success">+{Number(payout.amount || 0).toFixed(2)}€</td>
                                             <td data-label="Statut">
                                                 <span className={`status-badge ${statusInfo.class}`}>
                                                     {statusInfo.icon} {statusInfo.label}
