@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../context/authStore';
 
-type FilterStatus = 'all' | 'pending' | 'in_progress' | 'completed';
+type FilterStatus = 'all' | 'pending' | 'in_progress' | 'completed' | 'paused';
 
 export const OrdersList: React.FC = () => {
     const [orders, setOrders] = useState<ReviewOrder[]>([]);
@@ -52,6 +52,7 @@ export const OrdersList: React.FC = () => {
         if (activeFilter === 'pending') return orders.filter(o => o.status === 'submitted' || o.status === 'pending');
         if (activeFilter === 'in_progress') return orders.filter(o => o.status === 'in_progress');
         if (activeFilter === 'completed') return orders.filter(o => o.status === 'completed');
+        if (activeFilter === 'paused') return orders.filter(o => o.status === 'paused');
         return orders;
     };
 
@@ -61,6 +62,7 @@ export const OrdersList: React.FC = () => {
         pending: orders.filter(o => o.status === 'submitted' || o.status === 'pending').length,
         inProgress: orders.filter(o => o.status === 'in_progress').length,
         completed: orders.filter(o => o.status === 'completed').length,
+        paused: orders.filter(o => o.status === 'paused').length,
     };
 
     const totalRemaining = availablePacks.reduce((acc, p) => acc + (p.review_quantity - (p.fiches_used || 0)), 0);
@@ -138,10 +140,11 @@ export const OrdersList: React.FC = () => {
                     marginBottom: '2rem',
                     overflowX: 'auto'
                 }}>
-                    <TabButton status="all" label="Tous" count={stats.pending + stats.inProgress + stats.completed} />
+                    <TabButton status="all" label="Tous" count={stats.pending + stats.inProgress + stats.completed + stats.paused} />
                     <TabButton status="pending" label="En attente" count={stats.pending} />
                     <TabButton status="in_progress" label="En cours" count={stats.inProgress} />
                     <TabButton status="completed" label="Terminés" count={stats.completed} />
+                    {stats.paused > 0 && <TabButton status="paused" label="En pause" count={stats.paused} />}
                 </div>
 
                 {/* List */}
@@ -183,16 +186,19 @@ export const OrdersList: React.FC = () => {
                                                 backgroundColor:
                                                     order.status === 'completed' ? '#ecfdf5' :
                                                         order.status === 'in_progress' ? '#ebf5ff' :
-                                                            '#fff7ed',
+                                                            order.status === 'paused' ? '#fef3c7' :
+                                                                '#fff7ed',
                                                 color:
                                                     order.status === 'completed' ? '#047857' :
                                                         order.status === 'in_progress' ? '#1e40af' :
-                                                            '#c2410c'
+                                                            order.status === 'paused' ? '#92400e' :
+                                                                '#c2410c'
                                             }}>
                                                 {order.status === 'submitted' ? 'En attente' :
                                                     order.status === 'pending' ? 'En attente' :
                                                         order.status === 'in_progress' ? 'En cours' :
-                                                            order.status === 'completed' ? 'Terminé' : order.status}
+                                                            order.status === 'completed' ? 'Terminé' :
+                                                                order.status === 'paused' ? 'En pause' : order.status}
                                             </span>
                                         </td>
                                         <td style={{ padding: '1.25rem 1rem' }}>
