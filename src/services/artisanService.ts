@@ -480,6 +480,69 @@ export const artisanService = {
         `, [artisanId]);
     },
 
+    /**
+     * Pause a fiche (hide from guides temporarily)
+     */
+    async pauseFiche(orderId: string, artisanId: string) {
+        const orders: any = await query(
+            'SELECT id, status, artisan_id FROM reviews_orders WHERE id = ?',
+            [orderId]
+        );
+
+        if (orders.length === 0) throw new Error('Fiche non trouvée');
+        const order = orders[0];
+
+        if (order.artisan_id !== artisanId) {
+            throw new Error('Non autorisé à modifier cette fiche');
+        }
+
+        const pausableStatuses = ['submitted', 'pending', 'in_progress'];
+        if (!pausableStatuses.includes(order.status)) {
+            throw new Error(`Impossible de mettre en pause une fiche avec le statut "${order.status}"`);
+        }
+
+        await query(
+            `UPDATE reviews_orders
+             SET status = 'paused', status_before_pause = ?, paused_at = NOW()
+             WHERE id = ?`,
+            [order.status, orderId]
+        );
+
+        return this.getOrderById(orderId);
+    },
+
+    /**
+     * Resume a paused fiche (restore previous status)
+     */
+    async resumeFiche(orderId: string, artisanId: string) {
+        const orders: any = await query(
+            'SELECT id, status, artisan_id, status_before_pause FROM reviews_orders WHERE id = ?',
+            [orderId]
+        );
+
+        if (orders.length === 0) throw new Error('Fiche non trouvée');
+        const order = orders[0];
+
+        if (order.artisan_id !== artisanId) {
+            throw new Error('Non autorisé à modifier cette fiche');
+        }
+
+        if (order.status !== 'paused') {
+            throw new Error('Cette fiche n\'est pas en pause');
+        }
+
+        const restoreStatus = order.status_before_pause || 'submitted';
+
+        await query(
+            `UPDATE reviews_orders
+             SET status = ?, status_before_pause = NULL, paused_at = NULL
+             WHERE id = ?`,
+            [restoreStatus, orderId]
+        );
+
+        return this.getOrderById(orderId);
+    },
+
     async deleteOrder(orderId: string) {
         // Find if it was linked to a pack and restore fiches_used?
         // Usually, deleting a draft should restore the fiche slot.

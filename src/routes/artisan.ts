@@ -23,6 +23,10 @@ router.get('/stats', artisanController.getStats);
 router.put('/proposals/:id', artisanController.updateProposal);
 router.delete('/proposals/:id', artisanController.deleteProposal);
 
+// Pause/Resume fiches — pas besoin d'abonnement actif
+router.patch('/orders/:id/pause', artisanController.pauseFiche);
+router.patch('/orders/:id/resume', artisanController.resumeFiche);
+
 // Toutes les routes suivantes demandent un abonnement actif (actions d'écriture)
 router.use(requireActiveSubscription);
 
