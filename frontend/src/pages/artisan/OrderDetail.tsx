@@ -26,7 +26,9 @@ import {
     Briefcase,
     Edit3,
     X,
-    Star
+    Star,
+    Pause,
+    Play
 } from 'lucide-react';
 
 const getTradeInfo = (trade: string) => {
@@ -55,6 +57,7 @@ export const OrderDetail: React.FC = () => {
     const [editingProposal, setEditingProposal] = useState<ReviewProposal | null>(null);
     const [editForm, setEditForm] = useState({ content: '', author_name: '', rating: 5 });
     const [isSaving, setIsSaving] = useState(false);
+    const [isPausing, setIsPausing] = useState(false);
 
     const tradeInfo = getTradeInfo(order?.sector || order?.company_name || '');
 
@@ -140,6 +143,34 @@ export const OrderDetail: React.FC = () => {
         } catch (err: any) {
             console.error('Failed to delete proposal:', err);
             alert(err.response?.data?.message || 'Erreur lors de la suppression');
+        }
+    };
+
+    const handlePause = async () => {
+        if (!order || !window.confirm("Mettre cette fiche en pause ? Les guides ne pourront plus la voir tant qu'elle sera en pause.")) return;
+        setIsPausing(true);
+        try {
+            const updated = await artisanService.pauseFiche(order.id);
+            setOrder(updated);
+        } catch (err: any) {
+            console.error("Failed to pause fiche", err);
+            setError(err.response?.data?.message || "Erreur lors de la mise en pause.");
+        } finally {
+            setIsPausing(false);
+        }
+    };
+
+    const handleResume = async () => {
+        if (!order) return;
+        setIsPausing(true);
+        try {
+            const updated = await artisanService.resumeFiche(order.id);
+            setOrder(updated);
+        } catch (err: any) {
+            console.error("Failed to resume fiche", err);
+            setError(err.response?.data?.message || "Erreur lors de la reprise.");
+        } finally {
+            setIsPausing(false);
         }
     };
 
@@ -298,11 +329,11 @@ export const OrderDetail: React.FC = () => {
                                     fontWeight: 700,
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.5px',
-                                    backgroundColor: order.status === 'completed' ? '#ecfdf5' : order.status === 'draft' ? '#f3f4f6' : '#fff7ed',
-                                    color: order.status === 'completed' ? '#047857' : order.status === 'draft' ? '#4b5563' : '#c2410c',
+                                    backgroundColor: order.status === 'completed' ? '#ecfdf5' : order.status === 'paused' ? '#fef3c7' : order.status === 'draft' ? '#f3f4f6' : '#fff7ed',
+                                    color: order.status === 'completed' ? '#047857' : order.status === 'paused' ? '#92400e' : order.status === 'draft' ? '#4b5563' : '#c2410c',
                                     alignSelf: window.innerWidth <= 640 ? 'flex-start' : 'flex-start'
                                 }}>
-                                    {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'Soumis' : order.status}
+                                    {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'Soumis' : order.status === 'paused' ? 'En pause' : order.status === 'in_progress' ? 'En cours' : order.status === 'completed' ? 'Terminé' : order.status}
                                 </span>
                             </div>
 
@@ -523,6 +554,52 @@ export const OrderDetail: React.FC = () => {
                                 )}
                             </div>
                         </div>
+
+                        {/* Pause / Resume */}
+                        {['submitted', 'pending', 'in_progress', 'paused'].includes(order.status) && (
+                            <div style={{
+                                background: order.status === 'paused' ? '#fef3c7' : '#f0fdf4',
+                                padding: '1.5rem',
+                                borderRadius: '1.5rem',
+                                border: `1px solid ${order.status === 'paused' ? '#fde68a' : '#bbf7d0'}`
+                            }}>
+                                <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: order.status === 'paused' ? '#92400e' : '#166534', marginBottom: '1rem', textTransform: 'uppercase' }}>
+                                    {order.status === 'paused' ? 'Fiche en pause' : 'Publication'}
+                                </h3>
+                                <p style={{ fontSize: '0.8125rem', color: order.status === 'paused' ? '#a16207' : '#15803d', marginBottom: '1.25rem' }}>
+                                    {order.status === 'paused'
+                                        ? 'Cette fiche est en pause. Les guides ne peuvent pas la voir. Cliquez sur Reprendre pour la rendre visible.'
+                                        : 'Vous pouvez mettre en pause cette fiche pour la masquer temporairement aux guides.'}
+                                </p>
+                                <button
+                                    onClick={order.status === 'paused' ? handleResume : handlePause}
+                                    disabled={isPausing}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.75rem',
+                                        background: order.status === 'paused' ? '#16a34a' : 'white',
+                                        border: order.status === 'paused' ? 'none' : '1px solid #f59e0b',
+                                        color: order.status === 'paused' ? 'white' : '#d97706',
+                                        borderRadius: '0.75rem',
+                                        fontWeight: 700,
+                                        fontSize: '0.8125rem',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '0.5rem',
+                                        transition: 'all 0.2s',
+                                        opacity: isPausing ? 0.7 : 1
+                                    }}
+                                >
+                                    {order.status === 'paused' ? (
+                                        <><Play size={16} /> {isPausing ? 'Reprise...' : 'Reprendre la publication'}</>
+                                    ) : (
+                                        <><Pause size={16} /> {isPausing ? 'Mise en pause...' : 'Mettre en pause'}</>
+                                    )}
+                                </button>
+                            </div>
+                        )}
 
                         {/* Danger Zone */}
                         <div style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #ffe4e6' }}>

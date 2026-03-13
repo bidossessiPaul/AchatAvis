@@ -186,6 +186,28 @@ export const artisanController = {
         }
     },
 
+    async pauseFiche(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            const { id } = req.params;
+            const result = await artisanService.pauseFiche(id, user!.userId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: 'Failed to pause fiche', message: error.message });
+        }
+    },
+
+    async resumeFiche(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            const { id } = req.params;
+            const result = await artisanService.resumeFiche(id, user!.userId);
+            return res.json(result);
+        } catch (error: any) {
+            return res.status(400).json({ error: 'Failed to resume fiche', message: error.message });
+        }
+    },
+
     async deleteOrder(req: Request, res: Response) {
         try {
             const { id } = req.params;

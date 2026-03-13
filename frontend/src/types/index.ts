@@ -125,7 +125,7 @@ export interface ReviewOrder {
     artisan_id: string;
     quantity: number;
     price: number;
-    status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
+    status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'paused';
     reviews_received: number;
     fiche_name?: string;
     company_name?: string;
