@@ -114,5 +114,15 @@ export const artisanService = {
 
     async sendValidationEmail(orderId: string, emails: string[]): Promise<void> {
         await api.post(`/artisan/orders/${orderId}/send-validation`, { emails });
+    },
+
+    async pauseFiche(orderId: string): Promise<ReviewOrder & { proposals: ReviewProposal[] }> {
+        const response = await api.patch(`/artisan/orders/${orderId}/pause`);
+        return response.data;
+    },
+
+    async resumeFiche(orderId: string): Promise<ReviewOrder & { proposals: ReviewProposal[] }> {
+        const response = await api.patch(`/artisan/orders/${orderId}/resume`);
+        return response.data;
     }
 };
