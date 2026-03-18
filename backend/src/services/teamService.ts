@@ -8,7 +8,7 @@ export const teamService = {
     /**
      * Invite a new team member
      */
-    async inviteMember(email: string, permissions: any, adminId: number, baseUrl?: string) {
+    async inviteMember(email: string, permissions: any, adminId: string, baseUrl?: string) {
         // 1. Check if user already exists
         const existingUsers: any = await query('SELECT id FROM users WHERE email = ?', [email]);
         if (existingUsers.length > 0) {
@@ -145,7 +145,7 @@ export const teamService = {
     /**
      * Update permissions for an existing member
      */
-    async updatePermissions(userId: string, permissions: any, adminId: number) {
+    async updatePermissions(userId: string, permissions: any, adminId: string) {
         await query(
             'UPDATE users SET permissions = ? WHERE id = ? AND role = "admin"',
             [JSON.stringify(permissions), userId]
@@ -159,7 +159,7 @@ export const teamService = {
     /**
      * Remove a team member or revoke invitation
      */
-    async deleteMember(id: string, type: 'active' | 'pending', adminId: number) {
+    async deleteMember(id: string, type: 'active' | 'pending', adminId: string) {
         if (type === 'active') {
             await query('DELETE FROM users WHERE id = ? AND role = "admin"', [id]);
             await LogService.logAction(adminId, 'DELETE_MEMBER', 'USER', undefined, { deletedUserId: id });
