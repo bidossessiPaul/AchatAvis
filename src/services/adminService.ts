@@ -705,11 +705,11 @@ export const getPacks = async () => {
  * Create a new subscription pack
  */
 export const createPack = async (pack: any) => {
-    const { id, name, price_cents, quantity, fiches_quota, features, color, is_popular } = pack;
+    const { id, name, price_cents, quantity, fiches_quota, features, color, is_popular, stripe_link } = pack;
     return await query(
-        `INSERT INTO subscription_packs (id, name, price_cents, quantity, fiches_quota, features, color, is_popular) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular]
+        `INSERT INTO subscription_packs (id, name, price_cents, quantity, fiches_quota, features, color, is_popular, stripe_link)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular, stripe_link || null]
     );
 };
 
@@ -717,12 +717,12 @@ export const createPack = async (pack: any) => {
  * Update an existing subscription pack
  */
 export const updatePack = async (id: string, pack: any) => {
-    const { name, price_cents, quantity, fiches_quota, features, color, is_popular } = pack;
+    const { name, price_cents, quantity, fiches_quota, features, color, is_popular, stripe_link } = pack;
     return await query(
-        `UPDATE subscription_packs 
-         SET name = ?, price_cents = ?, quantity = ?, fiches_quota = ?, features = ?, color = ?, is_popular = ? 
+        `UPDATE subscription_packs
+         SET name = ?, price_cents = ?, quantity = ?, fiches_quota = ?, features = ?, color = ?, is_popular = ?, stripe_link = ?
          WHERE id = ?`,
-        [name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular, id]
+        [name, price_cents, quantity, fiches_quota || 1, JSON.stringify(features), color, is_popular, stripe_link || null, id]
     );
 };
 
