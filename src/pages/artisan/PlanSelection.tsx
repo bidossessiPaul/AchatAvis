@@ -7,12 +7,6 @@ import './PlanSelection.css';
 import { artisanService } from '../../services/artisanService';
 import { SubscriptionPack } from '../../types';
 
-const STRIPE_LINKS: Record<number, string> = {
-    29900: 'https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13',
-    23500: 'https://buy.stripe.com/aFabJ270L4Zw3kq4vW7Re12',
-    49900: 'https://buy.stripe.com/14A3cw5WHbnU1cifaA7Re14',
-};
-
 const WHATSAPP_NUMBER = '33644678642';
 const WHATSAPP_MESSAGE = encodeURIComponent(
     "Bonjour, je viens d'effectuer le paiement de mon pack AchatAvis. Merci d'activer mon abonnement."
@@ -97,7 +91,7 @@ export const PlanSelection: React.FC = () => {
                         </ul>
 
                         <a
-                            href={STRIPE_LINKS[plan.price_cents] || '#'}
+                            href={plan.stripe_link || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`plan-button ${plan.color}`}
