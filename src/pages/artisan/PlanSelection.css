@@ -1,215 +1,279 @@
 .plan-selection-container {
     min-height: 100vh;
-    background-color: var(--gray-50);
+    background-color: #f8fafc;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: var(--space-6);
+    padding: 3rem 1.5rem 6rem;
 }
 
+/* ── Header ── */
 .plan-header {
     max-width: 800px;
     width: 100%;
     text-align: center;
-    margin-bottom: var(--space-8);
+    margin-bottom: 3rem;
+}
+
+.plan-tag {
+    display: inline-block;
+    padding: 0.4rem 1.2rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 1.25rem;
 }
 
 .plan-title {
-    font-size: var(--text-3xl);
-    font-weight: var(--font-bold);
-    color: var(--gray-900);
-    margin-bottom: var(--space-4);
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 1rem;
 }
 
 .plan-subtitle {
-    font-size: var(--text-lg);
-    color: var(--gray-600);
+    font-size: 1rem;
+    color: #64748b;
+    line-height: 1.6;
+    max-width: 650px;
+    margin: 0 auto;
 }
 
+/* ── Grid ── */
 .plans-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
-    max-width: 1000px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    max-width: 1100px;
     width: 100%;
+    align-items: stretch;
 }
 
-@media (min-width: 768px) {
-    .plans-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-
+/* ── Card ── */
 .plan-card {
-    background-color: #ffffff;
-    border-radius: var(--radius-xl);
-    padding: var(--space-8);
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.plan-card.standard {
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--gray-200);
+.plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
 }
 
-.plan-card.premium {
-    box-shadow: 0 10px 40px -10px rgba(35, 131, 226, 0.2);
-    border: 2px solid var(--artisan-primary);
-    transform: translateY(-8px);
+.plan-card-popular {
+    border: 2px solid #3b82f6;
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.12);
 }
 
-.plan-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    padding: var(--space-1) var(--space-4);
-    border-bottom-left-radius: var(--radius-xl);
-    font-size: var(--text-sm);
-    font-weight: var(--font-medium);
-}
-
-.plan-badge.standard {
-    background-color: var(--gray-100);
-    color: var(--gray-600);
-}
-
-.plan-badge.premium {
-    background: var(--artisan-gradient);
-    color: #ffffff;
-}
-
-.plan-price-block {
-    margin-bottom: var(--space-6);
-}
-
-.plan-name {
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    color: var(--gray-900);
-}
-
-.plan-amount {
-    font-size: var(--text-4xl);
-    font-weight: var(--font-extrabold);
-    color: var(--gray-900);
-}
-
-.plan-period {
-    color: var(--gray-500);
-    margin-left: var(--space-2);
-}
-
-.plan-subtext {
-    font-size: var(--text-sm);
-    color: var(--gray-500);
-    margin-top: var(--space-2);
-}
-
-.plan-features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 var(--space-8) 0;
+.plan-card-body {
+    padding: 2rem 1.75rem 1.5rem;
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
+}
+
+.plan-card-footer {
+    padding: 0 1.75rem 2rem;
+    text-align: center;
+}
+
+/* ── Ribbon "PLUS POPULAIRE" ── */
+.plan-ribbon {
+    position: absolute;
+    top: 18px;
+    right: -32px;
+    background: #3b82f6;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 0.35rem 2.5rem;
+    transform: rotate(45deg);
+    z-index: 2;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* ── Name Badge ── */
+.plan-name-badge {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 0.3rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 1.25rem;
+}
+
+/* ── Pricing ── */
+.plan-pricing {
+    margin-bottom: 1.75rem;
+}
+
+.plan-old-price {
+    display: block;
+    font-size: 1rem;
+    color: #94a3b8;
+    text-decoration: line-through;
+    margin-bottom: 0.15rem;
+}
+
+.plan-current-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+}
+
+.plan-amount {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.plan-currency {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.plan-discount-badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.7rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #10b981;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+}
+
+/* ── Features ── */
+.plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
 }
 
 .plan-feature {
     display: flex;
-    align-items: center;
-    color: var(--gray-600);
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    color: #334155;
+    line-height: 1.4;
 }
 
-.feature-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: var(--space-3);
-}
-
-.feature-icon.standard {
-    color: var(--primary-orange);
-}
-
-.feature-icon.premium {
-    color: var(--artisan-primary);
-}
-
-.plan-button {
+/* ── CTA Buttons ── */
+.plan-cta {
+    display: block;
     width: 100%;
-    padding: var(--space-3) var(--space-6);
-    border-radius: var(--radius-xl);
-    font-weight: var(--font-semibold);
-    transition: background-color var(--transition-base);
-    border: none;
+    padding: 0.9rem 1.5rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-decoration: none;
+    text-align: center;
+    transition: all 0.2s ease;
     cursor: pointer;
 }
 
-.plan-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.plan-button.standard {
-    background-color: var(--gray-900);
+.plan-btn-green {
+    background: #10b981;
     color: #ffffff;
+    border: none;
 }
 
-.plan-button.standard:hover:not(:disabled) {
-    background-color: var(--gray-800);
-}
-
-.plan-button.premium {
-    background: var(--artisan-gradient);
-    color: #ffffff;
-    box-shadow: var(--shadow-artisan);
-}
-
-.plan-button.premium:hover:not(:disabled) {
+.plan-btn-green:hover {
+    background: #059669;
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(35, 131, 226, 0.3);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
 }
 
+.plan-btn-pink {
+    background: #ef4444;
+    color: #ffffff;
+    border: none;
+}
+
+.plan-btn-pink:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.plan-btn-outline-blue {
+    background: #ffffff;
+    color: #3b82f6;
+    border: 2px solid #3b82f6;
+}
+
+.plan-btn-outline-blue:hover {
+    background: #eff6ff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+}
+
+.plan-cta-subtext {
+    margin-top: 0.6rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ── Active Pack Alert ── */
 .active-pack-alert {
     background-color: #ecfdf5;
     border: 1px solid #10b981;
-    border-radius: var(--radius-xl);
-    padding: var(--space-6);
-    margin-bottom: var(--space-8);
-    max-width: 1000px;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+    max-width: 1100px;
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-4);
-    box-shadow: var(--shadow-md);
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
 }
 
 .active-pack-info h3 {
     color: #065f46;
-    font-size: var(--text-lg);
-    font-weight: var(--font-bold);
-    margin-bottom: var(--space-1);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
 }
 
 .active-pack-info p {
     color: #047857;
-    font-size: var(--text-base);
+    font-size: 0.95rem;
 }
 
 .btn-submit-mission {
     background-color: #10b981;
     color: white;
     border: none;
-    padding: var(--space-3) var(--space-6);
-    border-radius: var(--radius-lg);
-    font-weight: var(--font-bold);
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 700;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all 0.2s ease;
     white-space: nowrap;
 }
 
@@ -219,30 +283,7 @@
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
-/* Payment info banner */
-.plan-payment-info-banner {
-    background: linear-gradient(135deg, #eff6ff 0%, #e0f2fe 100%);
-    border: 1px solid #93c5fd;
-    color: #1e40af;
-    padding: 1rem 1.5rem;
-    border-radius: var(--radius-xl);
-    text-align: center;
-    margin-bottom: 2rem;
-    max-width: 1000px;
-    width: 100%;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-/* Plan button as link */
-.plan-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-}
-
-/* Floating WhatsApp button */
+/* ── WhatsApp FAB ── */
 .whatsapp-fab {
     position: fixed;
     bottom: 2rem;
@@ -278,7 +319,28 @@
     50% { box-shadow: 0 6px 30px rgba(37, 211, 102, 0.7); }
 }
 
-@media (max-width: 640px) {
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .plans-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 750px;
+    }
+}
+
+@media (max-width: 768px) {
+    .plan-title {
+        font-size: 1.6rem;
+    }
+
+    .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+    }
+
+    .plan-amount {
+        font-size: 2.75rem;
+    }
+
     .active-pack-alert {
         flex-direction: column;
         text-align: center;
@@ -287,25 +349,21 @@
     .btn-submit-mission {
         width: 100%;
     }
+}
+
+@media (max-width: 640px) {
+    .plan-selection-container {
+        padding: 2rem 1rem 5rem;
+    }
 
     .whatsapp-fab {
         bottom: 1rem;
         right: 1rem;
-        padding: 0.75rem 1rem;
-        font-size: 0.85rem;
+        padding: 1rem;
+        border-radius: 50%;
     }
 
     .whatsapp-fab-label {
         display: none;
-    }
-
-    .whatsapp-fab {
-        border-radius: 50%;
-        padding: 1rem;
-    }
-
-    .plan-payment-info-banner {
-        font-size: 0.85rem;
-        padding: 0.75rem 1rem;
     }
 }
