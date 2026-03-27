@@ -16,6 +16,7 @@ import antiDetectionRoutes from './routes/antiDetectionRoutes';
 import establishmentRoutes from './routes/establishment';
 import notificationRoutes from './routes/notifications';
 import trustScoreRoutes from './routes/trustScore';
+import { sanitizeInputs } from './middleware/sanitize';
 // Refreshing routes...
 
 // Load environment variables
@@ -52,6 +53,9 @@ app.use(helmet({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// 3. Input sanitization - block SQL injection & XSS payloads
+app.use(sanitizeInputs);
 
 // Serve static files - use multiple fallbacks for robustness across different hosting environments
 const publicPath = path.join(__dirname, '..', 'public');
