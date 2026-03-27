@@ -212,6 +212,7 @@
 
 .plan-btn-blue:hover {
     background-color: #2563eb;
+    color: #ffffff;
 }
 
 .plan-btn-pink {
@@ -221,6 +222,7 @@
 
 .plan-btn-pink:hover {
     background-color: #ff3b6a;
+    color: #ffffff;
 }
 
 .plan-btn-outline-blue {
