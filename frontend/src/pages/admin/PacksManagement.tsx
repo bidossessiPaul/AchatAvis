@@ -9,6 +9,7 @@ import {
     X,
     Package,
     Star,
+    Link,
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -24,6 +25,7 @@ interface Pack {
     features: string[];
     color: string;
     is_popular: boolean;
+    stripe_link: string;
 }
 
 export const PacksManagement: React.FC = () => {
@@ -41,7 +43,8 @@ export const PacksManagement: React.FC = () => {
         fiches_quota: 1,
         features: [],
         color: '#FF991F',
-        is_popular: false
+        is_popular: false,
+        stripe_link: ''
     });
     const [featureInput, setFeatureInput] = useState('');
 
@@ -81,7 +84,8 @@ export const PacksManagement: React.FC = () => {
                 fiches_quota: 1,
                 features: [],
                 color: '#FF991F',
-                is_popular: false
+                is_popular: false,
+                stripe_link: ''
             });
         }
         setIsModalOpen(true);
@@ -187,6 +191,10 @@ export const PacksManagement: React.FC = () => {
                                             <Package size={16} />
                                             <span>{pack.fiches_quota || 1} fiches / pack</span>
                                         </div>
+                                        <div className="detail-item" style={{ opacity: pack.stripe_link ? 1 : 0.4 }}>
+                                            <Link size={16} />
+                                            <span>{pack.stripe_link ? 'Lien Stripe configuré' : 'Aucun lien Stripe'}</span>
+                                        </div>
                                         <div className="features-list">
                                             {(pack.features || []).map((feature, i) => (
                                                 <div key={i} className="feature-item">
@@ -279,6 +287,19 @@ export const PacksManagement: React.FC = () => {
                                                     value={formData.color}
                                                     onChange={e => setFormData({ ...formData, color: e.target.value })}
                                                 />
+                                            </div>
+                                            <div className="pack-form-field" style={{ gridColumn: '1 / -1' }}>
+                                                <label>Lien Stripe</label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Link size={18} style={{ color: 'var(--gray-400)', flexShrink: 0 }} />
+                                                    <input
+                                                        type="url"
+                                                        value={formData.stripe_link || ''}
+                                                        onChange={e => setFormData({ ...formData, stripe_link: e.target.value })}
+                                                        placeholder="https://buy.stripe.com/..."
+                                                    />
+                                                </div>
+                                                <small>Lien de paiement Stripe pour ce pack</small>
                                             </div>
                                             <div className="pack-checkbox-field" onClick={() => setFormData({ ...formData, is_popular: !formData.is_popular })}>
                                                 <input

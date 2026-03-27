@@ -201,6 +201,7 @@ export interface SubscriptionPack {
     features: string[];
     color: 'standard' | 'premium';
     is_popular: boolean;
+    stripe_link?: string;
     created_at: string;
 }
 
