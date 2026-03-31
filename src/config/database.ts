@@ -11,7 +11,7 @@ const poolConfig = {
     database: process.env.MYSQL_DATABASE,
     port: Number(process.env.MYSQL_PORT) || 3306,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 3,
     queueLimit: 0,
     // Enable named placeholders for easier query writing
     namedPlaceholders: true,
