@@ -240,12 +240,12 @@ export const guideService = {
 
             if (orderInfo && orderInfo.length > 0) {
                 currentSectorSlug = orderInfo[0].sector_slug || '';
-                payoutAmount = Number(orderInfo[0].payout_per_review || 1.50);
+                payoutAmount = Number(orderInfo[0].payout_per_review || 1.00);
             }
         } else {
             // Fallback fetch if no gmail account used (should not happen in prod for most cases but good for safety)
             const orderInfo: any = await query('SELECT payout_per_review FROM reviews_orders WHERE id = ?', [data.orderId]);
-            payoutAmount = Number(orderInfo[0]?.payout_per_review || 1.50);
+            payoutAmount = Number(orderInfo[0]?.payout_per_review || 1.00);
         }
 
         // 1. Check if this guide already submitted for THIS proposal
