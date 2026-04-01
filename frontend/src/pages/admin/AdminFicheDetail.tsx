@@ -273,7 +273,7 @@ export const AdminFicheDetail: React.FC = () => {
                                         type="number"
                                         step="0.10"
                                         className="admin-input"
-                                        value={formData.payout_per_review || 1.50}
+                                        value={formData.payout_per_review || 1.00}
                                         onChange={(e) => setFormData({ ...formData, payout_per_review: parseFloat(e.target.value) })}
                                         style={{ paddingRight: '2rem' }}
                                     />

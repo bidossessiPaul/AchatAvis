@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth';
 import paymentRoutes from './routes/payment';
 import artisanRoutes from './routes/artisan';
@@ -103,9 +104,25 @@ app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
 
-// 404 handler
-app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: 'Route not found' });
+// Serve frontend static files (for combined deployments like Hostinger)
+const distPath = path.join(__dirname, '..', '..', 'dist');
+const distPath2 = path.join(process.cwd(), 'dist');
+app.use(express.static(distPath));
+app.use(express.static(distPath2));
+
+// SPA fallback — serve index.html for all non-API routes
+app.get('*', (req: Request, res: Response) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'Route not found' });
+    }
+    const indexPath = path.join(distPath, 'index.html');
+    const indexPath2 = path.join(distPath2, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    } else if (fs.existsSync(indexPath2)) {
+        return res.sendFile(indexPath2);
+    }
+    return res.status(404).json({ error: 'Route not found' });
 });
 
 // Error handler
@@ -123,11 +140,10 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     });
 });
 
-// Start server only if not on Vercel
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+// Start server (skip only on Vercel which handles this itself)
+if (!process.env.VERCEL) {
     app.listen(Number(PORT), '0.0.0.0', () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-        console.log(`📡 Network access on http://192.168.1.207:${PORT}`);
+        console.log(`Server running on port ${PORT}`);
     });
 }
 
