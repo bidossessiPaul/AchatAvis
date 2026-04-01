@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search, LayoutGrid, List } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import './GuideDashboard.css'; // Reuse existing styles
@@ -13,6 +13,7 @@ export const AllFiches: React.FC = () => {
     const [selectedSector, setSelectedSector] = useState<string>('all');
     const [onlyAvailable, setOnlyAvailable] = useState<boolean>(true); // Default to showing only available
     const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
     const navigate = useNavigate();
     const { user } = useAuthStore();
@@ -121,6 +122,38 @@ export const AllFiches: React.FC = () => {
                             Quotas disponibles uniquement
                         </label>
                     </div>
+
+                    {/* View Toggle */}
+                    <div className="view-toggle" style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '4px', marginLeft: 'auto' }}>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: '6px 12px', border: 'none',
+                                background: viewMode === 'list' ? 'white' : 'transparent',
+                                color: viewMode === 'list' ? '#111827' : '#6b7280',
+                                borderRadius: '6px',
+                                boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                cursor: 'pointer', transition: 'all 0.2s'
+                            }}
+                        >
+                            <List size={18} />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                padding: '6px 12px', border: 'none',
+                                background: viewMode === 'grid' ? 'white' : 'transparent',
+                                color: viewMode === 'grid' ? '#111827' : '#6b7280',
+                                borderRadius: '6px',
+                                boxShadow: viewMode === 'grid' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                cursor: 'pointer', transition: 'all 0.2s'
+                            }}
+                        >
+                            <LayoutGrid size={18} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -135,7 +168,7 @@ export const AllFiches: React.FC = () => {
                     <LoadingSpinner text="Chargement des fiches..." size="lg" className="theme-guide" />
                 </div>
             ) : filteredfiches.length > 0 ? (
-                <div className="fiches-grid">
+                <div className={viewMode === 'list' ? 'fiches-list' : 'fiches-grid'}>
                     {filteredfiches.map((fiche) => (
                         <div
                             key={fiche.id}
@@ -161,24 +194,26 @@ export const AllFiches: React.FC = () => {
                                     </div>
                                 </div>
 
-                                <h4 className="fiche-company-name">
-                                    {fiche.company_name}
-                                </h4>
+                                <div className="fiche-company-info">
+                                    <h4 className="fiche-company-name">
+                                        {fiche.company_name}
+                                    </h4>
 
-                                <div className="fiche-details-row">
-                                    <div className="fiche-sector">
-                                        <MapPin size={16} />
-                                        <span>{fiche.sector || 'Secteur non précisé'}</span>
-                                    </div>
-                                    <div
-                                        className="fiche-difficulty"
-                                        style={{
-                                            background: fiche.difficulty === 'hard' ? '#fef2f2' : (fiche.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
-                                            color: fiche.difficulty === 'hard' ? '#ef4444' : (fiche.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
-                                            border: `1px solid ${fiche.difficulty === 'hard' ? '#fee2e2' : (fiche.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
-                                        }}
-                                    >
-                                        {fiche.difficulty === 'easy' ? 'Simple' : (fiche.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                    <div className="fiche-details-row">
+                                        <div className="fiche-sector">
+                                            <MapPin size={16} />
+                                            <span>{fiche.sector || 'Secteur non précisé'}</span>
+                                        </div>
+                                        <div
+                                            className="fiche-difficulty"
+                                            style={{
+                                                background: fiche.difficulty === 'hard' ? '#fef2f2' : (fiche.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
+                                                color: fiche.difficulty === 'hard' ? '#ef4444' : (fiche.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
+                                                border: `1px solid ${fiche.difficulty === 'hard' ? '#fee2e2' : (fiche.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
+                                            }}
+                                        >
+                                            {fiche.difficulty === 'easy' ? 'Simple' : (fiche.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
+                                        </div>
                                     </div>
                                 </div>
 

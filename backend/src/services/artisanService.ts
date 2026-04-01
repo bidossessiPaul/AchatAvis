@@ -65,8 +65,8 @@ export const artisanService = {
                 id, fiche_name, artisan_id, quantity, price, status, company_name, company_context, 
                 google_business_url, services, staff_names, specific_instructions, payment_id,
                 sector, sector_id, sector_slug, sector_difficulty, city, reviews_per_day, rhythme_mode,
-                estimated_duration_days, client_cities, zones, initial_review_count
-            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                estimated_duration_days, client_cities, zones, initial_review_count, payout_per_review
+            ) VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1.00)`,
             [
                 orderId, fiche_name, artisanId, orderQuantity, price, company_name, company_context,
                 google_business_url, services, staff_names, specific_instructions, payment_id,
