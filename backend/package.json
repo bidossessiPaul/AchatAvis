@@ -72,6 +72,7 @@
   },
   "overrides": {
     "rimraf": "^6.0.1",
-    "glob": "^11.0.1"
+    "glob": "^11.0.1",
+    "whatwg-encoding": "npm:@exodus/bytes@^1.15.0"
   }
 }
