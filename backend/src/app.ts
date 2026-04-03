@@ -105,7 +105,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
 
 // Serve frontend static files (for combined deployments like Hostinger)
-const distPath = path.join(__dirname, '..', '..', 'dist');
+// __dirname is backend/dist/src/ or dist/backend-dist/src/ — need 3 levels up to reach project root
+const distPath = path.join(__dirname, '..', '..', '..', 'dist');
 const distPath2 = path.join(process.cwd(), 'dist');
 app.use(express.static(distPath));
 app.use(express.static(distPath2));
