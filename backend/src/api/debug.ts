@@ -1,4 +1,4 @@
-import { pool } from '../src/config/database';
+import { pool } from '../config/database';
 
 export default async function handler(_req: any, res: any) {
     try {
