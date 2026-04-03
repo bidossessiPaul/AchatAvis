@@ -82,7 +82,6 @@ export const AntiDetectionRulesPage: React.FC = () => {
             fetchAntiDetectionRules();
             fetchGuideRecap(); // Fetch guide recap here instead of in SecurityRadar
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Empty deps: only check once on mount
 
     const toggleRule = (id: number) => {
