@@ -3,11 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
-    timeout: 120 * 1000, // 2 minutes timeout for API calls
-    maxRetries: 2, // Retry twice on failure
-});
+let anthropicClient: Anthropic | null = null;
+
+const getAnthropicClient = (): Anthropic => {
+    if (anthropicClient) return anthropicClient;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+        throw new Error('Anthropic is not configured: missing ANTHROPIC_API_KEY');
+    }
+    anthropicClient = new Anthropic({
+        apiKey,
+        timeout: 120 * 1000,
+        maxRetries: 2,
+    });
+    return anthropicClient;
+};
 
 interface GenerateReviewsParams {
     companyName: string;
@@ -107,7 +117,7 @@ Format de sortie attendu (JSON) :
 
         try {
             console.log("🤖 Appel Claude pour generation d'avis...");
-            const response = await anthropic.messages.create({
+            const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 8192,
                 system: systemPrompt,
@@ -207,7 +217,7 @@ Format de sortie attendu (JSON) :
 
         try {
             console.log("🤖 Appel Claude pour generation de villes pour:", baseCity);
-            const response = await anthropic.messages.create({
+            const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
                 system: systemPrompt,
@@ -249,7 +259,7 @@ Format de sortie attendu (JSON) :
 
         try {
             console.log("🤖 Génération de réponse IA pour l'avis de:", authorName);
-            const response = await anthropic.messages.create({
+            const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
                 system: systemPrompt,

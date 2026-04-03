@@ -6,7 +6,17 @@ import { sendPackActivationEmail, sendAdminEventNotification } from './emailServ
 
 dotenv.config();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+let stripeClient: Stripe | null = null;
+
+const getStripeClient = (): Stripe => {
+    if (stripeClient) return stripeClient;
+    const apiKey = process.env.STRIPE_SECRET_KEY;
+    if (!apiKey) {
+        throw new Error('Stripe is not configured: missing STRIPE_SECRET_KEY');
+    }
+    stripeClient = new Stripe(apiKey);
+    return stripeClient;
+};
 
 // Price IDs from Stripe Dashboard should be here in production
 // For dev, we might need to create them or use simulated ones if using Stripe CLI
@@ -20,7 +30,7 @@ export const stripeService = {
 
         if (!plan) throw new Error("Invalid plan selected");
 
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripeClient().checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
@@ -57,7 +67,7 @@ export const stripeService = {
         let event;
 
         try {
-            event = stripe.webhooks.constructEvent(
+            event = getStripeClient().webhooks.constructEvent(
                 payload,
                 signature,
                 webhookSecret!
@@ -209,6 +219,6 @@ export const stripeService = {
     },
 
     async retrieveSession(sessionId: string) {
-        return await stripe.checkout.sessions.retrieve(sessionId);
+        return await getStripeClient().checkout.sessions.retrieve(sessionId);
     }
 };
