@@ -3,7 +3,6 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
-import fs from 'fs';
 import authRoutes from './routes/auth';
 import paymentRoutes from './routes/payment';
 import artisanRoutes from './routes/artisan';
