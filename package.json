@@ -15,5 +15,9 @@
     },
     "devDependencies": {
         "concurrently": "^8.2.2"
+    },
+    "overrides": {
+        "rimraf": "^6.0.1",
+        "glob": "^11.0.1"
     }
 }
