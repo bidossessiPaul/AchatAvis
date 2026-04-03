@@ -4,11 +4,26 @@ const http = require('http');
 
 const PORT = process.env.PORT || 3000;
 
+// List directory contents recursively (1 level deep)
+function listDir(dir) {
+    if (!fs.existsSync(dir)) return dir + ' NOT FOUND';
+    try {
+        const items = fs.readdirSync(dir);
+        return items.map(item => {
+            const full = path.join(dir, item);
+            const isDir = fs.statSync(full).isDirectory();
+            return isDir ? item + '/' : item;
+        }).join('\n');
+    } catch (e) { return 'Error: ' + e.message; }
+}
+
+// Check all possible paths
 const candidates = [
     path.join(__dirname, 'dist', 'backend-dist', 'app.js'),
+    path.join(__dirname, 'dist', 'backend-dist', 'src', 'app.js'),
     path.join(__dirname, 'backend-dist', 'app.js'),
     path.join(__dirname, 'backend', 'dist', 'app.js'),
-    path.join(__dirname, 'dist', 'app.js'),
+    path.join(__dirname, 'backend', 'dist', 'src', 'app.js'),
 ];
 
 let backendPath = null;
@@ -20,21 +35,18 @@ for (const p of candidates) {
 }
 
 if (!backendPath) {
-    const distFiles = fs.existsSync(path.join(__dirname, 'dist'))
-        ? fs.readdirSync(path.join(__dirname, 'dist')).join('\n')
-        : 'dist/ NOT FOUND';
-    const backendFiles = fs.existsSync(path.join(__dirname, 'backend'))
-        ? fs.readdirSync(path.join(__dirname, 'backend')).join('\n')
-        : 'backend/ NOT FOUND';
+    const debug = [
+        'Tried:', ...candidates.map(c => '  ' + c + ' → ' + (fs.existsSync(c) ? 'EXISTS' : 'NOT FOUND')),
+        '', 'dist/backend-dist/ contents:', listDir(path.join(__dirname, 'dist', 'backend-dist')),
+        '', 'backend/dist/ contents:', listDir(path.join(__dirname, 'backend', 'dist')),
+    ].join('\n');
 
-    const debugInfo = `Tried:\n${candidates.join('\n')}\n\nCWD: ${process.cwd()}\n__dirname: ${__dirname}\n\nFiles in dist/:\n${distFiles}\n\nFiles in backend/:\n${backendFiles}`;
-    console.error(debugInfo);
-
+    console.error(debug);
     const server = http.createServer((req, res) => {
         res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(`<html><body style="font-family:monospace;padding:40px;background:#1a1a2e;color:#eee">
             <h1 style="color:#e94560">Backend Not Found</h1>
-            <pre style="background:#16213e;padding:20px;color:#ff6b6b">${debugInfo}</pre>
+            <pre style="background:#16213e;padding:20px;color:#ff6b6b">${debug}</pre>
             </body></html>`);
     });
     server.listen(PORT, '0.0.0.0');
