@@ -107,22 +107,36 @@ app.use('/api/trust-score', trustScoreRoutes);
 // Serve frontend static files (for combined deployments like Hostinger)
 const distPath = path.join(__dirname, '..', '..', 'dist');
 const distPath2 = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
-app.use(express.static(distPath2));
+
+// Only use static middleware if the directories actually exist
+if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+}
+if (fs.existsSync(distPath2)) {
+    app.use(express.static(distPath2));
+}
 
 // SPA fallback — serve index.html for all non-API routes
 app.get('*', (req: Request, res: Response) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'Route not found' });
     }
+    
+    // Attempt to serve index.html if it exists
     const indexPath = path.join(distPath, 'index.html');
     const indexPath2 = path.join(distPath2, 'index.html');
+    
     if (fs.existsSync(indexPath)) {
         return res.sendFile(indexPath);
     } else if (fs.existsSync(indexPath2)) {
         return res.sendFile(indexPath2);
     }
-    return res.status(404).json({ error: 'Route not found' });
+    
+    // Explicit error message if we can't find anything
+    return res.status(404).json({ 
+        error: 'Route not found',
+        message: 'The requested resource was not found on this server.'
+    });
 });
 
 // Error handler
