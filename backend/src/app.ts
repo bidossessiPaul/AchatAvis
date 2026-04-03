@@ -104,26 +104,12 @@ app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
 
-// Serve frontend static files (for combined deployments like Hostinger)
-// __dirname is backend/dist/src/ or dist/backend-dist/src/ — need 3 levels up to reach project root
-const distPath = path.join(__dirname, '..', '..', '..', 'dist');
-const distPath2 = path.join(process.cwd(), 'dist');
-app.use(express.static(distPath));
-app.use(express.static(distPath2));
-
-// SPA fallback — serve index.html for all non-API routes
+// SPA fallback disabled — frontend is deployed separately
 app.get('*', (req: Request, res: Response) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'Route not found' });
     }
-    const indexPath = path.join(distPath, 'index.html');
-    const indexPath2 = path.join(distPath2, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        return res.sendFile(indexPath);
-    } else if (fs.existsSync(indexPath2)) {
-        return res.sendFile(indexPath2);
-    }
-    return res.status(404).json({ error: 'Route not found' });
+    return res.json({ status: 'API only', message: 'Frontend is deployed separately' });
 });
 
 // Error handler
