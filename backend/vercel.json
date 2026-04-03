@@ -1,14 +1,18 @@
 {
     "version": 2,
     "functions": {
-        "src/api/index.ts": {
+        "api/index.ts": {
             "maxDuration": 60
         }
     },
     "rewrites": [
         {
+            "source": "/api/(.*)",
+            "destination": "/api/index.ts"
+        },
+        {
             "source": "/(.*)",
-            "destination": "/src/api/index.ts"
+            "destination": "/api/index.ts"
         }
     ]
 }
