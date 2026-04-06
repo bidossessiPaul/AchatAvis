@@ -83,8 +83,9 @@ export const AdminLevelVerifications: React.FC = () => {
             await adminApi.reviewLevelVerification(id, { status: 'approved' });
             showSuccess('Niveau approuvé !', 'Le niveau du guide a été mis à jour.');
             fetchData(true);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors de l\'approbation');
+        } catch (error: any) {
+            const msg = error.response?.data?.error || 'Erreur lors de l\'approbation';
+            showError('Erreur', msg);
         } finally {
             setIsActionLoading(false);
         }
@@ -103,8 +104,9 @@ export const AdminLevelVerifications: React.FC = () => {
             setAdminNotes('');
             setSelectedId(null);
             fetchData(true);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors du rejet');
+        } catch (error: any) {
+            const msg = error.response?.data?.error || 'Erreur lors du rejet';
+            showError('Erreur', msg);
         } finally {
             setIsActionLoading(false);
         }
