@@ -114,7 +114,7 @@ export const login = async (req: Request, res: Response) => {
         res.cookie('refreshToken', result.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -216,7 +216,7 @@ export const verify2FA = async (req: Request, res: Response) => {
         res.cookie('refreshToken', result.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
@@ -235,7 +235,11 @@ export const verify2FA = async (req: Request, res: Response) => {
  * POST /api/auth/logout
  */
 export const logout = (_req: Request, res: Response) => {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    });
     return res.json({ message: 'Déconnexion réussie' });
 };
 
@@ -310,7 +314,11 @@ export const deleteAccount = async (req: Request, res: Response) => {
 
         await authService.deleteAccount(req.user.userId);
 
-        res.clearCookie('refreshToken');
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        });
         return res.json({ message: 'Account deleted successfully' });
     } catch (error) {
         console.error('Delete account error:', error);
@@ -411,7 +419,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         res.cookie('refreshToken', result.refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
