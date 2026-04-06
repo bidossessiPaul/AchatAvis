@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import { query } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { sendPackActivationEmail, sendAdminEventNotification } from './emailService';
+import { invalidateAuthCache } from '../middleware/auth';
 
 dotenv.config();
 
@@ -115,6 +116,7 @@ export const stripeService = {
                         `UPDATE users SET status = 'active' WHERE id = ?`,
                         [userId]
                     );
+                    invalidateAuthCache(userId);
 
                     // LOG PAYMENT AND QUOTA
                     const paymentId = uuidv4();

@@ -5,6 +5,7 @@ import { generateAccessToken, generateRefreshToken, generateEmailVerificationTok
 import { authenticator } from 'otplib';
 import qrcode from 'qrcode';
 import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/validator';
+import { invalidateAuthCache } from '../middleware/auth';
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
 import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail } from './emailService';
@@ -507,6 +508,7 @@ export const changePassword = async (
  */
 export const deleteAccount = async (userId: string) => {
     await query(`DELETE FROM users WHERE id = ?`, [userId]);
+    invalidateAuthCache(userId);
 };
 
 /**
