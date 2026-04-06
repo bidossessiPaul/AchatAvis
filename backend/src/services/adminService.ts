@@ -1,6 +1,7 @@
 import { query, pool } from '../config/database';
 import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail, sendNewFicheToGuidesEmail } from './emailService';
 import { notificationService } from './notificationService';
+import { invalidateAuthCache } from '../middleware/auth';
 import { TokenPayload } from '../utils/token';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
@@ -50,6 +51,10 @@ export const updateUserStatus = async (userId: string, status: string, _reason?:
         [status, userId]
     );
 
+    // Invalidate the auth cache so the new status is enforced immediately
+    // on the very next request (no 30s wait).
+    invalidateAuthCache(userId);
+
     // Send notification email
     try {
         const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
@@ -81,6 +86,9 @@ export const deleteUser = async (userId: string) => {
     // if needed. Most are already handled by CASCADE in schema.
 
     const result = await query(`DELETE FROM users WHERE id = ?`, [userId]);
+
+    // Invalidate the auth cache so any in-flight token for this user fails fast.
+    invalidateAuthCache(userId);
 
     // REAL-TIME BROADCAST (optional, to update other admin dashboards)
     notificationService.broadcast({
@@ -1013,6 +1021,9 @@ export const activateArtisanPack = async (userId: string, packId: string, baseUr
         ]);
 
         await connection.commit();
+
+        // Invalidate auth cache: user status may have been flipped to 'active'.
+        invalidateAuthCache(userId);
 
         // 5. Send notification email
         try {

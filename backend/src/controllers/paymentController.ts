@@ -5,6 +5,7 @@ import { generateAccessToken } from '../utils/token';
 import { v4 as uuidv4 } from 'uuid';
 import { sendPackActivationEmail } from '../services/emailService';
 import { notificationService } from '../services/notificationService';
+import { invalidateAuthCache } from '../middleware/auth';
 
 export const paymentController = {
     async createCheckoutSession(req: Request, res: Response): Promise<any> {
@@ -107,6 +108,7 @@ export const paymentController = {
 
             // Activer user
             await connection.execute('UPDATE users SET status = ? WHERE id = ?', ['active', userId]);
+            invalidateAuthCache(userId);
             console.log('✅ User activé');
 
             // Logger paiement
@@ -212,6 +214,7 @@ export const paymentController = {
                         `UPDATE users SET status = 'active' WHERE id = ?`,
                         [userId]
                     );
+                    invalidateAuthCache(userId);
 
                     // LOG PAYMENT AND QUOTA (Consistent with stripeService)
                     const paymentId = uuidv4();

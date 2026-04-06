@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { sendTeamInvitationEmail } from './emailService';
 import { LogService } from './logService';
+import { invalidateAuthCache } from '../middleware/auth';
 
 export const teamService = {
     /**
@@ -162,6 +163,7 @@ export const teamService = {
     async deleteMember(id: string, type: 'active' | 'pending', adminId: string) {
         if (type === 'active') {
             await query('DELETE FROM users WHERE id = ? AND role = "admin"', [id]);
+            invalidateAuthCache(id);
             await LogService.logAction(adminId, 'DELETE_MEMBER', 'USER', undefined, { deletedUserId: id });
         } else {
             // Delete by ID (invitation id)

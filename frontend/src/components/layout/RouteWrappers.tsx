@@ -8,15 +8,26 @@ interface ProtectedRouteProps {
     children?: React.ReactNode;
 }
 
+// Throttle checkAuth revalidations on navigation.
+// Without this, every single route change triggered a /auth/me call and a full
+// user-object re-assignation in the store, which in turn cascaded into SSE
+// reconnections and a pool-saturating burst of requests.
+// 60s is low enough to pick up suspensions quickly, high enough to stop spam.
+const AUTH_REVALIDATE_INTERVAL_MS = 60 * 1000;
+let lastAuthCheckAt = 0;
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
     const { isAuthenticated, user, isLoading, checkAuth } = useAuthStore();
     const location = useLocation();
 
     React.useEffect(() => {
-        if (isAuthenticated) {
-            // Check status on every navigation to catch suspensions in real-time
-            checkAuth(true);
-        }
+        if (!isAuthenticated) return;
+
+        const now = Date.now();
+        if (now - lastAuthCheckAt < AUTH_REVALIDATE_INTERVAL_MS) return;
+
+        lastAuthCheckAt = now;
+        checkAuth(true);
     }, [location.pathname, checkAuth, isAuthenticated]);
 
     if (isLoading) {
