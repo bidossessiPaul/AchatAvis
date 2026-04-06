@@ -3,6 +3,50 @@ import { persist } from 'zustand/middleware';
 import type { User } from '../types';
 import { authApi } from '../services/api';
 
+/**
+ * Compares the fields of `user` that actually matter to downstream consumers.
+ * If nothing changed, we return the previous reference so React/zustand
+ * subscribers don't re-render on every /auth/me revalidation.
+ *
+ * We intentionally only compare identity + access-control fields. Transient
+ * fields (last_login, last_seen, updated_at...) are ignored on purpose.
+ */
+const isSameUser = (a: User | null, b: User | null): boolean => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    // Fields that actually matter to the UI. We deliberately ignore transient
+    // server-side fields (updated_at, last_login, last_seen...) which would
+    // otherwise force a re-render on every /auth/me call.
+    const keys: (keyof User)[] = [
+        'id',
+        'email',
+        'role',
+        'status',
+        'full_name',
+        'avatar_url',
+        'email_verified',
+        'two_factor_enabled',
+        'subscription_status',
+        'subscription_end_date',
+        'subscription_tier',
+        'monthly_reviews_quota',
+        'current_month_reviews',
+        'fiches_allowed',
+        'fiches_used',
+    ];
+    for (const k of keys) {
+        if (a[k] !== b[k]) return false;
+    }
+    try {
+        if (JSON.stringify(a.permissions ?? null) !== JSON.stringify(b.permissions ?? null)) {
+            return false;
+        }
+    } catch {
+        return false;
+    }
+    return true;
+};
+
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
@@ -151,8 +195,16 @@ export const useAuthStore = create<AuthState>()(
                             userData.permissions = {};
                         }
                     }
+
+                    // Preserve the previous user reference if nothing meaningful changed.
+                    // This is critical: if we always set a new object, every consumer
+                    // subscribed to `user` re-renders on every navigation, which cascades
+                    // into SSE reconnects and request storms.
+                    const prev = get().user;
+                    const nextUser = isSameUser(prev, userData as User) ? prev : (userData as User);
+
                     set({
-                        user: userData,
+                        user: nextUser,
                         isAuthenticated: true,
                         isLoading: false,
                     });
@@ -181,8 +233,12 @@ export const useAuthStore = create<AuthState>()(
                             userData.permissions = {};
                         }
                     }
+
+                    const prev = get().user;
+                    const nextUser = isSameUser(prev, userData as User) ? prev : (userData as User);
+
                     set({
-                        user: userData,
+                        user: nextUser,
                         isAuthenticated: true,
                     });
                 } catch (error) {
