@@ -241,7 +241,8 @@ export const AdminLevelVerifications: React.FC = () => {
                     background: 'white',
                     borderRadius: '1rem',
                     border: '1px solid #e2e8f0',
-                    overflow: 'hidden'
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch'
                 }}>
                     <table className="lv-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
