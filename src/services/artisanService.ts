@@ -169,7 +169,9 @@ export const artisanService = {
      */
     async getOrderById(orderId: string) {
         const orders: any = await query(`
-        SELECT ro.*, p.description as payment_description, p.amount as payment_amount
+        SELECT ro.*, p.description as payment_description, p.amount as payment_amount,
+               (SELECT COUNT(*) FROM reviews_submissions s
+                WHERE s.order_id = ro.id AND s.status = 'validated') as reviews_validated
         FROM reviews_orders ro
         LEFT JOIN payments p ON ro.payment_id = p.id
         WHERE ro.id = ?
@@ -233,10 +235,12 @@ export const artisanService = {
      */
     async getArtisanOrders(artisanId: string) {
         const orders: any[] = await query(`
-            SELECT ro.*, p.description as payment_description, p.amount as payment_amount, p.review_credits
+            SELECT ro.*, p.description as payment_description, p.amount as payment_amount, p.review_credits,
+                   (SELECT COUNT(*) FROM reviews_submissions s
+                    WHERE s.order_id = ro.id AND s.status = 'validated') as reviews_validated
             FROM reviews_orders ro
             LEFT JOIN payments p ON ro.payment_id = p.id
-            WHERE ro.artisan_id = ? 
+            WHERE ro.artisan_id = ?
             ORDER BY ro.created_at DESC
         `, [artisanId]);
 
