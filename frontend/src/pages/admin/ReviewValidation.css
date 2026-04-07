@@ -186,8 +186,32 @@
 }
 
 /* ===== Level Verifications - Mobile responsive ===== */
+/* Card layout was an alternative approach — kept hidden so the table
+   stays the single source of truth. Mobile users get the full table with
+   horizontal scroll. */
 .lv-mobile-cards {
-    display: none;
+    display: none !important;
+}
+
+.lv-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lv-table {
+    min-width: 900px;
+}
+
+/* ===== Review Validation (/admin/reviews) - force horizontal scroll on table ===== */
+/* The admin-modern-table inside this page can't shrink below 900px — on mobile
+   users scroll horizontally to see all columns instead of having content crushed. */
+.admin-dashboard.revamped .admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-dashboard.revamped .admin-table-container .admin-modern-table {
+    min-width: 900px;
 }
 
 @media (max-width: 768px) {
@@ -210,114 +234,41 @@
         flex: 1 1 calc(50% - 0.25rem);
     }
 
-    .lv-table-wrap {
-        border: none !important;
-        background: transparent !important;
-        border-radius: 0 !important;
+    /* Review Validation filter header — stack controls vertically so every
+       filter element stays visible on small screens. Inline styles on these
+       elements are overridden with !important. */
+    .admin-controls-premium {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100%;
+        gap: 0.75rem !important;
     }
 
-    .lv-table {
-        display: none !important;
+    .search-box-premium {
+        width: 100%;
     }
 
-    .lv-mobile-cards {
-        display: flex;
-        flex-direction: column;
-        gap: 0.875rem;
+    .search-box-premium input {
+        width: 100% !important;
+        box-sizing: border-box;
     }
 
-    .lv-card {
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.875rem;
-        padding: 1rem;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    .filter-group-premium {
+        flex-wrap: wrap;
+        width: 100%;
     }
 
-    .lv-card-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding-bottom: 0.75rem;
-        margin-bottom: 0.5rem;
-        border-bottom: 1px solid #f1f5f9;
-        cursor: pointer;
-    }
-
-    .lv-card-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-
-    .lv-card-avatar-placeholder {
-        background: #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .lv-card-name {
-        font-weight: 700;
-        font-size: 0.9rem;
-        color: #0f172a;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .lv-card-email {
-        font-size: 0.72rem;
-        color: #94a3b8;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .lv-card-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 0.25rem 0.55rem;
-        border-radius: 1rem;
-        flex-shrink: 0;
-        white-space: nowrap;
-    }
-
-    .lv-card-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.45rem 0;
-    }
-
-    .lv-card-label {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.025em;
-        flex-shrink: 0;
-    }
-
-    .lv-card-value {
-        font-size: 0.85rem;
-        color: #475569;
-        text-align: right;
-        word-break: break-word;
+    .filter-group-premium > div {
+        flex: 1 1 auto;
         min-width: 0;
     }
 
-    .lv-card-actions {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid #f1f5f9;
+    .filter-group-premium .admin-select-premium {
+        width: 100%;
+    }
+
+    .age-filter-btn-premium {
+        flex: 1 1 auto;
+        justify-content: center;
     }
 }
