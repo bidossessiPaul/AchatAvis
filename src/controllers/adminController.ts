@@ -181,6 +181,92 @@ export const updateSubmissionStatus = async (req: Request, res: Response) => {
 };
 
 /**
+ * List rejected submissions with filters (dedicated admin page)
+ * GET /api/admin/rejected-submissions
+ */
+export const listRejectedSubmissions = async (req: Request, res: Response) => {
+    try {
+        const result = await adminService.getRejectedSubmissions({
+            orderId: req.query.orderId as string | undefined,
+            artisanId: req.query.artisanId as string | undefined,
+            guideId: req.query.guideId as string | undefined,
+            reasonSearch: req.query.q as string | undefined,
+            page: Number(req.query.page) || 1,
+            limit: Number(req.query.limit) || 20,
+        });
+        res.json(result);
+    } catch (error) {
+        console.error('listRejectedSubmissions error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Bulk-revalidate rejected submissions
+ * POST /api/admin/submissions/bulk-revalidate
+ * Body: { ids: string[] } OR { all: true, q?: string, orderId?, artisanId?, guideId? }
+ */
+export const bulkRevalidateSubmissions = async (req: Request, res: Response) => {
+    try {
+        const { ids, all, q, orderId, artisanId, guideId } = req.body as {
+            ids?: string[];
+            all?: boolean;
+            q?: string;
+            orderId?: string;
+            artisanId?: string;
+            guideId?: string;
+        };
+
+        let targetIds: string[];
+        if (all === true) {
+            targetIds = await adminService.getRejectedSubmissionIds({
+                orderId,
+                artisanId,
+                guideId,
+                reasonSearch: q,
+            });
+        } else if (Array.isArray(ids) && ids.length > 0) {
+            targetIds = ids;
+        } else {
+            res.status(400).json({ error: 'Provide ids[] or all=true' });
+            return;
+        }
+
+        if (targetIds.length === 0) {
+            res.json({ success: 0, failed: 0, errors: [] });
+            return;
+        }
+        if (targetIds.length > 500) {
+            res.status(400).json({
+                error: 'Too many submissions in a single batch (max 500)',
+                count: targetIds.length,
+            });
+            return;
+        }
+
+        const result = await adminService.bulkRevalidateSubmissions(targetIds);
+        res.json(result);
+    } catch (error) {
+        console.error('bulkRevalidateSubmissions error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Force-relist a fiche (set back to in_progress)
+ * POST /api/admin/orders/:id/force-relist
+ */
+export const forceRelistOrder = async (req: Request, res: Response) => {
+    try {
+        await adminService.forceRelistOrder(req.params.id);
+        res.json({ message: 'Fiche remise en ligne' });
+    } catch (error) {
+        console.error('forceRelistOrder error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
  * Cancel a payment
  * POST /api/admin/payments/:paymentId/cancel
  */

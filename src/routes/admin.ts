@@ -43,6 +43,9 @@ router.get('/subscriptions/stats', adminController.getSubscriptionStats);
 router.get('/submissions', adminController.getAllSubmissions);
 router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
+router.post('/submissions/bulk-revalidate', adminController.bulkRevalidateSubmissions);
+router.get('/rejected-submissions', adminController.listRejectedSubmissions);
+router.post('/orders/:id/force-relist', adminController.forceRelistOrder);
 
 // Level Verifications
 router.get('/level-verifications', adminController.getLevelVerifications);
