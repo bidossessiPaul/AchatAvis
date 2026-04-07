@@ -6,6 +6,44 @@ import { sendAdminEventNotification } from './emailService';
 
 export const guideService = {
     /**
+     * Libère les slots des rejets allow_resubmit dont le délai de 24h est dépassé.
+     * Appelé en lazy : à chaque getAvailablefiches.
+     * - Décrémente reviews_received de l'order correspondant
+     * - Désactive allow_resubmit (le guide ne peut plus corriger)
+     * - Marque slot_released_at = NOW()
+     */
+    async releaseExpiredResubmitSlots() {
+        const expired: any = await query(`
+            SELECT id, order_id FROM reviews_submissions
+            WHERE status = 'rejected'
+              AND allow_resubmit = 1
+              AND slot_released_at IS NULL
+              AND rejected_at IS NOT NULL
+              AND rejected_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
+        `);
+
+        if (!expired || expired.length === 0) return;
+
+        for (const row of expired) {
+            if (row.order_id) {
+                await query(`
+                    UPDATE reviews_orders
+                    SET reviews_received = GREATEST(0, COALESCE(reviews_received, 1) - 1),
+                        status = CASE WHEN status = 'completed' THEN 'in_progress' ELSE status END
+                    WHERE id = ?
+                `, [row.order_id]);
+            }
+
+            await query(`
+                UPDATE reviews_submissions
+                SET slot_released_at = NOW(),
+                    allow_resubmit = 0
+                WHERE id = ?
+            `, [row.id]);
+        }
+    },
+
+    /**
      * Get fiches available for a specific guide
      * A fiche is available if:
      * 1. The order status is not 'draft' or 'cancelled'
@@ -13,7 +51,8 @@ export const guideService = {
      * 3. The guide hasn't already submitted a review for this order
      */
     async getAvailablefiches(guideId: string) {
-
+        // Libérer en amont les slots expirés (rejets allow_resubmit > 24h)
+        await this.releaseExpiredResubmitSlots();
 
         return query(`
             SELECT o.*, 
@@ -277,11 +316,12 @@ export const guideService = {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
         `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null, payoutAmount]);
 
-        // 4. Increment reviews_received in order and update status
+        // 4. Increment reviews_received in order (slot count only).
+        // Le passage en 'completed' se fait désormais uniquement quand un avis est validé
+        // (dans adminService.updateSubmissionStatus), pas dès la soumission.
         await query(`
-            UPDATE reviews_orders 
+            UPDATE reviews_orders
             SET reviews_received = reviews_received + 1,
-                status = IF(reviews_received + 1 >= quantity, 'completed', 'in_progress'),
                 locked_by = NULL,
                 locked_until = NULL
             WHERE id = ?
@@ -573,13 +613,23 @@ export const guideService = {
             WHERE id = ?
         `, params);
 
-        // 5. If correction/appeal, re-increment reviews_received on the order (was decremented on rejection)
-        if ((isCorrection || isAppeal) && submission.order_id) {
+        // 5. Réincrémenter uniquement pour appel (où le slot avait été libéré au rejet).
+        // Pour allow_resubmit, le slot était conservé donc pas besoin de réincrémenter.
+        if (isAppeal && submission.order_id) {
             await query(`
                 UPDATE reviews_orders
                 SET reviews_received = COALESCE(reviews_received, 0) + 1
                 WHERE id = ?
             `, [submission.order_id]);
+        }
+
+        // Marquer la submission comme "slot à nouveau actif" : reset rejected_at et slot_released_at
+        if (isCorrection || isAppeal) {
+            await query(`
+                UPDATE reviews_submissions
+                SET slot_released_at = NULL, rejected_at = NULL
+                WHERE id = ?
+            `, [submissionId]);
         }
 
         return { success: true, message: (isCorrection || isAppeal) ? 'Avis relancé avec succès' : 'Soumission mise à jour avec succès' };

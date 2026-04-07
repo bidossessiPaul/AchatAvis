@@ -448,7 +448,7 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
         title = "Soumission Refusée";
         message = `Malheureusement, votre avis n'a pas pu être validé.${rejectionReason ? `<br><br><strong>Raison :</strong> ${rejectionReason}` : ""}`;
         if (allowResubmit) {
-            message += `<br><br><strong style="color: #10b981;">Bonne nouvelle :</strong> Vous avez la possibilité de corriger votre lien. Rendez-vous dans la rubrique <strong>Corrections</strong> de votre espace guide pour soumettre un nouveau lien valide.`;
+            message += `<br><br><strong style="color: #10b981;">Vous avez 24h pour corriger votre lien.</strong> Rendez-vous dans la rubrique <strong>Corrections</strong> de votre espace guide pour soumettre un nouveau lien valide. Passé ce délai, votre slot sera libéré et la mission redeviendra accessible aux autres guides.`;
         } else if (allowAppeal) {
             message += `<br><br><strong style="color: #3b82f6;">Faire appel :</strong> Si votre avis revient en ligne sur Google, vous pouvez relancer la validation depuis la rubrique <strong>Corrections</strong> de votre espace guide.`;
         }

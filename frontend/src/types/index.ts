@@ -127,6 +127,7 @@ export interface ReviewOrder {
     price: number;
     status: 'draft' | 'submitted' | 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'paused';
     reviews_received: number;
+    reviews_validated?: number;
     fiche_name?: string;
     company_name?: string;
     google_business_url?: string;

@@ -51,10 +51,17 @@ const pruneIfNeeded = (map: Map<string, any>) => {
 /**
  * Exported helper so controllers that mutate user.status (ban, unban, suspend...)
  * can immediately invalidate the cache for that user.
+ *
+ * Also invalidates the heavy `getUserByIdCached` cache in authService via a
+ * lazy import — done lazily to avoid a static circular dependency
+ * (authService.ts already imports from this file).
  */
 export const invalidateAuthCache = (userId: string) => {
     statusCache.delete(userId);
     lastSeenCache.delete(userId);
+    import('../services/authService')
+        .then(({ invalidateUserCache }) => invalidateUserCache(userId))
+        .catch(() => { /* startup race only — safe to ignore */ });
 };
 
 /**
