@@ -205,14 +205,14 @@ export const OrdersList: React.FC = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{ flex: 1, height: '6px', background: '#f3f4f6', borderRadius: '3px', overflow: 'hidden' }}>
                                                     <div style={{
-                                                        width: `${(order.reviews_received / order.quantity) * 100}%`,
+                                                        width: `${Math.min(100, ((order.reviews_validated ?? 0) / order.quantity) * 100)}%`,
                                                         height: '100%',
                                                         background: 'var(--primary-brand)',
                                                         transition: 'width 0.5s ease'
                                                     }} />
                                                 </div>
                                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4b5563', minWidth: '40px' }}>
-                                                    {order.reviews_received}/{order.quantity}
+                                                    {order.reviews_validated ?? 0}/{order.quantity}
                                                 </span>
                                             </div>
                                         </td>

@@ -324,7 +324,7 @@ export const ArtisanOverview: React.FC = () => {
                                                 {order.status === 'draft' ? 'Brouillon' : order.status === 'submitted' ? 'En révision' : order.status === 'in_progress' ? 'En cours' : order.status}
                                             </span>
                                         </td>
-                                        <td style={{ padding: '1rem' }}>{order.reviews_received} / {order.quantity}</td>
+                                        <td style={{ padding: '1rem' }}>{order.reviews_validated ?? 0} / {order.quantity}</td>
                                         <td style={{ padding: '1rem', textAlign: 'right' }}>
                                             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', alignItems: 'center' }}>
                                                 {(order.status === 'draft' || order.status === 'submitted') && (

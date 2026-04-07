@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import axios from 'axios';
 import { useAuthStore } from '../context/authStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import toast from 'react-hot-toast';
@@ -6,6 +7,32 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 10000; // 10 seconds between retries
+
+/**
+ * Try to obtain a fresh access token using the httpOnly refresh-token cookie.
+ * Returns the new token, or null if refresh failed (user is no longer logged in).
+ *
+ * Used by the SSE connect routine so it never reconnects with an expired token,
+ * which would otherwise burn all 5 retry attempts in 50s and silently kill
+ * notifications until the user reloads the page.
+ */
+const refreshAccessToken = async (): Promise<string | null> => {
+    try {
+        const response = await axios.post(
+            `${API_BASE_URL}/auth/refresh-token`,
+            {},
+            { withCredentials: true }
+        );
+        const newToken = response.data?.accessToken;
+        if (newToken) {
+            localStorage.setItem('accessToken', newToken);
+            return newToken;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+};
 
 /**
  * Establishes a single SSE connection for the current user.
@@ -44,14 +71,27 @@ export const useNotifications = () => {
 
         closedByUserRef.current = false;
 
-        const connect = () => {
-            const token = localStorage.getItem('accessToken');
+        const connect = async () => {
+            let token = localStorage.getItem('accessToken');
             if (!token) return;
 
             // Guard against multiple concurrent connections for the same user
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
                 eventSourceRef.current = null;
+            }
+
+            // After at least one error, try to refresh the access token before
+            // reconnecting. Without this, retries hit the backend with the same
+            // expired token over and over, killing notifications until reload.
+            if (retriesRef.current > 0) {
+                const fresh = await refreshAccessToken();
+                if (fresh) {
+                    token = fresh;
+                } else {
+                    // Refresh failed → the user really is logged out. Stop trying.
+                    return;
+                }
             }
 
             const url = `${API_BASE_URL}/notifications/stream?token=${token}`;
@@ -95,12 +135,15 @@ export const useNotifications = () => {
 
                 if (retriesRef.current < MAX_RETRIES) {
                     retriesRef.current++;
-                    retryTimeoutRef.current = setTimeout(connect, RETRY_DELAY);
+                    retryTimeoutRef.current = setTimeout(() => {
+                        // connect() is async; we don't need to await here.
+                        void connect();
+                    }, RETRY_DELAY);
                 }
             };
         };
 
-        connect();
+        void connect();
 
         return () => {
             closedByUserRef.current = true;

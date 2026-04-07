@@ -365,7 +365,7 @@ export const OrderDetail: React.FC = () => {
                                 <div>
                                     <h4 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Objectif</h4>
                                     <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>{order.quantity} avis attendus</p>
-                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{order.reviews_received} avis reçus</p>
+                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{order.reviews_validated ?? 0} avis validés</p>
                                 </div>
                             </div>
                         </div>
@@ -373,7 +373,7 @@ export const OrderDetail: React.FC = () => {
                         {/* Proposals Section */}
                         <div>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <CheckCircle size={20} color="#10b981" /> Avis Publiés ({order.proposals?.filter(p => p.submission_id).length})
+                                <CheckCircle size={20} color="#10b981" /> Avis Publiés ({order.proposals?.filter(p => p.submission_id && p.submission_status === 'validated').length})
                             </h2>
                             <div style={{
                                 display: 'flex',
@@ -381,8 +381,8 @@ export const OrderDetail: React.FC = () => {
                                 gap: '1rem',
                                 marginBottom: '2.5rem'
                             }}>
-                                {order.proposals && order.proposals.filter(p => p.submission_id).length > 0 ? (
-                                    order.proposals.filter(p => p.submission_id).map((proposal) => (
+                                {order.proposals && order.proposals.filter(p => p.submission_id && p.submission_status === 'validated').length > 0 ? (
+                                    order.proposals.filter(p => p.submission_id && p.submission_status === 'validated').map((proposal) => (
                                         <div key={proposal.id} style={{
                                             background: 'white',
                                             padding: '1.5rem',
