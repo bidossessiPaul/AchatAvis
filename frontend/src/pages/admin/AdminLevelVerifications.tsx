@@ -136,7 +136,7 @@ export const AdminLevelVerifications: React.FC = () => {
     return (
         <DashboardLayout title="Vérification Niveaux Local Guide">
             {/* Stats bar */}
-            <div style={{
+            <div className="lv-stats" style={{
                 display: 'flex',
                 gap: '1rem',
                 marginBottom: '1.5rem'
@@ -178,7 +178,7 @@ export const AdminLevelVerifications: React.FC = () => {
             </div>
 
             {/* Search & Filters */}
-            <div style={{
+            <div className="lv-filters" style={{
                 display: 'flex',
                 gap: '1rem',
                 marginBottom: '1.5rem',
@@ -201,7 +201,7 @@ export const AdminLevelVerifications: React.FC = () => {
                         }}
                     />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="lv-filter-buttons" style={{ display: 'flex', gap: '0.5rem' }}>
                     {[
                         { value: 'pending', label: 'En attente' },
                         { value: 'all', label: 'Tout' },
@@ -237,13 +237,13 @@ export const AdminLevelVerifications: React.FC = () => {
                     </p>
                 </div>
             ) : (
-                <div style={{
+                <div className="lv-table-wrap" style={{
                     background: 'white',
                     borderRadius: '1rem',
                     border: '1px solid #e2e8f0',
                     overflow: 'hidden'
                 }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <table className="lv-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Guide</th>
@@ -399,6 +399,129 @@ export const AdminLevelVerifications: React.FC = () => {
                             })}
                         </tbody>
                     </table>
+
+                    {/* Mobile cards */}
+                    <div className="lv-mobile-cards">
+                        {filtered.map((v) => {
+                            const config = statusConfig[v.status];
+                            return (
+                                <div key={v.id} className="lv-card">
+                                    <div className="lv-card-header" onClick={() => navigate(`/admin/guides/${v.guide_id}`)}>
+                                        {v.guide_avatar ? (
+                                            <img src={getFileUrl(v.guide_avatar)} alt="" className="lv-card-avatar" />
+                                        ) : (
+                                            <div className="lv-card-avatar lv-card-avatar-placeholder">
+                                                <User size={18} color="#94a3b8" />
+                                            </div>
+                                        )}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div className="lv-card-name">{v.guide_name}</div>
+                                            <div className="lv-card-email">{v.guide_email}</div>
+                                        </div>
+                                        <span className="lv-card-status" style={{ background: config.bg, color: config.color }}>
+                                            {v.status === 'pending' && <Clock size={12} />}
+                                            {v.status === 'approved' && <CheckCircle2 size={12} />}
+                                            {v.status === 'rejected' && <XCircle size={12} />}
+                                            {config.label}
+                                        </span>
+                                    </div>
+
+                                    <div className="lv-card-row">
+                                        <span className="lv-card-label">Gmail</span>
+                                        <span className="lv-card-value">{v.gmail_email}</span>
+                                    </div>
+
+                                    <div className="lv-card-row">
+                                        <span className="lv-card-label">Niveau</span>
+                                        <span className="lv-card-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ background: '#f1f5f9', padding: '0.2rem 0.55rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 700, color: '#64748b' }}>
+                                                {v.current_level}
+                                            </span>
+                                            <ArrowRight size={13} color="#94a3b8" />
+                                            <span style={{ background: '#fef3c7', padding: '0.2rem 0.55rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: 700, color: '#92400e' }}>
+                                                {v.claimed_level}
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <div className="lv-card-row">
+                                        <span className="lv-card-label">Preuves</span>
+                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                            <button
+                                                onClick={() => setPreviewUrl(v.screenshot_url)}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                                    background: '#f1f5f9', color: '#475569', border: 'none',
+                                                    padding: '0.35rem 0.65rem', borderRadius: '0.375rem',
+                                                    fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <ImageIcon size={13} /> Capture
+                                            </button>
+                                            <a
+                                                href={v.profile_link}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                                    background: '#eff6ff', color: '#2383e2',
+                                                    padding: '0.35rem 0.65rem', borderRadius: '0.375rem',
+                                                    fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none'
+                                                }}
+                                            >
+                                                <ExternalLink size={13} /> Profil
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    {v.reviewer_name && (
+                                        <div className="lv-card-row">
+                                            <span className="lv-card-label">Validé par</span>
+                                            <span className="lv-card-value" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{v.reviewer_name}</span>
+                                        </div>
+                                    )}
+
+                                    {v.status === 'pending' ? (
+                                        <div className="lv-card-actions">
+                                            <button
+                                                onClick={() => handleApprove(v.id)}
+                                                disabled={isActionLoading}
+                                                style={{
+                                                    flex: 1,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem',
+                                                    background: '#dcfce7', color: '#166534', border: 'none',
+                                                    padding: '0.6rem 0.75rem', borderRadius: '0.5rem',
+                                                    fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <CheckCircle2 size={15} /> Approuver
+                                            </button>
+                                            <button
+                                                onClick={() => { setSelectedId(v.id); setShowRejectModal(true); }}
+                                                disabled={isActionLoading}
+                                                style={{
+                                                    flex: 1,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem',
+                                                    background: '#fee2e2', color: '#991b1b', border: 'none',
+                                                    padding: '0.6rem 0.75rem', borderRadius: '0.5rem',
+                                                    fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <XCircle size={15} /> Rejeter
+                                            </button>
+                                        </div>
+                                    ) : v.reviewed_at && (
+                                        <div className="lv-card-row">
+                                            <span className="lv-card-label">Date</span>
+                                            <span className="lv-card-value" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                {new Date(v.reviewed_at).toLocaleDateString('fr-FR')}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
