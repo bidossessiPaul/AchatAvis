@@ -253,7 +253,9 @@ export const getMe = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Not authenticated' });
         }
 
-        const user = await authService.getUserById(req.user.userId);
+        // Use the cached variant — /auth/me is one of the hottest endpoints in
+        // the app and the underlying query has correlated COUNT subqueries.
+        const user = await authService.getUserByIdCached(req.user.userId);
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });

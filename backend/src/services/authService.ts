@@ -435,7 +435,55 @@ export const verify2FA = async (userId: string, token: string) => {
 };
 
 /**
- * Get user by ID (without password)
+ * In-memory cache for getUserById results.
+ *
+ * Why this exists:
+ * - /auth/me is called by the frontend on every navigation, every periodic
+ *   revalidation, and on every refresh-token round-trip. Each call hits this
+ *   function.
+ * - getUserById runs a multi-table LEFT JOIN plus two correlated COUNT
+ *   subqueries (`total_reviews_validated`, `fiches_used`) which scan
+ *   `reviews_submissions` and `reviews_orders`. Under any real traffic this
+ *   saturates the MySQL pool and causes 5–15s response times, which then
+ *   causes the frontend to time out and log users out.
+ *
+ * The TTL is short (30s) so suspensions, plan changes, and profile updates
+ * still propagate quickly. Any mutation that changes user-facing data MUST
+ * call `invalidateUserCache(userId)` (most already go through
+ * `invalidateAuthCache` which now invalidates this cache too).
+ */
+const USER_CACHE_TTL_MS = 30 * 1000;
+const USER_CACHE_MAX_ENTRIES = 5000;
+
+interface UserCacheEntry {
+    user: UserResponse;
+    expiresAt: number;
+}
+
+const userByIdCache = new Map<string, UserCacheEntry>();
+
+const pruneUserCache = () => {
+    if (userByIdCache.size <= USER_CACHE_MAX_ENTRIES) return;
+    const toDrop = Math.ceil(USER_CACHE_MAX_ENTRIES * 0.1);
+    let i = 0;
+    for (const key of userByIdCache.keys()) {
+        userByIdCache.delete(key);
+        if (++i >= toDrop) break;
+    }
+};
+
+/**
+ * Drop the cached user object for `userId`. Called whenever a controller or
+ * service mutates user-visible data (status, profile, subscription, team
+ * permissions, etc.). Safe to call with an unknown userId.
+ */
+export const invalidateUserCache = (userId: string) => {
+    userByIdCache.delete(userId);
+};
+
+/**
+ * Get user by ID (without password). Uncached — runs the heavy query.
+ * Prefer `getUserByIdCached` for hot-path callers like /auth/me.
  */
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
@@ -469,6 +517,28 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
     }
 
     return user || null;
+};
+
+/**
+ * Cached version of getUserById — used by /auth/me, refresh-token and any
+ * other hot-path that does not need strict freshness on every call.
+ */
+export const getUserByIdCached = async (userId: string): Promise<UserResponse | null> => {
+    const now = Date.now();
+    const cached = userByIdCache.get(userId);
+    if (cached && cached.expiresAt > now) {
+        return cached.user;
+    }
+
+    const user = await getUserById(userId);
+    if (user) {
+        userByIdCache.set(userId, {
+            user,
+            expiresAt: now + USER_CACHE_TTL_MS,
+        });
+        pruneUserCache();
+    }
+    return user;
 };
 
 /**
@@ -607,6 +677,9 @@ export const updateProfile = async (userId: string, data: any) => {
         }
 
         await connection.commit();
+
+        // Make sure the next /auth/me does not serve stale cached data.
+        invalidateUserCache(userId);
     } catch (error) {
         await connection.rollback();
         throw error;
@@ -623,8 +696,10 @@ export const refreshToken = async (token: string) => {
         const { verifyRefreshToken } = await import('../utils/token');
         const payload = verifyRefreshToken(token);
 
-        // Get user to ensure they still exist and are active
-        const user = await getUserById(payload.userId);
+        // Get user to ensure they still exist and are active. Cached version is
+        // fine here: refresh-token is called frequently as access tokens expire,
+        // and the 30s TTL still picks up suspensions/role changes quickly.
+        const user = await getUserByIdCached(payload.userId);
         if (!user) {
             throw new Error('User not found');
         }

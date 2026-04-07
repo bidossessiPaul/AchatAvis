@@ -303,6 +303,10 @@ export const ReviewValidation: React.FC = () => {
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                     <span style={{ fontSize: '13px', color: '#111827', fontWeight: 600 }}>
                                                         {new Date(submission.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                                        {' '}
+                                                        <span style={{ fontWeight: 500, color: '#6b7280' }}>
+                                                            {new Date(submission.submitted_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
                                                     </span>
                                                     <span style={{ fontSize: '11px', color: '#6b7280' }}>
                                                         {submission.google_email}
