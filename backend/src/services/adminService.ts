@@ -483,13 +483,15 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             submissionId
         });
 
-        // 2. Handle reviews_received in reviews_orders
-        // We increment on submission (in guideService), so here we:
-        // - Do nothing on validation (already counted)
-        // - Decrement on rejection (to reopen the slot)
+        // 2. Handle reviews_received in reviews_orders + statut completed
+        // Logique :
+        // - validation : ne touche pas reviews_received (déjà incrémenté à la soumission),
+        //   mais peut faire passer la fiche en 'completed' si validated >= quantity
+        // - rejet allow_resubmit : slot conservé pendant 24h, releaseExpiredResubmitSlots libérera après
+        // - rejet allow_appeal ou rejet sec : slot libéré immédiatement
         if (status === 'rejected' || status === 'validated') {
             const [rows]: any = await connection.query(
-                `SELECT s.artisan_id, p.order_id 
+                `SELECT s.artisan_id, p.order_id
                  FROM reviews_submissions s
                  JOIN review_proposals p ON s.proposal_id = p.id
                  WHERE s.id = :submissionId`,
@@ -500,23 +502,51 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                 const { artisan_id, order_id } = rows[0];
 
                 if (status === 'validated') {
-                    // Update Global Profile Stats
+                    // Stats globales artisan
                     await connection.query(`
-                        UPDATE artisans_profiles 
+                        UPDATE artisans_profiles
                         SET current_month_reviews = COALESCE(current_month_reviews, 0) + 1,
                             total_reviews_received = COALESCE(total_reviews_received, 0) + 1
                         WHERE user_id = :artisan_id
                     `, { artisan_id });
-                } else if (status === 'rejected') {
-                    // Decrement Specific Order Stats to re-open slot
+
+                    // Recalculer le statut de la fiche basé sur les avis VALIDÉS
                     if (order_id) {
+                        await connection.query(`
+                            UPDATE reviews_orders ro
+                            SET status = CASE
+                              WHEN (SELECT COUNT(*) FROM reviews_submissions s2
+                                    WHERE s2.order_id = ro.id AND s2.status = 'validated') >= ro.quantity
+                              THEN 'completed'
+                              ELSE ro.status
+                            END
+                            WHERE ro.id = :order_id
+                        `, { order_id });
+                    }
+                } else if (status === 'rejected' && order_id) {
+                    // Marquer la date de rejet
+                    await connection.query(`
+                        UPDATE reviews_submissions
+                        SET rejected_at = NOW()
+                        WHERE id = :submissionId
+                    `, { submissionId });
+
+                    // Logique slot : resubmit garde le slot 24h, sinon libération immédiate
+                    const shouldReleaseSlot = !allowResubmit;
+                    if (shouldReleaseSlot) {
                         await connection.query(`
                             UPDATE reviews_orders
                             SET reviews_received = GREATEST(0, COALESCE(reviews_received, 1) - 1),
-                                status = 'in_progress'
+                                status = CASE WHEN status = 'completed' THEN 'in_progress' ELSE status END
                             WHERE id = :order_id
                         `, { order_id });
+                        await connection.query(`
+                            UPDATE reviews_submissions
+                            SET slot_released_at = NOW()
+                            WHERE id = :submissionId
+                        `, { submissionId });
                     }
+                    // Si allow_resubmit : slot reste occupé, releaseExpiredResubmitSlots() le libérera après 24h
                 }
             }
         }
@@ -537,7 +567,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
 
                 // SSE NOTIFICATION - Guide
                 const rejectMsg = allowResubmit
-                    ? 'Votre avis a été rejeté, mais vous pouvez corriger le lien depuis la page Corrections.'
+                    ? 'Votre avis a été rejeté. Vous avez 24h pour corriger le lien depuis la page Corrections, sinon le slot sera libéré.'
                     : allowAppeal
                     ? 'Votre avis a été rejeté. Vous pouvez faire appel depuis la page Corrections si l\'avis revient en ligne.'
                     : 'Désolé, votre soumission n\'a pas été retenue.';
@@ -575,6 +605,174 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
     } finally {
         connection.release();
     }
+};
+
+/**
+ * Liste des avis rejetés avec filtres (page admin dédiée)
+ */
+export const getRejectedSubmissions = async (filters: {
+    orderId?: string;
+    artisanId?: string;
+    guideId?: string;
+    reasonSearch?: string;
+    page?: number;
+    limit?: number;
+}) => {
+    const page = filters.page || 1;
+    const limit = filters.limit || 20;
+    const offset = (page - 1) * limit;
+
+    const where: string[] = [`s.status = 'rejected'`, `s.dismissed_at IS NULL`];
+    const params: any = {};
+
+    if (filters.orderId) {
+        where.push('ro.id = :orderId');
+        params.orderId = filters.orderId;
+    }
+    if (filters.artisanId) {
+        where.push('ro.artisan_id = :artisanId');
+        params.artisanId = filters.artisanId;
+    }
+    if (filters.guideId) {
+        where.push('s.guide_id = :guideId');
+        params.guideId = filters.guideId;
+    }
+    if (filters.reasonSearch) {
+        where.push('s.rejection_reason LIKE :reasonSearch');
+        params.reasonSearch = `%${filters.reasonSearch}%`;
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        const [rows]: any = await connection.query(`
+            SELECT s.id, s.review_url, s.google_email, s.rejection_reason, s.rejected_at,
+                   s.allow_resubmit, s.allow_appeal, s.slot_released_at,
+                   s.earnings, s.submitted_at,
+                   u.id as guide_id, u.full_name as guide_name, u.email as guide_email,
+                   ro.id as order_id, ro.company_name, ro.quantity, ro.reviews_received, ro.status as order_status,
+                   au.id as artisan_id, au.full_name as artisan_name,
+                   (SELECT COUNT(*) FROM reviews_submissions s2
+                    WHERE s2.order_id = ro.id AND s2.status = 'validated') as reviews_validated
+            FROM reviews_submissions s
+            JOIN users u ON s.guide_id = u.id
+            LEFT JOIN review_proposals p ON s.proposal_id = p.id
+            LEFT JOIN reviews_orders ro ON p.order_id = ro.id
+            LEFT JOIN users au ON ro.artisan_id = au.id
+            WHERE ${where.join(' AND ')}
+            ORDER BY s.rejected_at DESC, s.submitted_at DESC
+            LIMIT :limit OFFSET :offset
+        `, { ...params, limit, offset });
+
+        const [countRows]: any = await connection.query(`
+            SELECT COUNT(*) as total
+            FROM reviews_submissions s
+            LEFT JOIN review_proposals p ON s.proposal_id = p.id
+            LEFT JOIN reviews_orders ro ON p.order_id = ro.id
+            WHERE ${where.join(' AND ')}
+        `, params);
+
+        return {
+            rows,
+            total: countRows?.[0]?.total || 0,
+            page,
+            limit,
+        };
+    } finally {
+        connection.release();
+    }
+};
+
+/**
+ * Liste les IDs des avis rejetés correspondant aux mêmes filtres que getRejectedSubmissions.
+ * Utilisé par l'action bulk "Tout sélectionner".
+ */
+export const getRejectedSubmissionIds = async (filters: {
+    orderId?: string;
+    artisanId?: string;
+    guideId?: string;
+    reasonSearch?: string;
+}): Promise<string[]> => {
+    const where: string[] = [`s.status = 'rejected'`, `s.dismissed_at IS NULL`];
+    const params: any = {};
+
+    if (filters.orderId) {
+        where.push('ro.id = :orderId');
+        params.orderId = filters.orderId;
+    }
+    if (filters.artisanId) {
+        where.push('ro.artisan_id = :artisanId');
+        params.artisanId = filters.artisanId;
+    }
+    if (filters.guideId) {
+        where.push('s.guide_id = :guideId');
+        params.guideId = filters.guideId;
+    }
+    if (filters.reasonSearch) {
+        where.push('s.rejection_reason LIKE :reasonSearch');
+        params.reasonSearch = `%${filters.reasonSearch}%`;
+    }
+
+    const rows: any = await query(`
+        SELECT s.id
+        FROM reviews_submissions s
+        LEFT JOIN review_proposals p ON s.proposal_id = p.id
+        LEFT JOIN reviews_orders ro ON p.order_id = ro.id
+        WHERE ${where.join(' AND ')}
+    `, params);
+
+    return rows.map((r: any) => r.id);
+};
+
+/**
+ * Revalide en lot une liste d'avis rejetés. Réutilise updateSubmissionStatus
+ * pour conserver la logique métier (transactions, notifications, recalcul stats).
+ */
+export const bulkRevalidateSubmissions = async (ids: string[]): Promise<{
+    success: number;
+    failed: number;
+    errors: { id: string; error: string }[];
+}> => {
+    let success = 0;
+    let failed = 0;
+    const errors: { id: string; error: string }[] = [];
+
+    for (const id of ids) {
+        try {
+            await updateSubmissionStatus(id, 'validated');
+            success++;
+        } catch (e: any) {
+            failed++;
+            errors.push({ id, error: e?.message || 'unknown error' });
+        }
+    }
+
+    return { success, failed, errors };
+};
+
+/**
+ * Force la remise en ligne d'une fiche (admin).
+ * Marque aussi toutes les soumissions rejetées de cet order comme "traitées"
+ * pour qu'elles disparaissent de la liste /admin/rejected-reviews.
+ */
+export const forceRelistOrder = async (orderId: string) => {
+    await query(`
+        UPDATE reviews_orders
+        SET status = 'in_progress', paused_at = NULL, status_before_pause = NULL
+        WHERE id = ?
+    `, [orderId]);
+
+    // Cache les rejets de cet order : l'admin a explicitement choisi de relancer
+    // la fiche, donc ces lignes ne sont plus pertinentes dans la file de traitement.
+    await query(`
+        UPDATE reviews_submissions s
+        JOIN review_proposals p ON s.proposal_id = p.id
+        SET s.dismissed_at = NOW()
+        WHERE p.order_id = ?
+          AND s.status = 'rejected'
+          AND s.dismissed_at IS NULL
+    `, [orderId]);
+
+    return { success: true };
 };
 
 /**

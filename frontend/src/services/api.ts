@@ -130,17 +130,35 @@ api.interceptors.response.use(
 
                 processQueue(null, accessToken);
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch (refreshError: any) {
                 processQueue(refreshError, null);
-                localStorage.removeItem('accessToken');
 
-                // DO NOT REDIRECT TO LOGIN IF WE ARE ON A REGISTRATION PAGE
-                // This avoids the loop where visiting /register/artisan calls /sectors, 
-                // gets a 401 (if not handled), and redirects to /login.
-                const isRegisterPage = window.location.pathname.includes('/register/');
-                if (!window.location.pathname.includes('/login') && !isRegisterPage) {
-                    window.location.href = '/login';
+                // Only treat the user as actually logged out when the refresh
+                // endpoint says so (401/403). For network errors, 5xx, timeouts
+                // and CORS hiccups, leave the session intact and let the user
+                // retry — these are transient and forcibly logging them out is
+                // exactly the "se déconnecte tout seul" complaint we are
+                // trying to fix.
+                const refreshStatus: number | undefined = refreshError?.response?.status;
+                const isAuthFailure = refreshStatus === 401 || refreshStatus === 403;
+
+                if (isAuthFailure) {
+                    localStorage.removeItem('accessToken');
+
+                    // DO NOT REDIRECT TO LOGIN IF WE ARE ON A REGISTRATION PAGE
+                    // This avoids the loop where visiting /register/artisan calls /sectors,
+                    // gets a 401 (if not handled), and redirects to /login.
+                    const isRegisterPage = window.location.pathname.includes('/register/');
+                    if (!window.location.pathname.includes('/login') && !isRegisterPage) {
+                        window.location.href = '/login';
+                    }
+                } else if (import.meta.env.DEV) {
+                    console.warn('🟡 Refresh-token transient failure (no logout):', {
+                        status: refreshStatus,
+                        message: refreshError?.message,
+                    });
                 }
+
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
@@ -450,6 +468,32 @@ export const adminApi = {
 
     reviewLevelVerification: async (verificationId: number, data: { status: 'approved' | 'rejected', admin_notes?: string }): Promise<void> => {
         await api.patch(`/admin/level-verifications/${verificationId}`, data);
+    },
+
+    // Rejected reviews dedicated page
+    getRejectedSubmissions: async (params: {
+        orderId?: string;
+        artisanId?: string;
+        guideId?: string;
+        q?: string;
+        page?: number;
+        limit?: number;
+    } = {}): Promise<{ rows: any[]; total: number; page: number; limit: number }> => {
+        const response = await api.get('/admin/rejected-submissions', { params });
+        return response.data;
+    },
+
+    forceRelistOrder: async (orderId: string): Promise<void> => {
+        await api.post(`/admin/orders/${orderId}/force-relist`);
+    },
+
+    bulkRevalidateSubmissions: async (
+        payload:
+            | { ids: string[] }
+            | { all: true; q?: string; orderId?: string; artisanId?: string; guideId?: string }
+    ): Promise<{ success: number; failed: number; errors: { id: string; error: string }[] }> => {
+        const response = await api.post('/admin/submissions/bulk-revalidate', payload);
+        return response.data;
     },
 };
 

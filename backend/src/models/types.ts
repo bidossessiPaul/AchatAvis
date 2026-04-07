@@ -113,6 +113,7 @@ export interface ReviewOrder {
     sector_difficulty?: 'easy' | 'medium' | 'hard';
     city?: string;
     reviews_received: number;
+    reviews_validated?: number;
     company_name?: string;
     company_context?: string;
     sector?: string;
