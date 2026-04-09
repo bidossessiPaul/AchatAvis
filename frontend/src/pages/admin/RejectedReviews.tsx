@@ -106,8 +106,10 @@ export const RejectedReviews: React.FC = () => {
             }
             // Step 2: Delete submission + free slot for a new guide
             await adminApi.recycleRejectedSubmissions([row.id]);
+            // Remove from UI immediately
+            setRows(prev => prev.filter(r => r.id !== row.id));
+            setTotal(prev => Math.max(0, prev - 1));
             showSuccess('Avis régénéré et slot libéré', 'Un autre guide pourra reprendre cette fiche.');
-            fetchData(true);
         } catch (error) {
             showError('Erreur', 'Impossible de régénérer et relancer cet avis');
         } finally {
@@ -147,15 +149,15 @@ export const RejectedReviews: React.FC = () => {
 
         const result = await showConfirm(
             `Régénérer et relancer TOUS les ${total} avis ?`,
-            `L'IA va réécrire le contenu de chaque avis, puis les soumissions seront supprimées (preuves, liens) et les slots libérés. D'autres guides pourront reprendre les fiches. Cette opération peut prendre plusieurs minutes, laissez la page ouverte.`
+            `Chaque avis sera réécrit par l'IA puis supprimé de la liste au fur et à mesure. Les slots seront libérés pour d'autres guides. Laissez la page ouverte.`
         );
         if (!result.isConfirmed) return;
 
         setIsRegenerating(true);
         setRegenProgress({ current: 0, total: total });
 
-        let regenSuccess = 0;
-        let regenFailed = 0;
+        let successCount = 0;
+        let failedCount = 0;
 
         try {
             // Fetch ALL rejected submissions page by page
@@ -174,28 +176,30 @@ export const RejectedReviews: React.FC = () => {
 
             setRegenProgress({ current: 0, total: allRows.length });
 
-            // Step 1: Regenerate each proposal one by one
+            // Process each item: regenerate → recycle → remove from UI
             for (let i = 0; i < allRows.length; i++) {
                 setRegenProgress({ current: i + 1, total: allRows.length });
                 const row = allRows[i];
 
-                if (row.proposal_id) {
-                    try {
+                try {
+                    // 1. Regenerate content
+                    if (row.proposal_id) {
                         await adminApi.regenerateProposal(row.proposal_id);
-                        regenSuccess++;
-                    } catch {
-                        regenFailed++;
                     }
+                    // 2. Recycle (delete submission + free slot)
+                    await adminApi.recycleRejectedSubmissions([row.id]);
+                    // 3. Remove from UI immediately
+                    setRows(prev => prev.filter(r => r.id !== row.id));
+                    setTotal(prev => Math.max(0, prev - 1));
+                    successCount++;
+                } catch {
+                    failedCount++;
                 }
             }
 
-            // Step 2: Delete all submissions + free slots for new guides
-            const allIds = allRows.map(r => r.id);
-            await adminApi.recycleRejectedSubmissions(allIds);
-
-            const msg = regenFailed > 0
-                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), soumissions supprimées et slots libérés.`
-                : `${regenSuccess} avis régénérés, soumissions supprimées et slots libérés avec succès.`;
+            const msg = failedCount > 0
+                ? `${successCount} avis relancés (${failedCount} échec(s)).`
+                : `${successCount} avis relancés avec succès.`;
             showSuccess('Opération terminée', msg);
             clearSelection();
             fetchData(true);
@@ -256,43 +260,38 @@ export const RejectedReviews: React.FC = () => {
 
         const result = await showConfirm(
             `Régénérer et relancer ${count} avis ?`,
-            `L'IA va régénérer le contenu de chaque avis un par un, puis les soumissions seront supprimées (preuves, liens) et les slots libérés pour d'autres guides. Cette opération peut prendre du temps.`
+            `Chaque avis sera réécrit puis retiré de la liste au fur et à mesure.`
         );
         if (!result.isConfirmed) return;
 
         setIsRegenerating(true);
         setRegenProgress({ current: 0, total: count });
 
-        let regenSuccess = 0;
-        let regenFailed = 0;
+        let successCount = 0;
+        let failedCount = 0;
 
-        // Step 1: Regenerate each proposal one by one
         for (let i = 0; i < selectedRows.length; i++) {
             setRegenProgress({ current: i + 1, total: count });
+            const row = selectedRows[i];
             try {
-                await adminApi.regenerateProposal(selectedRows[i].proposal_id!);
-                regenSuccess++;
+                await adminApi.regenerateProposal(row.proposal_id!);
+                await adminApi.recycleRejectedSubmissions([row.id]);
+                setRows(prev => prev.filter(r => r.id !== row.id));
+                setTotal(prev => Math.max(0, prev - 1));
+                setSelectedIds(prev => { const next = new Set(prev); next.delete(row.id); return next; });
+                successCount++;
             } catch {
-                regenFailed++;
+                failedCount++;
             }
         }
 
-        // Step 2: Delete submissions + free slots for new guides
-        try {
-            const ids = selectedRows.map(r => r.id);
-            await adminApi.recycleRejectedSubmissions(ids);
-            const msg = regenFailed > 0
-                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), soumissions supprimées et slots libérés.`
-                : `${regenSuccess} avis régénérés, soumissions supprimées et slots libérés.`;
-            showSuccess('Régénération terminée', msg);
-            clearSelection();
-            fetchData(true);
-        } catch (error: any) {
-            showError('Erreur', 'Les avis ont été régénérés mais la relance a échoué.');
-        } finally {
-            setIsRegenerating(false);
-            setRegenProgress({ current: 0, total: 0 });
-        }
+        const msg = failedCount > 0
+            ? `${successCount} avis relancés (${failedCount} échec(s)).`
+            : `${successCount} avis relancés avec succès.`;
+        showSuccess('Opération terminée', msg);
+        setIsRegenerating(false);
+        setRegenProgress({ current: 0, total: 0 });
+        fetchData(true);
     };
 
     // handleBulkResetToPending removed — use handleBulkRegenerateAndRelaunch instead (content must be rewritten)
