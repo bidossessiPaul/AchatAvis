@@ -1,6 +1,6 @@
 import express from 'express';
 import * as adminController from '../controllers/adminController';
-import { authenticate, authorize, checkPermission } from '../middleware/auth';
+import { authenticate, authorize } from '../middleware/auth';
 
 import { LogService } from '../services/logService';
 
@@ -10,9 +10,10 @@ const router = express.Router();
 router.use(authenticate, authorize('admin'));
 
 // Audit Logs (owner-only: dossoumaxime888@gmail.com)
-router.get('/logs', (req, res, next) => {
+router.get('/logs', (req, res, next): void => {
     if (req.user?.email !== 'dossoumaxime888@gmail.com') {
-        return res.status(403).json({ error: 'Accès réservé' });
+        res.status(403).json({ error: 'Accès réservé' });
+        return;
     }
     next();
 }, async (req, res) => {
