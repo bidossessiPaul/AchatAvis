@@ -50,6 +50,15 @@ class SecurityRadarErrorBoundary extends Component<{ children: React.ReactNode }
     }
 }
 
+const parseJsonField = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+        try { return JSON.parse(value); } catch { return []; }
+    }
+    return [];
+};
+
 const ruleIconMap: Record<string, React.ReactNode> = {
     'gmail_reel': <User size={24} />,
     'natural_navigation': <Navigation size={24} />,
@@ -193,7 +202,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
                                                             <CheckCircle size={14} /> STANDARD REQUIS
                                                         </h5>
                                                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
-                                                            {rule.examples_do?.map((ex: string, i: number) => (
+                                                            {parseJsonField(rule.examples_do).map((ex: string, i: number) => (
                                                                 <li key={i} style={{ color: '#475569', fontSize: '0.8125rem', lineHeight: '1.4' }}>• {ex}</li>
                                                             ))}
                                                         </ul>
@@ -203,7 +212,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
                                                             <AlertTriangle size={14} /> FACTEUR DE RISQUE
                                                         </h5>
                                                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.5rem' }}>
-                                                            {rule.examples_dont?.map((ex: string, i: number) => (
+                                                            {parseJsonField(rule.examples_dont).map((ex: string, i: number) => (
                                                                 <li key={i} style={{ color: '#475569', fontSize: '0.8125rem', lineHeight: '1.4' }}>• {ex}</li>
                                                             ))}
                                                         </ul>
@@ -215,7 +224,7 @@ export const AntiDetectionRulesPage: React.FC = () => {
                                                         <Lightbulb size={14} /> Analyse d'Expert
                                                     </h5>
                                                     <div style={{ color: '#0c4a6e', fontSize: '0.8125rem', lineHeight: '1.5' }}>
-                                                        {rule.tips?.map((tip: string, i: number) => <div key={i}>💡 {tip}</div>)}
+                                                        {parseJsonField(rule.tips).map((tip: string, i: number) => <div key={i}>💡 {tip}</div>)}
                                                     </div>
                                                 </div>
                                             </div>

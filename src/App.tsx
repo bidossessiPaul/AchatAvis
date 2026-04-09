@@ -62,6 +62,7 @@ const SectorManagement = lazyNamed(() => import('./pages/admin/SectorManagement'
 const AdminLevelVerifications = lazyNamed(() => import('./pages/admin/AdminLevelVerifications'), 'AdminLevelVerifications');
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
+const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
 
 const Profile = lazyNamed(() => import('./pages/Profile'), 'Profile');
 const NotFound = lazyNamed(() => import('./pages/NotFound'), 'NotFound');
@@ -343,7 +344,7 @@ function App() {
                             path="/guide/my-gmails"
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
-                                    <MaintenanceRedirect />
+                                    <MyGmailsPage />
                                 </ProtectedRoute>
                             }
                         />
@@ -504,6 +505,15 @@ function App() {
                                     <PermissionGuard requiredPermission={['can_manage_fiches', 'can_validate_fiches']}>
                                         <AdminFicheDetail />
                                     </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/admin/logs"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminLogs />
                                 </ProtectedRoute>
                             }
                         />
