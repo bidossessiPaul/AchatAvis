@@ -13,7 +13,11 @@ import {
     XCircle,
     Clock,
     PlayCircle,
-    Loader2
+    Loader2,
+    Pencil,
+    RefreshCw,
+    X,
+    Save
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -30,6 +34,9 @@ interface RejectedRow {
     allow_resubmit: 0 | 1;
     allow_appeal: 0 | 1;
     slot_released_at?: string | null;
+
+    proposal_id?: string;
+    review_text?: string;
 
     guide_id: string;
     guide_name: string;
@@ -57,6 +64,12 @@ export const RejectedReviews: React.FC = () => {
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBulkLoading, setIsBulkLoading] = useState(false);
+    const [editingRow, setEditingRow] = useState<RejectedRow | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [isSavingContent, setIsSavingContent] = useState(false);
+    const [isResetLoading, setIsResetLoading] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
+    const [regenProgress, setRegenProgress] = useState({ current: 0, total: 0 });
 
     const fetchData = useCallback(async (silent = false) => {
         if (!silent) setIsLoading(true);
@@ -130,7 +143,7 @@ export const RejectedReviews: React.FC = () => {
         const result = await showConfirm(
             mode === 'all' ? `Revalider TOUS les ${total} avis rejetés ?` : `Revalider ${count} avis ?`,
             mode === 'all'
-                ? `Cette action va revalider l'intégralité des ${total} avis rejetés${searchReason ? ' correspondant au filtre' : ''}. Une notification sera envoyée à chaque guide. L'opération peut prendre plusieurs minutes.`
+                ? `Les ${total} avis rejetés${searchReason ? ' correspondant au filtre' : ''} seront marqués comme validés.`
                 : `Les ${count} avis sélectionnés seront marqués comme validés et les statistiques mises à jour.`
         );
         if (!result.isConfirmed) return;
@@ -152,6 +165,203 @@ export const RejectedReviews: React.FC = () => {
             showError('Erreur', errMsg);
         } finally {
             setIsBulkLoading(false);
+        }
+    };
+
+    const handleRegenAndRevalidateAll = async () => {
+        if (total === 0) return;
+
+        const result = await showConfirm(
+            `Régénérer et revalider TOUS les ${total} avis ?`,
+            `L'IA va régénérer le contenu de chaque avis un par un, puis chaque avis sera revalidé automatiquement. Cette opération peut prendre plusieurs minutes, laissez la page ouverte.`
+        );
+        if (!result.isConfirmed) return;
+
+        setIsRegenerating(true);
+        setRegenProgress({ current: 0, total: total });
+
+        let regenSuccess = 0;
+        let regenFailed = 0;
+        let revalidateSuccess = 0;
+        let revalidateFailed = 0;
+
+        try {
+            // Fetch ALL rejected submissions page by page
+            const allRows: RejectedRow[] = [];
+            const batchSize = 100;
+            const totalPages = Math.ceil(total / batchSize);
+
+            for (let p = 1; p <= totalPages; p++) {
+                const res = await adminApi.getRejectedSubmissions({
+                    q: searchReason || undefined,
+                    page: p,
+                    limit: batchSize,
+                });
+                allRows.push(...(res.rows || []));
+            }
+
+            setRegenProgress({ current: 0, total: allRows.length });
+
+            // Process each review one by one: regenerate then revalidate
+            for (let i = 0; i < allRows.length; i++) {
+                setRegenProgress({ current: i + 1, total: allRows.length });
+                const row = allRows[i];
+
+                // Step 1: Regenerate if proposal exists
+                if (row.proposal_id) {
+                    try {
+                        await adminApi.regenerateProposal(row.proposal_id);
+                        regenSuccess++;
+                    } catch {
+                        regenFailed++;
+                    }
+                }
+
+                // Step 2: Revalidate the submission
+                try {
+                    await adminApi.updateSubmissionStatus(row.id, { status: 'validated' });
+                    revalidateSuccess++;
+                    // Remove from list immediately
+                    setRows(prev => prev.filter(r => r.id !== row.id));
+                    setTotal(prev => Math.max(0, prev - 1));
+                    setSelectedIds(prev => {
+                        const next = new Set(prev);
+                        next.delete(row.id);
+                        return next;
+                    });
+                } catch {
+                    revalidateFailed++;
+                }
+            }
+
+            const parts: string[] = [];
+            parts.push(`${regenSuccess} avis régénérés`);
+            if (regenFailed > 0) parts.push(`${regenFailed} régénération(s) échouée(s)`);
+            parts.push(`${revalidateSuccess} avis revalidés`);
+            if (revalidateFailed > 0) parts.push(`${revalidateFailed} revalidation(s) échouée(s)`);
+            showSuccess('Opération terminée', parts.join(', ') + '.');
+            clearSelection();
+            fetchData(true);
+        } catch (error: any) {
+            showError('Erreur', 'Une erreur est survenue pendant l\'opération.');
+        } finally {
+            setIsRegenerating(false);
+            setRegenProgress({ current: 0, total: 0 });
+        }
+    };
+
+    const handleEditContent = (row: RejectedRow) => {
+        setEditingRow(row);
+        setEditContent(row.review_text || '');
+    };
+
+    const handleSaveContent = async () => {
+        if (!editingRow?.proposal_id) return;
+        setIsSavingContent(true);
+        try {
+            await adminApi.updateProposal(editingRow.proposal_id, { content: editContent });
+            showSuccess('Contenu modifié', 'Le texte de l\'avis a été mis à jour.');
+            setEditingRow(null);
+            fetchData(true);
+        } catch (error) {
+            showError('Erreur', 'Impossible de modifier le contenu de l\'avis');
+        } finally {
+            setIsSavingContent(false);
+        }
+    };
+
+    const handleRegenerateInModal = async () => {
+        if (!editingRow?.proposal_id) return;
+        setIsRegenerating(true);
+        try {
+            const result = await adminApi.regenerateProposal(editingRow.proposal_id);
+            setEditContent(result.content);
+            setEditingRow({ ...editingRow, review_text: result.content });
+            showSuccess('Avis régénéré', 'Le texte a été régénéré par l\'IA. Enregistrez pour confirmer ou modifiez-le.');
+        } catch (error) {
+            showError('Erreur', 'Impossible de régénérer l\'avis');
+        } finally {
+            setIsRegenerating(false);
+        }
+    };
+
+    const handleBulkEditContent = () => {
+        const selectedRows = rows.filter(r => selectedIds.has(r.id));
+        if (selectedRows.length >= 1) {
+            handleEditContent(selectedRows[0]);
+        }
+    };
+
+    const handleBulkRegenerateAndRelaunch = async () => {
+        const selectedRows = rows.filter(r => selectedIds.has(r.id) && r.proposal_id);
+        const count = selectedRows.length;
+        if (count === 0) return;
+
+        const result = await showConfirm(
+            `Régénérer et relancer ${count} avis ?`,
+            `L'IA va régénérer le contenu de chaque avis un par un, puis tous seront remis en "non publié" (pending). Cette opération peut prendre du temps.`
+        );
+        if (!result.isConfirmed) return;
+
+        setIsRegenerating(true);
+        setRegenProgress({ current: 0, total: count });
+
+        let regenSuccess = 0;
+        let regenFailed = 0;
+
+        // Step 1: Regenerate each proposal one by one
+        for (let i = 0; i < selectedRows.length; i++) {
+            setRegenProgress({ current: i + 1, total: count });
+            try {
+                await adminApi.regenerateProposal(selectedRows[i].proposal_id!);
+                regenSuccess++;
+            } catch {
+                regenFailed++;
+            }
+        }
+
+        // Step 2: Reset all to pending
+        try {
+            const ids = selectedRows.map(r => r.id);
+            await adminApi.bulkResetToPending(ids);
+            const msg = regenFailed > 0
+                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), tous remis en ligne.`
+                : `${regenSuccess} avis régénérés et remis en ligne avec succès.`;
+            showSuccess('Régénération terminée', msg);
+            clearSelection();
+            fetchData(true);
+        } catch (error: any) {
+            showError('Erreur', 'Les avis ont été régénérés mais la relance a échoué.');
+        } finally {
+            setIsRegenerating(false);
+            setRegenProgress({ current: 0, total: 0 });
+        }
+    };
+
+    const handleBulkResetToPending = async () => {
+        const count = selectedIds.size;
+        if (count === 0) return;
+
+        const result = await showConfirm(
+            `Relancer ${count} avis ?`,
+            `Les ${count} avis sélectionnés seront remis en "non publié" (pending). Le guide pourra les re-soumettre et l'admin pourra les revalider.`
+        );
+        if (!result.isConfirmed) return;
+
+        setIsResetLoading(true);
+        try {
+            const res = await adminApi.bulkResetToPending(Array.from(selectedIds));
+            const msg = res.failed > 0
+                ? `${res.success} avis relancé(s), ${res.failed} échec(s)`
+                : `${res.success} avis relancé(s) avec succès`;
+            showSuccess('Relance terminée', msg);
+            clearSelection();
+            fetchData(true);
+        } catch (error: any) {
+            const errMsg = error?.response?.data?.error || 'Impossible de relancer les avis';
+            showError('Erreur', errMsg);
+        } finally {
+            setIsResetLoading(false);
         }
     };
 
@@ -282,48 +492,132 @@ export const RejectedReviews: React.FC = () => {
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 {selectedIds.size > 0 && (
-                                    <button
-                                        onClick={() => handleBulkRevalidate('selection')}
-                                        disabled={isBulkLoading}
-                                        style={{
-                                            padding: '0.5rem 1rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid #10b981',
-                                            background: '#10b981',
-                                            color: 'white',
-                                            cursor: isBulkLoading ? 'not-allowed' : 'pointer',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '0.4rem',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 700,
-                                            opacity: isBulkLoading ? 0.6 : 1
-                                        }}
-                                    >
-                                        {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                        Revalider la sélection
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={handleBulkEditContent}
+                                            disabled={isBulkLoading || isResetLoading}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '1px solid #6366f1',
+                                                background: '#eef2ff',
+                                                color: '#4338ca',
+                                                cursor: 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700
+                                            }}
+                                        >
+                                            <Pencil size={14} />
+                                            Modifier le contenu
+                                        </button>
+                                        <button
+                                            onClick={handleBulkRegenerateAndRelaunch}
+                                            disabled={isRegenerating || isBulkLoading || isResetLoading}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '1px solid #8b5cf6',
+                                                background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                                                color: 'white',
+                                                cursor: isRegenerating ? 'not-allowed' : 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                opacity: isRegenerating ? 0.7 : 1
+                                            }}
+                                        >
+                                            {isRegenerating
+                                                ? <><Loader2 size={14} className="animate-spin" /> {regenProgress.current}/{regenProgress.total}</>
+                                                : <><RotateCcw size={14} /> Régénérer + Relancer</>
+                                            }
+                                        </button>
+                                        <button
+                                            onClick={handleBulkResetToPending}
+                                            disabled={isResetLoading || isBulkLoading || isRegenerating}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '1px solid #f59e0b',
+                                                background: '#f59e0b',
+                                                color: 'white',
+                                                cursor: isResetLoading ? 'not-allowed' : 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                opacity: isResetLoading ? 0.6 : 1
+                                            }}
+                                        >
+                                            {isResetLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                                            Relancer la sélection
+                                        </button>
+                                        <button
+                                            onClick={() => handleBulkRevalidate('selection')}
+                                            disabled={isBulkLoading}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                borderRadius: '8px',
+                                                border: '1px solid #10b981',
+                                                background: '#10b981',
+                                                color: 'white',
+                                                cursor: isBulkLoading ? 'not-allowed' : 'pointer',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '0.4rem',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                opacity: isBulkLoading ? 0.6 : 1
+                                            }}
+                                        >
+                                            {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                                            Revalider la sélection
+                                        </button>
+                                    </>
                                 )}
                                 <button
-                                    onClick={() => handleBulkRevalidate('all')}
-                                    disabled={isBulkLoading || total === 0}
+                                    onClick={handleRegenAndRevalidateAll}
+                                    disabled={isRegenerating || isBulkLoading || total === 0}
                                     style={{
                                         padding: '0.5rem 1rem',
                                         borderRadius: '8px',
-                                        border: '1px solid #10b981',
-                                        background: 'white',
-                                        color: '#047857',
-                                        cursor: isBulkLoading || total === 0 ? 'not-allowed' : 'pointer',
+                                        border: '1px solid #8b5cf6',
+                                        background: isRegenerating
+                                            ? 'linear-gradient(135deg, #7c3aed, #6366f1)'
+                                            : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                                        color: 'white',
+                                        cursor: isRegenerating || isBulkLoading || total === 0 ? 'not-allowed' : 'pointer',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '0.4rem',
                                         fontSize: '0.8rem',
                                         fontWeight: 700,
-                                        opacity: isBulkLoading || total === 0 ? 0.5 : 1
+                                        opacity: isRegenerating || isBulkLoading || total === 0 ? 0.8 : 1,
+                                        minWidth: isRegenerating ? '260px' : 'auto',
+                                        position: 'relative',
+                                        overflow: 'hidden'
                                     }}
                                 >
-                                    {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                    Revalider tout ({total})
+                                    {isRegenerating && regenProgress.total > 0 && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: `${(regenProgress.current / regenProgress.total) * 100}%`,
+                                            background: 'rgba(255,255,255,0.15)',
+                                            transition: 'width 0.3s ease'
+                                        }} />
+                                    )}
+                                    {isRegenerating
+                                        ? <><Loader2 size={14} className="animate-spin" /> Régénération {regenProgress.current}/{regenProgress.total}...</>
+                                        : <><RotateCcw size={14} /> Revalider tout ({total})</>
+                                    }
                                 </button>
                             </div>
                         </div>
@@ -535,7 +829,27 @@ export const RejectedReviews: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none', borderRadius: '0 16px 16px 0', padding: '1rem' }} className="text-center">
-                                                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                        {row.proposal_id && (
+                                                            <button
+                                                                onClick={() => handleEditContent(row)}
+                                                                title="Modifier le contenu de l'avis"
+                                                                style={{
+                                                                    padding: '0.4rem',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid #6366f1',
+                                                                    background: '#eef2ff',
+                                                                    color: '#4338ca',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    fontSize: '0.7rem',
+                                                                    fontWeight: 700
+                                                                }}
+                                                            >
+                                                                <Pencil size={13} />
+                                                            </button>
+                                                        )}
                                                         <button
                                                             onClick={() => handleRevalidate(row)}
                                                             disabled={actionLoadingId === row.id}
@@ -632,6 +946,152 @@ export const RejectedReviews: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Edit content modal */}
+            {editingRow && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: '1rem'
+                }}>
+                    <div style={{
+                        background: 'white',
+                        borderRadius: '20px',
+                        width: '100%',
+                        maxWidth: '640px',
+                        maxHeight: '90vh',
+                        overflow: 'auto',
+                        boxShadow: '0 25px 50px rgba(0,0,0,0.25)'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '1.25rem 1.5rem',
+                            borderBottom: '1px solid #e5e7eb'
+                        }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>
+                                    Modifier le contenu de l'avis
+                                </h3>
+                                <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#6b7280' }}>
+                                    Fiche : <strong>{editingRow.company_name}</strong> — Guide : <strong>{editingRow.guide_name}</strong>
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setEditingRow(null)}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
+                            >
+                                <X size={20} color="#6b7280" />
+                            </button>
+                        </div>
+
+                        <div style={{ padding: '1.5rem' }}>
+                            {editingRow.rejection_reason && (
+                                <div style={{
+                                    background: '#fef2f2',
+                                    border: '1px solid #fecaca',
+                                    borderRadius: '12px',
+                                    padding: '0.75rem 1rem',
+                                    marginBottom: '1rem',
+                                    fontSize: '0.8rem',
+                                    color: '#991b1b'
+                                }}>
+                                    <strong>Raison du rejet :</strong> {editingRow.rejection_reason}
+                                </div>
+                            )}
+
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.5rem' }}>
+                                Texte de l'avis (modifiez sans changer le sens)
+                            </label>
+                            <textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                rows={8}
+                                style={{
+                                    width: '100%',
+                                    padding: '1rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #d1d5db',
+                                    fontSize: '0.9rem',
+                                    lineHeight: 1.6,
+                                    resize: 'vertical',
+                                    fontFamily: 'inherit',
+                                    outline: 'none',
+                                    boxSizing: 'border-box'
+                                }}
+                            />
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'space-between', marginTop: '1.25rem', alignItems: 'center' }}>
+                                <button
+                                    onClick={handleRegenerateInModal}
+                                    disabled={isRegenerating || !editingRow.proposal_id}
+                                    style={{
+                                        padding: '0.6rem 1.25rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid #8b5cf6',
+                                        background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                                        color: 'white',
+                                        cursor: isRegenerating || !editingRow.proposal_id ? 'not-allowed' : 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        opacity: isRegenerating ? 0.7 : 1
+                                    }}
+                                >
+                                    {isRegenerating ? <Loader2 size={16} className="animate-spin" /> : <RotateCcw size={16} />}
+                                    {isRegenerating ? 'Régénération...' : 'Régénérer (IA)'}
+                                </button>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <button
+                                        onClick={() => setEditingRow(null)}
+                                        style={{
+                                            padding: '0.6rem 1.25rem',
+                                            borderRadius: '10px',
+                                            border: '1px solid #d1d5db',
+                                            background: 'white',
+                                            color: '#374151',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600
+                                        }}
+                                    >
+                                        Annuler
+                                    </button>
+                                    <button
+                                        onClick={handleSaveContent}
+                                        disabled={isSavingContent || editContent === editingRow.review_text}
+                                        style={{
+                                            padding: '0.6rem 1.25rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: editContent === editingRow.review_text ? '#d1d5db' : '#6366f1',
+                                            color: 'white',
+                                            cursor: isSavingContent || editContent === editingRow.review_text ? 'not-allowed' : 'pointer',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 700,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            opacity: isSavingContent ? 0.6 : 1
+                                        }}
+                                    >
+                                        {isSavingContent ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                        Enregistrer
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };

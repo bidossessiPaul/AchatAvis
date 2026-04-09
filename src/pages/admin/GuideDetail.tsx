@@ -16,7 +16,9 @@ import {
     Briefcase,
     Smartphone,
     MessageCircle,
-    LogIn
+    LogIn,
+    ShieldOff,
+    AlertTriangle
 } from 'lucide-react';
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { getFileUrl } from '../../utils/url';
@@ -157,6 +159,22 @@ export const GuideDetail: React.FC = () => {
             window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
         } catch {
             showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+        }
+    };
+
+    const handleUnblockBadLinks = async () => {
+        const confirmResult = await showConfirm(
+            'Débloquer ce guide ?',
+            'Cela va réactiver son compte, débloquer tous ses comptes Gmail et remettre ses avertissements à zéro. Voulez-vous continuer ?'
+        );
+        if (!confirmResult.isConfirmed) return;
+
+        try {
+            await adminService.unblockBadLinkGuide(id!);
+            showSuccess('Guide débloqué', 'Le compte a été réactivé et tous les comptes Gmail débloqués.');
+            loadData();
+        } catch (error) {
+            showError('Erreur', 'Erreur lors du déblocage du guide');
         }
     };
 
@@ -748,10 +766,39 @@ export const GuideDetail: React.FC = () => {
                                         Suspendre l'accès
                                     </button>
                                 ) : (
-                                    <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
-                                        <CheckCircle size={18} />
-                                        Réactiver le compte
-                                    </button>
+                                    <>
+                                        <button onClick={() => handleStatusUpdate('active')} className="premium-action-btn activate">
+                                            <CheckCircle size={18} />
+                                            Réactiver le compte
+                                        </button>
+                                        <button
+                                            onClick={handleUnblockBadLinks}
+                                            className="premium-action-btn"
+                                            style={{
+                                                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                                                color: '#15803d',
+                                                border: '1px solid #bbf7d0',
+                                                fontWeight: 700
+                                            }}
+                                        >
+                                            <ShieldOff size={18} />
+                                            Débloquer (mauvais liens)
+                                        </button>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: '0.5rem',
+                                            padding: '0.75rem',
+                                            background: '#fffbeb',
+                                            borderRadius: '10px',
+                                            border: '1px solid #fde68a'
+                                        }}>
+                                            <AlertTriangle size={16} color="#d97706" style={{ marginTop: '2px', flexShrink: 0 }} />
+                                            <span style={{ fontSize: '0.7rem', color: '#92400e', lineHeight: 1.4 }}>
+                                                "Débloquer (mauvais liens)" réactive le compte <strong>et</strong> débloque tous les Gmail associés. Utilisez-le si le guide a été suspendu automatiquement pour 3 mauvais liens.
+                                            </span>
+                                        </div>
+                                    </>
                                 )}
 
                                 <button onClick={() => showError('Attention', 'La suppression définitive est irréversible.')} className="premium-action-btn delete" >

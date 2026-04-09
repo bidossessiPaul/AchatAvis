@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { guideService } from '../../services/guideService';
-import { Trophy, Medal, ChevronUp, Send, CheckCircle, Clock } from 'lucide-react';
+import { Trophy, Medal, ChevronUp, CheckCircle, XCircle, TrendingUp, Send, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './GuideLeaderboard.css';
 
@@ -10,6 +10,8 @@ interface LeaderboardEntry {
     totalPosted: number;
     totalValidated: number;
     totalPending: number;
+    totalRejected: number;
+    validationRate: number;
     isCurrentUser: boolean;
 }
 
@@ -78,39 +80,52 @@ export const GuideLeaderboard: React.FC = () => {
             <div className="lb-table-header">
                 <span className="lb-col-rank">#</span>
                 <span className="lb-col-name">Guide</span>
-                <span className="lb-col-stat"><Send size={12} /> Postés</span>
-                <span className="lb-col-stat"><CheckCircle size={12} /> Validés</span>
-                <span className="lb-col-stat"><Clock size={12} /> Attente</span>
+                <span className="lb-col-stat"><Send size={11} /> Postés</span>
+                <span className="lb-col-stat"><CheckCircle size={11} /> Validés</span>
+                <span className="lb-col-stat"><XCircle size={11} /> Rejetés</span>
+                <span className="lb-col-stat"><Clock size={11} /> Attente</span>
+                <span className="lb-col-stat"><TrendingUp size={11} /> %</span>
             </div>
 
             {/* Entries */}
             <div className="lb-list">
-                {entries.map((entry, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className={`lb-row ${entry.isCurrentUser ? 'lb-row-me' : ''} ${getRankClass(entry.rank)}`}
-                    >
-                        <div className="lb-col-rank">
-                            {getRankIcon(entry.rank)}
-                        </div>
-                        <div className="lb-col-name">
-                            <span className="lb-name">{entry.name}</span>
-                            {entry.isCurrentUser && <span className="lb-you-badge">Vous</span>}
-                        </div>
-                        <div className="lb-col-stat">
-                            <span className="lb-stat-value">{entry.totalPosted}</span>
-                        </div>
-                        <div className="lb-col-stat">
-                            <span className="lb-stat-value lb-stat-validated">{entry.totalValidated}</span>
-                        </div>
-                        <div className="lb-col-stat">
-                            <span className="lb-stat-value lb-stat-pending">{entry.totalPending}</span>
-                        </div>
-                    </motion.div>
-                ))}
+                {entries.map((entry, i) => {
+                    const rateColor = entry.validationRate >= 60 ? '#10b981'
+                        : entry.validationRate >= 30 ? '#f59e0b'
+                        : '#ef4444';
+                    return (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className={`lb-row ${entry.isCurrentUser ? 'lb-row-me' : ''} ${getRankClass(entry.rank)}`}
+                        >
+                            <div className="lb-col-rank">
+                                {getRankIcon(entry.rank)}
+                            </div>
+                            <div className="lb-col-name">
+                                <span className="lb-name">{entry.name}</span>
+                                {entry.isCurrentUser && <span className="lb-you-badge">Vous</span>}
+                            </div>
+                            <div className="lb-col-stat">
+                                <span className="lb-stat-value">{entry.totalPosted}</span>
+                            </div>
+                            <div className="lb-col-stat">
+                                <span className="lb-stat-value lb-stat-validated">{entry.totalValidated}</span>
+                            </div>
+                            <div className="lb-col-stat">
+                                <span className="lb-stat-value" style={{ color: '#ef4444' }}>{entry.totalRejected}</span>
+                            </div>
+                            <div className="lb-col-stat">
+                                <span className="lb-stat-value lb-stat-pending">{entry.totalPending}</span>
+                            </div>
+                            <div className="lb-col-stat">
+                                <span className="lb-stat-value" style={{ color: rateColor, fontWeight: 800 }}>{entry.validationRate}%</span>
+                            </div>
+                        </motion.div>
+                    );
+                })}
             </div>
         </div>
     );
