@@ -80,7 +80,7 @@ export const ComplianceWidget: React.FC<ComplianceWidgetProps> = ({ data, orient
                     </div>
                 </div>
 
-                {data.certification_passed && (
+                {!!data.certification_passed && (
                     <div style={{
                         marginTop: '1rem',
                         background: 'rgba(56, 189, 248, 0.1)',

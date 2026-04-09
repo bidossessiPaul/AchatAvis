@@ -316,23 +316,52 @@ export const AdminFiches: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <div style={{ width: '120px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
-                                                        <span style={{ fontWeight: 700, color: '#111827' }}>{fiche.reviews_received}/{fiche.quantity}</span>
-                                                        <span style={{ fontWeight: 700, color: 'var(--artisan-primary)' }}>{Math.round((fiche.reviews_received / fiche.quantity) * 100)}%</span>
-                                                    </div>
-                                                    <div style={{ width: '100%', height: '8px', background: '#f3f4f6', borderRadius: '10px', overflow: 'hidden' }}>
-                                                        <div
-                                                            style={{
-                                                                width: `${(fiche.reviews_received / fiche.quantity) * 100}%`,
-                                                                height: '100%',
-                                                                background: 'linear-gradient(90deg, var(--artisan-primary), #FF6B35)',
-                                                                borderRadius: '10px',
-                                                                transition: 'width 1s ease-in-out'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                </div>
+                                                {(() => {
+                                                    const total = fiche.quantity || 1;
+                                                    const validated = fiche.validated_count || 0;
+                                                    const received = fiche.reviews_received || 0;
+                                                    const pending = Math.max(0, received - validated);
+                                                    const validatedPct = Math.min(100, (validated / total) * 100);
+                                                    const pendingPct = Math.min(100 - validatedPct, (pending / total) * 100);
+                                                    return (
+                                                        <div style={{ width: '120px' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
+                                                                <span style={{ fontWeight: 700, color: '#111827' }}>{validated}/{total}</span>
+                                                                <span style={{ fontWeight: 700, color: 'var(--artisan-primary)' }}>{Math.round(validatedPct)}%</span>
+                                                            </div>
+                                                            <div style={{ width: '100%', height: '8px', background: '#f3f4f6', borderRadius: '10px', overflow: 'visible', position: 'relative' }}>
+                                                                <div
+                                                                    style={{
+                                                                        width: `${validatedPct}%`,
+                                                                        height: '100%',
+                                                                        background: 'linear-gradient(90deg, var(--artisan-primary), #FF6B35)',
+                                                                        borderRadius: pendingPct > 0 ? '10px 0 0 10px' : '10px',
+                                                                        transition: 'width 1s ease-in-out'
+                                                                    }}
+                                                                />
+                                                                {pendingPct > 0 && (
+                                                                    <div
+                                                                        style={{
+                                                                            width: `${pendingPct}%`,
+                                                                            height: '100%',
+                                                                            background: '#cbd5e1',
+                                                                            borderRadius: validatedPct > 0 ? '0 10px 10px 0' : '10px',
+                                                                            position: 'absolute',
+                                                                            left: `${validatedPct}%`,
+                                                                            top: 0,
+                                                                            transition: 'width 1s ease-in-out'
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            {pending > 0 && (
+                                                                <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '3px' }}>
+                                                                    +{pending} en attente
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td style={{ border: 'none' }}>
                                                 <span

@@ -305,6 +305,32 @@ export const bulkResetToPending = async (req: Request, res: Response) => {
 };
 
 /**
+ * Recycle rejected submissions: delete submission + free slot for new guide
+ * POST /api/admin/submissions/recycle
+ */
+export const recycleRejectedSubmissions = async (req: Request, res: Response) => {
+    try {
+        const { ids } = req.body as { ids?: string[] };
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            res.status(400).json({ error: 'Provide ids[]' });
+            return;
+        }
+        if (ids.length > 500) {
+            res.status(400).json({ error: 'Too many submissions in a single batch (max 500)', count: ids.length });
+            return;
+        }
+
+        const result = await adminService.recycleRejectedSubmissions(ids);
+        await LogService.logAction(req.user!.userId, 'RECYCLE_SUBMISSIONS', 'submission', undefined, { count: ids.length }, req.ip);
+        res.json(result);
+    } catch (error) {
+        console.error('recycleRejectedSubmissions error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
  * Force-relist a fiche (set back to in_progress)
  * POST /api/admin/orders/:id/force-relist
  */
