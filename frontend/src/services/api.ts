@@ -29,7 +29,8 @@ const getBaseURL = (): string => {
     return cleanURL.replace(/\/$/, '');
 };
 
-const API_BASE = getBaseURL();
+export const API_BASE = getBaseURL();
+const RELATIVE_API_FALLBACK = '/api';
 
 // Log in development
 if (import.meta.env.DEV) {
@@ -91,6 +92,29 @@ api.interceptors.response.use(
         }
 
         const originalRequest = error.config;
+
+        // Auto-fallback when the configured API host is unreachable/CORS-blocked.
+        // This helps production when an absolute VITE_API_BASE_URL is misconfigured.
+        const isNetworkLikeError = !error.response && (error.code === 'ERR_NETWORK' || error.message === 'Network Error');
+        const currentBaseURL = (originalRequest?.baseURL || api.defaults.baseURL || '').toString().trim().replace(/\/$/, '');
+        const canTryRelativeFallback =
+            typeof window !== 'undefined' &&
+            isNetworkLikeError &&
+            !originalRequest?._relativeApiFallbackTried &&
+            currentBaseURL.length > 0 &&
+            currentBaseURL !== RELATIVE_API_FALLBACK;
+
+        if (canTryRelativeFallback) {
+            originalRequest._relativeApiFallbackTried = true;
+            originalRequest.baseURL = RELATIVE_API_FALLBACK;
+            if (import.meta.env.DEV) {
+                console.warn('🟡 API fallback to /api after network/CORS failure:', {
+                    fromBaseURL: currentBaseURL,
+                    url: originalRequest?.url,
+                });
+            }
+            return api(originalRequest);
+        }
 
         // Skip token refresh for auth endpoints where 401 is expected (login, register, etc.)
         const skipRefreshPaths = [
@@ -456,6 +480,11 @@ export const adminApi = {
         await api.put(`/admin/proposals/${proposalId}`, data);
     },
 
+    regenerateProposal: async (proposalId: string): Promise<{ content: string; author_name: string; rating: number }> => {
+        const response = await api.post(`/admin/proposals/${proposalId}/regenerate`);
+        return response.data;
+    },
+
     sendReviewValidationEmail: async (orderId: string, emails: string[]): Promise<void> => {
         await api.post(`/admin/fiches/${orderId}/send-validation`, { emails });
     },
@@ -493,6 +522,11 @@ export const adminApi = {
             | { all: true; q?: string; orderId?: string; artisanId?: string; guideId?: string }
     ): Promise<{ success: number; failed: number; errors: { id: string; error: string }[] }> => {
         const response = await api.post('/admin/submissions/bulk-revalidate', payload);
+        return response.data;
+    },
+
+    bulkResetToPending: async (ids: string[]): Promise<{ success: number; failed: number; errors: { id: string; error: string }[] }> => {
+        const response = await api.post('/admin/submissions/bulk-reset-pending', { ids });
         return response.data;
     },
 };
