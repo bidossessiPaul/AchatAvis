@@ -4,7 +4,7 @@ import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
     Search,
-    CheckCircle2,
+    // CheckCircle2 removed - no more direct validate buttons
     ExternalLink,
     User,
     RotateCcw,
@@ -15,7 +15,6 @@ import {
     PlayCircle,
     Loader2,
     Pencil,
-    RefreshCw,
     X,
     Save
 } from 'lucide-react';
@@ -63,11 +62,11 @@ export const RejectedReviews: React.FC = () => {
     const [limit] = useState(20);
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [isBulkLoading, setIsBulkLoading] = useState(false);
+    const [isBulkLoading] = useState(false);
     const [editingRow, setEditingRow] = useState<RejectedRow | null>(null);
     const [editContent, setEditContent] = useState('');
     const [isSavingContent, setIsSavingContent] = useState(false);
-    const [isResetLoading, setIsResetLoading] = useState(false);
+    const [isResetLoading] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [regenProgress, setRegenProgress] = useState({ current: 0, total: 0 });
 
@@ -92,20 +91,25 @@ export const RejectedReviews: React.FC = () => {
         fetchData();
     }, [fetchData]);
 
-    const handleRevalidate = async (row: RejectedRow) => {
+    const handleRegenerateAndRelaunchSingle = async (row: RejectedRow) => {
         const result = await showConfirm(
-            'Revalider cet avis ?',
-            `Cet avis sera marqué comme validé et les statistiques de l'artisan seront mises à jour.`
+            'Régénérer et relancer cet avis ?',
+            `Le contenu sera réécrit par l'IA, la soumission actuelle sera supprimée (preuves, lien) et le slot sera libéré pour qu'un autre guide puisse reprendre la fiche.`
         );
         if (!result.isConfirmed) return;
 
         setActionLoadingId(row.id);
         try {
-            await adminApi.updateSubmissionStatus(row.id, { status: 'validated' });
-            showSuccess('Avis revalidé avec succès');
+            // Step 1: Regenerate content
+            if (row.proposal_id) {
+                await adminApi.regenerateProposal(row.proposal_id);
+            }
+            // Step 2: Delete submission + free slot for a new guide
+            await adminApi.recycleRejectedSubmissions([row.id]);
+            showSuccess('Avis régénéré et slot libéré', 'Un autre guide pourra reprendre cette fiche.');
             fetchData(true);
         } catch (error) {
-            showError('Erreur', 'Impossible de revalider cet avis');
+            showError('Erreur', 'Impossible de régénérer et relancer cet avis');
         } finally {
             setActionLoadingId(null);
         }
@@ -136,44 +140,14 @@ export const RejectedReviews: React.FC = () => {
 
     const clearSelection = () => setSelectedIds(new Set());
 
-    const handleBulkRevalidate = async (mode: 'selection' | 'all') => {
-        const count = mode === 'all' ? total : selectedIds.size;
-        if (count === 0) return;
+    // handleBulkRevalidate removed — all actions now go through regenerate + pending flow
 
-        const result = await showConfirm(
-            mode === 'all' ? `Revalider TOUS les ${total} avis rejetés ?` : `Revalider ${count} avis ?`,
-            mode === 'all'
-                ? `Les ${total} avis rejetés${searchReason ? ' correspondant au filtre' : ''} seront marqués comme validés.`
-                : `Les ${count} avis sélectionnés seront marqués comme validés et les statistiques mises à jour.`
-        );
-        if (!result.isConfirmed) return;
-
-        setIsBulkLoading(true);
-        try {
-            const payload = mode === 'all'
-                ? { all: true as const, q: searchReason || undefined }
-                : { ids: Array.from(selectedIds) };
-            const res = await adminApi.bulkRevalidateSubmissions(payload);
-            const msg = res.failed > 0
-                ? `${res.success} avis revalidés, ${res.failed} échec(s)`
-                : `${res.success} avis revalidés avec succès`;
-            showSuccess('Revalidation en lot terminée', msg);
-            clearSelection();
-            fetchData(true);
-        } catch (error: any) {
-            const errMsg = error?.response?.data?.error || 'Impossible de revalider les avis sélectionnés';
-            showError('Erreur', errMsg);
-        } finally {
-            setIsBulkLoading(false);
-        }
-    };
-
-    const handleRegenAndRevalidateAll = async () => {
+    const handleRegenAndRelaunchAll = async () => {
         if (total === 0) return;
 
         const result = await showConfirm(
-            `Régénérer et revalider TOUS les ${total} avis ?`,
-            `L'IA va régénérer le contenu de chaque avis un par un, puis chaque avis sera revalidé automatiquement. Cette opération peut prendre plusieurs minutes, laissez la page ouverte.`
+            `Régénérer et relancer TOUS les ${total} avis ?`,
+            `L'IA va réécrire le contenu de chaque avis, puis les soumissions seront supprimées (preuves, liens) et les slots libérés. D'autres guides pourront reprendre les fiches. Cette opération peut prendre plusieurs minutes, laissez la page ouverte.`
         );
         if (!result.isConfirmed) return;
 
@@ -182,8 +156,6 @@ export const RejectedReviews: React.FC = () => {
 
         let regenSuccess = 0;
         let regenFailed = 0;
-        let revalidateSuccess = 0;
-        let revalidateFailed = 0;
 
         try {
             // Fetch ALL rejected submissions page by page
@@ -202,12 +174,11 @@ export const RejectedReviews: React.FC = () => {
 
             setRegenProgress({ current: 0, total: allRows.length });
 
-            // Process each review one by one: regenerate then revalidate
+            // Step 1: Regenerate each proposal one by one
             for (let i = 0; i < allRows.length; i++) {
                 setRegenProgress({ current: i + 1, total: allRows.length });
                 const row = allRows[i];
 
-                // Step 1: Regenerate if proposal exists
                 if (row.proposal_id) {
                     try {
                         await adminApi.regenerateProposal(row.proposal_id);
@@ -216,30 +187,16 @@ export const RejectedReviews: React.FC = () => {
                         regenFailed++;
                     }
                 }
-
-                // Step 2: Revalidate the submission
-                try {
-                    await adminApi.updateSubmissionStatus(row.id, { status: 'validated' });
-                    revalidateSuccess++;
-                    // Remove from list immediately
-                    setRows(prev => prev.filter(r => r.id !== row.id));
-                    setTotal(prev => Math.max(0, prev - 1));
-                    setSelectedIds(prev => {
-                        const next = new Set(prev);
-                        next.delete(row.id);
-                        return next;
-                    });
-                } catch {
-                    revalidateFailed++;
-                }
             }
 
-            const parts: string[] = [];
-            parts.push(`${regenSuccess} avis régénérés`);
-            if (regenFailed > 0) parts.push(`${regenFailed} régénération(s) échouée(s)`);
-            parts.push(`${revalidateSuccess} avis revalidés`);
-            if (revalidateFailed > 0) parts.push(`${revalidateFailed} revalidation(s) échouée(s)`);
-            showSuccess('Opération terminée', parts.join(', ') + '.');
+            // Step 2: Delete all submissions + free slots for new guides
+            const allIds = allRows.map(r => r.id);
+            await adminApi.recycleRejectedSubmissions(allIds);
+
+            const msg = regenFailed > 0
+                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), soumissions supprimées et slots libérés.`
+                : `${regenSuccess} avis régénérés, soumissions supprimées et slots libérés avec succès.`;
+            showSuccess('Opération terminée', msg);
             clearSelection();
             fetchData(true);
         } catch (error: any) {
@@ -299,7 +256,7 @@ export const RejectedReviews: React.FC = () => {
 
         const result = await showConfirm(
             `Régénérer et relancer ${count} avis ?`,
-            `L'IA va régénérer le contenu de chaque avis un par un, puis tous seront remis en "non publié" (pending). Cette opération peut prendre du temps.`
+            `L'IA va régénérer le contenu de chaque avis un par un, puis les soumissions seront supprimées (preuves, liens) et les slots libérés pour d'autres guides. Cette opération peut prendre du temps.`
         );
         if (!result.isConfirmed) return;
 
@@ -320,13 +277,13 @@ export const RejectedReviews: React.FC = () => {
             }
         }
 
-        // Step 2: Reset all to pending
+        // Step 2: Delete submissions + free slots for new guides
         try {
             const ids = selectedRows.map(r => r.id);
-            await adminApi.bulkResetToPending(ids);
+            await adminApi.recycleRejectedSubmissions(ids);
             const msg = regenFailed > 0
-                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), tous remis en ligne.`
-                : `${regenSuccess} avis régénérés et remis en ligne avec succès.`;
+                ? `${regenSuccess} avis régénérés (${regenFailed} échec(s)), soumissions supprimées et slots libérés.`
+                : `${regenSuccess} avis régénérés, soumissions supprimées et slots libérés.`;
             showSuccess('Régénération terminée', msg);
             clearSelection();
             fetchData(true);
@@ -338,32 +295,7 @@ export const RejectedReviews: React.FC = () => {
         }
     };
 
-    const handleBulkResetToPending = async () => {
-        const count = selectedIds.size;
-        if (count === 0) return;
-
-        const result = await showConfirm(
-            `Relancer ${count} avis ?`,
-            `Les ${count} avis sélectionnés seront remis en "non publié" (pending). Le guide pourra les re-soumettre et l'admin pourra les revalider.`
-        );
-        if (!result.isConfirmed) return;
-
-        setIsResetLoading(true);
-        try {
-            const res = await adminApi.bulkResetToPending(Array.from(selectedIds));
-            const msg = res.failed > 0
-                ? `${res.success} avis relancé(s), ${res.failed} échec(s)`
-                : `${res.success} avis relancé(s) avec succès`;
-            showSuccess('Relance terminée', msg);
-            clearSelection();
-            fetchData(true);
-        } catch (error: any) {
-            const errMsg = error?.response?.data?.error || 'Impossible de relancer les avis';
-            showError('Erreur', errMsg);
-        } finally {
-            setIsResetLoading(false);
-        }
-    };
+    // handleBulkResetToPending removed — use handleBulkRegenerateAndRelaunch instead (content must be rewritten)
 
     const handleForceRelist = async (orderId?: string) => {
         if (!orderId) return;
@@ -487,7 +419,7 @@ export const RejectedReviews: React.FC = () => {
                                         </button>
                                     </>
                                 ) : (
-                                    <span style={{ color: '#6b7280' }}>Aucune sélection — utilisez les cases pour choisir des avis ou revalidez tout d'un coup</span>
+                                    <span style={{ color: '#6b7280' }}>Aucune sélection — utilisez les cases ou régénérez + relancez tout d'un coup</span>
                                 )}
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -536,52 +468,11 @@ export const RejectedReviews: React.FC = () => {
                                                 : <><RotateCcw size={14} /> Régénérer + Relancer</>
                                             }
                                         </button>
-                                        <button
-                                            onClick={handleBulkResetToPending}
-                                            disabled={isResetLoading || isBulkLoading || isRegenerating}
-                                            style={{
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '8px',
-                                                border: '1px solid #f59e0b',
-                                                background: '#f59e0b',
-                                                color: 'white',
-                                                cursor: isResetLoading ? 'not-allowed' : 'pointer',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 700,
-                                                opacity: isResetLoading ? 0.6 : 1
-                                            }}
-                                        >
-                                            {isResetLoading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                                            Relancer la sélection
-                                        </button>
-                                        <button
-                                            onClick={() => handleBulkRevalidate('selection')}
-                                            disabled={isBulkLoading}
-                                            style={{
-                                                padding: '0.5rem 1rem',
-                                                borderRadius: '8px',
-                                                border: '1px solid #10b981',
-                                                background: '#10b981',
-                                                color: 'white',
-                                                cursor: isBulkLoading ? 'not-allowed' : 'pointer',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 700,
-                                                opacity: isBulkLoading ? 0.6 : 1
-                                            }}
-                                        >
-                                            {isBulkLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                            Revalider la sélection
-                                        </button>
+                                        {/* Only "Régénérer + Relancer" for selection - content must be rewritten first */}
                                     </>
                                 )}
                                 <button
-                                    onClick={handleRegenAndRevalidateAll}
+                                    onClick={handleRegenAndRelaunchAll}
                                     disabled={isRegenerating || isBulkLoading || total === 0}
                                     style={{
                                         padding: '0.5rem 1rem',
@@ -616,7 +507,7 @@ export const RejectedReviews: React.FC = () => {
                                     )}
                                     {isRegenerating
                                         ? <><Loader2 size={14} className="animate-spin" /> Régénération {regenProgress.current}/{regenProgress.total}...</>
-                                        : <><RotateCcw size={14} /> Revalider tout ({total})</>
+                                        : <><RotateCcw size={14} /> Régénérer + Relancer tout ({total})</>
                                     }
                                 </button>
                             </div>
@@ -851,15 +742,15 @@ export const RejectedReviews: React.FC = () => {
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => handleRevalidate(row)}
+                                                            onClick={() => handleRegenerateAndRelaunchSingle(row)}
                                                             disabled={actionLoadingId === row.id}
-                                                            title="Revalider l'avis"
+                                                            title="Régénérer le contenu et remettre en attente"
                                                             style={{
                                                                 padding: '0.5rem',
                                                                 borderRadius: '8px',
-                                                                border: '1px solid #10b981',
-                                                                background: '#ecfdf5',
-                                                                color: '#10b981',
+                                                                border: '1px solid #8b5cf6',
+                                                                background: '#f5f3ff',
+                                                                color: '#7c3aed',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -869,8 +760,8 @@ export const RejectedReviews: React.FC = () => {
                                                                 opacity: actionLoadingId === row.id ? 0.5 : 1
                                                             }}
                                                         >
-                                                            {actionLoadingId === row.id ? <RotateCcw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                                            Revalider
+                                                            {actionLoadingId === row.id ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                                                            Régénérer
                                                         </button>
                                                         {row.order_id && (
                                                             <button

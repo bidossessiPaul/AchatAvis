@@ -321,8 +321,9 @@
     height: 6px;
     background: #f1f5f9;
     border-radius: 3px;
-    margin-bottom: 1rem;
-    overflow: hidden;
+    margin-bottom: 0.5rem;
+    overflow: visible;
+    position: relative;
 }
 
 .progress-bar-fill {

@@ -532,6 +532,11 @@ export const adminApi = {
         const response = await api.post('/admin/submissions/bulk-reset-pending', { ids });
         return response.data;
     },
+
+    recycleRejectedSubmissions: async (ids: string[]): Promise<{ success: number; failed: number; errors: { id: string; error: string }[] }> => {
+        const response = await api.post('/admin/submissions/recycle', { ids });
+        return response.data;
+    },
 };
 
 // Suspension API
