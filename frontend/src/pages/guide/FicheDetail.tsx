@@ -282,9 +282,10 @@ export const FicheDetail: React.FC = () => {
         );
     }
 
-    // Filter proposals into pending and published
-    const publishedProposalIds = fiche.submissions.map(s => s.proposal_id);
-    const totalRemaining = Math.max(0, fiche.quantity - fiche.submissions.length);
+    // Filter proposals into pending and published (exclude rejected submissions)
+    const activeSubmissions = fiche.submissions.filter((s: any) => s.status !== 'rejected');
+    const publishedProposalIds = activeSubmissions.map((s: any) => s.proposal_id);
+    const totalRemaining = Math.max(0, fiche.quantity - activeSubmissions.length);
 
     // Filter and cap the pending proposals to match the fiche quantity
     const pendingProposals = fiche.proposals
@@ -292,7 +293,7 @@ export const FicheDetail: React.FC = () => {
         .slice(0, totalRemaining);
 
     // Map over SUBficheS to allow showing all reviews (even if multiple guides did the same one)
-    const publishedProposals = fiche.submissions.map(submission => {
+    const publishedProposals = activeSubmissions.map((submission: any) => {
         const proposal = fiche.proposals.find(p => p.id === submission.proposal_id);
         return {
             ...proposal, // Spread existing proposal data
@@ -338,7 +339,7 @@ export const FicheDetail: React.FC = () => {
                                     </p>
                                 </div>
                                 <div className="fiche-badge">
-                                    {fiche.submissions.length} / {fiche.quantity} avis soumis
+                                    {activeSubmissions.length} / {fiche.quantity} avis soumis
                                 </div>
                             </div>
 

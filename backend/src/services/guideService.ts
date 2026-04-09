@@ -55,8 +55,9 @@ export const guideService = {
         await this.releaseExpiredResubmitSlots();
 
         return query(`
-            SELECT o.*, 
-                   (o.quantity - o.reviews_received) as remaining_slots,
+            SELECT o.*,
+                   (SELECT COUNT(*) FROM reviews_submissions s2
+                    WHERE s2.order_id = o.id AND s2.status != 'rejected') as active_submissions,
                    o.locked_by,
                    o.locked_until,
                    sd.sector_name as sector,
@@ -64,15 +65,17 @@ export const guideService = {
                    sd.icon_emoji as sector_icon,
                    sd.required_gmail_level,
                    (
-                       SELECT COUNT(*) 
-                       FROM reviews_submissions s 
-                       WHERE s.order_id = o.id 
+                       SELECT COUNT(*)
+                       FROM reviews_submissions s
+                       WHERE s.order_id = o.id
                        AND DATE(s.submitted_at) = CURDATE()
+                       AND s.status != 'rejected'
                    ) as daily_submissions_count
             FROM reviews_orders o
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
             WHERE o.status IN ('in_progress')
-            AND o.reviews_received < o.quantity
+            AND (SELECT COUNT(*) FROM reviews_submissions s3
+                 WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
             ORDER BY o.created_at DESC
         `, [guideId]);
     },
@@ -134,16 +137,22 @@ export const guideService = {
             }
         }
 
-        // 1. Quota Check (Total)
-        if (order.reviews_received >= order.quantity) {
+        // 1. Quota Check (Total) — count only active (non-rejected) submissions
+        const activeSubStats: any = await query(`
+            SELECT COUNT(*) as count
+            FROM reviews_submissions
+            WHERE order_id = ? AND status != 'rejected'
+        `, [order_id]);
+        const activeSubmissionsCount = activeSubStats[0].count;
+        if (activeSubmissionsCount >= order.quantity) {
             throw new Error('fiche_FULL');
         }
 
-        // 2. Daily Quota Check
+        // 2. Daily Quota Check — count only active (non-rejected) submissions today
         const dailyStats: any = await query(`
-            SELECT COUNT(*) as count 
-            FROM reviews_submissions 
-            WHERE order_id = ? AND DATE(submitted_at) = CURDATE()
+            SELECT COUNT(*) as count
+            FROM reviews_submissions
+            WHERE order_id = ? AND DATE(submitted_at) = CURDATE() AND status != 'rejected'
         `, [order_id]);
 
         const dailyCount = dailyStats[0].count;
@@ -655,12 +664,18 @@ export const guideService = {
                 u.full_name,
                 COUNT(s.id) as total_posted,
                 SUM(CASE WHEN s.status = 'validated' THEN 1 ELSE 0 END) as total_validated,
-                SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END) as total_pending
+                SUM(CASE WHEN s.status = 'pending' THEN 1 ELSE 0 END) as total_pending,
+                SUM(CASE WHEN s.status = 'rejected' THEN 1 ELSE 0 END) as total_rejected,
+                ROUND(
+                    SUM(CASE WHEN s.status = 'validated' THEN 1 ELSE 0 END) * 100.0 /
+                    NULLIF(COUNT(s.id), 0)
+                , 1) as validation_rate
             FROM users u
             INNER JOIN reviews_submissions s ON s.guide_id = u.id
             WHERE u.role = 'guide'
             GROUP BY u.id, u.full_name
-            ORDER BY total_validated DESC, total_posted DESC
+            HAVING total_posted > 0
+            ORDER BY validation_rate DESC, total_validated DESC
             LIMIT 20
         `);
 
@@ -670,6 +685,8 @@ export const guideService = {
             totalPosted: Number(row.total_posted),
             totalValidated: Number(row.total_validated),
             totalPending: Number(row.total_pending),
+            totalRejected: Number(row.total_rejected),
+            validationRate: Number(row.validation_rate) || 0,
             isCurrentUser: row.id === currentGuideId
         }));
     }

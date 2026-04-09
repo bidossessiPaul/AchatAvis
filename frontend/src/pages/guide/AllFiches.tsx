@@ -220,13 +220,13 @@ export const AllFiches: React.FC = () => {
                                 <div className="fiche-progress-container">
                                     <div className="progress-header">
                                         <span>Progression Totale</span>
-                                        <span className="progress-value">{fiche.reviews_received || 0} / {fiche.quantity}</span>
+                                        <span className="progress-value">{(fiche.active_submissions ?? fiche.reviews_received) || 0} / {fiche.quantity}</span>
                                     </div>
                                     <div className="progress-bar-bg">
                                         <div
                                             className="progress-bar-fill"
                                             style={{
-                                                width: `${Math.min(100, ((fiche.reviews_received || 0) / fiche.quantity) * 100)}%`
+                                                width: `${Math.min(100, (((fiche.active_submissions ?? fiche.reviews_received) || 0) / fiche.quantity) * 100)}%`
                                             }}
                                         ></div>
                                     </div>

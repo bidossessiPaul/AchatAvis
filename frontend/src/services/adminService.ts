@@ -71,6 +71,14 @@ export const adminService = {
     },
 
     /**
+     * Unblock a guide suspended for bad links (reactivate + unblock gmails)
+     */
+    unblockBadLinkGuide: async (userId: string) => {
+        const response = await api.post(`/admin/guides/${userId}/unblock-bad-links`);
+        return response.data;
+    },
+
+    /**
      * Delete user
      */
     deleteUser: async (userId: string) => {

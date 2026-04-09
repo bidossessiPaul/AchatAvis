@@ -98,6 +98,20 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
  * Register a new local guide
  */
 export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: string) => {
+    // Check if email belongs to a suspended guide (primary email or gmail account)
+    const [suspendedCheck]: any = await pool.query(`
+        SELECT 'primary' as source, u.id, u.email FROM users u
+        WHERE u.email = ? AND u.status = 'suspended' AND u.role = 'guide'
+        UNION
+        SELECT 'gmail' as source, g.user_id as id, g.email FROM guide_gmail_accounts g
+        JOIN users u ON g.user_id = u.id
+        WHERE g.email = ? AND u.status = 'suspended'
+    `, [data.email, data.email]);
+
+    if (suspendedCheck && suspendedCheck.length > 0) {
+        throw new Error('This email is linked to a suspended account and cannot be used to register');
+    }
+
     const hashedPassword = await hashPassword(data.password);
     const userId = uuidv4();
     const profileId = uuidv4();
@@ -249,8 +263,10 @@ export const login = async (email: string, password: string) => {
         throw new Error('Invalid email or password');
     }
 
-
-
+    // Block login for suspended accounts with clear reason
+    if (user.status === 'suspended') {
+        throw new Error('Votre compte a été suspendu. Si vous pensez qu\'il s\'agit d\'une erreur, contactez le support AchatAvis.');
+    }
 
     // Check if account is locked
     if (user.account_locked_until && new Date(user.account_locked_until) > new Date()) {
