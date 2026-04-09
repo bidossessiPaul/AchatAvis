@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as adminService from '../services/adminService';
+import { LogService } from '../services/logService';
 
 /**
  * Get all artisans
@@ -40,6 +41,7 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     try {
         console.log(`[ADMIN] Attempting to update status for user ${userId} to ${status}`);
         await adminService.updateUserStatus(userId, status, reason);
+        await LogService.logAction(req.user!.userId, `UPDATE_USER_STATUS`, 'user', userId, { status, reason }, req.ip);
         res.json({ message: `User status updated to ${status}` });
     } catch (error: any) {
         console.error(`[ADMIN] Update user status error for ${userId}:`, error);
@@ -60,6 +62,7 @@ export const unblockBadLinkGuide = async (req: Request, res: Response) => {
     try {
         console.log(`[ADMIN] Unblocking bad-link-suspended guide ${userId}`);
         await adminService.unblockBadLinkGuide(userId);
+        await LogService.logAction(req.user!.userId, 'UNBLOCK_GUIDE', 'user', userId, {}, req.ip);
         res.json({ message: 'Guide unblocked successfully' });
     } catch (error: any) {
         console.error(`[ADMIN] Unblock guide error for ${userId}:`, error);
@@ -80,6 +83,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     try {
         console.log(`[ADMIN] Request to delete user ${userId}`);
         await adminService.deleteUser(userId);
+        await LogService.logAction(req.user!.userId, 'DELETE_USER', 'user', userId, {}, req.ip);
         res.json({ message: 'User deleted successfully' });
     } catch (error: any) {
         console.error(`[ADMIN] Delete user error for ${userId}:`, error);
@@ -192,7 +196,9 @@ export const updateSubmissionStatus = async (req: Request, res: Response) => {
     const { status, rejectionReason, allowResubmit, allowAppeal } = req.body;
 
     try {
-        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason, allowResubmit, allowAppeal);
+        await adminService.updateSubmissionStatus(submissionId, status, rejectionReason, allowResubmit, allowAppeal, req.user!.userId);
+        const logAction = status === 'validated' ? 'VALIDATE_SUBMISSION' : 'REJECT_SUBMISSION';
+        await LogService.logAction(req.user!.userId, logAction, 'submission', submissionId, { status, rejectionReason }, req.ip);
         res.json({ message: `Submission status updated to ${status}` });
     } catch (error) {
         console.error('Update submission status error:', error);
@@ -265,6 +271,7 @@ export const bulkRevalidateSubmissions = async (req: Request, res: Response) => 
         }
 
         const result = await adminService.bulkRevalidateSubmissions(targetIds);
+        await LogService.logAction(req.user!.userId, 'BULK_REVALIDATE', 'submission', undefined, { count: targetIds.length }, req.ip);
         res.json(result);
     } catch (error) {
         console.error('bulkRevalidateSubmissions error:', error);
@@ -293,6 +300,32 @@ export const bulkResetToPending = async (req: Request, res: Response) => {
         res.json(result);
     } catch (error) {
         console.error('bulkResetToPending error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Recycle rejected submissions: delete submission + free slot for new guide
+ * POST /api/admin/submissions/recycle
+ */
+export const recycleRejectedSubmissions = async (req: Request, res: Response) => {
+    try {
+        const { ids } = req.body as { ids?: string[] };
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            res.status(400).json({ error: 'Provide ids[]' });
+            return;
+        }
+        if (ids.length > 500) {
+            res.status(400).json({ error: 'Too many submissions in a single batch (max 500)', count: ids.length });
+            return;
+        }
+
+        const result = await adminService.recycleRejectedSubmissions(ids);
+        await LogService.logAction(req.user!.userId, 'RECYCLE_SUBMISSIONS', 'submission', undefined, { count: ids.length }, req.ip);
+        res.json(result);
+    } catch (error) {
+        console.error('recycleRejectedSubmissions error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -754,6 +787,7 @@ export const regenerateProposal = async (req: Request, res: Response) => {
 
     try {
         const result = await adminService.regenerateProposal(proposalId);
+        await LogService.logAction(req.user!.userId, 'REGENERATE_PROPOSAL', 'proposal', proposalId, {}, req.ip);
         res.json(result);
     } catch (error: any) {
         console.error('Regenerate proposal error:', error);
@@ -791,6 +825,8 @@ export const reviewLevelVerification = async (req: Request, res: Response) => {
         const result = await adminService.reviewLevelVerification(
             parseInt(verificationId), status, admin_notes, adminId!
         );
+        const lvlAction = status === 'approved' ? 'APPROVE_LEVEL' : 'REJECT_LEVEL';
+        await LogService.logAction(adminId!, lvlAction, 'level_verification', verificationId, { status, admin_notes }, req.ip);
         return res.json(result);
     } catch (error: any) {
         console.error('Review level verification error:', error);

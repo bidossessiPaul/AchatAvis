@@ -58,6 +58,8 @@ export const guideService = {
             SELECT o.*,
                    (SELECT COUNT(*) FROM reviews_submissions s2
                     WHERE s2.order_id = o.id AND s2.status != 'rejected') as active_submissions,
+                   (SELECT COUNT(*) FROM reviews_submissions s4
+                    WHERE s4.order_id = o.id AND s4.status = 'validated') as validated_count,
                    o.locked_by,
                    o.locked_until,
                    sd.sector_name as sector,

@@ -92,7 +92,12 @@ SELECT * FROM sector_difficulty
             const { userId } = req.params;
 
             const accounts = await query(`
-SELECT * FROM guide_gmail_accounts WHERE user_id = ? AND is_active = 1 AND deleted_at IS NULL
+SELECT g.*,
+    (SELECT COUNT(*) FROM reviews_submissions s
+     WHERE (s.gmail_account_id = g.id OR (s.gmail_account_id IS NULL AND s.google_email = g.email))
+     AND s.status = 'validated') as validated_reviews_count
+FROM guide_gmail_accounts g
+WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
     `, [userId]);
 
             return res.json({ success: true, data: accounts });

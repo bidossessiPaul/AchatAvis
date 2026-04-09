@@ -32,6 +32,7 @@ interface Submission {
     earnings: number;
     submitted_at: string;
     validated_at?: string;
+    validated_by_name?: string;
     guide_name: string;
     guide_avatar?: string;
     artisan_name: string;
@@ -224,6 +225,7 @@ export const ReviewValidation: React.FC = () => {
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Fiche</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Date & Email</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Preuve</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Contenu avis</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }} className="text-center">Actions</th>
                                     </tr>
@@ -333,6 +335,24 @@ export const ReviewValidation: React.FC = () => {
                                                     Voir la preuve <ExternalLink size={14} />
                                                 </a>
                                             </td>
+                                            <td style={{ border: 'none', maxWidth: '250px' }}>
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    color: '#374151',
+                                                    lineHeight: 1.4,
+                                                    maxHeight: '60px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    cursor: 'pointer'
+                                                }}
+                                                title={submission.proposal_content}
+                                                >
+                                                    {submission.proposal_content || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Aucun contenu</span>}
+                                                </div>
+                                            </td>
                                             <td style={{ border: 'none' }}>
                                                 <span
                                                     className={`admin-badge`}
@@ -355,6 +375,11 @@ export const ReviewValidation: React.FC = () => {
                                                     {submission.status === 'pending' ? 'En attente' :
                                                         submission.status === 'validated' ? 'Validé' : 'Rejeté'}
                                                 </span>
+                                                {submission.validated_by_name && (submission.status === 'validated' || submission.status === 'rejected') && (
+                                                    <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '0.2rem', fontWeight: 500 }}>
+                                                        par {submission.validated_by_name}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="actions-cell" style={{ border: 'none', borderRadius: '0 16px 16px 0' }}>
                                                 <div className="action-buttons">

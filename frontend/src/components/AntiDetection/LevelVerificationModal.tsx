@@ -128,9 +128,9 @@ export const LevelVerificationModal: React.FC<LevelVerificationModalProps> = ({ 
                                     cursor: 'pointer'
                                 }}
                             >
-                                {Array.from({ length: 10 }, (_, i) => i + 1).map(level => (
+                                {Array.from({ length: 7 }, (_, i) => i + 4).map(level => (
                                     <option key={level} value={level}>
-                                        Niveau {level} {level >= 4 ? '(Badge Local Guide)' : ''}
+                                        Niveau {level} (Badge Local Guide)
                                     </option>
                                 ))}
                             </select>

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { Trash2, Mail, AlertTriangle, Link as LinkIcon, Trophy } from 'lucide-react';
+import { Trash2, Mail, AlertTriangle, Link as LinkIcon, Trophy, CheckCircle } from 'lucide-react';
 
 const LEVEL_BADGE_IMAGES: Record<number, string> = {
     4: 'https://services.google.com/fh/files/helpcenter/points-badge_level_four.png',
@@ -184,14 +184,32 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="gmail-account-status-row">
-                                        <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                            {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] ? (
-                                                <img src={LEVEL_BADGE_IMAGES[account.local_guide_level]} alt="" style={{ width: '16px', height: '16px' }} />
-                                            ) : null}
-                                            Niveau {account.local_guide_level || 1} • Compte actif
-                                        </span>
-                                        {onVerifyLevel && (
+                                    <>
+                                        <div className="gmail-account-status-row">
+                                            <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                                {account.local_guide_level && account.local_guide_level >= 4 && LEVEL_BADGE_IMAGES[account.local_guide_level] ? (
+                                                    <img src={LEVEL_BADGE_IMAGES[account.local_guide_level]} alt="" style={{ width: '16px', height: '16px' }} />
+                                                ) : null}
+                                                Niveau {account.local_guide_level || 1} • Compte actif
+                                            </span>
+                                            <span style={{
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.3rem',
+                                                color: (account.validated_reviews_count || 0) >= 5 ? '#059669' : '#f59e0b',
+                                                background: (account.validated_reviews_count || 0) >= 5 ? '#ecfdf5' : '#fffbeb',
+                                                padding: '0.15rem 0.5rem',
+                                                borderRadius: '1rem',
+                                                border: (account.validated_reviews_count || 0) >= 5 ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                <CheckCircle size={12} />
+                                                {Math.min(account.validated_reviews_count || 0, 5)}/5 avis validés
+                                            </span>
+                                        </div>
+                                        {onVerifyLevel && (account.validated_reviews_count || 0) >= 5 && (
                                             <button
                                                 onClick={() => onVerifyLevel(account.id)}
                                                 style={{
@@ -206,14 +224,15 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                                     fontSize: '0.75rem',
                                                     fontWeight: 600,
                                                     cursor: 'pointer',
-                                                    whiteSpace: 'nowrap'
+                                                    whiteSpace: 'nowrap',
+                                                    width: 'fit-content'
                                                 }}
                                             >
                                                 <Trophy size={13} />
                                                 Vérifier mon niveau
                                             </button>
                                         )}
-                                    </div>
+                                    </>
                                 )}
                             </div>
 

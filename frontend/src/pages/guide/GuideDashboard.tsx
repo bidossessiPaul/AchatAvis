@@ -231,18 +231,46 @@ export const GuideDashboard: React.FC = () => {
                                     </div>
 
                                     <div className="fiche-progress-container">
-                                        <div className="progress-header">
-                                            <span>Progression Totale</span>
-                                            <span className="progress-value">{(fiche.active_submissions ?? fiche.reviews_received) || 0} / {fiche.quantity}</span>
-                                        </div>
-                                        <div className="progress-bar-bg">
-                                            <div
-                                                className="progress-bar-fill"
-                                                style={{
-                                                    width: `${Math.min(100, (((fiche.active_submissions ?? fiche.reviews_received) || 0) / fiche.quantity) * 100)}%`
-                                                }}
-                                            ></div>
-                                        </div>
+                                        {(() => {
+                                            const total = fiche.quantity || 1;
+                                            const validated = fiche.validated_count || 0;
+                                            const active = (fiche.active_submissions ?? fiche.reviews_received) || 0;
+                                            const pending = Math.max(0, active - validated);
+                                            const validatedPct = Math.min(100, (validated / total) * 100);
+                                            const pendingPct = Math.min(100 - validatedPct, (pending / total) * 100);
+                                            return (
+                                                <>
+                                                    <div className="progress-header">
+                                                        <span>Progression</span>
+                                                        <span className="progress-value">{validated} validé{validated > 1 ? 's' : ''} / {total}</span>
+                                                    </div>
+                                                    <div className="progress-bar-bg">
+                                                        <div
+                                                            className="progress-bar-fill"
+                                                            style={{ width: `${validatedPct}%`, borderRadius: pendingPct > 0 ? '3px 0 0 3px' : '3px' }}
+                                                        ></div>
+                                                        {pendingPct > 0 && (
+                                                            <div
+                                                                style={{
+                                                                    width: `${pendingPct}%`,
+                                                                    height: '100%',
+                                                                    background: '#cbd5e1',
+                                                                    borderRadius: validatedPct > 0 ? '0 3px 3px 0' : '3px',
+                                                                    position: 'absolute',
+                                                                    left: `${validatedPct}%`,
+                                                                    top: 0
+                                                                }}
+                                                            ></div>
+                                                        )}
+                                                    </div>
+                                                    {pending > 0 && (
+                                                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                                            {pending} en attente de validation
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
 
                                         <div className="daily-goal-header">
                                             Objectif du jour

@@ -9,14 +9,21 @@ const router = express.Router();
 // Middleware to ensure admin access
 router.use(authenticate, authorize('admin'));
 
-// Audit Logs
-router.get('/logs', checkPermission(['can_view_stats']), async (req, res) => {
+// Audit Logs (owner-only: dossoumaxime888@gmail.com)
+router.get('/logs', (req, res, next) => {
+    if (req.user?.email !== 'dossoumaxime888@gmail.com') {
+        return res.status(403).json({ error: 'Accès réservé' });
+    }
+    next();
+}, async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = 50;
         const offset = (page - 1) * limit;
+        const action = req.query.action as string | undefined;
+        const adminId = req.query.adminId as string | undefined;
 
-        const result = await LogService.getLogs(limit, offset);
+        const result = await LogService.getLogs(limit, offset, { action, adminId });
         res.json(result);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching logs' });
@@ -45,6 +52,7 @@ router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.post('/submissions/bulk-revalidate', adminController.bulkRevalidateSubmissions);
 router.post('/submissions/bulk-reset-pending', adminController.bulkResetToPending);
+router.post('/submissions/recycle', adminController.recycleRejectedSubmissions);
 router.get('/rejected-submissions', adminController.listRejectedSubmissions);
 router.post('/orders/:id/force-relist', adminController.forceRelistOrder);
 
