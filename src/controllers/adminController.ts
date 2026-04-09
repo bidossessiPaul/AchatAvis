@@ -51,6 +51,26 @@ export const updateUserStatus = async (req: Request, res: Response) => {
 };
 
 /**
+ * Unblock a guide suspended for bad links
+ * POST /api/admin/guides/:userId/unblock-bad-links
+ */
+export const unblockBadLinkGuide = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+
+    try {
+        console.log(`[ADMIN] Unblocking bad-link-suspended guide ${userId}`);
+        await adminService.unblockBadLinkGuide(userId);
+        res.json({ message: 'Guide unblocked successfully' });
+    } catch (error: any) {
+        console.error(`[ADMIN] Unblock guide error for ${userId}:`, error);
+        res.status(500).json({
+            error: 'Erreur lors du déblocage du guide',
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+};
+
+/**
  * Delete user
  * DELETE /api/admin/users/:userId
  */
@@ -248,6 +268,31 @@ export const bulkRevalidateSubmissions = async (req: Request, res: Response) => 
         res.json(result);
     } catch (error) {
         console.error('bulkRevalidateSubmissions error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
+ * Bulk reset rejected submissions to pending
+ * POST /api/admin/submissions/bulk-reset-pending
+ */
+export const bulkResetToPending = async (req: Request, res: Response) => {
+    try {
+        const { ids } = req.body as { ids?: string[] };
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            res.status(400).json({ error: 'Provide ids[]' });
+            return;
+        }
+        if (ids.length > 500) {
+            res.status(400).json({ error: 'Too many submissions in a single batch (max 500)', count: ids.length });
+            return;
+        }
+
+        const result = await adminService.bulkResetToPending(ids);
+        res.json(result);
+    } catch (error) {
+        console.error('bulkResetToPending error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
@@ -696,6 +741,22 @@ export const updateProposal = async (req: Request, res: Response) => {
         res.json({ message: 'Proposal updated successfully' });
     } catch (error: any) {
         console.error('Update proposal error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
+ * Regenerate a proposal's content using AI
+ * POST /api/admin/proposals/:proposalId/regenerate
+ */
+export const regenerateProposal = async (req: Request, res: Response) => {
+    const { proposalId } = req.params;
+
+    try {
+        const result = await adminService.regenerateProposal(proposalId);
+        res.json(result);
+    } catch (error: any) {
+        console.error('Regenerate proposal error:', error);
         res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };

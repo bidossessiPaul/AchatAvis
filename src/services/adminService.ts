@@ -1,5 +1,5 @@
 import { query, pool } from '../config/database';
-import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail, sendNewFicheToGuidesEmail } from './emailService';
+import { sendUserStatusUpdateEmail, sendficheDecisionEmail, sendSubmissionDecisionEmail, sendNewFicheToGuidesEmail, sendBadLinkWarningEmail } from './emailService';
 import { notificationService } from './notificationService';
 import { invalidateAuthCache } from '../middleware/auth';
 import { TokenPayload } from '../utils/token';
@@ -74,6 +74,52 @@ export const updateUserStatus = async (userId: string, status: string, _reason?:
     });
 
     return result;
+};
+
+/**
+ * Unblock a guide suspended for bad links: reactivate account + unblock all gmail accounts
+ */
+export const unblockBadLinkGuide = async (userId: string) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Reactivate user account
+        await connection.query(`UPDATE users SET status = 'active' WHERE id = ? AND role = 'guide'`, [userId]);
+
+        // 2. Unblock all gmail accounts
+        await connection.query(`
+            UPDATE guide_gmail_accounts
+            SET is_blocked = FALSE, trust_level = 'BRONZE'
+            WHERE user_id = ? AND is_blocked = TRUE
+        `, [userId]);
+
+        await connection.commit();
+
+        // 3. Invalidate auth cache
+        invalidateAuthCache(userId);
+
+        // 4. Send reactivation email
+        const user: any = await query('SELECT full_name, email FROM users WHERE id = ?', [userId]);
+        if (user && user.length > 0) {
+            await sendUserStatusUpdateEmail(user[0].email, user[0].full_name, 'active');
+        }
+
+        // 5. Real-time notification
+        notificationService.sendToUser(userId, {
+            type: 'system',
+            title: 'Compte Réactivé',
+            message: 'Votre compte a été réactivé par un administrateur. Vos comptes Gmail ont été débloqués.',
+            link: '/guide/dashboard'
+        });
+
+        console.log(`[ADMIN] Guide ${userId} unblocked (bad link suspension lifted)`);
+    } catch (error) {
+        await connection.rollback();
+        throw error;
+    } finally {
+        connection.release();
+    }
 };
 
 /**
@@ -458,6 +504,17 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
     try {
         await connection.beginTransaction();
 
+        // 0. Pre-fetch guide + artisan info (needed after commit, even if submission gets deleted)
+        const [preInfo]: any = await connection.query(`
+            SELECT s.guide_id, s.artisan_id, p.order_id,
+                   u.full_name as guide_name, u.email as guide_email, u.status as guide_status
+            FROM reviews_submissions s
+            JOIN review_proposals p ON s.proposal_id = p.id
+            JOIN users u ON s.guide_id = u.id
+            WHERE s.id = :submissionId
+        `, { submissionId });
+        const subInfo = preInfo?.[0] || null;
+
         // 1. Update submission status
         let validatedAtPart = "";
         if (status === 'validated') {
@@ -553,17 +610,65 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
 
         await connection.commit();
 
-        // 3. Send notification to guide
-        try {
-            const [rows]: any = await connection.query(`
-                SELECT s.guide_id, u.full_name, u.email 
-                FROM reviews_submissions s
-                JOIN users u ON s.guide_id = u.id
-                WHERE s.id = :submissionId
-            `, { submissionId });
+        // 3. BAD LINK WARNING SYSTEM: auto-suspend at 3 bad links in a month
+        if (status === 'rejected' && allowResubmit && subInfo) {
+            try {
+                // Count + fetch bad link submissions this month for this guide
+                const [badLinkRows]: any = await pool.query(`
+                    SELECT rs.id, rs.review_url, rs.rejection_reason, rs.rejected_at,
+                           ro.company_name, ro.fiche_name
+                    FROM reviews_submissions rs
+                    JOIN review_proposals rp ON rs.proposal_id = rp.id
+                    JOIN reviews_orders ro ON rp.order_id = ro.id
+                    WHERE rs.guide_id = :guideId
+                      AND rs.allow_resubmit = 1
+                      AND rs.status = 'rejected'
+                      AND rs.rejected_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+                    ORDER BY rs.rejected_at DESC
+                `, { guideId: subInfo.guide_id });
 
-            if (rows && rows.length > 0) {
-                await sendSubmissionDecisionEmail(rows[0].email, rows[0].full_name, status, rejectionReason, allowResubmit, allowAppeal);
+                const badLinkCount = badLinkRows?.length || 0;
+                const badLinkDetails = (badLinkRows || []).map((r: any) => ({
+                    ficheName: r.fiche_name || r.company_name || 'Fiche inconnue',
+                    reviewUrl: r.review_url || '',
+                    reason: r.rejection_reason || '',
+                    date: r.rejected_at ? new Date(r.rejected_at).toLocaleDateString('fr-FR') : ''
+                }));
+
+                if (badLinkCount >= 3 && subInfo.guide_status === 'active') {
+                    // AUTO-SUSPEND: 3 bad links reached
+                    await pool.query(`UPDATE users SET status = 'suspended' WHERE id = ?`, [subInfo.guide_id]);
+                    invalidateAuthCache(subInfo.guide_id);
+
+                    // Block ALL gmail accounts for this guide
+                    await pool.query(`
+                        UPDATE guide_gmail_accounts
+                        SET is_blocked = TRUE, trust_level = 'BLOCKED'
+                        WHERE user_id = ?
+                    `, [subInfo.guide_id]);
+
+                    await sendBadLinkWarningEmail(subInfo.guide_email, subInfo.guide_name, 3, true, badLinkDetails);
+
+                    notificationService.sendToUser(subInfo.guide_id, {
+                        type: 'system',
+                        title: 'Compte Suspendu',
+                        message: 'Votre compte a été suspendu automatiquement suite à 3 mauvais liens en un mois. Contactez le support.',
+                        link: '/profile'
+                    });
+
+                    console.log(`[AUTO-SUSPEND] Guide ${subInfo.guide_id} (${subInfo.guide_email}) suspended: 3 bad links this month`);
+                } else if (badLinkCount < 3) {
+                    await sendBadLinkWarningEmail(subInfo.guide_email, subInfo.guide_name, badLinkCount, false, badLinkDetails);
+                }
+            } catch (warningError) {
+                console.error('Error in bad link warning system:', warningError);
+            }
+        }
+
+        // 4. Send notification to guide (using pre-fetched subInfo since submission may have been deleted)
+        if (subInfo) {
+            try {
+                await sendSubmissionDecisionEmail(subInfo.guide_email, subInfo.guide_name, status, rejectionReason, allowResubmit, allowAppeal);
 
                 // SSE NOTIFICATION - Guide
                 const rejectMsg = allowResubmit
@@ -572,7 +677,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                     ? 'Votre avis a été rejeté. Vous pouvez faire appel depuis la page Corrections si l\'avis revient en ligne.'
                     : 'Désolé, votre soumission n\'a pas été retenue.';
                 const hasCorrection = allowResubmit || allowAppeal;
-                notificationService.sendToUser(rows[0].guide_id, {
+                notificationService.sendToUser(subInfo.guide_id, {
                     type: 'system',
                     title: status === 'validated' ? 'Avis Validé ! 🎉' : 'Avis Rejeté ❌',
                     message: status === 'validated' ? 'Félicitations ! Vos gains ont été crédités.' : rejectMsg,
@@ -580,23 +685,17 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                 });
 
                 // SSE NOTIFICATION - Artisan (only if validated)
-                if (status === 'validated') {
-                    const [subInfo]: any = await connection.query(`
-                        SELECT artisan_id FROM reviews_submissions WHERE id = :submissionId
-                    `, { submissionId });
-
-                    if (subInfo && subInfo.length > 0) {
-                        notificationService.sendToUser(subInfo[0].artisan_id, {
-                            type: 'order_update',
-                            title: 'Un avis a été publié ! ✅',
-                            message: 'Google a validé un nouvel avis pour votre entreprise.',
-                            link: '/artisan/dashboard'
-                        });
-                    }
+                if (status === 'validated' && subInfo.artisan_id) {
+                    notificationService.sendToUser(subInfo.artisan_id, {
+                        type: 'order_update',
+                        title: 'Un avis a été publié ! ✅',
+                        message: 'Google a validé un nouvel avis pour votre entreprise.',
+                        link: '/artisan/dashboard'
+                    });
                 }
+            } catch (error) {
+                console.error('Error sending submission decision email:', error);
             }
-        } catch (error) {
-            console.error('Error sending submission decision email:', error);
         }
     } catch (error) {
         console.error('Error in updateSubmissionStatus:', error);
@@ -648,6 +747,7 @@ export const getRejectedSubmissions = async (filters: {
             SELECT s.id, s.review_url, s.google_email, s.rejection_reason, s.rejected_at,
                    s.allow_resubmit, s.allow_appeal, s.slot_released_at,
                    s.earnings, s.submitted_at,
+                   s.proposal_id, p.content as review_text,
                    u.id as guide_id, u.full_name as guide_name, u.email as guide_email,
                    ro.id as order_id, ro.company_name, ro.quantity, ro.reviews_received, ro.status as order_status,
                    au.id as artisan_id, au.full_name as artisan_name,
@@ -744,6 +844,91 @@ export const bulkRevalidateSubmissions = async (ids: string[]): Promise<{
             failed++;
             errors.push({ id, error: e?.message || 'unknown error' });
         }
+    }
+
+    return { success, failed, errors };
+};
+
+/**
+ * Remet des avis rejetés en "pending" (non publié) pour qu'ils puissent être revalidés.
+ * - Remet le statut de la soumission en "pending"
+ * - Réinitialise les champs de rejet
+ * - Si le slot avait été libéré, ré-incrémente reviews_received sur la fiche
+ * - Si la fiche avait atteint son quota journalier, décrémente de 1 pour laisser de la place
+ */
+export const bulkResetToPending = async (ids: string[]): Promise<{
+    success: number;
+    failed: number;
+    errors: { id: string; error: string }[];
+}> => {
+    let success = 0;
+    let failed = 0;
+    const errors: { id: string; error: string }[] = [];
+
+    const connection = await pool.getConnection();
+    try {
+        for (const submissionId of ids) {
+            try {
+                await connection.beginTransaction();
+
+                // 1. Get submission + order info
+                const [subRows]: any = await connection.query(`
+                    SELECT s.id, s.guide_id, s.status, s.slot_released_at, s.allow_resubmit,
+                           p.order_id, ro.reviews_received, ro.quantity, ro.status as order_status
+                    FROM reviews_submissions s
+                    JOIN review_proposals p ON s.proposal_id = p.id
+                    JOIN reviews_orders ro ON p.order_id = ro.id
+                    WHERE s.id = :submissionId AND s.status = 'rejected'
+                `, { submissionId });
+
+                if (!subRows || subRows.length === 0) {
+                    await connection.rollback();
+                    errors.push({ id: submissionId, error: 'Soumission non trouvée ou pas rejetée' });
+                    failed++;
+                    continue;
+                }
+
+                const sub = subRows[0];
+
+                // 2. Reset submission to pending
+                await connection.query(`
+                    UPDATE reviews_submissions
+                    SET status = 'pending',
+                        rejection_reason = NULL,
+                        allow_resubmit = 0,
+                        allow_appeal = 0,
+                        rejected_at = NULL,
+                        slot_released_at = NULL,
+                        validated_at = NULL
+                    WHERE id = :submissionId
+                `, { submissionId });
+
+                // 3. If slot was released, re-increment reviews_received
+                if (sub.slot_released_at) {
+                    await connection.query(`
+                        UPDATE reviews_orders
+                        SET reviews_received = COALESCE(reviews_received, 0) + 1
+                        WHERE id = :orderId
+                    `, { orderId: sub.order_id });
+                }
+
+                // 4. Ensure fiche is in_progress (not completed/cancelled)
+                await connection.query(`
+                    UPDATE reviews_orders
+                    SET status = 'in_progress'
+                    WHERE id = :orderId AND status IN ('completed', 'cancelled')
+                `, { orderId: sub.order_id });
+
+                await connection.commit();
+                success++;
+            } catch (e: any) {
+                await connection.rollback();
+                failed++;
+                errors.push({ id: submissionId, error: e?.message || 'unknown error' });
+            }
+        }
+    } finally {
+        connection.release();
     }
 
     return { success, failed, errors };
@@ -1824,6 +2009,62 @@ export const getReview360Data = async () => {
  */
 export const updateProposal = async (proposalId: string, data: { content: string }) => {
     return await query('UPDATE review_proposals SET content = ? WHERE id = ?', [data.content, proposalId]);
+};
+
+/**
+ * Regenerate a single proposal's content using AI, keeping the same fiche context
+ */
+export const regenerateProposal = async (proposalId: string): Promise<{ content: string; author_name: string; rating: number }> => {
+    // 1. Get proposal + order context
+    const rows: any = await query(`
+        SELECT p.id, p.order_id, p.author_name, p.rating,
+               ro.company_name, ro.fiche_name, ro.company_context, ro.sector,
+               ro.zones, ro.services, ro.staff_names, ro.specific_instructions,
+               ap.company_name as artisan_company, ap.trade
+        FROM review_proposals p
+        JOIN reviews_orders ro ON p.order_id = ro.id
+        JOIN artisans_profiles ap ON ro.artisan_id = ap.user_id
+        WHERE p.id = ?
+    `, [proposalId]);
+
+    if (!rows || rows.length === 0) {
+        throw new Error('Proposal not found');
+    }
+
+    const order = rows[0];
+
+    // 2. Generate 1 new review with AI
+    const { aiService } = await import('./aiService');
+    const generated = await aiService.generateReviews({
+        companyName: order.company_name || order.artisan_company || 'Artisan',
+        ficheName: order.fiche_name,
+        trade: order.trade || 'Artisan',
+        quantity: 1,
+        context: order.company_context,
+        sector: order.sector,
+        zones: order.zones,
+        services: order.services,
+        staffNames: order.staff_names,
+        specificInstructions: order.specific_instructions,
+    });
+
+    if (!generated || generated.length === 0) {
+        throw new Error('AI did not return any review');
+    }
+
+    const newReview = generated[0];
+
+    // 3. Update the proposal with new content
+    await query(
+        'UPDATE review_proposals SET content = ?, author_name = ?, rating = ? WHERE id = ?',
+        [newReview.content, newReview.author_name, newReview.rating || 5, proposalId]
+    );
+
+    return {
+        content: newReview.content,
+        author_name: newReview.author_name,
+        rating: newReview.rating || 5,
+    };
 };
 
 /**

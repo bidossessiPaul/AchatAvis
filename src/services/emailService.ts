@@ -498,6 +498,128 @@ export const sendSubmissionDecisionEmail = async (email: string, fullName: strin
 };
 
 /**
+ * Send bad link warning email to guide (progressive: 1st, 2nd, 3rd = suspension)
+ */
+export const sendBadLinkWarningEmail = async (
+    email: string,
+    fullName: string,
+    warningNumber: number,
+    isSuspended: boolean,
+    badLinkDetails?: Array<{ ficheName: string; reviewUrl: string; reason: string; date: string }>
+) => {
+    const brandRed = '#FF991F';
+    const brandBlack = '#0a0a0a';
+
+    // Build the bad links detail table
+    let detailsHtml = '';
+    if (badLinkDetails && badLinkDetails.length > 0) {
+        const rows = badLinkDetails.map((d, i) => `
+            <tr style="border-bottom:1px solid #e5e7eb;">
+                <td style="padding:10px 8px;font-size:13px;font-weight:700;color:#374151;">${i + 1}</td>
+                <td style="padding:10px 8px;font-size:13px;color:#374151;">${d.ficheName}</td>
+                <td style="padding:10px 8px;font-size:13px;color:#6b7280;max-width:160px;word-break:break-all;">${d.reviewUrl ? `<a href="${d.reviewUrl}" style="color:#6366f1;">${d.reviewUrl.substring(0, 40)}...</a>` : 'N/A'}</td>
+                <td style="padding:10px 8px;font-size:13px;color:#6b7280;">${d.reason || '-'}</td>
+                <td style="padding:10px 8px;font-size:13px;color:#6b7280;">${d.date}</td>
+            </tr>
+        `).join('');
+
+        detailsHtml = `
+            <div style="margin-top:20px;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+                <div style="background:#1e293b;color:white;padding:12px 16px;font-weight:800;font-size:14px;">
+                    Fiches et avis concernés
+                </div>
+                <table style="width:100%;border-collapse:collapse;background:white;">
+                    <thead>
+                        <tr style="background:#f8fafc;border-bottom:2px solid #e5e7eb;">
+                            <th style="padding:10px 8px;font-size:12px;text-align:left;color:#64748b;font-weight:700;">#</th>
+                            <th style="padding:10px 8px;font-size:12px;text-align:left;color:#64748b;font-weight:700;">Fiche</th>
+                            <th style="padding:10px 8px;font-size:12px;text-align:left;color:#64748b;font-weight:700;">Lien soumis</th>
+                            <th style="padding:10px 8px;font-size:12px;text-align:left;color:#64748b;font-weight:700;">Raison</th>
+                            <th style="padding:10px 8px;font-size:12px;text-align:left;color:#64748b;font-weight:700;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    let title: string;
+    let message: string;
+    let color: string;
+    let urgencyBadge: string;
+
+    if (isSuspended) {
+        title = "COMPTE SUSPENDU — 3 MAUVAIS LIENS";
+        color = '#dc2626';
+        urgencyBadge = `<div style="display:inline-block;background:#dc2626;color:white;padding:6px 16px;border-radius:8px;font-weight:800;font-size:14px;margin-bottom:16px;">SUSPENSION AUTOMATIQUE</div><br>`;
+        message = `${urgencyBadge}
+            Votre compte AchatAvis a été <strong style="color:#dc2626;">automatiquement suspendu</strong>.<br><br>
+            Vous avez accumulé <strong>3 mauvais liens</strong> ce mois-ci. Conformément à notre politique, votre compte et tous vos comptes Gmail associés ont été bloqués.<br><br>
+            <strong>Conséquences :</strong><br>
+            • Votre compte est suspendu immédiatement<br>
+            • Tous vos comptes Gmail sont bloqués sur la plateforme<br>
+            • Aucun de vos emails ne pourra être utilisé pour créer un nouveau compte<br><br>
+            ${detailsHtml}
+            <br>Si vous pensez qu'il s'agit d'une erreur, contactez le support AchatAvis.`;
+    } else {
+        const remaining = 3 - warningNumber;
+        color = warningNumber >= 2 ? '#dc2626' : brandRed;
+        urgencyBadge = `<div style="display:inline-block;background:${warningNumber >= 2 ? '#fef2f2' : '#fffbeb'};color:${warningNumber >= 2 ? '#dc2626' : '#d97706'};padding:6px 16px;border-radius:8px;font-weight:800;font-size:14px;margin-bottom:16px;border:1px solid ${warningNumber >= 2 ? '#fecaca' : '#fde68a'};">AVERTISSEMENT ${warningNumber}/3</div><br>`;
+        title = `AVERTISSEMENT ${warningNumber}/3 — MAUVAIS LIEN`;
+        message = `${urgencyBadge}
+            Votre lien de soumission a été jugé <strong>invalide ou incorrect</strong>.<br><br>
+            C'est votre <strong>${warningNumber === 1 ? '1er' : '2ème'} avertissement</strong> ce mois-ci. Vous avez encore <strong>${remaining} chance${remaining > 1 ? 's' : ''}</strong> avant la suspension automatique de votre compte.<br><br>
+            <strong style="color:${color};">À 3 avertissements, votre compte sera automatiquement suspendu et tous vos emails bloqués sur la plateforme.</strong><br><br>
+            ${detailsHtml}
+            <br>Veuillez corriger votre lien depuis la page <strong>Corrections</strong> de votre espace guide dans les 24h.`;
+    }
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: isSuspended
+            ? `Compte suspendu — 3 mauvais liens — AchatAvis`
+            : `Avertissement ${warningNumber}/3 — Mauvais lien — AchatAvis`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb; padding: 40px; text-align: center; }
+                    .logo { font-size: 24px; font-weight: 800; color: ${brandBlack}; margin-bottom: 24px; }
+                    .title { font-size: 20px; font-weight: 800; color: ${color}; margin-bottom: 16px; text-transform: uppercase; }
+                    .text { font-size: 15px; color: #374151; line-height: 1.7; text-align: left; }
+                    .warning-box { padding: 24px; border-radius: 12px; background-color: ${isSuspended ? '#fef2f2' : '#fffbeb'}; border-top: 4px solid ${color}; margin-top: 24px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
+                        <h2 class="title">${title}</h2>
+                        <div class="warning-box">
+                            <p class="text">
+                                Bonjour <strong>${fullName}</strong>,<br><br>
+                                ${message}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error(`Error sending bad link warning email:`, error);
+    }
+};
+
+/**
  * Send invitation email to new team member
  */
 export const sendTeamInvitationEmail = async (email: string, token: string, permissions: any, baseUrl?: string) => {

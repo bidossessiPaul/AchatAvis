@@ -44,6 +44,7 @@ router.get('/submissions', adminController.getAllSubmissions);
 router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.post('/submissions/bulk-revalidate', adminController.bulkRevalidateSubmissions);
+router.post('/submissions/bulk-reset-pending', adminController.bulkResetToPending);
 router.get('/rejected-submissions', adminController.listRejectedSubmissions);
 router.post('/orders/:id/force-relist', adminController.forceRelistOrder);
 
@@ -54,6 +55,7 @@ router.patch('/level-verifications/:verificationId', adminController.reviewLevel
 router.patch('/users/:userId/status', adminController.updateUserStatus);
 // Warning system removed - route disabled
 // router.post('/users/:userId/warning', adminController.issueWarning);
+router.post('/guides/:userId/unblock-bad-links', adminController.unblockBadLinkGuide);
 router.delete('/users/:userId', adminController.deleteUser);
 router.get('/users', adminController.getUsers);
 router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
@@ -70,7 +72,7 @@ router.post('/fiches/:orderId/send-validation', adminController.sendReviewValida
 router.put('/fiches/:orderId', adminController.updatefiche);
 router.delete('/fiches/:orderId', adminController.deletefiche);
 router.put('/proposals/:proposalId', adminController.updateProposal);
-
+router.post('/proposals/:proposalId/regenerate', adminController.regenerateProposal);
 
 // Pack management
 router.get('/packs', adminController.getPacks);
