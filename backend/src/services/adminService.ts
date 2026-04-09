@@ -448,18 +448,20 @@ export const updatePayoutStatus = async (payoutId: string, status: string, admin
  */
 export const getAllSubmissions = async () => {
     return await query(`
-        SELECT s.*, 
+        SELECT s.*,
                u.full_name as guide_name, u.avatar_url as guide_avatar,
                gp.google_email,
                ap.company_name as artisan_name,
                ro.company_name as fiche_name,
-               p.content as proposal_content
+               p.content as proposal_content,
+               validator.full_name as validated_by_name
         FROM reviews_submissions s
         JOIN users u ON s.guide_id = u.id
         JOIN guides_profiles gp ON u.id = gp.user_id
         JOIN artisans_profiles ap ON s.artisan_id = ap.user_id
         JOIN review_proposals p ON s.proposal_id = p.id
         JOIN reviews_orders ro ON s.order_id = ro.id
+        LEFT JOIN users validator ON s.validated_by = validator.id
         ORDER BY s.submitted_at DESC
     `);
 };
@@ -498,7 +500,7 @@ export const getArtisanSubmissions = async (artisanId: string) => {
 /**
  * Update review submission status (validate/reject)
  */
-export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, allowResubmit?: boolean, allowAppeal?: boolean) => {
+export const updateSubmissionStatus = async (submissionId: string, status: string, rejectionReason?: string, allowResubmit?: boolean, allowAppeal?: boolean, adminId?: string) => {
     const connection = await pool.getConnection();
 
     try {
@@ -518,7 +520,9 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
         // 1. Update submission status
         let validatedAtPart = "";
         if (status === 'validated') {
-            validatedAtPart = ", validated_at = NOW()";
+            validatedAtPart = ", validated_at = NOW(), validated_by = :adminId";
+        } else if (status === 'rejected') {
+            validatedAtPart = ", validated_by = :adminId";
         }
 
         const allowResubmitValue = (status === 'rejected' && allowResubmit) ? 1 : 0;
@@ -537,6 +541,7 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
             rejectionReason: rejectionReason || null,
             allowResubmitValue,
             allowAppealValue,
+            adminId: adminId || null,
             submissionId
         });
 

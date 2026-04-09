@@ -2,9 +2,13 @@ import { useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../context/authStore';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { API_BASE } from '../services/api';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const RELATIVE_API_FALLBACK = '/api';
+const API_BASE_CANDIDATES = API_BASE === RELATIVE_API_FALLBACK
+    ? [RELATIVE_API_FALLBACK]
+    : [API_BASE, RELATIVE_API_FALLBACK];
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 10000; // 10 seconds between retries
 
@@ -16,10 +20,10 @@ const RETRY_DELAY = 10000; // 10 seconds between retries
  * which would otherwise burn all 5 retry attempts in 50s and silently kill
  * notifications until the user reloads the page.
  */
-const refreshAccessToken = async (): Promise<string | null> => {
+const refreshAccessToken = async (baseUrl: string): Promise<string | null> => {
     try {
         const response = await axios.post(
-            `${API_BASE_URL}/auth/refresh-token`,
+            `${baseUrl}/auth/refresh-token`,
             {},
             { withCredentials: true }
         );
@@ -52,6 +56,7 @@ export const useNotifications = () => {
     const retriesRef = useRef(0);
     const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const closedByUserRef = useRef(false);
+    const baseCandidateIndexRef = useRef(0);
 
     useEffect(() => {
         if (!isAuthenticated || !userId) {
@@ -66,14 +71,17 @@ export const useNotifications = () => {
                 retryTimeoutRef.current = null;
             }
             retriesRef.current = 0;
+            baseCandidateIndexRef.current = 0;
             return;
         }
 
         closedByUserRef.current = false;
+        baseCandidateIndexRef.current = 0;
 
         const connect = async () => {
             let token = localStorage.getItem('accessToken');
             if (!token) return;
+            const currentBase = API_BASE_CANDIDATES[baseCandidateIndexRef.current] || RELATIVE_API_FALLBACK;
 
             // Guard against multiple concurrent connections for the same user
             if (eventSourceRef.current) {
@@ -85,7 +93,7 @@ export const useNotifications = () => {
             // reconnecting. Without this, retries hit the backend with the same
             // expired token over and over, killing notifications until reload.
             if (retriesRef.current > 0) {
-                const fresh = await refreshAccessToken();
+                const fresh = await refreshAccessToken(currentBase);
                 if (fresh) {
                     token = fresh;
                 } else {
@@ -94,7 +102,7 @@ export const useNotifications = () => {
                 }
             }
 
-            const url = `${API_BASE_URL}/notifications/stream?token=${token}`;
+            const url = `${currentBase}/notifications/stream?token=${token}`;
             const es = new EventSource(url);
             eventSourceRef.current = es;
 
@@ -132,6 +140,16 @@ export const useNotifications = () => {
                 eventSourceRef.current = null;
 
                 if (closedByUserRef.current) return;
+
+                // One immediate switch to /api if primary base is broken (CORS / DNS / host down)
+                if (baseCandidateIndexRef.current < API_BASE_CANDIDATES.length - 1) {
+                    baseCandidateIndexRef.current += 1;
+                    retriesRef.current = 0;
+                    retryTimeoutRef.current = setTimeout(() => {
+                        void connect();
+                    }, 500);
+                    return;
+                }
 
                 if (retriesRef.current < MAX_RETRIES) {
                     retriesRef.current++;

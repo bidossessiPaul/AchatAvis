@@ -2,11 +2,8 @@
   command = "npm run build"
   publish = "dist"
 
-[[redirects]]
-  from = "/api/*"
-  to = "https://achat-avis-api.vercel.app/api/:splat"
-  status = 200
-  force = true
+# Legacy file kept for compatibility only.
+# No external API redirect here anymore.
 
 [[redirects]]
   from = "/*"

@@ -21,7 +21,8 @@ import {
     BookOpen,
     Trophy,
     Wallet,
-    XCircle
+    XCircle,
+    Activity
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import './Layout.css';
@@ -93,6 +94,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
+
+                // Owner-only: Logs
+                if (user.email === 'dossoumaxime888@gmail.com') {
+                    allAdminItems.splice(-1, 0, { label: 'Logs Activité', path: '/admin/logs', icon: <Activity size={20} /> });
+                }
 
                 // Return all items for all admins to ensure consistent interface order
                 // PermissionGuard still handles security for individual pages

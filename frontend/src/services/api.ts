@@ -361,8 +361,11 @@ export const adminApi = {
         return response.data;
     },
 
-    async getLogs(page = 1) {
-        const response = await api.get(`/admin/logs?page=${page}`);
+    async getLogs(page = 1, filters?: { action?: string; adminId?: string }) {
+        const params = new URLSearchParams({ page: String(page) });
+        if (filters?.action) params.set('action', filters.action);
+        if (filters?.adminId) params.set('adminId', filters.adminId);
+        const response = await api.get(`/admin/logs?${params}`);
         return response.data;
     },
 
