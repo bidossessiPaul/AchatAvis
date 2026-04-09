@@ -52,6 +52,7 @@ router.get('/reviews/360', adminController.getReview360);
 router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
 router.post('/submissions/bulk-revalidate', adminController.bulkRevalidateSubmissions);
 router.post('/submissions/bulk-reset-pending', adminController.bulkResetToPending);
+router.post('/submissions/recycle', adminController.recycleRejectedSubmissions);
 router.get('/rejected-submissions', adminController.listRejectedSubmissions);
 router.post('/orders/:id/force-relist', adminController.forceRelistOrder);
 

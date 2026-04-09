@@ -832,26 +832,16 @@ export const getRejectedSubmissionIds = async (filters: {
  * Revalide en lot une liste d'avis rejetés. Réutilise updateSubmissionStatus
  * pour conserver la logique métier (transactions, notifications, recalcul stats).
  */
+/**
+ * Remet des avis rejetés en "pending" pour qu'ils soient re-vérifiés.
+ * Délègue à bulkResetToPending qui gère correctement les slots et stats.
+ */
 export const bulkRevalidateSubmissions = async (ids: string[]): Promise<{
     success: number;
     failed: number;
     errors: { id: string; error: string }[];
 }> => {
-    let success = 0;
-    let failed = 0;
-    const errors: { id: string; error: string }[] = [];
-
-    for (const id of ids) {
-        try {
-            await updateSubmissionStatus(id, 'validated');
-            success++;
-        } catch (e: any) {
-            failed++;
-            errors.push({ id, error: e?.message || 'unknown error' });
-        }
-    }
-
-    return { success, failed, errors };
+    return bulkResetToPending(ids);
 };
 
 /**
@@ -923,6 +913,97 @@ export const bulkResetToPending = async (ids: string[]): Promise<{
                     SET status = 'in_progress'
                     WHERE id = :orderId AND status IN ('completed', 'cancelled')
                 `, { orderId: sub.order_id });
+
+                await connection.commit();
+                success++;
+            } catch (e: any) {
+                await connection.rollback();
+                failed++;
+                errors.push({ id: submissionId, error: e?.message || 'unknown error' });
+            }
+        }
+    } finally {
+        connection.release();
+    }
+
+    return { success, failed, errors };
+};
+
+/**
+ * Recycle des avis rejetés : supprime la soumission et libère le slot
+ * pour qu'un autre guide puisse reprendre la fiche.
+ *
+ * Flow: Admin régénère le contenu IA → recycle → la proposition existe avec du nouveau
+ * contenu mais sans soumission → un nouveau guide peut la prendre.
+ *
+ * - Supprime la soumission (review_url, guide_id, preuves)
+ * - Libère le slot (décrémente reviews_received si pas déjà fait)
+ * - Remet la fiche en in_progress si besoin
+ */
+export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
+    success: number;
+    failed: number;
+    errors: { id: string; error: string }[];
+}> => {
+    let success = 0;
+    let failed = 0;
+    const errors: { id: string; error: string }[] = [];
+
+    const connection = await pool.getConnection();
+    try {
+        for (const submissionId of ids) {
+            try {
+                await connection.beginTransaction();
+
+                // 1. Get submission + order info
+                const [subRows]: any = await connection.query(`
+                    SELECT s.id, s.guide_id, s.status, s.slot_released_at,
+                           p.order_id, p.id as proposal_id,
+                           ro.reviews_received, ro.quantity
+                    FROM reviews_submissions s
+                    JOIN review_proposals p ON s.proposal_id = p.id
+                    JOIN reviews_orders ro ON p.order_id = ro.id
+                    WHERE s.id = :submissionId AND s.status = 'rejected'
+                `, { submissionId });
+
+                if (!subRows || subRows.length === 0) {
+                    await connection.rollback();
+                    errors.push({ id: submissionId, error: 'Soumission non trouvée ou pas rejetée' });
+                    failed++;
+                    continue;
+                }
+
+                const sub = subRows[0];
+
+                // 2. DELETE the submission entirely (preuves, lien, guide_id — tout supprimé)
+                await connection.query(`
+                    DELETE FROM reviews_submissions WHERE id = :submissionId
+                `, { submissionId });
+
+                // 3. Free the slot: decrement reviews_received if it wasn't already released
+                if (!sub.slot_released_at) {
+                    await connection.query(`
+                        UPDATE reviews_orders
+                        SET reviews_received = GREATEST(0, COALESCE(reviews_received, 1) - 1)
+                        WHERE id = :orderId
+                    `, { orderId: sub.order_id });
+                }
+
+                // 4. Ensure fiche is in_progress so new guides can see it
+                await connection.query(`
+                    UPDATE reviews_orders
+                    SET status = 'in_progress'
+                    WHERE id = :orderId AND status IN ('completed', 'cancelled')
+                `, { orderId: sub.order_id });
+
+                // 5. Reset the proposal status so it's available for a new guide
+                // Note: CHECK constraint only allows ('draft', 'approved', 'rejected')
+                // 'approved' = content ready, waiting for a guide to submit proof
+                await connection.query(`
+                    UPDATE review_proposals
+                    SET status = 'approved'
+                    WHERE id = :proposalId AND status != 'approved'
+                `, { proposalId: sub.proposal_id });
 
                 await connection.commit();
                 success++;
@@ -1237,10 +1318,12 @@ export const approvefiche = async (orderId: string, baseUrl?: string) => {
  */
 export const getAllfiches = async () => {
     return await query(`
-        SELECT o.*, 
+        SELECT o.*,
                COALESCE(pay.amount, o.price) as price,
-               u.full_name as artisan_name, 
-               ap.company_name as original_company_name
+               u.full_name as artisan_name,
+               ap.company_name as original_company_name,
+               (SELECT COUNT(*) FROM reviews_submissions s
+                WHERE s.order_id = o.id AND s.status = 'validated') as validated_count
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
