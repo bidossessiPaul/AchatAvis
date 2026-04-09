@@ -6,7 +6,7 @@ dotenv.config();
 // MySQL connection pool configuration
 // connectionLimit is overridable via env for different hosting plans.
 // Default 10 is safe for Hostinger shared (usually allows 25 concurrent).
-// SSL is enabled by default for Vercel -> External DB (Hostinger, etc.) but
+// SSL is enabled by default for production -> external DB (Hostinger, etc.) but
 // can be disabled (e.g. Railway TCP proxy in local dev) by setting MYSQL_SSL=false.
 const sslEnabled = (process.env.MYSQL_SSL ?? 'true').toLowerCase() !== 'false';
 

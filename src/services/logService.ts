@@ -2,6 +2,11 @@ import pool from '../config/database';
 import { AdminLog } from '../models/types';
 import { RowDataPacket } from 'mysql2';
 
+interface LogFilters {
+    action?: string;
+    adminId?: string;
+}
+
 export class LogService {
 
     /**
@@ -17,7 +22,7 @@ export class LogService {
     ): Promise<void> {
         try {
             await pool.query(
-                `INSERT INTO admin_logs (admin_id, action, target_type, target_id, details, ip_address) 
+                `INSERT INTO admin_logs (admin_id, action, target_type, target_id, details, ip_address)
                  VALUES (?, ?, ?, ?, ?, ?)`,
                 [adminId, action, targetType, targetId, JSON.stringify(details || {}), ipAddress]
             );
@@ -28,20 +33,38 @@ export class LogService {
     }
 
     /**
-     * Get paginated logs with admin details
+     * Get paginated logs with admin details and optional filters
      */
-    static async getLogs(limit: number = 50, offset: number = 0): Promise<{ logs: AdminLog[], total: number }> {
+    static async getLogs(limit: number = 50, offset: number = 0, filters?: LogFilters): Promise<{ logs: AdminLog[], total: number }> {
+        let where = '';
+        const params: any[] = [];
+
+        const conditions: string[] = [];
+        if (filters?.action) {
+            conditions.push('l.action = ?');
+            params.push(filters.action);
+        }
+        if (filters?.adminId) {
+            conditions.push('l.admin_id = ?');
+            params.push(filters.adminId);
+        }
+        if (conditions.length > 0) {
+            where = 'WHERE ' + conditions.join(' AND ');
+        }
+
         const [rows] = await pool.query<RowDataPacket[]>(
-            `SELECT l.*, u.full_name as admin_name, u.email as admin_email 
+            `SELECT l.*, u.full_name as admin_name, u.email as admin_email
              FROM admin_logs l
              LEFT JOIN users u ON l.admin_id = u.id
+             ${where}
              ORDER BY l.created_at DESC
              LIMIT ? OFFSET ?`,
-            [limit, offset]
+            [...params, limit, offset]
         );
 
         const [countResult] = await pool.query<RowDataPacket[]>(
-            'SELECT COUNT(*) as total FROM admin_logs'
+            `SELECT COUNT(*) as total FROM admin_logs l ${where}`,
+            params
         );
 
         return {

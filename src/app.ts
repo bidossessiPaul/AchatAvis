@@ -126,7 +126,7 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     });
 });
 
-// Start server (skip only on Vercel which handles this itself)
+// Start server (skip in serverless runtime that bootstraps the app itself)
 if (!process.env.VERCEL) {
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
