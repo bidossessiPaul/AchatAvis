@@ -31,13 +31,13 @@ export const uploadScreenshot = multer({
     }
 });
 
-// Multer instance for identity documents (allows images, stricter size limit)
+// Multer instance for identity documents (allows images + PDF, stricter size limit)
 const identityFileFilter = (_req: any, file: any, cb: any) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (allowed.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Format non supporté. Utilisez JPG, PNG ou WEBP.'), false);
+        cb(new Error('Format non supporté. Utilisez JPG, PNG, WEBP ou PDF.'), false);
     }
 };
 

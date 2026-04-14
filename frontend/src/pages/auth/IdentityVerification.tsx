@@ -36,9 +36,9 @@ export const IdentityVerification: React.FC = () => {
             showError('Fichier trop lourd', 'Taille max : 8 Mo');
             return;
         }
-        const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
         if (!allowed.includes(selected.type)) {
-            showError('Format non supporté', 'Utilisez JPG, PNG ou WEBP');
+            showError('Format non supporté', 'Utilisez JPG, PNG, WEBP ou PDF');
             return;
         }
         setFile(selected);

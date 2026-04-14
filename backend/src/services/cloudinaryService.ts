@@ -18,19 +18,27 @@ cloudinary.config({
  */
 export const uploadToCloudinary = async (
     buffer: Buffer,
-    folder: string = 'avatars'
+    folder: string = 'avatars',
+    options?: { resourceType?: 'image' | 'raw' | 'auto'; skipTransform?: boolean }
 ): Promise<{ secure_url: string; public_id: string }> => {
+    const resourceType = options?.resourceType || 'image';
+    const skipTransform = options?.skipTransform || resourceType !== 'image';
+
     return new Promise((resolve, reject) => {
+        const uploadOptions: any = {
+            folder: `achatavis/${folder}`,
+            resource_type: resourceType,
+        };
+        if (!skipTransform) {
+            uploadOptions.transformation = [
+                { width: 500, height: 500, crop: 'limit' },
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' }
+            ];
+        }
+
         const uploadStream = cloudinary.uploader.upload_stream(
-            {
-                folder: `achatavis/${folder}`,
-                resource_type: 'image',
-                transformation: [
-                    { width: 500, height: 500, crop: 'limit' },
-                    { quality: 'auto:good' },
-                    { fetch_format: 'auto' }
-                ]
-            },
+            uploadOptions,
             (error, result) => {
                 if (error) {
                     console.error('❌ Cloudinary upload error:', error);
@@ -39,7 +47,7 @@ export const uploadToCloudinary = async (
                 if (!result) {
                     return reject(new Error('No result from Cloudinary'));
                 }
-                console.log('✅ Image uploaded to Cloudinary:', result.secure_url);
+                console.log('✅ File uploaded to Cloudinary:', result.secure_url);
                 resolve({
                     secure_url: result.secure_url,
                     public_id: result.public_id

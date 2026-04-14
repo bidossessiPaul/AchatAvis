@@ -10,7 +10,7 @@ export const submit = async (req: Request, res: Response) => {
         if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
         if (!req.file) return res.status(400).json({ error: 'Aucun fichier reçu' });
 
-        const result = await service.submitVerification(req.user.userId, req.file.buffer);
+        const result = await service.submitVerification(req.user.userId, req.file.buffer, req.file.mimetype);
         return res.json({
             message: 'Document envoyé avec succès. Votre compte sera vérifié sous 24h.',
             verification: result,
