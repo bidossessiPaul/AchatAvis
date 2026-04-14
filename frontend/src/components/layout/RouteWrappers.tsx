@@ -39,6 +39,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
+    // Users suspended for identity verification may only access the verification page
+    if (
+        user?.status === 'suspended' &&
+        user?.suspension_reason === 'identity_verification_required' &&
+        location.pathname !== '/identity-verification'
+    ) {
+        return <Navigate to="/identity-verification" replace />;
+    }
+
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         // Role based access control
         // Redirect to appropriate dashboard based on actual role
@@ -60,6 +69,9 @@ export const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children
 
     if (isAuthenticated && user) {
         // Redirect authenticated users away from public pages like login/register
+        if (user.status === 'suspended' && user.suspension_reason === 'identity_verification_required') {
+            return <Navigate to="/identity-verification" replace />;
+        }
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;
         if (user.role === 'guide') return <Navigate to="/guide" replace />;
         if (user.role === 'admin') return <Navigate to="/admin" replace />;

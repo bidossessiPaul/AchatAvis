@@ -25,6 +25,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy (Railway / load balancer) so req.ip and X-Forwarded-For work correctly
+app.set('trust proxy', true);
+
 // 1. CORS Middleware - PERMISSIVE FOR DEBUG
 app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.headers.origin;

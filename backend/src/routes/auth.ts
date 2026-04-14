@@ -19,7 +19,8 @@ import {
     verifyEmail,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
-import { uploadAvatar as uploadMiddleware } from '../middleware/upload';
+import { uploadAvatar as uploadMiddleware, uploadIdentityDocument } from '../middleware/upload';
+import * as identityVerif from '../controllers/identityVerificationController';
 
 const router = express.Router();
 
@@ -47,5 +48,14 @@ router.post('/2fa/disable', authenticate, disable2FA);
 // Forgot password routes
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+
+// Identity verification (for users suspended with reason = 'identity_verification_required')
+router.get('/identity-verification/status', authenticate, identityVerif.getStatus);
+router.post(
+    '/identity-verification',
+    authenticate,
+    uploadIdentityDocument.single('document'),
+    identityVerif.submit
+);
 
 export default router;

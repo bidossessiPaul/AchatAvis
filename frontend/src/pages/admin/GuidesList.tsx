@@ -32,7 +32,25 @@ interface Guide {
     city: string;
     phone: string;
     submitted_reviews_count: number;
+    detected_ip?: string | null;
+    detected_country?: string | null;
+    detected_country_code?: string | null;
+    detected_city?: string | null;
+    detected_region?: string | null;
+    detected_isp?: string | null;
+    detected_is_vpn?: number | null;
+    detected_at?: string | null;
 }
+
+// Convert country code (ISO 3166-1 alpha-2) to emoji flag
+const countryCodeToFlag = (code?: string | null): string => {
+    if (!code || code.length !== 2) return '';
+    return code
+        .toUpperCase()
+        .split('')
+        .map(c => String.fromCodePoint(127397 + c.charCodeAt(0)))
+        .join('');
+};
 
 export const GuidesList: React.FC = () => {
     const [guides, setGuides] = useState<Guide[]>([]);
@@ -198,7 +216,10 @@ export const GuidesList: React.FC = () => {
                                     <tr>
                                         <th>Local Guide</th>
                                         <th>Email Compte</th>
-                                        <th>Ville</th>
+                                        <th>Ville (déclarée)</th>
+                                        <th title="Localisation détectée automatiquement via IP à la dernière connexion">
+                                            🛡️ Localisation détectée
+                                        </th>
                                         <th
                                             onClick={() => setSortOrder(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none')}
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -210,6 +231,7 @@ export const GuidesList: React.FC = () => {
                                                 {sortOrder === 'asc' && <ArrowUp size={14} style={{ color: '#0369a1' }} />}
                                             </div>
                                         </th>
+                                        <th>Inscription</th>
                                         <th>Statut</th>
                                         <th className="text-center">Actions</th>
                                     </tr>
@@ -247,6 +269,53 @@ export const GuidesList: React.FC = () => {
                                             <td className="text-gray-500">{guide.email}</td>
                                             <td>{guide.city}</td>
                                             <td>
+                                                {guide.detected_city || guide.detected_country ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 600 }}>
+                                                            <span style={{ fontSize: '1.1rem' }}>{countryCodeToFlag(guide.detected_country_code)}</span>
+                                                            <span>{guide.detected_city || '—'}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+                                                            <span>{guide.detected_country || ''}</span>
+                                                            {!!guide.detected_is_vpn && (
+                                                                <span
+                                                                    title={`VPN/Proxy détecté — ISP: ${guide.detected_isp || 'inconnu'}`}
+                                                                    style={{
+                                                                        background: '#fef2f2',
+                                                                        color: '#b91c1c',
+                                                                        border: '1px solid #fecaca',
+                                                                        borderRadius: '6px',
+                                                                        padding: '1px 6px',
+                                                                        fontSize: '0.65rem',
+                                                                        fontWeight: 700
+                                                                    }}
+                                                                >
+                                                                    🚨 VPN
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {guide.city && guide.detected_city &&
+                                                            guide.city.toLowerCase().trim() !== guide.detected_city.toLowerCase().trim() && (
+                                                                <span
+                                                                    title={`Incohérence : déclarée "${guide.city}" vs détectée "${guide.detected_city}"`}
+                                                                    style={{
+                                                                        fontSize: '0.65rem',
+                                                                        color: '#b45309',
+                                                                        fontWeight: 600,
+                                                                        marginTop: '2px'
+                                                                    }}
+                                                                >
+                                                                    ⚠️ Ville différente
+                                                                </span>
+                                                            )}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: 'var(--gray-400)', fontSize: '0.8rem' }}>
+                                                        Non détectée
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td>
                                                 <div style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -271,6 +340,20 @@ export const GuidesList: React.FC = () => {
                                                         avis
                                                     </span>
                                                 </div>
+                                            </td>
+                                            <td>
+                                                {guide.created_at ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)' }}>
+                                                            {new Date(guide.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+                                                            {new Date(guide.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ color: 'var(--gray-400)' }}>—</span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span className={`admin-badge ${guide.status || 'inactive'}`}>

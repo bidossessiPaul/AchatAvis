@@ -6,6 +6,7 @@ export interface User {
     avatar_url?: string;
     role: 'artisan' | 'guide' | 'admin';
     status: 'pending' | 'active' | 'suspended' | 'rejected';
+    suspension_reason?: string | null;
     email_verified: boolean;
     created_at: string;
     updated_at: string;

@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/authService';
+import { getClientIp, geolocateIp } from '../utils/geolocation';
+import { query } from '../config/database';
 import {
     artisanRegistrationSchema,
     guideRegistrationSchema,
@@ -118,6 +120,38 @@ export const login = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
 
+        // Geolocate user (fire-and-forget, never blocks login)
+        const userId = result.user?.id;
+        if (userId) {
+            const ip = getClientIp(req);
+            if (ip) {
+                geolocateIp(ip).then(async (geo) => {
+                    if (!geo) return;
+                    try {
+                        await query(
+                            `UPDATE users
+                             SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
+                                 detected_city = ?, detected_region = ?, detected_isp = ?,
+                                 detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
+                             WHERE id = ?`,
+                            [
+                                geo.ip,
+                                geo.country,
+                                geo.country_code,
+                                geo.city,
+                                geo.region,
+                                geo.isp,
+                                geo.is_vpn ? 1 : 0,
+                                userId,
+                            ]
+                        );
+                    } catch (err) {
+                        console.error('Failed to store geolocation:', err);
+                    }
+                }).catch(() => { /* silent */ });
+            }
+        }
+
         return res.json({
             message: 'Login successful',
             user: result.user,
@@ -219,6 +253,38 @@ export const verify2FA = async (req: Request, res: Response) => {
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
+
+        // Geolocate user (fire-and-forget)
+        const userId2 = result.user?.id;
+        if (userId2) {
+            const ip = getClientIp(req);
+            if (ip) {
+                geolocateIp(ip).then(async (geo) => {
+                    if (!geo) return;
+                    try {
+                        await query(
+                            `UPDATE users
+                             SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
+                                 detected_city = ?, detected_region = ?, detected_isp = ?,
+                                 detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
+                             WHERE id = ?`,
+                            [
+                                geo.ip,
+                                geo.country,
+                                geo.country_code,
+                                geo.city,
+                                geo.region,
+                                geo.isp,
+                                geo.is_vpn ? 1 : 0,
+                                userId2,
+                            ]
+                        );
+                    } catch (err) {
+                        console.error('Failed to store geolocation:', err);
+                    }
+                }).catch(() => { /* silent */ });
+            }
+        }
 
         return res.json({
             message: 'Vérification 2FA réussie',

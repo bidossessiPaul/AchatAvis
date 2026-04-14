@@ -16,6 +16,7 @@ const lazyNamed = <T extends Record<string, React.ComponentType<unknown>>>(
 ) => lazy(() => importer().then((module) => ({ default: module[exportName] })));
 
 const Login = lazyNamed(() => import('./pages/auth/Login'), 'Login');
+const IdentityVerification = lazyNamed(() => import('./pages/auth/IdentityVerification'), 'IdentityVerification');
 const ImpersonateLanding = lazyNamed(() => import('./pages/auth/ImpersonateLanding'), 'ImpersonateLanding');
 const RegisterArtisan = lazyNamed(() => import('./pages/auth/RegisterArtisan'), 'RegisterArtisan');
 const RegisterGuide = lazyNamed(() => import('./pages/auth/RegisterGuide'), 'RegisterGuide');
@@ -60,6 +61,7 @@ const AcceptAdminInvite = lazyNamed(() => import('./pages/admin/AcceptAdminInvit
 const TrustScoreManagement = lazyNamed(() => import('./pages/admin/TrustScoreManagement'), 'TrustScoreManagement');
 const SectorManagement = lazyNamed(() => import('./pages/admin/SectorManagement'), 'SectorManagement');
 const AdminLevelVerifications = lazyNamed(() => import('./pages/admin/AdminLevelVerifications'), 'AdminLevelVerifications');
+const IdentityVerifications = lazyNamed(() => import('./pages/admin/IdentityVerifications'), 'IdentityVerifications');
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
@@ -110,6 +112,14 @@ function App() {
                             }
                         />
                         <Route path="/auth/impersonate" element={<ImpersonateLanding />} />
+                        <Route
+                            path="/identity-verification"
+                            element={
+                                <ProtectedRoute>
+                                    <IdentityVerification />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path="/register/artisan"
                             element={
@@ -484,6 +494,16 @@ function App() {
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
                                         <AdminLevelVerifications />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/identity-verifications"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                                        <IdentityVerifications />
                                     </PermissionGuard>
                                 </ProtectedRoute>
                             }

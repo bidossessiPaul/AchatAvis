@@ -27,7 +27,9 @@ export const getArtisans = async () => {
 export const getGuides = async () => {
     return await query(`
         SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
-               gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
+               u.detected_ip, u.detected_country, u.detected_country_code, u.detected_city,
+               u.detected_region, u.detected_isp, u.detected_is_vpn, u.detected_at,
+               gp.google_email, gp.local_guide_level, gp.total_reviews_count,
                gp.phone, gp.city,
                COUNT(DISTINCT rs.id) as submitted_reviews_count
         FROM users u
@@ -35,6 +37,8 @@ export const getGuides = async () => {
         LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
         WHERE u.role = 'guide'
         GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
+                 u.detected_ip, u.detected_country, u.detected_country_code, u.detected_city,
+                 u.detected_region, u.detected_isp, u.detected_is_vpn, u.detected_at,
                  gp.google_email, gp.local_guide_level, gp.total_reviews_count, gp.phone, gp.city
         ORDER BY u.created_at DESC
     `);

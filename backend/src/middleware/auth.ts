@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, TokenPayload } from '../utils/token';
+import { getClientIp, geolocateIp } from '../utils/geolocation';
 
 
 
@@ -30,11 +31,36 @@ const CACHE_MAX_ENTRIES = 5000;
 
 interface StatusCacheEntry {
     status: string;
+    suspension_reason: string | null;
     expiresAt: number;
 }
 
+/**
+ * Endpoints that suspended users awaiting identity verification may still access.
+ * Matches the path relative to /api (req.baseUrl + req.path).
+ */
+const IDENTITY_VERIF_ALLOWED_PATHS = [
+    '/api/auth/me',
+    '/api/auth/logout',
+    '/api/auth/refresh-token',
+    '/api/auth/identity-verification',
+    '/api/auth/identity-verification/status',
+];
+
 const statusCache = new Map<string, StatusCacheEntry>();
 const lastSeenCache = new Map<string, number>();
+
+/**
+ * Tracks users whose detected_ip is already populated, so we don't hit the
+ * geolocation API on every single request. Once a user is in this set, we
+ * skip the check entirely.
+ */
+const geoFilledUsers = new Set<string>();
+/**
+ * Tracks users currently being geolocated (in-flight) to prevent stampedes
+ * when a dashboard fires multiple parallel requests at the same time.
+ */
+const geoInFlight = new Set<string>();
 
 const pruneIfNeeded = (map: Map<string, any>) => {
     if (map.size > CACHE_MAX_ENTRIES) {
@@ -59,6 +85,7 @@ const pruneIfNeeded = (map: Map<string, any>) => {
 export const invalidateAuthCache = (userId: string) => {
     statusCache.delete(userId);
     lastSeenCache.delete(userId);
+    geoFilledUsers.delete(userId);
     import('../services/authService')
         .then(({ invalidateUserCache }) => invalidateUserCache(userId))
         .catch(() => { /* startup race only — safe to ignore */ });
@@ -91,15 +118,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         const cached = statusCache.get(payload.userId);
 
         let userStatus: string;
+        let suspensionReason: string | null;
 
         if (cached && cached.expiresAt > now) {
             // Cache hit: skip the SELECT entirely
             userStatus = cached.status;
+            suspensionReason = cached.suspension_reason;
         } else {
             // Cache miss or expired: fetch from DB
             const { query } = await import('../config/database');
             const rows: any = await query(
-                'SELECT status FROM users WHERE id = ?',
+                'SELECT status, suspension_reason FROM users WHERE id = ?',
                 [payload.userId]
             );
 
@@ -109,8 +138,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             }
 
             userStatus = rows[0].status;
+            suspensionReason = rows[0].suspension_reason || null;
             statusCache.set(payload.userId, {
                 status: userStatus,
+                suspension_reason: suspensionReason,
                 expiresAt: now + STATUS_TTL_MS,
             });
             pruneIfNeeded(statusCache);
@@ -119,12 +150,29 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         // Enforce suspension in real-time (still respected thanks to short TTL).
         // Match authService login rules: admins pass through; non-admins must be
         // in 'active' or 'pending' state. Anything else (suspended, rejected, banned...) → 403.
+        //
+        // Exception: users suspended for identity verification may still hit a small
+        // whitelist of endpoints (to view their status and upload their ID).
         if (payload.role !== 'admin' && !['active', 'pending'].includes(userStatus)) {
-            return res.status(403).json({
-                error: 'Account is not active',
-                code: 'ACCOUNT_SUSPENDED',
-                status: userStatus,
-            });
+            const isIdentityPending =
+                userStatus === 'suspended' &&
+                suspensionReason === 'identity_verification_required';
+            const currentPath = (req.baseUrl || '') + (req.path || '');
+            const isWhitelisted = isIdentityPending && IDENTITY_VERIF_ALLOWED_PATHS.some(
+                p => currentPath === p || currentPath.startsWith(p + '/')
+            );
+
+            if (!isWhitelisted) {
+                return res.status(403).json({
+                    error: isIdentityPending
+                        ? 'Identity verification required'
+                        : 'Account is not active',
+                    code: isIdentityPending ? 'IDENTITY_VERIFICATION_REQUIRED' : 'ACCOUNT_SUSPENDED',
+                    status: userStatus,
+                    suspension_reason: suspensionReason,
+                });
+            }
+            // Whitelisted — proceed
         }
 
         // Throttled last_seen update: at most once per LAST_SEEN_THROTTLE_MS per user.
@@ -140,6 +188,57 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
                         console.error('⚠️ [Auth Middleware] Failed to update last_seen:', err.message);
                     });
             });
+        }
+
+        // Backfill geolocation for users whose detected_ip is still NULL (e.g. created
+        // before this feature shipped, or last login pre-dates the migration).
+        // Once filled, the user is cached in geoFilledUsers and we never check again
+        // for the lifetime of this server process — zero overhead on hot path.
+        if (!geoFilledUsers.has(payload.userId) && !geoInFlight.has(payload.userId)) {
+            geoInFlight.add(payload.userId);
+            const ip = getClientIp(req);
+
+            (async () => {
+                try {
+                    const { query } = await import('../config/database');
+                    const rows: any = await query(
+                        'SELECT detected_ip FROM users WHERE id = ?',
+                        [payload.userId]
+                    );
+                    if (rows && rows.length > 0 && rows[0].detected_ip) {
+                        // Already filled — cache it so we skip forever
+                        geoFilledUsers.add(payload.userId);
+                        return;
+                    }
+                    if (!ip) return;
+
+                    const geo = await geolocateIp(ip);
+                    if (!geo) return;
+
+                    await query(
+                        `UPDATE users
+                         SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
+                             detected_city = ?, detected_region = ?, detected_isp = ?,
+                             detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
+                         WHERE id = ?`,
+                        [
+                            geo.ip,
+                            geo.country,
+                            geo.country_code,
+                            geo.city,
+                            geo.region,
+                            geo.isp,
+                            geo.is_vpn ? 1 : 0,
+                            payload.userId,
+                        ]
+                    );
+                    geoFilledUsers.add(payload.userId);
+                } catch (err: any) {
+                    console.error('⚠️ [Auth Middleware] Geolocation backfill failed:', err?.message);
+                } finally {
+                    geoInFlight.delete(payload.userId);
+                }
+            })();
         }
 
         return next();
