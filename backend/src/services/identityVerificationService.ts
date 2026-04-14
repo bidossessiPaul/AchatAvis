@@ -35,7 +35,8 @@ export const getLatestForUser = async (userId: string): Promise<IdentityVerifica
  */
 export const submitVerification = async (
     userId: string,
-    buffer: Buffer
+    buffer: Buffer,
+    mimetype?: string
 ): Promise<IdentityVerification> => {
     // Verify the user is currently suspended for identity verification
     const userRows: any = await query(
@@ -48,8 +49,15 @@ export const submitVerification = async (
         throw new Error('No identity verification required for this account');
     }
 
-    // Upload document to Cloudinary (private folder)
-    const uploaded = await uploadToCloudinary(buffer, 'identity-documents');
+    // Upload document to Cloudinary.
+    // PDFs are stored as resource_type='raw' (no image transform).
+    // Images use the default flow.
+    const isPdf = mimetype === 'application/pdf';
+    const uploaded = await uploadToCloudinary(
+        buffer,
+        'identity-documents',
+        isPdf ? { resourceType: 'raw', skipTransform: true } : undefined
+    );
 
     // Replace any existing pending verification
     const existingPending: any = await query(

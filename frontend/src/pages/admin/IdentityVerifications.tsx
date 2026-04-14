@@ -20,6 +20,7 @@ interface Verification {
     full_name: string;
     avatar_url: string | null;
     role: string;
+    user_created_at: string | null;
     google_email: string | null;
     declared_city: string | null;
     detected_city: string | null;
@@ -27,6 +28,8 @@ interface Verification {
     detected_country_code: string | null;
     detected_is_vpn: number | null;
 }
+
+const isPdfUrl = (url: string) => /\.pdf($|\?)/i.test(url);
 
 const countryCodeToFlag = (code?: string | null): string => {
     if (!code || code.length !== 2) return '';
@@ -153,7 +156,7 @@ export const IdentityVerifications: React.FC = () => {
                                     }}>
                                         {/* Document thumbnail */}
                                         <div
-                                            onClick={() => setPreview(v.document_url)}
+                                            onClick={() => isPdfUrl(v.document_url) ? window.open(v.document_url, '_blank') : setPreview(v.document_url)}
                                             style={{
                                                 width: '120px',
                                                 height: '120px',
@@ -162,14 +165,24 @@ export const IdentityVerifications: React.FC = () => {
                                                 cursor: 'pointer',
                                                 border: '1px solid #e2e8f0',
                                                 position: 'relative',
-                                                background: '#f1f5f9'
+                                                background: '#f1f5f9',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
                                             }}
                                         >
-                                            <img
-                                                src={v.document_url}
-                                                alt="Pièce"
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            />
+                                            {isPdfUrl(v.document_url) ? (
+                                                <div style={{ textAlign: 'center', color: '#64748b' }}>
+                                                    <div style={{ fontSize: '2rem', fontWeight: 700, color: '#dc2626' }}>PDF</div>
+                                                    <div style={{ fontSize: '0.7rem' }}>Document</div>
+                                                </div>
+                                            ) : (
+                                                <img
+                                                    src={v.document_url}
+                                                    alt="Pièce"
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                />
+                                            )}
                                             <div style={{
                                                 position: 'absolute',
                                                 bottom: 0,
@@ -185,7 +198,7 @@ export const IdentityVerifications: React.FC = () => {
                                                 justifyContent: 'center',
                                                 gap: '4px'
                                             }}>
-                                                <Eye size={12} /> Agrandir
+                                                <Eye size={12} /> {isPdfUrl(v.document_url) ? 'Ouvrir PDF' : 'Agrandir'}
                                             </div>
                                         </div>
 
@@ -223,6 +236,12 @@ export const IdentityVerifications: React.FC = () => {
                                                                 🚨 VPN
                                                             </span>
                                                         )}
+                                                    </div>
+                                                )}
+                                                {v.user_created_at && (
+                                                    <div>
+                                                        <span style={{ color: '#64748b' }}>Inscrit le :</span>{' '}
+                                                        <strong>{new Date(v.user_created_at).toLocaleString('fr-FR')}</strong>
                                                     </div>
                                                 )}
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
