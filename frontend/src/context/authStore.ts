@@ -22,6 +22,7 @@ const isSameUser = (a: User | null, b: User | null): boolean => {
         'email',
         'role',
         'status',
+        'suspension_reason',
         'full_name',
         'avatar_url',
         'email_verified',

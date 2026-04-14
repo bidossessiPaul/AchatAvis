@@ -121,10 +121,11 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
     try {
         await connection.beginTransaction();
 
-        // Create user
+        // Create user — new guides must upload an ID before their account is activated.
+        // They can log in immediately but will be redirected to /identity-verification.
         await connection.execute(
-            `INSERT INTO users (id, email, full_name, password_hash, role, status)
-             VALUES (?, ?, ?, ?, 'guide', 'active')`,
+            `INSERT INTO users (id, email, full_name, password_hash, role, status, suspension_reason)
+             VALUES (?, ?, ?, ?, 'guide', 'suspended', 'identity_verification_required')`,
             [userId, data.email, data.fullName, hashedPassword]
         );
 
@@ -263,9 +264,18 @@ export const login = async (email: string, password: string) => {
         throw new Error('Invalid email or password');
     }
 
-    // Block login for suspended accounts with clear reason
+    // Block login for suspended accounts with clear reason.
+    // Exception: if suspended for identity verification, let them in so they can
+    // upload their ID; the auth middleware then restricts them to verification endpoints.
     if (user.status === 'suspended') {
-        throw new Error('Votre compte a été suspendu. Si vous pensez qu\'il s\'agit d\'une erreur, contactez le support AchatAvis.');
+        const reasonRows: any = await query(
+            `SELECT suspension_reason FROM users WHERE id = ?`,
+            [user.id]
+        );
+        const reason = reasonRows?.[0]?.suspension_reason;
+        if (reason !== 'identity_verification_required') {
+            throw new Error('Votre compte a été suspendu. Si vous pensez qu\'il s\'agit d\'une erreur, contactez le support AchatAvis.');
+        }
     }
 
     // Check if account is locked
@@ -503,7 +513,7 @@ export const invalidateUserCache = (userId: string) => {
  */
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
-        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.suspension_reason, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,

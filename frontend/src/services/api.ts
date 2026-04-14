@@ -308,6 +308,21 @@ export const authApi = {
         const response = await api.get('/auth/detect-region');
         return response.data;
     },
+
+    // Identity verification (for suspended users awaiting identity check)
+    getIdentityVerificationStatus: async (): Promise<{ verification: any }> => {
+        const response = await api.get('/auth/identity-verification/status');
+        return response.data;
+    },
+
+    submitIdentityVerification: async (file: File): Promise<{ message: string; verification: any }> => {
+        const formData = new FormData();
+        formData.append('document', file);
+        const response = await api.post('/auth/identity-verification', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    },
 };
 
 // Payout API
@@ -535,6 +550,22 @@ export const adminApi = {
 
     recycleRejectedSubmissions: async (ids: string[]): Promise<{ success: number; failed: number; errors: { id: string; error: string }[] }> => {
         const response = await api.post('/admin/submissions/recycle', { ids });
+        return response.data;
+    },
+
+    // Identity verifications review
+    getIdentityVerifications: async (status?: 'pending' | 'approved' | 'rejected'): Promise<any[]> => {
+        const response = await api.get('/admin/identity-verifications', { params: status ? { status } : {} });
+        return response.data;
+    },
+
+    approveIdentityVerification: async (id: string): Promise<{ message: string }> => {
+        const response = await api.post(`/admin/identity-verifications/${id}/approve`);
+        return response.data;
+    },
+
+    rejectIdentityVerification: async (id: string, reason: string): Promise<{ message: string }> => {
+        const response = await api.post(`/admin/identity-verifications/${id}/reject`, { reason });
         return response.data;
     },
 };

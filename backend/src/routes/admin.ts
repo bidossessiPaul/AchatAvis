@@ -1,5 +1,6 @@
 import express from 'express';
 import * as adminController from '../controllers/adminController';
+import * as identityVerif from '../controllers/identityVerificationController';
 import { authenticate, authorize } from '../middleware/auth';
 
 import { LogService } from '../services/logService';
@@ -105,5 +106,10 @@ router.get('/sectors', adminController.getAllSectors);
 router.post('/sectors', adminController.createSector);
 router.put('/sectors/:slug', adminController.updateSector);
 router.delete('/sectors/:slug', adminController.deleteSector);
+
+// Identity verifications review
+router.get('/identity-verifications', identityVerif.adminList);
+router.post('/identity-verifications/:id/approve', identityVerif.adminApprove);
+router.post('/identity-verifications/:id/reject', identityVerif.adminReject);
 
 export default router;
