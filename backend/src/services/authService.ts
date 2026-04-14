@@ -121,10 +121,11 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
     try {
         await connection.beginTransaction();
 
-        // Create user
+        // Create user — new guides must upload an ID before their account is activated.
+        // They can log in immediately but will be redirected to /identity-verification.
         await connection.execute(
-            `INSERT INTO users (id, email, full_name, password_hash, role, status)
-             VALUES (?, ?, ?, ?, 'guide', 'active')`,
+            `INSERT INTO users (id, email, full_name, password_hash, role, status, suspension_reason)
+             VALUES (?, ?, ?, ?, 'guide', 'suspended', 'identity_verification_required')`,
             [userId, data.email, data.fullName, hashedPassword]
         );
 
