@@ -66,6 +66,7 @@ const IdentityVerifications = lazyNamed(() => import('./pages/admin/IdentityVeri
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
+const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
 
 const Profile = lazyNamed(() => import('./pages/Profile'), 'Profile');
 const NotFound = lazyNamed(() => import('./pages/NotFound'), 'NotFound');
@@ -543,6 +544,14 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <AdminLogs />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/communiques"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <CommuniquesAdmin />
                                 </ProtectedRoute>
                             }
                         />

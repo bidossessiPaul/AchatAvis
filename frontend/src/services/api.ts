@@ -568,6 +568,40 @@ export const adminApi = {
         const response = await api.post(`/admin/identity-verifications/${id}/reject`, { reason });
         return response.data;
     },
+
+    // Communiques (admin CRUD)
+    listCommuniques: async (): Promise<any[]> => {
+        const response = await api.get('/admin/communiques');
+        return response.data;
+    },
+
+    createCommunique: async (data: any): Promise<any> => {
+        const response = await api.post('/admin/communiques', data);
+        return response.data;
+    },
+
+    updateCommunique: async (id: string, data: any): Promise<any> => {
+        const response = await api.put(`/admin/communiques/${id}`, data);
+        return response.data;
+    },
+
+    deleteCommunique: async (id: string): Promise<{ message: string }> => {
+        const response = await api.delete(`/admin/communiques/${id}`);
+        return response.data;
+    },
+
+    notifyCommunique: async (id: string): Promise<{ message: string }> => {
+        const response = await api.post(`/admin/communiques/${id}/notify`);
+        return response.data;
+    },
+};
+
+// Communiques API (for guides — published only)
+export const communiquesApi = {
+    listPublished: async (): Promise<any[]> => {
+        const response = await api.get('/communiques');
+        return response.data;
+    },
 };
 
 // Suspension API
