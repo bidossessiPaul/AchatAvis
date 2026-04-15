@@ -1,6 +1,7 @@
 import express from 'express';
 import * as adminController from '../controllers/adminController';
 import * as identityVerif from '../controllers/identityVerificationController';
+import * as communique from '../controllers/communiqueController';
 import { authenticate, authorize } from '../middleware/auth';
 
 import { LogService } from '../services/logService';
@@ -111,5 +112,12 @@ router.delete('/sectors/:slug', adminController.deleteSector);
 router.get('/identity-verifications', identityVerif.adminList);
 router.post('/identity-verifications/:id/approve', identityVerif.adminApprove);
 router.post('/identity-verifications/:id/reject', identityVerif.adminReject);
+
+// Communiques (admin CRUD)
+router.get('/communiques', communique.adminList);
+router.post('/communiques', communique.adminCreate);
+router.put('/communiques/:id', communique.adminUpdate);
+router.delete('/communiques/:id', communique.adminDelete);
+router.post('/communiques/:id/notify', communique.adminResendNotification);
 
 export default router;

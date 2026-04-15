@@ -16,6 +16,7 @@ import antiDetectionRoutes from './routes/antiDetectionRoutes';
 import establishmentRoutes from './routes/establishment';
 import notificationRoutes from './routes/notifications';
 import trustScoreRoutes from './routes/trustScore';
+import communiquesRoutes from './routes/communiques';
 import { sanitizeInputs } from './middleware/sanitize';
 // Refreshing routes...
 
@@ -105,6 +106,7 @@ app.use('/api/anti-detection', antiDetectionRoutes);
 app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
+app.use('/api/communiques', communiquesRoutes);
 
 // SPA fallback disabled — frontend is deployed separately
 app.get('*', (req: Request, res: Response) => {
