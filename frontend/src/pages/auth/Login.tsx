@@ -20,9 +20,11 @@ export const Login: React.FC = () => {
     const [formError, setFormError] = useState('');
 
     React.useEffect(() => {
+        // Only geo/country restrictions should redirect to the dedicated /suspended page.
+        // A regular admin-driven suspension is shown inline on the login form.
         const isGeoBlocked =
-            errorCode === 'ACCOUNT_SUSPENDED' ||
             errorCode === 'COUNTRY_SUSPENDED' ||
+            (!!detectedCountry && errorCode === 'ACCOUNT_SUSPENDED') ||
             (error && (error.toLowerCase().includes('pays') || error.toLowerCase().includes('géographique')));
 
         if (isGeoBlocked) {
@@ -125,7 +127,7 @@ export const Login: React.FC = () => {
                             </div>
 
                             <form onSubmit={handleLoginSubmit} className="auth-form">
-                                {(error || formError) && errorCode !== 'ACCOUNT_SUSPENDED' && errorCode !== 'COUNTRY_SUSPENDED' && (
+                                {(error || formError) && errorCode !== 'COUNTRY_SUSPENDED' && !(errorCode === 'ACCOUNT_SUSPENDED' && !!detectedCountry) && (
                                     <div className="auth-error">
                                         {formError || error}
                                     </div>
