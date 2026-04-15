@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
-import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
@@ -68,6 +68,34 @@ export const IdentityVerifications: React.FC = () => {
             load();
         } catch (e: any) {
             showError('Erreur', e?.response?.data?.error || 'Validation impossible');
+        }
+    };
+
+    const handleRelaunch = async (v: Verification) => {
+        const reasonSnippet = v.rejection_reason
+            ? `<p style="margin:0.5rem 0;padding:0.5rem 0.75rem;background:#fef2f2;border-radius:6px;font-size:0.85rem;color:#7f1d1d;"><strong>Raison initiale du refus :</strong> ${v.rejection_reason.replace(/</g, '&lt;')}</p>`
+            : '';
+        const Swal = (await import('sweetalert2')).default;
+        const { isConfirmed } = await Swal.fire({
+            title: 'Relancer la validation ?',
+            html: `<div style="text-align:left;font-size:0.9rem">
+                    <p>Le compte de <strong>${v.full_name || v.email}</strong> sera remis en attente de vérification.</p>
+                    <p>Le guide pourra se reconnecter et <strong>soumettre un nouveau document</strong>. La raison du précédent refus restera visible pour qu'il comprenne ce qu'il doit corriger.</p>
+                    ${reasonSnippet}
+                </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, relancer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#0369a1',
+        });
+        if (!isConfirmed) return;
+        try {
+            await adminApi.relaunchIdentityVerification(v.id);
+            showSuccess('Relancé', 'Le guide peut maintenant soumettre un nouveau document');
+            load();
+        } catch (e: any) {
+            showError('Erreur', e?.response?.data?.error || 'Action impossible');
         }
     };
 
@@ -326,17 +354,40 @@ export const IdentityVerifications: React.FC = () => {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'stretch' }}>
                                                 <span style={{
                                                     padding: '0.4rem 0.8rem',
                                                     borderRadius: '8px',
                                                     fontSize: '0.8rem',
                                                     fontWeight: 600,
                                                     background: v.status === 'approved' ? '#d1fae5' : '#fee2e2',
-                                                    color: v.status === 'approved' ? '#065f46' : '#991b1b'
+                                                    color: v.status === 'approved' ? '#065f46' : '#991b1b',
+                                                    textAlign: 'center'
                                                 }}>
                                                     {v.status === 'approved' ? '✓ Validé' : '✗ Refusé'}
                                                 </span>
+                                                {v.status === 'rejected' && (
+                                                    <button
+                                                        onClick={() => handleRelaunch(v)}
+                                                        title="Relancer la validation — le guide pourra soumettre un nouveau document"
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: '6px',
+                                                            padding: '0.5rem 0.9rem',
+                                                            background: '#0369a1',
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '8px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 600
+                                                        }}
+                                                    >
+                                                        <RotateCw size={14} /> Relancer
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>

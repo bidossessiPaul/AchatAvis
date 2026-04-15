@@ -138,6 +138,35 @@ export const approveVerification = async (verificationId: string, adminId: strin
 };
 
 /**
+ * Admin: re-open a previously rejected verification so the guide can submit
+ * a new document. Keeps the old rejected record as history (its
+ * rejection_reason stays visible to the guide on the upload page).
+ */
+export const relaunchVerification = async (verificationId: string) => {
+    const rows: any = await query(
+        `SELECT * FROM identity_verifications WHERE id = ?`,
+        [verificationId]
+    );
+    const verif = rows[0];
+    if (!verif) throw new Error('Verification not found');
+    if (verif.status !== 'rejected') {
+        throw new Error('Seules les vérifications refusées peuvent être relancées');
+    }
+
+    // Reset user to identity-verification-required so they can log in and re-upload
+    await query(
+        `UPDATE users
+         SET status = 'suspended', suspension_reason = 'identity_verification_required'
+         WHERE id = ?`,
+        [verif.user_id]
+    );
+
+    invalidateAuthCache(verif.user_id);
+
+    return { user_id: verif.user_id };
+};
+
+/**
  * Admin: reject a verification — permanently blocks the user.
  */
 export const rejectVerification = async (
