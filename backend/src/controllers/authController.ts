@@ -171,6 +171,12 @@ export const login = async (req: Request, res: Response) => {
             return res.status(401).json({ error: error.message });
         }
 
+        // Account suspended / blocked by admin — surface the exact business
+        // message to the user (403 Forbidden is more accurate than 500).
+        if (error.message && (error.message.includes('compte a été suspendu') || error.message.includes('suspendu'))) {
+            return res.status(403).json({ error: error.message, code: 'ACCOUNT_SUSPENDED' });
+        }
+
         console.error('Login error:', error);
         return res.status(500).json({
             error: 'Internal server error',
