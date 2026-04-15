@@ -41,6 +41,7 @@ const AntiDetectionRulesPage = lazyNamed(() => import('./pages/guide/AntiDetecti
 const QuizCertificationPage = lazyNamed(() => import('./pages/guide/QuizCertificationPage'), 'QuizCertificationPage');
 const Corrections = lazyNamed(() => import('./pages/guide/Corrections'), 'Corrections');
 const CommunityRulesPage = lazyNamed(() => import('./pages/guide/CommunityRulesPage'), 'CommunityRulesPage');
+const CommuniquesPage = lazyNamed(() => import('./pages/guide/CommuniquesPage'), 'CommuniquesPage');
 const MyGmailsPage = lazyNamed(() => import('./pages/guide/MyGmailsPage'), 'MyGmailsPage');
 
 const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard');
@@ -347,6 +348,14 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
                                     <CommunityRulesPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/guide/communiques"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <CommuniquesPage />
                                 </ProtectedRoute>
                             }
                         />

@@ -22,7 +22,8 @@ import {
     Trophy,
     Wallet,
     XCircle,
-    Activity
+    Activity,
+    Megaphone
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/url';
 import './Layout.css';
@@ -71,6 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mes Gmails', path: '/guide/my-gmails', icon: <Mail size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
+                    { label: 'Communiqués', path: '/guide/communiques', icon: <Megaphone size={20} /> },
                     { label: 'Règlement', path: '/guide/community-rules', icon: <BookOpen size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
                 ];
