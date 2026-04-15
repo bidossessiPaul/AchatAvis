@@ -64,6 +64,19 @@ export const adminApprove = async (req: Request, res: Response) => {
 };
 
 /**
+ * Admin endpoint — relaunch a rejected verification (give the guide another chance)
+ * POST /api/admin/identity-verifications/:id/relaunch
+ */
+export const adminRelaunch = async (req: Request, res: Response) => {
+    try {
+        const result = await service.relaunchVerification(req.params.id);
+        return res.json({ message: 'Validation relancée. Le guide peut se reconnecter et soumettre un nouveau document.', ...result });
+    } catch (err: any) {
+        return res.status(400).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+/**
  * Admin endpoint — reject a verification (permanent block)
  * POST /api/admin/identity-verifications/:id/reject
  */

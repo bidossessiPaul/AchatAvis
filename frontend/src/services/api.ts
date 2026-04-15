@@ -569,6 +569,11 @@ export const adminApi = {
         return response.data;
     },
 
+    relaunchIdentityVerification: async (id: string): Promise<{ message: string }> => {
+        const response = await api.post(`/admin/identity-verifications/${id}/relaunch`);
+        return response.data;
+    },
+
     // Communiques (admin CRUD)
     listCommuniques: async (): Promise<any[]> => {
         const response = await api.get('/admin/communiques');

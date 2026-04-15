@@ -112,6 +112,7 @@ router.delete('/sectors/:slug', adminController.deleteSector);
 router.get('/identity-verifications', identityVerif.adminList);
 router.post('/identity-verifications/:id/approve', identityVerif.adminApprove);
 router.post('/identity-verifications/:id/reject', identityVerif.adminReject);
+router.post('/identity-verifications/:id/relaunch', identityVerif.adminRelaunch);
 
 // Communiques (admin CRUD)
 router.get('/communiques', communique.adminList);
