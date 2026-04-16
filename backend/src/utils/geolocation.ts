@@ -5,6 +5,7 @@
  */
 import axios from 'axios';
 import { Request } from 'express';
+import { query } from '../config/database';
 
 export interface GeoLocation {
     ip: string;
@@ -103,3 +104,28 @@ export const geolocateIp = async (ip: string): Promise<GeoLocation | null> => {
 
     return null;
 };
+
+/**
+ * Persist geolocation result to the users table. Used by login, 2FA, and
+ * the auth-middleware backfill — single source of truth for the UPDATE.
+ */
+export const saveGeoToUser = async (userId: string, geo: GeoLocation): Promise<void> => {
+    await query(
+        `UPDATE users
+         SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
+             detected_city = ?, detected_region = ?, detected_isp = ?,
+             detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+        [
+            geo.ip, geo.country, geo.country_code,
+            geo.city, geo.region, geo.isp,
+            geo.is_vpn ? 1 : 0, userId,
+        ]
+    );
+};
+
+/** Centralised suspension reason constants. */
+export const SUSPENSION_REASON = {
+    IDENTITY_VERIFICATION: 'identity_verification_required',
+    IDENTITY_REJECTED: 'identity_rejected',
+} as const;

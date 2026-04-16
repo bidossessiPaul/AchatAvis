@@ -31,10 +31,7 @@ interface Verification {
 
 const isPdfUrl = (url: string) => /\.pdf($|\?)/i.test(url);
 
-const countryCodeToFlag = (code?: string | null): string => {
-    if (!code || code.length !== 2) return '';
-    return code.toUpperCase().split('').map(c => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
-};
+import { countryCodeToFlag } from '../../utils/countryFlag';
 
 export const IdentityVerifications: React.FC = () => {
     const [items, setItems] = useState<Verification[]>([]);
@@ -123,9 +120,7 @@ export const IdentityVerifications: React.FC = () => {
         }
     };
 
-    const counts = {
-        pending: items.filter(i => i.status === 'pending').length,
-    };
+
 
     return (
         <DashboardLayout title="Vérifications d'identité">
@@ -421,9 +416,6 @@ export const IdentityVerifications: React.FC = () => {
                     />
                 </div>
             )}
-
-            {/* Suppress unused warning */}
-            {counts.pending < 0 && null}
         </DashboardLayout>
     );
 };

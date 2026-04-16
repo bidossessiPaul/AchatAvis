@@ -42,15 +42,7 @@ interface Guide {
     detected_at?: string | null;
 }
 
-// Convert country code (ISO 3166-1 alpha-2) to emoji flag
-const countryCodeToFlag = (code?: string | null): string => {
-    if (!code || code.length !== 2) return '';
-    return code
-        .toUpperCase()
-        .split('')
-        .map(c => String.fromCodePoint(127397 + c.charCodeAt(0)))
-        .join('');
-};
+import { countryCodeToFlag } from '../../utils/countryFlag';
 
 export const GuidesList: React.FC = () => {
     const [guides, setGuides] = useState<Guide[]>([]);

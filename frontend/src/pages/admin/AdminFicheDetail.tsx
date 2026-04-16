@@ -41,6 +41,8 @@ interface FicheDetailData {
     pack_features?: string;
     fiches_quota?: number;
     pack_fiches_used?: number;
+    reviews_per_day?: number;
+    payout_per_review?: number;
 }
 
 export const AdminFicheDetail: React.FC = () => {
@@ -279,6 +281,17 @@ export const AdminFicheDetail: React.FC = () => {
                                     />
                                     <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: '13px' }}>€</span>
                                 </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Avis par jour (quota)</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="50"
+                                    className="admin-input"
+                                    value={formData.reviews_per_day ?? 3}
+                                    onChange={(e) => setFormData({ ...formData, reviews_per_day: parseInt(e.target.value) || 1 })}
+                                />
                             </div>
                             <div className="form-group admin-col-span-2">
                                 <label>Statut</label>

@@ -1,7 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database';
-import { transporter } from '../config/email';
-import { emailConfig } from '../config/email';
+import { transporter, emailConfig } from '../config/email';
 
 export interface Communique {
     id: string;

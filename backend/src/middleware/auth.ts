@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, TokenPayload } from '../utils/token';
-import { getClientIp, geolocateIp } from '../utils/geolocation';
+import { getClientIp, geolocateIp, saveGeoToUser } from '../utils/geolocation';
 
 
 
@@ -128,7 +128,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             // Cache miss or expired: fetch from DB
             const { query } = await import('../config/database');
             const rows: any = await query(
-                'SELECT status, suspension_reason FROM users WHERE id = ?',
+                'SELECT status, suspension_reason, detected_ip FROM users WHERE id = ?',
                 [payload.userId]
             );
 
@@ -139,6 +139,10 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
             userStatus = rows[0].status;
             suspensionReason = rows[0].suspension_reason || null;
+            // Cache geo-filled status from the same query (no extra SELECT later)
+            if (rows[0].detected_ip) {
+                geoFilledUsers.add(payload.userId);
+            }
             statusCache.set(payload.userId, {
                 status: userStatus,
                 suspension_reason: suspensionReason,
@@ -190,55 +194,25 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             });
         }
 
-        // Backfill geolocation for users whose detected_ip is still NULL (e.g. created
-        // before this feature shipped, or last login pre-dates the migration).
-        // Once filled, the user is cached in geoFilledUsers and we never check again
-        // for the lifetime of this server process — zero overhead on hot path.
+        // Backfill geolocation for users whose detected_ip is still NULL.
+        // The status SELECT above already caches geo-filled users (no extra query).
+        // Here we only trigger the async geolocate + save for users not yet filled.
         if (!geoFilledUsers.has(payload.userId) && !geoInFlight.has(payload.userId)) {
             geoInFlight.add(payload.userId);
             const ip = getClientIp(req);
 
-            (async () => {
-                try {
-                    const { query } = await import('../config/database');
-                    const rows: any = await query(
-                        'SELECT detected_ip FROM users WHERE id = ?',
-                        [payload.userId]
-                    );
-                    if (rows && rows.length > 0 && rows[0].detected_ip) {
-                        // Already filled — cache it so we skip forever
-                        geoFilledUsers.add(payload.userId);
-                        return;
-                    }
-                    if (!ip) return;
-
-                    const geo = await geolocateIp(ip);
-                    if (!geo) return;
-
-                    await query(
-                        `UPDATE users
-                         SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
-                             detected_city = ?, detected_region = ?, detected_isp = ?,
-                             detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
-                         WHERE id = ?`,
-                        [
-                            geo.ip,
-                            geo.country,
-                            geo.country_code,
-                            geo.city,
-                            geo.region,
-                            geo.isp,
-                            geo.is_vpn ? 1 : 0,
-                            payload.userId,
-                        ]
-                    );
-                    geoFilledUsers.add(payload.userId);
-                } catch (err: any) {
-                    console.error('⚠️ [Auth Middleware] Geolocation backfill failed:', err?.message);
-                } finally {
-                    geoInFlight.delete(payload.userId);
-                }
-            })();
+            if (ip) {
+                geolocateIp(ip)
+                    .then(geo => {
+                        if (!geo) return;
+                        return saveGeoToUser(payload.userId, geo);
+                    })
+                    .then(() => geoFilledUsers.add(payload.userId))
+                    .catch(err => console.error('⚠️ [Auth] Geo backfill failed:', err?.message))
+                    .finally(() => geoInFlight.delete(payload.userId));
+            } else {
+                geoInFlight.delete(payload.userId);
+            }
         }
 
         return next();
