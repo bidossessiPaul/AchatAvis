@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/authService';
-import { getClientIp, geolocateIp } from '../utils/geolocation';
-import { query } from '../config/database';
+import { getClientIp, geolocateIp, saveGeoToUser } from '../utils/geolocation';
 import {
     artisanRegistrationSchema,
     guideRegistrationSchema,
@@ -13,6 +12,15 @@ import {
 } from '../middleware/validator';
 import { ZodError } from 'zod';
 
+/** Fire-and-forget geolocation: resolve IP → save to DB. Never throws. */
+const fireAndForgetGeo = (userId: string | undefined, req: Request) => {
+    if (!userId) return;
+    const ip = getClientIp(req);
+    if (!ip) return;
+    geolocateIp(ip)
+        .then(geo => geo && saveGeoToUser(userId, geo))
+        .catch(() => { /* silent */ });
+};
 
 
 
@@ -121,36 +129,7 @@ export const login = async (req: Request, res: Response) => {
         });
 
         // Geolocate user (fire-and-forget, never blocks login)
-        const userId = result.user?.id;
-        if (userId) {
-            const ip = getClientIp(req);
-            if (ip) {
-                geolocateIp(ip).then(async (geo) => {
-                    if (!geo) return;
-                    try {
-                        await query(
-                            `UPDATE users
-                             SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
-                                 detected_city = ?, detected_region = ?, detected_isp = ?,
-                                 detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
-                             WHERE id = ?`,
-                            [
-                                geo.ip,
-                                geo.country,
-                                geo.country_code,
-                                geo.city,
-                                geo.region,
-                                geo.isp,
-                                geo.is_vpn ? 1 : 0,
-                                userId,
-                            ]
-                        );
-                    } catch (err) {
-                        console.error('Failed to store geolocation:', err);
-                    }
-                }).catch(() => { /* silent */ });
-            }
-        }
+        fireAndForgetGeo(result.user?.id, req);
 
         return res.json({
             message: 'Login successful',
@@ -261,36 +240,7 @@ export const verify2FA = async (req: Request, res: Response) => {
         });
 
         // Geolocate user (fire-and-forget)
-        const userId2 = result.user?.id;
-        if (userId2) {
-            const ip = getClientIp(req);
-            if (ip) {
-                geolocateIp(ip).then(async (geo) => {
-                    if (!geo) return;
-                    try {
-                        await query(
-                            `UPDATE users
-                             SET detected_ip = ?, detected_country = ?, detected_country_code = ?,
-                                 detected_city = ?, detected_region = ?, detected_isp = ?,
-                                 detected_is_vpn = ?, detected_at = CURRENT_TIMESTAMP
-                             WHERE id = ?`,
-                            [
-                                geo.ip,
-                                geo.country,
-                                geo.country_code,
-                                geo.city,
-                                geo.region,
-                                geo.isp,
-                                geo.is_vpn ? 1 : 0,
-                                userId2,
-                            ]
-                        );
-                    } catch (err) {
-                        console.error('Failed to store geolocation:', err);
-                    }
-                }).catch(() => { /* silent */ });
-            }
-        }
+        fireAndForgetGeo(result.user?.id, req);
 
         return res.json({
             message: 'Vérification 2FA réussie',

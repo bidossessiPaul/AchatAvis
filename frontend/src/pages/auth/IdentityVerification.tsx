@@ -41,6 +41,7 @@ export const IdentityVerification: React.FC = () => {
             showError('Format non supporté', 'Utilisez JPG, PNG, WEBP ou PDF');
             return;
         }
+        if (preview) URL.revokeObjectURL(preview);
         setFile(selected);
         setPreview(URL.createObjectURL(selected));
     };
@@ -234,7 +235,7 @@ export const IdentityVerification: React.FC = () => {
                             }}>
                                 <input
                                     type="file"
-                                    accept="image/jpeg,image/png,image/webp"
+                                    accept="image/jpeg,image/png,image/webp,application/pdf"
                                     onChange={handleFileChange}
                                     style={{ display: 'none' }}
                                 />

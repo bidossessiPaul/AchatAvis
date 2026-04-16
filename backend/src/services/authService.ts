@@ -238,7 +238,7 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
 export const login = async (email: string, password: string) => {
     // Get user with password hash
     const rows: any = await query(
-        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.email_verified,
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.suspension_reason, u.email_verified,
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
@@ -268,12 +268,7 @@ export const login = async (email: string, password: string) => {
     // Exception: if suspended for identity verification, let them in so they can
     // upload their ID; the auth middleware then restricts them to verification endpoints.
     if (user.status === 'suspended') {
-        const reasonRows: any = await query(
-            `SELECT suspension_reason FROM users WHERE id = ?`,
-            [user.id]
-        );
-        const reason = reasonRows?.[0]?.suspension_reason;
-        if (reason !== 'identity_verification_required') {
+        if ((user as any).suspension_reason !== 'identity_verification_required') {
             throw new Error('Votre compte a été suspendu. Si vous pensez qu\'il s\'agit d\'une erreur, contactez le support AchatAvis.');
         }
     }
