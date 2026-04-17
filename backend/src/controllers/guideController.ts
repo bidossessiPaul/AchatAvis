@@ -1,5 +1,23 @@
 import { Request, Response } from 'express';
 import { guideService } from '../services/guideService';
+import { query } from '../config/database';
+import { invalidateAuthCache } from '../middleware/auth';
+import { SUSPENSION_REASON } from '../utils/geolocation';
+
+/**
+ * Anti-scraping: per-user sliding window for fiche views.
+ * Tracks timestamps of recent views to enforce max 10 views/hour.
+ */
+const ficheViewTimestamps = new Map<string, number[]>();
+const FICHE_RATE_LIMIT = 10;
+const FICHE_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+/**
+ * Auto-suspension threshold:
+ * If a guide has viewed 5+ fiches AND has 0 submissions ever → auto-suspend.
+ * Only applies to guides who never submitted (scraper pattern).
+ */
+const SCRAPER_VIEW_THRESHOLD = 5;
 
 export const guideController = {
     async getAvailablefiches(req: Request, res: Response) {
@@ -21,6 +39,57 @@ export const guideController = {
         try {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const userId = user.userId;
+
+            // --- Anti-scraping: rate limit (10 fiches/heure) ---
+            const now = Date.now();
+            const timestamps = ficheViewTimestamps.get(userId) || [];
+            const recent = timestamps.filter(t => now - t < FICHE_RATE_WINDOW_MS);
+            if (recent.length >= FICHE_RATE_LIMIT) {
+                return res.status(429).json({
+                    error: 'Vous consultez trop de fiches. Postez un avis avant de continuer.',
+                    message: 'RATE_LIMITED'
+                });
+            }
+            recent.push(now);
+            ficheViewTimestamps.set(userId, recent);
+
+            // --- Anti-scraping: increment fiches_viewed + auto-suspend ---
+            // Fire-and-forget: increment counter and check if scraper pattern
+            (async () => {
+                try {
+                    await query(
+                        'UPDATE users SET fiches_viewed = COALESCE(fiches_viewed, 0) + 1 WHERE id = ?',
+                        [userId]
+                    );
+
+                    // Check scraper pattern: 5+ views, 0 submissions, still active
+                    const rows: any = await query(`
+                        SELECT u.fiches_viewed, u.status,
+                               (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id) as total_submissions
+                        FROM users u WHERE u.id = ?
+                    `, [userId]);
+
+                    const userData = rows?.[0];
+                    if (
+                        userData &&
+                        userData.status === 'active' &&
+                        userData.fiches_viewed >= SCRAPER_VIEW_THRESHOLD &&
+                        userData.total_submissions === 0
+                    ) {
+                        // Auto-suspend: scraper pattern detected
+                        await query(
+                            `UPDATE users SET status = 'suspended', suspension_reason = ? WHERE id = ?`,
+                            [SUSPENSION_REASON.IDENTITY_VERIFICATION, userId]
+                        );
+                        invalidateAuthCache(userId);
+                        console.log(`🚨 [Anti-scraping] Auto-suspended guide ${userId} — ${userData.fiches_viewed} fiches viewed, 0 submissions`);
+                    }
+                } catch (err: any) {
+                    console.error('Anti-scraping check failed:', err?.message);
+                }
+            })();
 
             const { id } = req.params;
             const fiche = await guideService.getficheDetails(id, user.userId);
