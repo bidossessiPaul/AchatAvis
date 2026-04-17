@@ -248,7 +248,7 @@ WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
                 return res.status(400).json({ success: false, error: 'Données manquantes' });
             }
 
-            // ✅ Check global email uniqueness (across all active users)
+            // ✅ Check global email uniqueness (across all active users, excluding own soft-deleted)
             const existingEmail: any = await query(
                 'SELECT user_id FROM guide_gmail_accounts WHERE email = ? AND user_id != ? AND deleted_at IS NULL',
                 [email, user_id]
@@ -274,6 +274,12 @@ WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
                 }
             }
 
+            // Check if this email was previously soft-deleted by this same user → reactivate it
+            const softDeleted: any = await query(
+                'SELECT id FROM guide_gmail_accounts WHERE email = ? AND user_id = ? AND deleted_at IS NOT NULL',
+                [email, user_id]
+            );
+
             // Utiliser le vrai moteur de calcul pour la sauvegarde finale
             const { TrustScoreEngine } = require('../services/trustScoreEngine');
             const result = await TrustScoreEngine.calculateTrustScore(
@@ -284,29 +290,62 @@ WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
 
             const maxReviewsPerMonth = result.maxReviewsPerMonth;
 
-            await query(`
-                INSERT INTO guide_gmail_accounts
-                (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date, monthly_quota_limit)
-                VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), ?)
-                ON DUPLICATE KEY UPDATE
-                maps_profile_url = VALUES(maps_profile_url),
-                local_guide_level = VALUES(local_guide_level),
-                total_reviews_google = VALUES(total_reviews_google),
-                trust_score_value = VALUES(trust_score_value),
-                trust_level = VALUES(trust_level),
-                avatar_url = VALUES(avatar_url),
-                has_profile_picture = VALUES(has_profile_picture),
-                monthly_quota_limit = VALUES(monthly_quota_limit),
-                is_verified = TRUE,
-                verification_date = NOW()
-            `, [
-                user_id, email, maps_profile_url, result.details.mapsProfile?.data?.localGuideLevel || 1,
-                result.details.mapsProfile?.data?.totalReviews || 0,
-                result.finalScore, result.trustLevel,
-                result.details.mapsProfile?.data?.avatarUrl || avatar_url || null,
-                result.details.mapsProfile?.data?.avatarUrl ? true : false,
-                maxReviewsPerMonth
-            ]);
+            if (softDeleted && softDeleted.length > 0) {
+                // Reactivate: reset deleted state, update profile data.
+                // Keep verified level verifications intact (anti-abuse: the guide
+                // cannot re-request a level bonus they already received).
+                await query(`
+                    UPDATE guide_gmail_accounts
+                    SET deleted_at = NULL,
+                        deleted_by_user_id = NULL,
+                        is_active = 1,
+                        is_verified = TRUE,
+                        verification_date = NOW(),
+                        maps_profile_url = ?,
+                        local_guide_level = ?,
+                        total_reviews_google = ?,
+                        trust_score_value = ?,
+                        trust_level = ?,
+                        avatar_url = ?,
+                        has_profile_picture = ?,
+                        monthly_quota_limit = ?
+                    WHERE id = ?
+                `, [
+                    maps_profile_url,
+                    result.details.mapsProfile?.data?.localGuideLevel || 1,
+                    result.details.mapsProfile?.data?.totalReviews || 0,
+                    result.finalScore, result.trustLevel,
+                    result.details.mapsProfile?.data?.avatarUrl || avatar_url || null,
+                    result.details.mapsProfile?.data?.avatarUrl ? true : false,
+                    maxReviewsPerMonth,
+                    softDeleted[0].id
+                ]);
+            } else {
+                // Fresh insert
+                await query(`
+                    INSERT INTO guide_gmail_accounts
+                    (user_id, email, maps_profile_url, local_guide_level, total_reviews_google, trust_score_value, trust_level, avatar_url, has_profile_picture, is_verified, verification_date, monthly_quota_limit)
+                    VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, NOW(), ?)
+                    ON DUPLICATE KEY UPDATE
+                    maps_profile_url = VALUES(maps_profile_url),
+                    local_guide_level = VALUES(local_guide_level),
+                    total_reviews_google = VALUES(total_reviews_google),
+                    trust_score_value = VALUES(trust_score_value),
+                    trust_level = VALUES(trust_level),
+                    avatar_url = VALUES(avatar_url),
+                    has_profile_picture = VALUES(has_profile_picture),
+                    monthly_quota_limit = VALUES(monthly_quota_limit),
+                    is_verified = TRUE,
+                    verification_date = NOW()
+                `, [
+                    user_id, email, maps_profile_url, result.details.mapsProfile?.data?.localGuideLevel || 1,
+                    result.details.mapsProfile?.data?.totalReviews || 0,
+                    result.finalScore, result.trustLevel,
+                    result.details.mapsProfile?.data?.avatarUrl || avatar_url || null,
+                    result.details.mapsProfile?.data?.avatarUrl ? true : false,
+                    maxReviewsPerMonth
+                ]);
+            }
 
             return res.json({ success: true, message: 'Compte ajouté avec succès' });
         } catch (error: any) {
