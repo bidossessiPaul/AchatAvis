@@ -68,6 +68,36 @@ export const IdentityVerifications: React.FC = () => {
         }
     };
 
+    const handleRejectAndRelaunch = async (v: Verification) => {
+        const Swal = (await import('sweetalert2')).default;
+        const { value: reason, isConfirmed } = await Swal.fire({
+            title: 'Rejeter et relancer la validation',
+            html: `<div style="text-align:left;font-size:0.9rem">
+                    <p>La pièce de <strong>${v.full_name || v.email}</strong> sera <strong>rejetée</strong> avec votre raison, et le guide pourra <strong>soumettre un nouveau document</strong>.</p>
+                    <p style="color:#64748b;font-size:0.85rem">Le guide verra votre raison pour savoir quoi corriger.</p>
+                </div>`,
+            input: 'textarea',
+            inputPlaceholder: 'Raison du rejet (ex: photo floue, document illisible, pièce expirée...)',
+            inputAttributes: { required: 'true' },
+            showCancelButton: true,
+            confirmButtonText: 'Rejeter + Relancer',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#0369a1',
+            inputValidator: (val) => (!val || val.trim().length < 5) ? 'Merci de fournir une raison (min 5 caractères)' : null,
+        });
+        if (!isConfirmed || !reason) return;
+        try {
+            // 1. Reject the verification with the reason
+            await adminApi.rejectIdentityVerification(v.id, reason);
+            // 2. Immediately relaunch so the guide can re-upload
+            await adminApi.relaunchIdentityVerification(v.id);
+            showSuccess('Relancé', 'Pièce rejetée avec raison — le guide peut soumettre un nouveau document');
+            load();
+        } catch (e: any) {
+            showError('Erreur', e?.response?.data?.error || 'Action impossible');
+        }
+    };
+
     const handleRelaunch = async (v: Verification) => {
         const reasonSnippet = v.rejection_reason
             ? `<p style="margin:0.5rem 0;padding:0.5rem 0.75rem;background:#fef2f2;border-radius:6px;font-size:0.85rem;color:#7f1d1d;"><strong>Raison initiale du refus :</strong> ${v.rejection_reason.replace(/</g, '&lt;')}</p>`
@@ -330,6 +360,24 @@ export const IdentityVerifications: React.FC = () => {
                                                     <CheckCircle size={16} /> Valider
                                                 </button>
                                                 <button
+                                                    onClick={() => handleRejectAndRelaunch(v)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        padding: '0.6rem 1rem',
+                                                        background: '#0369a1',
+                                                        color: 'white',
+                                                        border: 'none',
+                                                        borderRadius: '8px',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: 600
+                                                    }}
+                                                >
+                                                    <RotateCw size={16} /> Rejeter + Relancer
+                                                </button>
+                                                <button
                                                     onClick={() => handleReject(v)}
                                                     style={{
                                                         display: 'flex',
@@ -345,7 +393,7 @@ export const IdentityVerifications: React.FC = () => {
                                                         fontWeight: 600
                                                     }}
                                                 >
-                                                    <XCircle size={16} /> Bloquer
+                                                    <XCircle size={16} /> Bloquer définitivement
                                                 </button>
                                             </div>
                                         ) : (
