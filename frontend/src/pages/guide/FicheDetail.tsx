@@ -618,7 +618,7 @@ export const FicheDetail: React.FC = () => {
                 submitLabel={pendingProposalId ? "Valider et soumettre" : "Accéder au texte de l'avis"}
             />
 
-            {/* Modal avertissement étoiles */}
+            {/* Modal annonce personnalisation des avis */}
             {showStarsWarning && (
                 <div className="stars-warning-overlay">
                     <div
@@ -627,28 +627,46 @@ export const FicheDetail: React.FC = () => {
                     />
                     <div className="stars-warning-modal">
                         <div className="stars-warning-icon-circle">
-                            <AlertTriangle size={32} color="#f59e0b" />
+                            <AlertTriangle size={32} color="#0369a1" />
                         </div>
 
-                        <h3 className="stars-warning-title">
-                            Obligation importante
+                        <h3 className="stars-warning-title" style={{ color: '#0369a1' }}>
+                            Personnalisez vos avis !
                         </h3>
 
-                        <div className="stars-warning-stars">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                                <Star key={s} size={28} fill="#f59e0b" color="#f59e0b" />
-                            ))}
+                        <p className="stars-warning-text" style={{ textAlign: 'left', lineHeight: 1.6 }}>
+                            Vous pouvez <strong style={{ color: '#0369a1' }}>modifier le texte des avis</strong> proposés en y ajoutant votre <strong>expérience personnelle</strong> et votre <strong>vécu réel</strong>.
+                        </p>
+
+                        <div style={{
+                            background: '#f0f9ff',
+                            border: '1px solid #bae6fd',
+                            borderRadius: '8px',
+                            padding: '0.75rem 1rem',
+                            margin: '0.75rem 0',
+                            fontSize: '0.85rem',
+                            color: '#0c4a6e',
+                            textAlign: 'left',
+                            lineHeight: 1.5
+                        }}>
+                            <strong>Exemples :</strong>
+                            <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
+                                <li>Décrivez ce que vous avez vu en passant devant le commerce</li>
+                                <li>Partagez les retours de vos proches</li>
+                                <li>Ajoutez des détails sur l'emplacement ou l'ambiance</li>
+                            </ul>
                         </div>
 
-                        <p className="stars-warning-text">
-                            Respectez <strong style={{ color: '#b45309' }}>obligatoirement</strong> le nombre d'étoiles indiqué sur chaque avis lors de la publication, <strong style={{ color: '#b45309' }}>même s'il s'agit d'une seule étoile</strong>. Le non-respect entraînera le <strong style={{ color: '#dc2626' }}>rejet de l'avis</strong>.
+                        <p className="stars-warning-text" style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            Un avis personnalisé a plus de valeur et réduit le risque de rejet. Respectez également le <strong>nombre d'étoiles</strong> indiqué.
                         </p>
 
                         <button
                             className="stars-warning-btn"
+                            style={{ background: 'linear-gradient(135deg, #0369a1, #0284c7)' }}
                             onClick={() => setShowStarsWarning(false)}
                         >
-                            J'ai compris, je respecterai les étoiles
+                            J'ai compris
                         </button>
                     </div>
                 </div>
