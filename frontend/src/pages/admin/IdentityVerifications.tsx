@@ -179,7 +179,7 @@ export const IdentityVerifications: React.FC = () => {
                                     }}>
                                         {/* Document thumbnail */}
                                         <div
-                                            onClick={() => isPdfUrl(v.document_url) ? window.open(v.document_url, '_blank') : setPreview(v.document_url)}
+                                            onClick={() => setPreview(v.document_url)}
                                             style={{
                                                 width: '120px',
                                                 height: '120px',
@@ -393,7 +393,7 @@ export const IdentityVerifications: React.FC = () => {
                 </div>
             </div>
 
-            {/* Preview modal */}
+            {/* Preview modal (images + PDF) */}
             {preview && (
                 <div
                     onClick={() => setPreview(null)}
@@ -403,17 +403,50 @@ export const IdentityVerifications: React.FC = () => {
                         background: 'rgba(0,0,0,0.85)',
                         zIndex: 1000,
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        padding: '2rem'
+                        padding: '1rem',
+                        gap: '1rem'
                     }}
                 >
-                    <img
-                        src={preview}
-                        alt="Pièce d'identité"
-                        style={{ maxWidth: '95%', maxHeight: '95%', objectFit: 'contain', borderRadius: '8px' }}
-                        onClick={(e) => e.stopPropagation()}
-                    />
+                    {isPdfUrl(preview) ? (
+                        <iframe
+                            src={preview}
+                            title="Pièce d'identité PDF"
+                            style={{
+                                width: '90%',
+                                maxWidth: '900px',
+                                height: '85vh',
+                                border: 'none',
+                                borderRadius: '8px',
+                                background: 'white'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <img
+                            src={preview}
+                            alt="Pièce d'identité"
+                            style={{ maxWidth: '95%', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    )}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); window.open(preview, '_blank'); }}
+                        style={{
+                            padding: '0.5rem 1.25rem',
+                            background: 'rgba(255,255,255,0.15)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: 600
+                        }}
+                    >
+                        Ouvrir dans un nouvel onglet
+                    </button>
                 </div>
             )}
         </DashboardLayout>
