@@ -74,7 +74,7 @@ TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME, DU RÉALISME BRUT ET DE LA COH�
 
 FORMAT : JSON valide uniquement.`;
 
-        const userPrompt = `Génère ${quantity} avis positifs (4 ou 5 étoiles) pour l'entreprise "${companyName}" (${trade}).
+        const userPrompt = `Génère ${quantity} avis positifs (5 étoiles OBLIGATOIRE pour CHAQUE avis) pour l'entreprise "${companyName}" (${trade}).
 Contexte : ${context || 'Artisan local'}
 Secteur : ${sector || trade}
 Services : ${services || 'Tous services'}
@@ -111,7 +111,7 @@ Exemple : "Même en habitant tout au fond de [Ville], ils sont venus vite."
 Format de sortie attendu (JSON) :
 {
     "reviews": [
-        {"author_name": "...", "content": "...", "rating": 4 ou 5}
+        {"author_name": "...", "content": "...", "rating": 5}
     ]
 }`;
 
@@ -170,8 +170,10 @@ Format de sortie attendu (JSON) :
                 const parsed = JSON.parse(jsonStr);
                 console.log("✅ Réponse AI reçue et parsée");
 
-                if (Array.isArray(parsed.reviews)) return parsed.reviews;
-                if (Array.isArray(parsed)) return parsed;
+                // Force all ratings to 5 (safety net if AI ignores the instruction)
+                const forceRating5 = (reviews: any[]) => reviews.map(r => ({ ...r, rating: 5 }));
+                if (Array.isArray(parsed.reviews)) return forceRating5(parsed.reviews);
+                if (Array.isArray(parsed)) return forceRating5(parsed);
                 throw new Error("Format JSON invalide (pas un tableau)");
             } catch (e: any) {
                 // If truncated, try to salvage complete review objects
@@ -182,7 +184,7 @@ Format de sortie attendu (JSON) :
                         const reviewRegex = /\{\s*"author_name"\s*:\s*"[^"]*"\s*,\s*"content"\s*:\s*"[^"]*"\s*,\s*"rating"\s*:\s*\d+\s*\}/g;
                         const matches = rawContent.match(reviewRegex);
                         if (matches && matches.length > 0) {
-                            const salvaged = matches.map(m => JSON.parse(m));
+                            const salvaged = matches.map(m => ({ ...JSON.parse(m), rating: 5 }));
                             console.log(`✅ ${salvaged.length} avis récupérés depuis réponse tronquée`);
                             return salvaged;
                         }
