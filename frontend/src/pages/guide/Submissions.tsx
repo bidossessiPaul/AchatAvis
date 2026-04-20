@@ -24,6 +24,7 @@ interface Submission {
     sector_id: number;
     sector_name: string;
     sector_icon: string;
+    recycled_at?: string | null;
 }
 
 export const Submissions: React.FC = () => {

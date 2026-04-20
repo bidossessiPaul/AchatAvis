@@ -10,7 +10,8 @@ import {
     ExternalLink,
     Mail,
     Link,
-    X
+    X,
+    RefreshCw
 } from 'lucide-react';
 import { guideService } from '../../services/guideService';
 import { showSuccess, showError } from '../../utils/Swal';
@@ -93,6 +94,7 @@ interface HistoryItem {
     sector_icon: string;
     review_url: string;
     google_email: string;
+    recycled_at?: string | null;
 }
 
 interface GmailHistoryTableProps {
@@ -100,15 +102,23 @@ interface GmailHistoryTableProps {
 }
 
 export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history }) => {
-    const [statusFilter, setStatusFilter] = useState<'all' | 'validated' | 'pending' | 'rejected'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'validated' | 'pending' | 'rejected' | 'recycled'>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingItem, setEditingItem] = useState<HistoryItem | null>(null);
     const [editForm, setEditForm] = useState({ reviewUrl: '', googleEmail: '' });
     const [isSaving, setIsSaving] = useState(false);
 
+    // État "effectif" d'une soumission : si elle a été recyclée par l'admin,
+    // elle est stockée en 'rejected' côté DB mais affichée comme 'recycled' au guide.
+    const getEffectiveStatus = (item: HistoryItem): 'pending' | 'validated' | 'rejected' | 'recycled' => {
+        if (item.recycled_at) return 'recycled';
+        return item.status;
+    };
+
     const safeHistory = Array.isArray(history) ? history : [];
     const filteredHistory = safeHistory.filter(item => {
-        const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+        const effectiveStatus = getEffectiveStatus(item);
+        const matchesStatus = statusFilter === 'all' || effectiveStatus === statusFilter;
         const matchesSearch = (item.artisan_company || '').toLowerCase().includes(searchQuery.toLowerCase());
         return matchesStatus && matchesSearch;
     });
@@ -132,6 +142,13 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                     color: '#dc2626',
                     label: 'Refusé',
                     icon: <XCircle size={12} />
+                };
+            case 'recycled':
+                return {
+                    bg: '#ede9fe',
+                    color: '#6d28d9',
+                    label: 'Recyclé',
+                    icon: <RefreshCw size={12} />
                 };
             default:
                 return {
@@ -219,8 +236,8 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                         />
                     </div>
 
-                    <div style={{ display: 'flex', background: 'white', borderRadius: '0.75rem', padding: '2px', border: '1px solid #e2e8f0' }}>
-                        {(['all', 'validated', 'pending', 'rejected'] as const).map((status) => (
+                    <div style={{ display: 'flex', background: 'white', borderRadius: '0.75rem', padding: '2px', border: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+                        {(['all', 'validated', 'pending', 'rejected', 'recycled'] as const).map((status) => (
                             <button
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
@@ -284,7 +301,9 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                             </tr>
                         ) : (
                             filteredHistory.map((item, idx) => {
-                                const status = getStatusStyles(item.status);
+                                const effectiveStatus = getEffectiveStatus(item);
+                                const status = getStatusStyles(effectiveStatus);
+                                const isRecycled = effectiveStatus === 'recycled';
                                 return (
                                     <tr key={item.id} style={{ borderBottom: idx === filteredHistory.length - 1 ? 'none' : '1px solid #f1f5f9', background: 'white' }}>
                                         <td style={{ padding: '1rem 1.5rem' }}>
@@ -304,21 +323,30 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            <div style={{
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '0.4rem',
-                                                padding: '0.25rem 0.6rem',
-                                                borderRadius: '2rem',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 800,
-                                                textTransform: 'uppercase',
-                                                background: status.bg,
-                                                color: status.color
-                                            }}>
+                                            <div
+                                                title={isRecycled ? "Cet avis a été rejeté puis redistribué à un autre guide par l'administration. Le gain n'est pas comptabilisé." : undefined}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.4rem',
+                                                    padding: '0.25rem 0.6rem',
+                                                    borderRadius: '2rem',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 800,
+                                                    textTransform: 'uppercase',
+                                                    background: status.bg,
+                                                    color: status.color,
+                                                    cursor: isRecycled ? 'help' : 'default'
+                                                }}
+                                            >
                                                 {status.icon}
                                                 {status.label}
                                             </div>
+                                            {isRecycled && (
+                                                <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.25rem', maxWidth: '200px', lineHeight: 1.3 }}>
+                                                    Redistribué à un autre guide
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                             {Number(item.earnings || 0).toFixed(2)}€

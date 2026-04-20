@@ -938,11 +938,14 @@ export const bulkResetToPending = async (ids: string[]): Promise<{
  * pour qu'un autre guide puisse reprendre la fiche.
  *
  * Flow: Admin régénère le contenu IA → recycle → la proposition existe avec du nouveau
- * contenu mais sans soumission → un nouveau guide peut la prendre.
+ * contenu mais sans soumission active → un nouveau guide peut la prendre.
  *
- * - Supprime la soumission (review_url, guide_id, preuves)
+ * - Marque la soumission comme recyclée (`recycled_at`) au lieu de la supprimer
+ *   → le guide d'origine garde son historique et comprend ce qui s'est passé.
  * - Libère le slot (décrémente reviews_received si pas déjà fait)
  * - Remet la fiche en in_progress si besoin
+ * - Désactive allow_resubmit/allow_appeal (le guide ne peut plus corriger)
+ * - Marque dismissed_at pour retirer de la file admin des rejets à traiter
  */
 export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
     success: number;
@@ -979,12 +982,8 @@ export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
 
                 const sub = subRows[0];
 
-                // 2. DELETE the submission entirely (preuves, lien, guide_id — tout supprimé)
-                await connection.query(`
-                    DELETE FROM reviews_submissions WHERE id = :submissionId
-                `, { submissionId });
-
-                // 3. Free the slot: decrement reviews_received if it wasn't already released
+                // 2. Free the slot FIRST (before marking as recycled) so the check on
+                //    slot_released_at still reflects the state at admin decision time.
                 if (!sub.slot_released_at) {
                     await connection.query(`
                         UPDATE reviews_orders
@@ -992,6 +991,23 @@ export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
                         WHERE id = :orderId
                     `, { orderId: sub.order_id });
                 }
+
+                // 3. Mark the submission as RECYCLED (instead of deleting).
+                //    - recycled_at: new flag for guide UI ("Recyclé" badge)
+                //    - dismissed_at: retire de la file /admin/rejected-reviews
+                //    - slot_released_at: empêche releaseExpiredResubmitSlots de re-décrémenter
+                //    - allow_resubmit/allow_appeal = 0: le guide ne peut plus corriger/contester
+                //    - status reste 'rejected': toutes les queries existantes continuent de fonctionner
+                //      (quotas, compteurs, stats) car elles filtrent déjà sur status != 'rejected'
+                await connection.query(`
+                    UPDATE reviews_submissions
+                    SET recycled_at = NOW(),
+                        dismissed_at = COALESCE(dismissed_at, NOW()),
+                        slot_released_at = COALESCE(slot_released_at, NOW()),
+                        allow_resubmit = 0,
+                        allow_appeal = 0
+                    WHERE id = :submissionId
+                `, { submissionId });
 
                 // 4. Ensure fiche is in_progress so new guides can see it
                 await connection.query(`
