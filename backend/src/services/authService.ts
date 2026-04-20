@@ -8,6 +8,8 @@ import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/
 import { invalidateAuthCache } from '../middleware/auth';
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { jwtConfig } from '../config/jwt';
 import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail, sendAdminLoginOtp } from './emailService';
 
 // In-memory store for admin email OTPs (short-lived, 5 min expiry)
@@ -107,7 +109,7 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
         // Handle unique constraint violations (MySQL error code 1062)
         if (error.errno === 1062) {
             if (error.message.includes('email')) {
-                throw new Error('Email already registered');
+                throw new Error('Cet email est déjà utilisé');
             }
         }
 
@@ -132,7 +134,7 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
     `, [data.email, data.email]);
 
     if (suspendedCheck && suspendedCheck.length > 0) {
-        throw new Error('This email is linked to a suspended account and cannot be used to register');
+        throw new Error('Cet email est lié à un compte suspendu et ne peut pas être utilisé');
     }
 
     const hashedPassword = await hashPassword(data.password);
@@ -246,7 +248,7 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
         await connection.rollback();
 
         if (error.errno === 1062 && error.message.includes('email')) {
-            throw new Error('Email already registered');
+            throw new Error('Cet email est déjà utilisé');
         }
 
         throw error;
@@ -258,7 +260,32 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
 /**
  * Login user
  */
-export const login = async (email: string, password: string) => {
+/**
+ * Signe un token "appareil de confiance" (12h) pour éviter de redemander l'OTP
+ * à chaque connexion depuis le même navigateur.
+ */
+export const signTrustedDeviceToken = (userId: string): string => {
+    return jwt.sign(
+        { userId, purpose: 'admin_trusted_device' },
+        jwtConfig.accessTokenSecret as string,
+        { expiresIn: '12h' }
+    );
+};
+
+/**
+ * Vérifie un token "appareil de confiance". Renvoie l'userId si valide, null sinon.
+ */
+export const verifyTrustedDeviceToken = (token: string): string | null => {
+    try {
+        const payload: any = jwt.verify(token, jwtConfig.accessTokenSecret as string);
+        if (payload?.purpose !== 'admin_trusted_device' || !payload?.userId) return null;
+        return payload.userId;
+    } catch {
+        return null;
+    }
+};
+
+export const login = async (email: string, password: string, trustedDeviceToken?: string) => {
     // Get user with password hash
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.suspension_reason, u.email_verified,
@@ -284,7 +311,7 @@ export const login = async (email: string, password: string) => {
     const user = rows[0] as (User & { subscription_status?: string }) | undefined;
 
     if (!user) {
-        throw new Error('Invalid email or password');
+        throw new Error('Email ou mot de passe incorrect');
     }
 
     // Block login for suspended accounts with clear reason.
@@ -301,7 +328,7 @@ export const login = async (email: string, password: string) => {
         const minutesLeft = Math.ceil(
             (new Date(user.account_locked_until).getTime() - Date.now()) / 60000
         );
-        throw new Error(`Account locked. Try again in ${minutesLeft} minutes`);
+        throw new Error(`Compte temporairement verrouillé. Réessayez dans ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.`);
     }
 
     // Verify password
@@ -318,13 +345,13 @@ export const login = async (email: string, password: string) => {
         }
 
         await query(
-            `UPDATE users 
+            `UPDATE users
              SET failed_login_attempts = ?, account_locked_until = ?
              WHERE id = ?`,
             [newFailedAttempts, lockUntil, user.id]
         );
 
-        throw new Error('Invalid email or password');
+        throw new Error('Email ou mot de passe incorrect');
     }
 
     // Reset failed login attempts and update last login (only if 2FA is NOT required, or handled after 2FA)
@@ -338,24 +365,32 @@ export const login = async (email: string, password: string) => {
         permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : undefined,
     };
 
-    // Admin accounts always require email OTP — mandatory, no exceptions
+    // Admin accounts: require email OTP UNLESS this browser has a valid
+    // "trusted device" cookie (12h) from a previous successful OTP entry.
     if (user.role === 'admin') {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const tempToken = crypto.randomBytes(32).toString('hex');
-        adminOtpStore.set(tempToken, {
-            otp,
-            userId: user.id,
-            tokenPayload,
-            expiresAt: Date.now() + 5 * 60 * 1000,
-            attempts: 0,
-        });
-        await sendAdminLoginOtp(user.email, user.full_name || 'Admin', otp);
-        console.log(`🔐 Admin OTP envoyé à ${maskEmail(user.email)}`);
-        return {
-            requiresEmailOtp: true,
-            tempToken,
-            maskedEmail: maskEmail(user.email),
-        };
+        const trustedUserId = trustedDeviceToken ? verifyTrustedDeviceToken(trustedDeviceToken) : null;
+        const isDeviceTrusted = trustedUserId === user.id;
+
+        if (!isDeviceTrusted) {
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const tempToken = crypto.randomBytes(32).toString('hex');
+            adminOtpStore.set(tempToken, {
+                otp,
+                userId: user.id,
+                tokenPayload,
+                expiresAt: Date.now() + 5 * 60 * 1000,
+                attempts: 0,
+            });
+            await sendAdminLoginOtp(user.email, user.full_name || 'Admin', otp);
+            console.log(`🔐 Admin OTP envoyé à ${maskEmail(user.email)}`);
+            return {
+                requiresEmailOtp: true,
+                tempToken,
+                maskedEmail: maskEmail(user.email),
+            };
+        }
+        // Device trusted → fall through to normal token generation below
+        console.log(`✓ Admin ${maskEmail(user.email)} connecté via appareil de confiance (pas d'OTP)`);
     }
 
     // Check if TOTP 2FA is enabled (for non-admin users)
@@ -441,7 +476,12 @@ export const verifyAdminEmailOtp = async (tempToken: string, otp: string) => {
         try { user.permissions = JSON.parse(user.permissions); } catch { user.permissions = {}; }
     }
 
-    return { user, accessToken, refreshToken };
+    // Après une vérification OTP réussie, on délivre un token "appareil de confiance"
+    // (12h) qui sera déposé en cookie httpOnly par le contrôleur. Lors des prochaines
+    // connexions depuis ce même navigateur dans les 12h, l'OTP sera sauté.
+    const trustedDeviceToken = signTrustedDeviceToken(entry.userId);
+
+    return { user, accessToken, refreshToken, trustedDeviceToken };
 };
 
 /**
@@ -449,7 +489,7 @@ export const verifyAdminEmailOtp = async (tempToken: string, otp: string) => {
  */
 export const generate2FASecret = async (userId: string) => {
     const rows: any = await query('SELECT email FROM users WHERE id = ?', [userId]);
-    if (rows.length === 0) throw new Error('User not found');
+    if (rows.length === 0) throw new Error('Utilisateur non trouvé');
 
     const email = rows[0].email;
     const secret = authenticator.generateSecret();
@@ -666,12 +706,12 @@ export const changePassword = async (
 
     const user = rows[0];
     if (!user) {
-        throw new Error('User not found');
+        throw new Error('Utilisateur non trouvé');
     }
 
     const isValid = await comparePassword(currentPassword, user.password_hash);
     if (!isValid) {
-        throw new Error('Current password is incorrect');
+        throw new Error('Le mot de passe actuel est incorrect');
     }
 
     // Update password
@@ -810,7 +850,7 @@ export const refreshToken = async (token: string) => {
         // and the 30s TTL still picks up suspensions/role changes quickly.
         const user = await getUserByIdCached(payload.userId);
         if (!user) {
-            throw new Error('User not found');
+            throw new Error('Utilisateur non trouvé');
         }
 
         if (user.role !== 'admin' && !['active', 'pending'].includes(user.status)) {
@@ -834,7 +874,7 @@ export const refreshToken = async (token: string) => {
             refreshToken,
         };
     } catch (error) {
-        throw new Error('Invalid refresh token');
+        throw new Error('Session expirée, veuillez vous reconnecter');
     }
 };
 

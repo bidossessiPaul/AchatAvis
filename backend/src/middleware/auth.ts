@@ -106,7 +106,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         }
 
         if (!token) {
-            return res.status(401).json({ error: 'No token provided' });
+            return res.status(401).json({ error: 'Session expirée, veuillez vous reconnecter' });
         }
 
         const payload = verifyAccessToken(token);
@@ -134,7 +134,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
             if (!rows || rows.length === 0) {
                 statusCache.delete(payload.userId);
-                return res.status(401).json({ error: 'User no longer exists' });
+                return res.status(401).json({ error: 'Votre compte n\'existe plus' });
             }
 
             userStatus = rows[0].status;
@@ -169,8 +169,8 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             if (!isWhitelisted) {
                 return res.status(403).json({
                     error: isIdentityPending
-                        ? 'Identity verification required'
-                        : 'Account is not active',
+                        ? 'Vérification d\'identité requise'
+                        : 'Compte inactif',
                     code: isIdentityPending ? 'IDENTITY_VERIFICATION_REQUIRED' : 'ACCOUNT_SUSPENDED',
                     status: userStatus,
                     suspension_reason: suspensionReason,
@@ -219,7 +219,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     } catch (error: any) {
         console.error(`❌ [Auth Middleware] Error:`, error.message);
         return res.status(401).json({
-            error: 'Invalid or expired token',
+            error: 'Session expirée, veuillez vous reconnecter',
             details: error.message
         });
     }
@@ -231,12 +231,12 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 export const authorize = (...allowedRoles: ('artisan' | 'guide' | 'admin')[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
-            return res.status(401).json({ error: 'Authentication required' });
+            return res.status(401).json({ error: 'Veuillez vous connecter pour continuer' });
         }
 
         if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({
-                error: 'Insufficient permissions',
+                error: 'Vous n\'avez pas les droits nécessaires',
                 requiredRole: allowedRoles,
                 userRole: req.user.role,
             });
@@ -271,7 +271,7 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
 export const checkPermission = (requiredPermission: string | string[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
-            return res.status(401).json({ error: 'Authentication required' });
+            return res.status(401).json({ error: 'Veuillez vous connecter pour continuer' });
         }
 
         // 1. Owner always has full access — cannot be restricted
@@ -299,7 +299,7 @@ export const checkPermission = (requiredPermission: string | string[]) => {
         }
 
         return res.status(403).json({
-            error: 'Insufficient permissions',
+            error: 'Vous n\'avez pas les droits nécessaires',
             requiredPermission
         });
     };

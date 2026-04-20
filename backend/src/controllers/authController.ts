@@ -56,7 +56,7 @@ export const registerArtisan = async (req: Request, res: Response) => {
             return res.status(409).json({ error: error.message });
         }
 
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -93,7 +93,7 @@ export const registerGuide = async (req: Request, res: Response) => {
             return res.status(409).json({ error: error.message });
         }
 
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -105,9 +105,14 @@ export const login = async (req: Request, res: Response) => {
     try {
         const validatedData = loginSchema.parse(req.body);
 
+        // Récupère le cookie "appareil de confiance" (12h) s'il existe — permet de
+        // sauter l'OTP admin lors d'une reconnexion récente depuis ce navigateur.
+        const trustedDeviceToken = req.cookies?.adminTrustedDevice;
+
         const result: any = await authService.login(
             validatedData.email,
-            validatedData.password
+            validatedData.password,
+            trustedDeviceToken
         );
 
 
@@ -141,7 +146,7 @@ export const login = async (req: Request, res: Response) => {
         fireAndForgetGeo(result.user?.id, req);
 
         return res.json({
-            message: 'Login successful',
+            message: 'Connexion réussie',
             user: result.user,
             accessToken: result.accessToken,
         });
@@ -155,7 +160,12 @@ export const login = async (req: Request, res: Response) => {
 
 
 
-        if (error.message && (error.message.includes('Invalid email or password') || error.message.includes('Account locked'))) {
+        if (error.message && (
+            error.message.includes('mot de passe') ||
+            error.message.includes('verrouillé') ||
+            error.message.includes('Invalid email or password') ||
+            error.message.includes('Account locked')
+        )) {
             return res.status(401).json({ error: error.message });
         }
 
@@ -167,7 +177,7 @@ export const login = async (req: Request, res: Response) => {
 
         console.error('Login error:', error);
         return res.status(500).json({
-            error: 'Internal server error',
+            error: 'Une erreur est survenue, veuillez réessayer',
             message: error.message
         });
     }
@@ -281,7 +291,7 @@ export const logout = (_req: Request, res: Response) => {
 export const getMe = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({ error: 'Not authenticated' });
+            return res.status(401).json({ error: 'Vous n\'êtes pas connecté' });
         }
 
         // Use the cached variant — /auth/me is one of the hottest endpoints in
@@ -295,7 +305,7 @@ export const getMe = async (req: Request, res: Response) => {
         return res.json({ user });
     } catch (error) {
         console.error('Get me error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -306,7 +316,7 @@ export const getMe = async (req: Request, res: Response) => {
 export const changePassword = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({ error: 'Not authenticated' });
+            return res.status(401).json({ error: 'Vous n\'êtes pas connecté' });
         }
 
         const validatedData = changePasswordSchema.parse(req.body);
@@ -331,7 +341,7 @@ export const changePassword = async (req: Request, res: Response) => {
         }
 
         console.error('Change password error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -342,7 +352,7 @@ export const changePassword = async (req: Request, res: Response) => {
 export const deleteAccount = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({ error: 'Not authenticated' });
+            return res.status(401).json({ error: 'Vous n\'êtes pas connecté' });
         }
 
         await authService.deleteAccount(req.user.userId);
@@ -355,7 +365,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
         return res.json({ message: 'Account deleted successfully' });
     } catch (error) {
         console.error('Delete account error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -366,7 +376,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
-            return res.status(401).json({ error: 'Not authenticated' });
+            return res.status(401).json({ error: 'Vous n\'êtes pas connecté' });
         }
 
         const validatedData = profileUpdateSchema.parse(req.body);
@@ -388,7 +398,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         }
 
         console.error('Update profile error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
 
@@ -400,7 +410,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     try {
         if (!req.user) {
             console.warn('⚠️ Avatar upload attempt without req.user');
-            return res.status(401).json({ error: 'Not authenticated' });
+            return res.status(401).json({ error: 'Vous n\'êtes pas connecté' });
         }
 
         if (!req.file) {
@@ -429,7 +439,7 @@ export const uploadAvatar = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('❌ Upload avatar error:', error);
         return res.status(500).json({
-            error: 'Internal server error',
+            error: 'Une erreur est survenue, veuillez réessayer',
             message: error.message
         });
     }
@@ -443,7 +453,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     try {
         const token = req.cookies.refreshToken;
         if (!token) {
-            return res.status(401).json({ error: 'No refresh token found' });
+            return res.status(401).json({ error: 'Session expirée, veuillez vous reconnecter' });
         }
 
         const result = await authService.refreshToken(token);
@@ -498,7 +508,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         // Return a more descriptive error in development, or keep it generic for security in prod
         const isDev = process.env.NODE_ENV !== 'production';
         return res.status(500).json({
-            error: 'Internal server error',
+            error: 'Une erreur est survenue, veuillez réessayer',
             message: isDev ? error.message : undefined
         });
     }
@@ -549,7 +559,7 @@ export const verifyAdminEmailOtp = async (req: Request, res: Response) => {
     try {
         const { tempToken, otp } = req.body;
         if (!tempToken || !otp) {
-            return res.status(400).json({ error: 'tempToken et otp sont requis' });
+            return res.status(400).json({ error: 'Informations manquantes, veuillez recommencer la connexion' });
         }
         const result = await authService.verifyAdminEmailOtp(tempToken, otp);
 
@@ -559,6 +569,17 @@ export const verifyAdminEmailOtp = async (req: Request, res: Response) => {
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
+
+        // Cookie "appareil de confiance" (12h) — évite l'OTP à chaque reconnexion
+        // sur le même navigateur pendant 12h.
+        if (result.trustedDeviceToken) {
+            res.cookie('adminTrustedDevice', result.trustedDeviceToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                maxAge: 12 * 60 * 60 * 1000, // 12 heures
+            });
+        }
 
         return res.json({
             message: 'Connexion admin réussie',

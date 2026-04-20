@@ -82,7 +82,14 @@ api.interceptors.response.use(
         return response;
     },
     async (error) => {
-        if (import.meta.env.DEV) {
+        // 401 sur /auth/refresh-token au chargement de l'app = attendu quand le
+        // visiteur n'a pas de session. Inutile de polluer la console avec une
+        // erreur rouge qui laisse croire à un bug.
+        const isExpectedRefreshMiss =
+            error.response?.status === 401 &&
+            error.config?.url?.includes('/auth/refresh-token');
+
+        if (import.meta.env.DEV && !isExpectedRefreshMiss) {
             console.error('❌ API Error:', {
                 url: error.config?.url,
                 method: error.config?.method,
