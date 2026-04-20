@@ -9,7 +9,7 @@ import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import './AdminTeam.css';
 
 const PERMISSIONS = [
-    { key: 'can_validate_profiles', label: 'Artisans & Guides', color: '#7c3aed' },
+    { key: 'can_validate_profiles', label: 'Artisans, Guides & Pièces d\'identité', color: '#7c3aed' },
     { key: 'can_validate_reviews', label: 'Modération Avis', color: '#0369a1' },
     { key: 'can_validate_fiches', label: 'Fiches', color: '#0891b2' },
     { key: 'can_manage_sectors', label: 'Secteurs', color: '#059669' },

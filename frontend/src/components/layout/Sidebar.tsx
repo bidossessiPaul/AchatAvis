@@ -25,6 +25,7 @@ import {
     Activity,
     Megaphone
 } from 'lucide-react';
+import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
 import './Layout.css';
 
@@ -43,6 +44,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const { user, logout } = useAuthStore();
     const location = useLocation();
+    const { hasAnyPermission, isSuperAdmin } = usePermissions();
 
     // Close sidebar when route changes (mobile)
     const handleLinkClick = () => {
@@ -87,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Avis Rejetés', path: '/admin/rejected-reviews', icon: <XCircle size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Niveaux Guides', path: '/admin/level-verifications', icon: <Trophy size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Pièces d\'identité', path: '/admin/identity-verifications', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
-                    { label: 'Communiqués', path: '/admin/communiques', icon: <Megaphone size={20} /> },
+                    { label: 'Communiqués', path: '/admin/communiques', icon: <Megaphone size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_manage_packs'] },
@@ -104,9 +106,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     allAdminItems.splice(-1, 0, { label: 'Logs Activité', path: '/admin/logs', icon: <Activity size={20} /> });
                 }
 
-                // Return all items for all admins to ensure consistent interface order
-                // PermissionGuard still handles security for individual pages
-                return allAdminItems;
+                // Filter: show only items the admin has permission for
+                return allAdminItems.filter(item => {
+                    if (!item.permissions) return true; // Always visible (Mon profil, Logs)
+                    if (isSuperAdmin()) return true;
+                    return hasAnyPermission(item.permissions);
+                });
             }
             default:
                 return [];
