@@ -9,6 +9,26 @@ import './Auth.css';
 
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
 
+const ADMIN_LANDING_ROUTES: { path: string; permissions: string[] }[] = [
+    { path: '/admin', permissions: ['can_view_stats'] },
+    { path: '/admin/reviews', permissions: ['can_manage_reviews', 'can_validate_reviews'] },
+    { path: '/admin/artisans', permissions: ['can_manage_users', 'can_validate_profiles'] },
+    { path: '/admin/guides', permissions: ['can_manage_users', 'can_validate_profiles'] },
+    { path: '/admin/fiches', permissions: ['can_manage_fiches', 'can_validate_fiches'] },
+    { path: '/admin/payments', permissions: ['can_view_payments'] },
+    { path: '/admin/packs', permissions: ['can_manage_packs'] },
+    { path: '/admin/sectors', permissions: ['can_manage_sectors'] },
+    { path: '/admin/team', permissions: ['can_manage_team'] },
+];
+
+const pickAdminLandingRoute = (user: any): string => {
+    if (user?.email === 'dossoumaxime888@gmail.com') return '/admin';
+    const perms = user?.permissions;
+    if (!perms || Object.keys(perms).length === 0) return '/admin';
+    const match = ADMIN_LANDING_ROUTES.find(r => r.permissions.some(p => perms[p] === true));
+    return match ? match.path : '/profile';
+};
+
 export const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login, verify2FA, verifyEmailOtp, error, errorCode, isLoading, clearError, twoFactorRequired, requiresEmailOtp, emailOtpMaskedEmail, detectedCountry, suspendedUserName, suspension } = useAuthStore();
@@ -95,14 +115,18 @@ export const Login: React.FC = () => {
 
     const redirectUser = () => {
         const user = useAuthStore.getState().user;
-        if (user) {
-            if (user.role === 'artisan') {
-                navigate('/artisan');
-            } else if (user.role === 'guide') {
-                navigate('/guide');
-            } else if (user.role === 'admin') {
-                navigate('/admin');
-            }
+        if (!user) return;
+
+        if (user.role === 'artisan') {
+            navigate('/artisan');
+            return;
+        }
+        if (user.role === 'guide') {
+            navigate('/guide');
+            return;
+        }
+        if (user.role === 'admin') {
+            navigate(pickAdminLandingRoute(user));
         }
     };
 

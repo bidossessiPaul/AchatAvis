@@ -22,6 +22,7 @@ import {
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { useAuthStore } from '../../context/authStore';
 import './AdminLists.css';
 
 interface Artisan {
@@ -38,6 +39,8 @@ interface Artisan {
 }
 
 export const ArtisansList: React.FC = () => {
+    const currentUser = useAuthStore((s) => s.user);
+    const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
     const [artisans, setArtisans] = useState<Artisan[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -305,14 +308,16 @@ export const ArtisansList: React.FC = () => {
                                                     >
                                                         <Eye size={18} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleImpersonate(artisan.id)}
-                                                        className="action-btn"
-                                                        title="Se connecter en tant que"
-                                                        style={{ color: '#2383e2' }}
-                                                    >
-                                                        <LogIn size={18} />
-                                                    </button>
+                                                    {isOwner && (
+                                                        <button
+                                                            onClick={() => handleImpersonate(artisan.id)}
+                                                            className="action-btn"
+                                                            title="Se connecter en tant que"
+                                                            style={{ color: '#2383e2' }}
+                                                        >
+                                                            <LogIn size={18} />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => handleDelete(artisan.id)}
                                                         className="action-btn delete-btn"

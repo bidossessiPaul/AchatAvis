@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminService } from '../../services/adminService';
+import { useAuthStore } from '../../context/authStore';
 import {
     Briefcase,
     Mail,
@@ -105,6 +106,8 @@ interface ArtisanSubmission {
 export const ArtisanDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const currentUser = useAuthStore((s) => s.user);
+    const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
     const [data, setData] = useState<ArtisanDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [packs, setPacks] = useState<Pack[]>([]);
@@ -890,10 +893,12 @@ export const ArtisanDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Actions Admin</h3>
                             <div className="action-premium-stack">
-                                <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
-                                    <LogIn size={18} />
-                                    Se connecter en tant que
-                                </button>
+                                {isOwner && (
+                                    <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
+                                        <LogIn size={18} />
+                                        Se connecter en tant que
+                                    </button>
+                                )}
                                 {profile.status === 'active' ? (
                                     <>
                                         <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminService } from '../../services/adminService';
+import { useAuthStore } from '../../context/authStore';
 import {
     Mail,
     Phone,
@@ -79,6 +80,8 @@ interface GuideStats {
 export const GuideDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const currentUser = useAuthStore((s) => s.user);
+    const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
     const [profile, setProfile] = useState<GuideProfile | null>(null);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [stats, setStats] = useState<GuideStats | null>(null);
@@ -756,10 +759,12 @@ export const GuideDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Contrôle du compte</h3>
                             <div className="action-premium-stack" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
-                                    <LogIn size={18} />
-                                    Se connecter en tant que
-                                </button>
+                                {isOwner && (
+                                    <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
+                                        <LogIn size={18} />
+                                        Se connecter en tant que
+                                    </button>
+                                )}
                                 {profile.status === 'active' ? (
                                     <button onClick={() => handleStatusUpdate('suspended')} className="premium-action-btn suspend">
                                         <XCircle size={18} />

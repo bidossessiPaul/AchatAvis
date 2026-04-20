@@ -19,6 +19,7 @@ import {
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { useAuthStore } from '../../context/authStore';
 import './AdminLists.css';
 
 interface Guide {
@@ -45,6 +46,8 @@ interface Guide {
 import { countryCodeToFlag } from '../../utils/countryFlag';
 
 export const GuidesList: React.FC = () => {
+    const currentUser = useAuthStore((s) => s.user);
+    const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
     const [guides, setGuides] = useState<Guide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -361,14 +364,16 @@ export const GuidesList: React.FC = () => {
                                                     >
                                                         <Eye size={18} />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleImpersonate(guide.id)}
-                                                        className="action-btn"
-                                                        title="Se connecter en tant que"
-                                                        style={{ color: '#2383e2' }}
-                                                    >
-                                                        <LogIn size={18} />
-                                                    </button>
+                                                    {isOwner && (
+                                                        <button
+                                                            onClick={() => handleImpersonate(guide.id)}
+                                                            className="action-btn"
+                                                            title="Se connecter en tant que"
+                                                            style={{ color: '#2383e2' }}
+                                                        >
+                                                            <LogIn size={18} />
+                                                        </button>
+                                                    )}
                                                     {guide.status !== 'active' && (
                                                         <button
                                                             onClick={() => handleStatusUpdate(guide.id, 'active')}

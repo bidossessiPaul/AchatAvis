@@ -78,8 +78,10 @@ export const AdminDashboard: React.FC = () => {
         try {
             const data = await adminService.getGlobalStats();
             setStats(data);
-        } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des statistiques');
+        } catch (error: any) {
+            if (error?.response?.status !== 403) {
+                showError('Erreur', 'Erreur lors du chargement des statistiques');
+            }
         } finally {
             setIsLoading(false);
         }
