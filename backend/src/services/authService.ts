@@ -8,7 +8,30 @@ import { ArtisanRegistrationInput, GuideRegistrationInput } from '../middleware/
 import { invalidateAuthCache } from '../middleware/auth';
 import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
-import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail } from './emailService';
+import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail, sendAdminLoginOtp } from './emailService';
+
+// In-memory store for admin email OTPs (short-lived, 5 min expiry)
+interface AdminOtpEntry {
+    otp: string;
+    userId: string;
+    tokenPayload: any;
+    expiresAt: number;
+    attempts: number;
+}
+const adminOtpStore = new Map<string, AdminOtpEntry>();
+
+// Cleanup expired entries every 10 min
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, val] of adminOtpStore) {
+        if (val.expiresAt < now) adminOtpStore.delete(key);
+    }
+}, 10 * 60 * 1000);
+
+const maskEmail = (email: string) => {
+    const [local, domain] = email.split('@');
+    return local.charAt(0) + '***@' + domain;
+};
 
 
 
@@ -315,7 +338,27 @@ export const login = async (email: string, password: string) => {
         permissions: user.permissions ? (typeof user.permissions === 'string' ? JSON.parse(user.permissions) : user.permissions) : undefined,
     };
 
-    // Check if 2FA is enabled
+    // Admin accounts always require email OTP — mandatory, no exceptions
+    if (user.role === 'admin') {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const tempToken = crypto.randomBytes(32).toString('hex');
+        adminOtpStore.set(tempToken, {
+            otp,
+            userId: user.id,
+            tokenPayload,
+            expiresAt: Date.now() + 5 * 60 * 1000,
+            attempts: 0,
+        });
+        await sendAdminLoginOtp(user.email, user.full_name || 'Admin', otp);
+        console.log(`🔐 Admin OTP envoyé à ${maskEmail(user.email)}`);
+        return {
+            requiresEmailOtp: true,
+            tempToken,
+            maskedEmail: maskEmail(user.email),
+        };
+    }
+
+    // Check if TOTP 2FA is enabled (for non-admin users)
     if (user.two_factor_enabled) {
         const mfaToken = generateMFAToken(tokenPayload);
         return {
@@ -326,7 +369,7 @@ export const login = async (email: string, password: string) => {
 
     // Update last login
     await query(
-        `UPDATE users 
+        `UPDATE users
          SET failed_login_attempts = 0, account_locked_until = NULL, last_login = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [user.id]
@@ -354,6 +397,51 @@ export const login = async (email: string, password: string) => {
         accessToken,
         refreshToken,
     };
+};
+
+/**
+ * Verify admin email OTP and return JWT tokens
+ */
+export const verifyAdminEmailOtp = async (tempToken: string, otp: string) => {
+    const entry = adminOtpStore.get(tempToken);
+    if (!entry) {
+        throw new Error('Code expiré ou invalide. Veuillez vous reconnecter.');
+    }
+    if (Date.now() > entry.expiresAt) {
+        adminOtpStore.delete(tempToken);
+        throw new Error('Code expiré (5 min). Veuillez vous reconnecter.');
+    }
+    entry.attempts++;
+    if (entry.attempts > 5) {
+        adminOtpStore.delete(tempToken);
+        throw new Error('Trop de tentatives. Veuillez vous reconnecter.');
+    }
+    if (entry.otp !== otp.trim()) {
+        throw new Error('Code incorrect');
+    }
+
+    adminOtpStore.delete(tempToken);
+
+    await query(
+        'UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL, last_login = CURRENT_TIMESTAMP WHERE id = ?',
+        [entry.userId]
+    );
+
+    const accessToken = generateAccessToken(entry.tokenPayload);
+    const refreshToken = generateRefreshToken(entry.tokenPayload);
+
+    const rows: any = await query(
+        `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.suspension_reason,
+                u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions
+         FROM users u WHERE u.id = ?`,
+        [entry.userId]
+    );
+    const user = rows[0];
+    if (user?.permissions && typeof user.permissions === 'string') {
+        try { user.permissions = JSON.parse(user.permissions); } catch { user.permissions = {}; }
+    }
+
+    return { user, accessToken, refreshToken };
 };
 
 /**

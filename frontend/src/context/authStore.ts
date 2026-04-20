@@ -59,11 +59,15 @@ interface AuthState {
     suspension?: any | null;
     mfaToken: string | null;
     twoFactorRequired: boolean;
+    requiresEmailOtp: boolean;
+    emailOtpTempToken: string | null;
+    emailOtpMaskedEmail: string | null;
 
     // Actions
     setUser: (user: User | null) => void;
     login: (email: string, password: string) => Promise<any>;
     verify2FA: (token: string) => Promise<void>;
+    verifyEmailOtp: (otp: string) => Promise<void>;
     logout: () => Promise<void>;
     checkAuth: (silent?: boolean) => Promise<void>;
     silentRefresh: () => Promise<void>;
@@ -84,6 +88,9 @@ export const useAuthStore = create<AuthState>()(
             suspension: null,
             mfaToken: null,
             twoFactorRequired: false,
+            requiresEmailOtp: false,
+            emailOtpTempToken: null,
+            emailOtpMaskedEmail: null,
 
             setUser: (user) =>
                 set({ user, isAuthenticated: !!user }),
@@ -92,6 +99,20 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
                 try {
                     const response = await authApi.login({ email, password });
+
+                    // Admin email OTP — mandatory step
+                    if ((response as any).requiresEmailOtp) {
+                        set({
+                            requiresEmailOtp: true,
+                            emailOtpTempToken: (response as any).tempToken,
+                            emailOtpMaskedEmail: (response as any).maskedEmail,
+                            isLoading: false,
+                            error: null,
+                            errorCode: null,
+                        });
+                        return response;
+                    }
+
                     if (response.twoFactorRequired) {
                         set({
                             twoFactorRequired: true,
@@ -129,6 +150,34 @@ export const useAuthStore = create<AuthState>()(
                         detectedCountry: error.response?.data?.country || null,
                         suspendedUserName: error.response?.data?.user_name || null,
                         suspension: error.response?.data?.suspension || null,
+                        isLoading: false,
+                    });
+                    throw error;
+                }
+            },
+
+            verifyEmailOtp: async (otp: string) => {
+                const { emailOtpTempToken } = get();
+                if (!emailOtpTempToken) throw new Error('Session expirée, veuillez vous reconnecter');
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await authApi.verifyAdminEmailOtp({ tempToken: emailOtpTempToken, otp });
+                    const userData = response.user as User;
+                    if (userData?.permissions && typeof userData.permissions === 'string') {
+                        try { userData.permissions = JSON.parse(userData.permissions); } catch { userData.permissions = {}; }
+                    }
+                    set({
+                        user: userData,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        requiresEmailOtp: false,
+                        emailOtpTempToken: null,
+                        emailOtpMaskedEmail: null,
+                        error: null,
+                    });
+                } catch (error: any) {
+                    set({
+                        error: error.response?.data?.error || 'Code incorrect',
                         isLoading: false,
                     });
                     throw error;

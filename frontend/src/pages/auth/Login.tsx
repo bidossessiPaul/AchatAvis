@@ -11,7 +11,7 @@ import { ParticlesBackground } from '../../components/common/ParticlesBackground
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { login, verify2FA, error, errorCode, isLoading, clearError, twoFactorRequired, detectedCountry, suspendedUserName, suspension } = useAuthStore();
+    const { login, verify2FA, verifyEmailOtp, error, errorCode, isLoading, clearError, twoFactorRequired, requiresEmailOtp, emailOtpMaskedEmail, detectedCountry, suspendedUserName, suspension } = useAuthStore();
 
     const [userType, setUserType] = useState<'artisan' | 'guide'>('artisan');
     const [email, setEmail] = useState('');
@@ -77,6 +77,22 @@ export const Login: React.FC = () => {
         }
     };
 
+    const handleEmailOtpSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormError('');
+        clearError();
+        if (!otpToken || otpToken.length !== 6) {
+            setFormError('Veuillez entrer le code à 6 chiffres');
+            return;
+        }
+        try {
+            await verifyEmailOtp(otpToken);
+            redirectUser();
+        } catch (err) {
+            // Error handled in store
+        }
+    };
+
     const redirectUser = () => {
         const user = useAuthStore.getState().user;
         if (user) {
@@ -115,7 +131,61 @@ export const Login: React.FC = () => {
                 </div>
 
                 <Card className={`auth-card ${userType === 'artisan' ? 'artisan-theme' : 'guide-theme'}`}>
-                    {!twoFactorRequired ? (
+                    {requiresEmailOtp ? (
+                        <>
+                            <div className="auth-header">
+                                <h2 className="auth-title">Vérification admin</h2>
+                                <p className="auth-subtitle">
+                                    Un code à 6 chiffres a été envoyé à{' '}
+                                    <strong>{emailOtpMaskedEmail || 'votre email'}</strong>.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleEmailOtpSubmit} className="auth-form">
+                                {(error || formError) && (
+                                    <div className="auth-error">{formError || error}</div>
+                                )}
+
+                                <div style={{ textAlign: 'center', padding: '0.5rem 0 0.75rem', fontSize: '0.82rem', color: '#64748b' }}>
+                                    ⏱ Le code expire dans 5 minutes
+                                </div>
+
+                                <Input
+                                    type="text"
+                                    label="Code de vérification"
+                                    placeholder="000000"
+                                    value={otpToken}
+                                    onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    required
+                                    autoFocus
+                                    autoComplete="one-time-code"
+                                    inputMode="numeric"
+                                    style={{ textAlign: 'center', fontSize: '1.8rem', letterSpacing: '8px', fontWeight: 700 }}
+                                />
+
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    size="lg"
+                                    fullWidth
+                                    isLoading={isLoading}
+                                    style={{ marginTop: '0.3rem' }}
+                                >
+                                    Confirmer la connexion
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    fullWidth
+                                    onClick={() => window.location.reload()}
+                                    style={{ marginTop: '0.5rem', color: '#94a3b8', fontSize: '0.85rem' }}
+                                >
+                                    ← Retour à la connexion
+                                </Button>
+                            </form>
+                        </>
+                    ) : !twoFactorRequired ? (
                         <>
                             <div className="auth-header">
                                 <h2 className="auth-title">Bon retour !</h2>

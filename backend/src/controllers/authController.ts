@@ -112,6 +112,15 @@ export const login = async (req: Request, res: Response) => {
 
 
 
+        // Admin email OTP — mandatory for all admin logins
+        if (result.requiresEmailOtp) {
+            return res.json({
+                requiresEmailOtp: true,
+                tempToken: result.tempToken,
+                maskedEmail: result.maskedEmail,
+            });
+        }
+
         if (result.twoFactorRequired) {
             return res.json({
                 message: '2FA verification required',
@@ -533,5 +542,30 @@ export const verifyEmail = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Verify email error:', error);
         return res.status(400).json({ error: error.message });
+    }
+};
+
+export const verifyAdminEmailOtp = async (req: Request, res: Response) => {
+    try {
+        const { tempToken, otp } = req.body;
+        if (!tempToken || !otp) {
+            return res.status(400).json({ error: 'tempToken et otp sont requis' });
+        }
+        const result = await authService.verifyAdminEmailOtp(tempToken, otp);
+
+        res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.json({
+            message: 'Connexion admin réussie',
+            user: result.user,
+            accessToken: result.accessToken,
+        });
+    } catch (error: any) {
+        return res.status(401).json({ error: error.message });
     }
 };

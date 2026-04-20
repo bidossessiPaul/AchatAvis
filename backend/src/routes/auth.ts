@@ -17,6 +17,7 @@ import {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    verifyAdminEmailOtp,
 } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 import { uploadAvatar as uploadMiddleware, uploadIdentityDocument } from '../middleware/upload';
@@ -31,6 +32,7 @@ router.post('/login', login);
 router.post('/logout', logout);
 router.post('/refresh-token', refreshToken);
 router.post('/2fa/verify', verify2FA);
+router.post('/admin/verify-otp', verifyAdminEmailOtp);
 router.get('/verify-email', verifyEmail);
 
 // Protected routes (require authentication)

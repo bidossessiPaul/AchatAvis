@@ -14,7 +14,6 @@ const FICHES = checkPermission(['can_validate_fiches', 'can_manage_fiches']);
 const PAYMENTS = checkPermission('can_view_payments');
 const PACKS = checkPermission('can_manage_packs');
 const SECTORS = checkPermission('can_manage_sectors');
-const TRUST = checkPermission('can_manage_trust_scores');
 const STATS = checkPermission('can_view_stats');
 
 // Middleware to ensure admin access

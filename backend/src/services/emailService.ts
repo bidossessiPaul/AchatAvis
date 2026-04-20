@@ -1494,3 +1494,56 @@ export const sendAdminEventNotification = async (
         console.error(`Error sending admin event notification [${event.title}]:`, error);
     }
 };
+
+/**
+ * Send 2FA email OTP to admin on login
+ */
+export const sendAdminLoginOtp = async (email: string, fullName: string, otp: string) => {
+    const brandOrange = '#FF991F';
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `🔐 Code de connexion admin — ${otp}`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { margin: 0; padding: 0; background: #f1f5f9; font-family: 'Segoe UI', Arial, sans-serif; }
+                    .wrap { max-width: 480px; margin: 40px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+                    .header { background: #0a0a0a; padding: 28px 36px; text-align: center; }
+                    .header img { height: 36px; }
+                    .body { padding: 36px; }
+                    .otp-box { background: #f8fafc; border: 2px solid ${brandOrange}; border-radius: 12px; text-align: center; padding: 24px 16px; margin: 24px 0; }
+                    .otp-code { font-size: 42px; font-weight: 900; letter-spacing: 10px; color: #0a0a0a; font-family: monospace; }
+                    .footer { padding: 20px 36px; border-top: 1px solid #f1f5f9; text-align: center; font-size: 12px; color: #94a3b8; }
+                </style>
+            </head>
+            <body>
+                <div class="wrap">
+                    <div class="header">
+                        <img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" onerror="this.style.display='none'">
+                    </div>
+                    <div class="body">
+                        <p style="font-size:15px;color:#374151;margin:0 0 8px">Bonjour <strong>${fullName}</strong>,</p>
+                        <p style="font-size:15px;color:#374151;margin:0 0 20px">Une tentative de connexion à votre compte administrateur vient d'être détectée. Voici votre code de vérification :</p>
+                        <div class="otp-box">
+                            <div class="otp-code">${otp}</div>
+                        </div>
+                        <p style="font-size:13px;color:#64748b;margin:0 0 8px">⏱ Ce code expire dans <strong>5 minutes</strong>.</p>
+                        <p style="font-size:13px;color:#ef4444;margin:0">⚠️ Si vous n'êtes pas à l'origine de cette connexion, changez votre mot de passe immédiatement.</p>
+                    </div>
+                    <div class="footer">AchatAvis — Plateforme d'avis vérifiés<br>Ne partagez jamais ce code.</div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+    try {
+        await transporter.sendMail(mailOptions);
+    } catch (error) {
+        console.error('Error sending admin login OTP:', error);
+        throw error;
+    }
+};

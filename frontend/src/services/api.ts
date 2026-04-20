@@ -293,6 +293,14 @@ export const authApi = {
         return response.data;
     },
 
+    verifyAdminEmailOtp: async (data: { tempToken: string, otp: string }): Promise<AuthResponse> => {
+        const response = await api.post('/auth/admin/verify-otp', data);
+        if (response.data.accessToken) {
+            localStorage.setItem('accessToken', response.data.accessToken);
+        }
+        return response.data;
+    },
+
     // Forgot password
     forgotPassword: async (email: string): Promise<{ message: string }> => {
         const response = await api.post('/auth/forgot-password', { email });
