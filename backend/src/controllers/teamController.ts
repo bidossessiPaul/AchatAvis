@@ -26,7 +26,8 @@ export const teamController = {
     getTeamMembers: async (req: Request, res: Response) => {
         try {
             const currentUserId = (req as any).user.userId;
-            const members = await teamService.getTeamMembers(currentUserId);
+            const isOwner = (req as any).user.email === 'dossoumaxime888@gmail.com';
+            const members = await teamService.getTeamMembers(currentUserId, isOwner);
             return res.json(members);
         } catch (error: any) {
             return res.status(500).json({ error: error.message });

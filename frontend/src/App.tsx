@@ -551,7 +551,9 @@ function App() {
                             path="/admin/communiques"
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
-                                    <CommuniquesAdmin />
+                                    <PermissionGuard requiredPermission="can_manage_sectors">
+                                        <CommuniquesAdmin />
+                                    </PermissionGuard>
                                 </ProtectedRoute>
                             }
                         />

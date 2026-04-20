@@ -2,11 +2,20 @@ import express from 'express';
 import * as adminController from '../controllers/adminController';
 import * as identityVerif from '../controllers/identityVerificationController';
 import * as communique from '../controllers/communiqueController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize, checkPermission } from '../middleware/auth';
 
 import { LogService } from '../services/logService';
 
 const router = express.Router();
+
+const USERS = checkPermission(['can_validate_profiles', 'can_manage_users']);
+const REVIEWS = checkPermission(['can_validate_reviews', 'can_manage_reviews']);
+const FICHES = checkPermission(['can_validate_fiches', 'can_manage_fiches']);
+const PAYMENTS = checkPermission('can_view_payments');
+const PACKS = checkPermission('can_manage_packs');
+const SECTORS = checkPermission('can_manage_sectors');
+const TRUST = checkPermission('can_manage_trust_scores');
+const STATS = checkPermission('can_view_stats');
 
 // Middleware to ensure admin access
 router.use(authenticate, authorize('admin'));
@@ -34,91 +43,97 @@ router.get('/logs', (req, res, next): void => {
 });
 
 // Dashboard Stats
-router.get('/stats', adminController.getGlobalStats);
-router.get('/suspension-reasons', adminController.getSuspensionReasons);
-router.get('/reasons', adminController.getSuspensionReasons); // Alias for testing
+router.get('/stats', STATS, adminController.getGlobalStats);
+router.get('/suspension-reasons', STATS, adminController.getSuspensionReasons);
+router.get('/reasons', STATS, adminController.getSuspensionReasons);
 
-router.get('/artisans', adminController.getArtisans);
-router.get('/artisans/:userId', adminController.getArtisanDetail);
-router.get('/artisans/:userId/submissions', adminController.getArtisanSubmissions);
-router.patch('/artisans/:userId', adminController.updateArtisan);
-router.post('/artisans/create', adminController.createArtisan);
-router.post('/artisans/:userId/activate-pack', adminController.activateArtisanPack);
-router.get('/guides', adminController.getGuides);
-router.post('/guides/create', adminController.createGuide);
-router.get('/guides/:userId', adminController.getGuideDetail);
-router.patch('/guides/:userId', adminController.updateGuide);
-router.get('/subscriptions', adminController.getAllSubscriptions);
-router.get('/subscriptions/stats', adminController.getSubscriptionStats);
-router.get('/submissions', adminController.getAllSubmissions);
-router.get('/reviews/360', adminController.getReview360);
-router.patch('/submissions/:submissionId/status', adminController.updateSubmissionStatus);
-router.post('/submissions/bulk-revalidate', adminController.bulkRevalidateSubmissions);
-router.post('/submissions/bulk-reset-pending', adminController.bulkResetToPending);
-router.post('/submissions/recycle', adminController.recycleRejectedSubmissions);
-router.get('/rejected-submissions', adminController.listRejectedSubmissions);
-router.post('/orders/:id/force-relist', adminController.forceRelistOrder);
+// Artisans & Guides (can_validate_profiles OR can_manage_users)
+router.get('/artisans', USERS, adminController.getArtisans);
+router.get('/artisans/:userId', USERS, adminController.getArtisanDetail);
+router.get('/artisans/:userId/submissions', USERS, adminController.getArtisanSubmissions);
+router.patch('/artisans/:userId', USERS, adminController.updateArtisan);
+router.post('/artisans/create', USERS, adminController.createArtisan);
+router.post('/artisans/:userId/activate-pack', USERS, adminController.activateArtisanPack);
+router.get('/guides', USERS, adminController.getGuides);
+router.post('/guides/create', USERS, adminController.createGuide);
+router.get('/guides/:userId', USERS, adminController.getGuideDetail);
+router.patch('/guides/:userId', USERS, adminController.updateGuide);
+router.post('/guides/:userId/unblock-bad-links', USERS, adminController.unblockBadLinkGuide);
 
-// Level Verifications
-router.get('/level-verifications', adminController.getLevelVerifications);
-router.patch('/level-verifications/:verificationId', adminController.reviewLevelVerification);
+// Users management
+router.get('/users', USERS, adminController.getUsers);
+router.patch('/users/:userId/status', USERS, adminController.updateUserStatus);
+router.delete('/users/:userId', USERS, adminController.deleteUser);
 
-router.patch('/users/:userId/status', adminController.updateUserStatus);
-// Warning system removed - route disabled
-// router.post('/users/:userId/warning', adminController.issueWarning);
-router.post('/guides/:userId/unblock-bad-links', adminController.unblockBadLinkGuide);
-router.delete('/users/:userId', adminController.deleteUser);
-router.get('/users', adminController.getUsers);
-router.post('/payments/:paymentId/cancel', adminController.cancelPayment);
-router.post('/payments/:paymentId/reactivate', adminController.reactivatePayment);
-router.post('/payments/:paymentId/block', adminController.blockPayment);
-router.delete('/payments/:paymentId/status', adminController.deletePaymentStatus);
+// Level & Identity Verifications
+router.get('/level-verifications', USERS, adminController.getLevelVerifications);
+router.patch('/level-verifications/:verificationId', USERS, adminController.reviewLevelVerification);
+router.get('/identity-verifications', USERS, identityVerif.adminList);
+router.post('/identity-verifications/:id/approve', USERS, identityVerif.adminApprove);
+router.post('/identity-verifications/:id/reject', USERS, identityVerif.adminReject);
+router.post('/identity-verifications/:id/relaunch', USERS, identityVerif.adminRelaunch);
 
-// fiche management
-router.get('/fiches', adminController.getfiches);
-router.get('/fiches/pending', adminController.getPendingfiches);
-router.get('/fiches/:orderId', adminController.getAdminficheDetail);
-router.post('/fiches/:orderId/approve', adminController.approvefiche);
-router.post('/fiches/:orderId/send-validation', adminController.sendReviewValidationEmail);
-router.put('/fiches/:orderId', adminController.updatefiche);
-router.delete('/fiches/:orderId', adminController.deletefiche);
-router.put('/proposals/:proposalId', adminController.updateProposal);
-router.post('/proposals/:proposalId/regenerate', adminController.regenerateProposal);
+// Gmail accounts
+router.get('/gmail-accounts', USERS, adminController.getGmailAccounts);
+router.patch('/gmail-accounts/:accountId/block', USERS, adminController.toggleGmailBlock);
 
-// Pack management
-router.get('/packs', adminController.getPacks);
-router.post('/packs', adminController.createPack);
-router.put('/packs/:id', adminController.updatePack);
-router.delete('/packs/:id', adminController.deletePack);
+// Submissions & Reviews
+router.get('/subscriptions', PAYMENTS, adminController.getAllSubscriptions);
+router.get('/subscriptions/stats', PAYMENTS, adminController.getSubscriptionStats);
+router.get('/submissions', REVIEWS, adminController.getAllSubmissions);
+router.get('/reviews/360', REVIEWS, adminController.getReview360);
+router.patch('/submissions/:submissionId/status', REVIEWS, adminController.updateSubmissionStatus);
+router.post('/submissions/bulk-revalidate', REVIEWS, adminController.bulkRevalidateSubmissions);
+router.post('/submissions/bulk-reset-pending', REVIEWS, adminController.bulkResetToPending);
+router.post('/submissions/recycle', REVIEWS, adminController.recycleRejectedSubmissions);
+router.get('/rejected-submissions', REVIEWS, adminController.listRejectedSubmissions);
+router.post('/orders/:id/force-relist', REVIEWS, adminController.forceRelistOrder);
 
-// Guides balances & encouragement payments
-router.get('/guides-balances', adminController.getGuidesWithBalance);
-router.post('/force-pay-guide', adminController.forcePayGuide);
+// Fiches
+router.get('/fiches', FICHES, adminController.getfiches);
+router.get('/fiches/pending', FICHES, adminController.getPendingfiches);
+router.get('/fiches/:orderId', FICHES, adminController.getAdminficheDetail);
+router.post('/fiches/:orderId/approve', FICHES, adminController.approvefiche);
+router.post('/fiches/:orderId/send-validation', FICHES, adminController.sendReviewValidationEmail);
+router.put('/fiches/:orderId', FICHES, adminController.updatefiche);
+router.delete('/fiches/:orderId', FICHES, adminController.deletefiche);
+router.put('/proposals/:proposalId', FICHES, adminController.updateProposal);
+router.post('/proposals/:proposalId/regenerate', FICHES, adminController.regenerateProposal);
 
-// Impersonation
-router.post('/impersonate/:userId', adminController.impersonateUser);
+// Payments & Finance
+router.post('/payments/:paymentId/cancel', PAYMENTS, adminController.cancelPayment);
+router.post('/payments/:paymentId/reactivate', PAYMENTS, adminController.reactivatePayment);
+router.post('/payments/:paymentId/block', PAYMENTS, adminController.blockPayment);
+router.delete('/payments/:paymentId/status', PAYMENTS, adminController.deletePaymentStatus);
+router.get('/guides-balances', PAYMENTS, adminController.getGuidesWithBalance);
+router.post('/force-pay-guide', PAYMENTS, adminController.forcePayGuide);
 
-// Gmail accounts management
-router.get('/gmail-accounts', adminController.getGmailAccounts);
-router.patch('/gmail-accounts/:accountId/block', adminController.toggleGmailBlock);
+// Packs
+router.get('/packs', PACKS, adminController.getPacks);
+router.post('/packs', PACKS, adminController.createPack);
+router.put('/packs/:id', PACKS, adminController.updatePack);
+router.delete('/packs/:id', PACKS, adminController.deletePack);
 
-// Sector management
-router.get('/sectors', adminController.getAllSectors);
-router.post('/sectors', adminController.createSector);
-router.put('/sectors/:slug', adminController.updateSector);
-router.delete('/sectors/:slug', adminController.deleteSector);
+// Sectors
+router.get('/sectors', SECTORS, adminController.getAllSectors);
+router.post('/sectors', SECTORS, adminController.createSector);
+router.put('/sectors/:slug', SECTORS, adminController.updateSector);
+router.delete('/sectors/:slug', SECTORS, adminController.deleteSector);
 
-// Identity verifications review
-router.get('/identity-verifications', identityVerif.adminList);
-router.post('/identity-verifications/:id/approve', identityVerif.adminApprove);
-router.post('/identity-verifications/:id/reject', identityVerif.adminReject);
-router.post('/identity-verifications/:id/relaunch', identityVerif.adminRelaunch);
+// Communiqués
+router.get('/communiques', SECTORS, communique.adminList);
+router.post('/communiques', SECTORS, communique.adminCreate);
+router.put('/communiques/:id', SECTORS, communique.adminUpdate);
+router.delete('/communiques/:id', SECTORS, communique.adminDelete);
+router.post('/communiques/:id/notify', SECTORS, communique.adminResendNotification);
 
-// Communiques (admin CRUD)
-router.get('/communiques', communique.adminList);
-router.post('/communiques', communique.adminCreate);
-router.put('/communiques/:id', communique.adminUpdate);
-router.delete('/communiques/:id', communique.adminDelete);
-router.post('/communiques/:id/notify', communique.adminResendNotification);
+// Impersonation (owner only)
+router.post('/impersonate/:userId', (req, res, next): void => {
+    if (req.user?.email !== 'dossoumaxime888@gmail.com') {
+        res.status(403).json({ error: 'Accès réservé au propriétaire' });
+        return;
+    }
+    next();
+}, adminController.impersonateUser);
 
 export default router;

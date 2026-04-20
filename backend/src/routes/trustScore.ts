@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { TrustScoreController } from '../controllers/trustScoreController';
-import { authenticate } from '../middleware/auth';
+import { authenticate, checkPermission } from '../middleware/auth';
+const TRUST = checkPermission('can_manage_trust_scores');
 
 const router = Router();
 
@@ -17,14 +18,12 @@ router.post('/scrape-profile', authenticate, TrustScoreController.scrapeProfile)
 // Guide/Artisan routes
 router.post('/recalculate/:accountId', authenticate, TrustScoreController.recalculateAccount);
 
-// Admin routes
-router.get('/accounts', authenticate, TrustScoreController.listAllAccounts);
-router.patch('/accounts/:id/toggle-active', authenticate, TrustScoreController.toggleAccountActivation);
-router.get('/statistics', authenticate, TrustScoreController.getStatistics);
-router.get('/suspicious-accounts', authenticate, TrustScoreController.getSuspiciousAccounts);
-router.get('/top-performers', authenticate, TrustScoreController.getTopPerformers);
-
-// Admin override (nécessite permissions admin - à adapter selon votre middleware)
-router.put('/override/:accountId', authenticate, TrustScoreController.overrideTrustScore);
+// Admin routes (permission requise)
+router.get('/accounts', authenticate, TRUST, TrustScoreController.listAllAccounts);
+router.patch('/accounts/:id/toggle-active', authenticate, TRUST, TrustScoreController.toggleAccountActivation);
+router.get('/statistics', authenticate, TRUST, TrustScoreController.getStatistics);
+router.get('/suspicious-accounts', authenticate, TRUST, TrustScoreController.getSuspiciousAccounts);
+router.get('/top-performers', authenticate, TRUST, TrustScoreController.getTopPerformers);
+router.put('/override/:accountId', authenticate, TRUST, TrustScoreController.overrideTrustScore);
 
 export default router;

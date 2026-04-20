@@ -74,13 +74,13 @@ export const teamService = {
     /**
      * Get pending invitations and active team members
      */
-    async getTeamMembers(currentUserId: string) {
-        // ... implementation unchanged ...
-        // Get active admins (excluding self)
+    async getTeamMembers(currentUserId: string, isOwner: boolean = false) {
+        // Get active admins (excluding self, and excluding owner if caller is not owner)
         const members: any = await query(`
             SELECT id, full_name, email, role, permissions, created_at, 'active' as status
-            FROM users 
+            FROM users
             WHERE role = 'admin' AND id != ?
+            ${!isOwner ? `AND email != 'dossoumaxime888@gmail.com'` : ''}
         `, [currentUserId]);
 
         // Get pending invitations
@@ -147,6 +147,11 @@ export const teamService = {
      * Update permissions for an existing member
      */
     async updatePermissions(userId: string, permissions: any, adminId: string) {
+        // Protect the owner — no one can modify their permissions
+        const target: any = await query('SELECT email FROM users WHERE id = ?', [userId]);
+        if (target[0]?.email === 'dossoumaxime888@gmail.com') {
+            throw new Error('Le compte propriétaire ne peut pas être modifié');
+        }
         await query(
             'UPDATE users SET permissions = ? WHERE id = ? AND role = "admin"',
             [JSON.stringify(permissions), userId]
@@ -162,6 +167,11 @@ export const teamService = {
      */
     async deleteMember(id: string, type: 'active' | 'pending', adminId: string) {
         if (type === 'active') {
+            // Protect the owner
+            const target: any = await query('SELECT email FROM users WHERE id = ?', [id]);
+            if (target[0]?.email === 'dossoumaxime888@gmail.com') {
+                throw new Error('Le compte propriétaire ne peut pas être supprimé');
+            }
             await query('DELETE FROM users WHERE id = ? AND role = "admin"', [id]);
             invalidateAuthCache(id);
             await LogService.logAction(adminId, 'DELETE_MEMBER', 'USER', undefined, { deletedUserId: id });
