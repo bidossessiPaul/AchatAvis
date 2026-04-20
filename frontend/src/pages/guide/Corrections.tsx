@@ -59,46 +59,21 @@ export const Corrections: React.FC = () => {
         });
     };
 
-    const handleAppeal = async (item: CorrectableSubmission) => {
-        const result = await showConfirm(
-            'Relancer cet avis ?',
-            'Vous confirmez que votre avis est de nouveau visible sur Google. Il sera remis en attente de validation.'
-        );
-        if (!result.isConfirmed) return;
-
-        setIsSaving(true);
-        Swal.fire({
-            title: 'Relance en cours...',
-            text: 'Veuillez patienter',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-
-        try {
-            await guideService.updateSubmission(item.id, {
-                reviewUrl: item.review_url,
-                googleEmail: item.google_email
-            });
-            Swal.close();
-            showSuccess('Appel envoyé !', 'Votre avis a été remis en attente de validation.');
-            loadData();
-        } catch (err: any) {
-            console.error('Appeal failed:', err);
-            Swal.close();
-            showError('Erreur', err.response?.data?.message || 'Impossible de relancer la soumission.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingItem) return;
 
-        const result = await showConfirm(
-            'Relancer cet avis ?',
-            'Votre avis sera remis en attente de validation avec le nouveau lien.'
-        );
+        const isAppeal = !editingItem.allow_resubmit && editingItem.allow_appeal === 1;
+        const linkChanged = editForm.reviewUrl.trim() !== (editingItem.review_url || '').trim();
+
+        const confirmTitle = isAppeal ? 'Faire appel ?' : 'Relancer cet avis ?';
+        const confirmText = isAppeal
+            ? (linkChanged
+                ? 'Votre avis sera remis en attente de validation avec le nouveau lien.'
+                : 'Vous confirmez que votre avis est de nouveau visible sur Google. Il sera remis en attente de validation.')
+            : 'Votre avis sera remis en attente de validation avec le nouveau lien.';
+
+        const result = await showConfirm(confirmTitle, confirmText);
         if (!result.isConfirmed) return;
 
         setIsSaving(true);
@@ -216,49 +191,25 @@ export const Corrections: React.FC = () => {
                                             </span>
                                         </div>
                                     </div>
-                                    {item.allow_resubmit ? (
-                                        <button
-                                            onClick={() => handleEdit(item)}
-                                            style={{
-                                                background: '#FF991F',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '0.5rem',
-                                                padding: '0.5rem 1rem',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.375rem'
-                                            }}
-                                        >
-                                            <RefreshCw size={14} />
-                                            Corriger
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleAppeal(item)}
-                                            disabled={isSaving}
-                                            style={{
-                                                background: '#3b82f6',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '0.5rem',
-                                                padding: '0.5rem 1rem',
-                                                fontSize: '0.8125rem',
-                                                fontWeight: 700,
-                                                cursor: isSaving ? 'not-allowed' : 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.375rem',
-                                                opacity: isSaving ? 0.7 : 1
-                                            }}
-                                        >
-                                            <RefreshCw size={14} />
-                                            Faire appel
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => handleEdit(item)}
+                                        style={{
+                                            background: item.allow_resubmit ? '#FF991F' : '#3b82f6',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '0.5rem',
+                                            padding: '0.5rem 1rem',
+                                            fontSize: '0.8125rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.375rem'
+                                        }}
+                                    >
+                                        <RefreshCw size={14} />
+                                        {item.allow_resubmit ? 'Corriger' : 'Faire appel'}
+                                    </button>
                                 </div>
 
                                 {/* Rejection Reason */}
@@ -305,10 +256,17 @@ export const Corrections: React.FC = () => {
                             background: 'white', borderRadius: '1rem', padding: '2rem',
                             maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
                         }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
-                                    Corriger le lien
-                                </h3>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                <div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                                        {editingItem.allow_resubmit ? 'Corriger le lien' : 'Faire appel'}
+                                    </h3>
+                                    {!editingItem.allow_resubmit && (
+                                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>
+                                            Vérifiez le lien avant de relancer — Google modifie parfois les liens après republication.
+                                        </p>
+                                    )}
+                                </div>
                                 <button onClick={() => setEditingItem(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
                                     <X size={20} />
                                 </button>
@@ -327,7 +285,7 @@ export const Corrections: React.FC = () => {
                             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     <label style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                                        <Link size={14} /> Nouveau lien de l'avis
+                                        <Link size={14} /> {editingItem.allow_resubmit ? "Nouveau lien de l'avis" : "Lien de l'avis (modifiable)"}
                                     </label>
                                     <input
                                         type="url"
