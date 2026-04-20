@@ -250,6 +250,13 @@
     color: var(--gray-900);
 }
 
+/* Card actions row */
+.card-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
 /* Action Button */
 .btn-action-card {
     width: 100%;
@@ -585,6 +592,11 @@
     opacity: 0.7;
     cursor: not-allowed;
     transform: none;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @keyframes fadeIn {
