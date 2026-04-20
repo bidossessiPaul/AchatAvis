@@ -91,10 +91,12 @@ export const listVerifications = async (status?: string) => {
         SELECT iv.*,
                u.email, u.full_name, u.avatar_url, u.role, u.created_at as user_created_at,
                u.detected_city, u.detected_country, u.detected_country_code, u.detected_is_vpn,
-               gp.google_email, gp.city as declared_city, gp.phone
+               gp.google_email, gp.city as declared_city, gp.phone,
+               admin_u.full_name as reviewed_by_name
         FROM identity_verifications iv
         JOIN users u ON iv.user_id = u.id
         LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
+        LEFT JOIN users admin_u ON iv.reviewed_by = admin_u.id
     `;
     const params: any[] = [];
     if (status) {

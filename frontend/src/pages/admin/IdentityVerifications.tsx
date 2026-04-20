@@ -27,6 +27,7 @@ interface Verification {
     detected_country: string | null;
     detected_country_code: string | null;
     detected_is_vpn: number | null;
+    reviewed_by_name: string | null;
 }
 
 const isPdfUrl = (url: string) => /\.pdf($|\?)/i.test(url);
@@ -409,6 +410,14 @@ export const IdentityVerifications: React.FC = () => {
                                                 }}>
                                                     {v.status === 'approved' ? '✓ Validé' : '✗ Refusé'}
                                                 </span>
+                                                {(v.reviewed_by_name || v.reviewed_at) && (
+                                                    <div style={{ fontSize: '0.72rem', color: '#64748b', textAlign: 'center', lineHeight: 1.4 }}>
+                                                        Traité par : <strong>{v.reviewed_by_name || 'Admin'}</strong>
+                                                        {v.reviewed_at && (
+                                                            <><br />{new Date(v.reviewed_at).toLocaleString('fr-FR')}</>
+                                                        )}
+                                                    </div>
+                                                )}
                                                 {v.status === 'rejected' && (
                                                     <button
                                                         onClick={() => handleRelaunch(v)}
