@@ -540,7 +540,7 @@ export const GuidesBalances: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="modal-body" style={{ padding: '2rem' }}>
+                        <div className="modal-body">
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {/* Guide info */}
                                 <div style={{ background: 'var(--gray-50)', borderRadius: '12px', padding: '1.25rem' }}>
