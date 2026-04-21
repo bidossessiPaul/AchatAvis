@@ -12,23 +12,61 @@ import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
 import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail, sendAdminLoginOtp } from './emailService';
 
-// In-memory store for admin email OTPs (short-lived, 5 min expiry)
-interface AdminOtpEntry {
-    otp: string;
-    userId: string;
-    tokenPayload: any;
-    expiresAt: number;
-    attempts: number;
-}
-const adminOtpStore = new Map<string, AdminOtpEntry>();
+// OTP admin store : DB-backed (table admin_otp_tokens) pour que ça fonctionne
+// en environnement serverless (Vercel). Un Map en mémoire perdrait ses données
+// entre /login (instance A) et /verify-otp (instance B potentiellement différente).
+// Migration 063 crée la table. Expiry = 5 min, cleanup lazy à la lecture.
+const OTP_EXPIRY_MS = 5 * 60 * 1000;
+const OTP_MAX_ATTEMPTS = 5;
 
-// Cleanup expired entries every 10 min
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, val] of adminOtpStore) {
-        if (val.expiresAt < now) adminOtpStore.delete(key);
+const saveAdminOtp = async (tempToken: string, userId: string, otp: string, tokenPayload: any) => {
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    await query(
+        `INSERT INTO admin_otp_tokens (temp_token, user_id, otp, token_payload, attempts, expires_at)
+         VALUES (?, ?, ?, ?, 0, ?)`,
+        [tempToken, userId, otp, JSON.stringify(tokenPayload), expiresAt]
+    );
+};
+
+const getAdminOtp = async (tempToken: string): Promise<
+    { otp: string; userId: string; tokenPayload: any; attempts: number; expiresAt: Date } | null
+> => {
+    const rows: any = await query(
+        `SELECT user_id, otp, token_payload, attempts, expires_at
+         FROM admin_otp_tokens WHERE temp_token = ?`,
+        [tempToken]
+    );
+    if (!rows || rows.length === 0) return null;
+    const r = rows[0];
+    return {
+        otp: r.otp,
+        userId: r.user_id,
+        tokenPayload: typeof r.token_payload === 'string' ? JSON.parse(r.token_payload) : r.token_payload,
+        attempts: Number(r.attempts) || 0,
+        expiresAt: new Date(r.expires_at),
+    };
+};
+
+const incrementAdminOtpAttempts = async (tempToken: string) => {
+    await query(
+        `UPDATE admin_otp_tokens SET attempts = attempts + 1 WHERE temp_token = ?`,
+        [tempToken]
+    );
+};
+
+const deleteAdminOtp = async (tempToken: string) => {
+    await query(`DELETE FROM admin_otp_tokens WHERE temp_token = ?`, [tempToken]);
+};
+
+// Nettoyage best-effort des OTP expirés (appelé lazy à chaque sauvegarde —
+// pas besoin de setInterval qui ne tourne pas en serverless).
+const cleanupExpiredOtps = async () => {
+    try {
+        await query(`DELETE FROM admin_otp_tokens WHERE expires_at < NOW()`);
+    } catch (e: any) {
+        console.warn('OTP cleanup failed:', e?.message);
     }
-}, 10 * 60 * 1000);
+};
 
 const maskEmail = (email: string) => {
     const [local, domain] = email.split('@');
@@ -374,13 +412,9 @@ export const login = async (email: string, password: string, trustedDeviceToken?
         if (!isDeviceTrusted) {
             const otp = Math.floor(100000 + Math.random() * 900000).toString();
             const tempToken = crypto.randomBytes(32).toString('hex');
-            adminOtpStore.set(tempToken, {
-                otp,
-                userId: user.id,
-                tokenPayload,
-                expiresAt: Date.now() + 5 * 60 * 1000,
-                attempts: 0,
-            });
+            // Best-effort cleanup des OTP expirés avant d'en créer un nouveau
+            cleanupExpiredOtps().catch(() => { /* silent */ });
+            await saveAdminOtp(tempToken, user.id, otp, tokenPayload);
             await sendAdminLoginOtp(user.email, user.full_name || 'Admin', otp);
             console.log(`🔐 Admin OTP envoyé à ${maskEmail(user.email)}`);
             return {
@@ -438,24 +472,26 @@ export const login = async (email: string, password: string, trustedDeviceToken?
  * Verify admin email OTP and return JWT tokens
  */
 export const verifyAdminEmailOtp = async (tempToken: string, otp: string) => {
-    const entry = adminOtpStore.get(tempToken);
+    const entry = await getAdminOtp(tempToken);
     if (!entry) {
         throw new Error('Code expiré ou invalide. Veuillez vous reconnecter.');
     }
-    if (Date.now() > entry.expiresAt) {
-        adminOtpStore.delete(tempToken);
+    if (Date.now() > entry.expiresAt.getTime()) {
+        await deleteAdminOtp(tempToken);
         throw new Error('Code expiré (5 min). Veuillez vous reconnecter.');
     }
-    entry.attempts++;
-    if (entry.attempts > 5) {
-        adminOtpStore.delete(tempToken);
+    // Incrémente en DB AVANT la vérification du code pour que les tentatives
+    // comptent même sur erreur réseau / crash après.
+    await incrementAdminOtpAttempts(tempToken);
+    if (entry.attempts + 1 > OTP_MAX_ATTEMPTS) {
+        await deleteAdminOtp(tempToken);
         throw new Error('Trop de tentatives. Veuillez vous reconnecter.');
     }
     if (entry.otp !== otp.trim()) {
         throw new Error('Code incorrect');
     }
 
-    adminOtpStore.delete(tempToken);
+    await deleteAdminOtp(tempToken);
 
     await query(
         'UPDATE users SET failed_login_attempts = 0, account_locked_until = NULL, last_login = CURRENT_TIMESTAMP WHERE id = ?',
