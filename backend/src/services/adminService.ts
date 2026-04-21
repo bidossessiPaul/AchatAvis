@@ -16,7 +16,7 @@ export const getArtisans = async () => {
                ap.subscription_status, ap.subscription_end_date
         FROM users u
         JOIN artisans_profiles ap ON u.id = ap.user_id
-        WHERE u.role = 'artisan'
+        WHERE u.role = 'artisan' AND u.deleted_at IS NULL
         ORDER BY u.created_at DESC
     `);
 };
@@ -35,7 +35,7 @@ export const getGuides = async () => {
         FROM users u
         JOIN guides_profiles gp ON u.id = gp.user_id
         LEFT JOIN reviews_submissions rs ON u.id = rs.guide_id
-        WHERE u.role = 'guide'
+        WHERE u.role = 'guide' AND u.deleted_at IS NULL
         GROUP BY u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
                  u.detected_ip, u.detected_country, u.detected_country_code, u.detected_city,
                  u.detected_region, u.detected_isp, u.detected_is_vpn, u.detected_at,
@@ -130,12 +130,17 @@ export const unblockBadLinkGuide = async (userId: string) => {
  * Delete a user and their associated profile
  */
 export const deleteUser = async (userId: string) => {
-    console.log(`[ADMIN] Attempting to delete user ${userId}`);
+    console.log(`[ADMIN] Soft-deleting user ${userId} (historique préservé)`);
 
-    // We rely on ON DELETE CASCADE for most tables, but let's be explicit for security/profiles
-    // if needed. Most are already handled by CASCADE in schema.
-
-    const result = await query(`DELETE FROM users WHERE id = ?`, [userId]);
+    // Soft delete : on NE supprime PAS la ligne, on marque deleted_at.
+    // Ainsi l'historique (avis, commandes, paiements, logs) reste intact
+    // et joignable sur cet userId. L'utilisateur ne peut plus se connecter
+    // (login check WHERE deleted_at IS NULL), ne figure plus dans les listes admin,
+    // mais toutes ses données passées restent visibles.
+    const result = await query(
+        `UPDATE users SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+        [userId]
+    );
 
     // Invalidate the auth cache so any in-flight token for this user fails fast.
     invalidateAuthCache(userId);
@@ -1239,7 +1244,7 @@ export const getPendingfiches = async () => {
         FROM reviews_orders o
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
-        WHERE o.status = 'submitted'
+        WHERE o.status = 'submitted' AND o.deleted_at IS NULL
         ORDER BY o.created_at DESC
     `);
 };
@@ -1375,7 +1380,7 @@ export const getAdminficheDetail = async (orderId: string) => {
     if (!orders || orders.length === 0) return null;
 
     const proposals = await query(`
-        SELECT * FROM review_proposals WHERE order_id = ? ORDER BY created_at ASC
+        SELECT * FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL ORDER BY created_at ASC
     `, [orderId]);
 
     const order = orders[0];
@@ -1440,8 +1445,17 @@ export const deletefiche = async (orderId: string) => {
         // but let's be safe if they don't or if there's other cleanup.
         // Usually, reviews_submissions should be deleted or handled.
 
-        await connection.query(`DELETE FROM review_proposals WHERE order_id = ?`, [orderId]);
-        await connection.query(`DELETE FROM reviews_orders WHERE id = ?`, [orderId]);
+        // Soft delete : on marque deleted_at sans supprimer les lignes.
+        // L'historique des avis (reviews_submissions) reste intact et joignable
+        // sur cet order_id, donc le guide garde toutes ses preuves et gains.
+        await connection.query(
+            `UPDATE review_proposals SET deleted_at = NOW() WHERE order_id = ? AND deleted_at IS NULL`,
+            [orderId]
+        );
+        await connection.query(
+            `UPDATE reviews_orders SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+            [orderId]
+        );
 
         await connection.commit();
     } catch (error) {

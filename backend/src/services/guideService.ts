@@ -75,7 +75,7 @@ export const guideService = {
                    ) as daily_submissions_count
             FROM reviews_orders o
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
-            WHERE o.status IN ('in_progress')
+            WHERE o.status IN ('in_progress') AND o.deleted_at IS NULL
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
             ORDER BY o.created_at DESC
@@ -184,7 +184,7 @@ export const guideService = {
 
         const proposals = await query(`
             SELECT * FROM review_proposals
-            WHERE order_id = ?
+            WHERE order_id = ? AND deleted_at IS NULL
             ORDER BY created_at ASC
         `, [order_id]);
 

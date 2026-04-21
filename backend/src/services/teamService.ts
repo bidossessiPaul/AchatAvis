@@ -79,7 +79,7 @@ export const teamService = {
         const members: any = await query(`
             SELECT id, full_name, email, role, permissions, created_at, 'active' as status
             FROM users
-            WHERE role = 'admin' AND id != ?
+            WHERE role = 'admin' AND id != ? AND deleted_at IS NULL
             ${!isOwner ? `AND email != 'dossoumaxime888@gmail.com'` : ''}
         `, [currentUserId]);
 
@@ -172,7 +172,8 @@ export const teamService = {
             if (target[0]?.email === 'dossoumaxime888@gmail.com') {
                 throw new Error('Le compte propriétaire ne peut pas être supprimé');
             }
-            await query('DELETE FROM users WHERE id = ? AND role = "admin"', [id]);
+            // Soft delete: on garde l'historique (logs d'actions, validations passées, etc.)
+            await query('UPDATE users SET deleted_at = NOW() WHERE id = ? AND role = "admin" AND deleted_at IS NULL', [id]);
             invalidateAuthCache(id);
             await LogService.logAction(adminId, 'DELETE_MEMBER', 'USER', undefined, { deletedUserId: id });
         } else {

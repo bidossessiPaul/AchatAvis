@@ -85,14 +85,20 @@ export const artisanController = {
             const artisanProfile: any = await artisanService.getArtisanProfileByUserId(order.artisan_id);
             const targetQuantity = order.quantity || 1;
 
-            // If force, delete all existing proposals first
+            // If force, soft-delete all existing proposals (historique préservé)
             if (force) {
-                console.log("⚠️ Force regeneration: suppression des avis existants.");
-                await query('DELETE FROM review_proposals WHERE order_id = ?', [id]);
+                console.log("⚠️ Force regeneration: soft-delete des anciennes propositions.");
+                await query(
+                    'UPDATE review_proposals SET deleted_at = NOW() WHERE order_id = ? AND deleted_at IS NULL',
+                    [id]
+                );
             }
 
-            // Count existing proposals after potential deletion
-            const existingProposals: any = await query('SELECT COUNT(*) as count FROM review_proposals WHERE order_id = ?', [id]);
+            // Count existing (non-deleted) proposals after potential deletion
+            const existingProposals: any = await query(
+                'SELECT COUNT(*) as count FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL',
+                [id]
+            );
             const existingCount = existingProposals[0]?.count || 0;
             const needed = targetQuantity - existingCount;
 

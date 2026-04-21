@@ -21,7 +21,7 @@ export interface IdentityVerification {
 export const getLatestForUser = async (userId: string): Promise<IdentityVerification | null> => {
     const rows: any = await query(
         `SELECT * FROM identity_verifications
-         WHERE user_id = ?
+         WHERE user_id = ? AND deleted_at IS NULL
          ORDER BY submitted_at DESC
          LIMIT 1`,
         [userId]
@@ -69,7 +69,11 @@ export const submitVerification = async (
         if (row.document_public_id) {
             deleteFromCloudinary(row.document_public_id).catch(() => { /* silent */ });
         }
-        await query(`DELETE FROM identity_verifications WHERE id = ?`, [row.id]);
+        // Soft delete : on conserve la trace de la vérification pour l'audit.
+        await query(
+            `UPDATE identity_verifications SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+            [row.id]
+        );
     }
 
     const id = uuidv4();
@@ -99,9 +103,12 @@ export const listVerifications = async (status?: string) => {
         LEFT JOIN users admin_u ON iv.reviewed_by = admin_u.id
     `;
     const params: any[] = [];
+    // Toujours filtrer les soft-deleted, peu importe le filtre statut
     if (status) {
-        sql += ` WHERE iv.status = ?`;
+        sql += ` WHERE iv.deleted_at IS NULL AND iv.status = ?`;
         params.push(status);
+    } else {
+        sql += ` WHERE iv.deleted_at IS NULL`;
     }
     sql += ` ORDER BY iv.submitted_at DESC`;
     return await query(sql, params);

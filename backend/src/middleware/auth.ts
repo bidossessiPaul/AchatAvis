@@ -128,7 +128,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             // Cache miss or expired: fetch from DB
             const { query } = await import('../config/database');
             const rows: any = await query(
-                'SELECT status, suspension_reason, detected_ip FROM users WHERE id = ?',
+                'SELECT status, suspension_reason, detected_ip FROM users WHERE id = ? AND deleted_at IS NULL',
                 [payload.userId]
             );
 

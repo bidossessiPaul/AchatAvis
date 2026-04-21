@@ -220,7 +220,7 @@ export const artisanService = {
                 s.status as submission_status
             FROM review_proposals p
             LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
-            WHERE p.order_id = ?
+            WHERE p.order_id = ? AND p.deleted_at IS NULL
             ORDER BY p.created_at ASC
         `, [orderId]);
 
@@ -240,7 +240,7 @@ export const artisanService = {
                     WHERE s.order_id = ro.id AND s.status = 'validated') as reviews_validated
             FROM reviews_orders ro
             LEFT JOIN payments p ON ro.payment_id = p.id
-            WHERE ro.artisan_id = ?
+            WHERE ro.artisan_id = ? AND ro.deleted_at IS NULL
             ORDER BY ro.created_at DESC
         `, [artisanId]);
 
@@ -297,13 +297,18 @@ export const artisanService = {
             throw new Error("Proposals must be an array");
         }
 
-        // Clear existing proposals (draft or approved) ONLY if not appending
+        // Clear existing proposals (draft or approved) ONLY if not appending.
+        // Soft delete : on préserve l'historique (les submissions qui pointent
+        // sur un proposal gardent la référence intacte).
         if (!append) {
-            await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
+            await query(
+                'UPDATE review_proposals SET deleted_at = NOW() WHERE order_id = ? AND deleted_at IS NULL',
+                [orderId]
+            );
         }
 
         if (proposals.length === 0) {
-            return query('SELECT * FROM review_proposals WHERE order_id = ?', [orderId]);
+            return query('SELECT * FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL ORDER BY created_at ASC', [orderId]);
         }
 
         const values: any[] = [];
@@ -321,7 +326,7 @@ export const artisanService = {
             values
         );
 
-        return query('SELECT * FROM review_proposals WHERE order_id = ?', [orderId]);
+        return query('SELECT * FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL ORDER BY created_at ASC', [orderId]);
     },
 
     async getUsedGoogleUrls(artisanId: string) {
@@ -419,8 +424,11 @@ export const artisanService = {
 
         // Artisan can delete at ANY TIME (removed submission_id check per user request)
 
-        // 2. Delete the proposal
-        await query('DELETE FROM review_proposals WHERE id = ?', [proposalId]);
+        // 2. Soft delete the proposal (historique préservé, référence intacte pour les submissions existantes)
+        await query(
+            'UPDATE review_proposals SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL',
+            [proposalId]
+        );
 
         return { success: true, message: 'Proposition supprimée avec succès' };
     },
@@ -555,8 +563,15 @@ export const artisanService = {
             await query('UPDATE payments SET fiches_used = GREATEST(0, fiches_used - 1) WHERE id = ?', [order[0].payment_id]);
         }
 
-        await query('DELETE FROM review_proposals WHERE order_id = ?', [orderId]);
-        return query('DELETE FROM reviews_orders WHERE id = ?', [orderId]);
+        // Soft delete : historique préservé (les submissions restent, les liens proposals/orders aussi).
+        await query(
+            'UPDATE review_proposals SET deleted_at = NOW() WHERE order_id = ? AND deleted_at IS NULL',
+            [orderId]
+        );
+        return query(
+            'UPDATE reviews_orders SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL',
+            [orderId]
+        );
     },
 
     /**

@@ -304,7 +304,7 @@ export const login = async (email: string, password: string, trustedDeviceToken?
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
-         WHERE u.email = ?`,
+         WHERE u.email = ? AND u.deleted_at IS NULL`,
         [email]
     );
 
@@ -544,7 +544,7 @@ export const verify2FA = async (userId: string, token: string) => {
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
-         WHERE u.id = ?`,
+         WHERE u.id = ? AND u.deleted_at IS NULL`,
         [userId]
     );
 
@@ -651,7 +651,7 @@ export const getUserById = async (userId: string): Promise<UserResponse | null> 
          FROM users u
          LEFT JOIN artisans_profiles ap ON u.id = ap.user_id AND u.role = 'artisan'
          LEFT JOIN guides_profiles gp ON u.id = gp.user_id AND u.role = 'guide'
-         WHERE u.id = ?`,
+         WHERE u.id = ? AND u.deleted_at IS NULL`,
         [userId]
     );
 
@@ -726,7 +726,11 @@ export const changePassword = async (
  * Delete user account
  */
 export const deleteAccount = async (userId: string) => {
-    await query(`DELETE FROM users WHERE id = ?`, [userId]);
+    // Soft delete : on garde l'historique de l'utilisateur (avis, commandes, paiements).
+    await query(
+        `UPDATE users SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+        [userId]
+    );
     invalidateAuthCache(userId);
 };
 
