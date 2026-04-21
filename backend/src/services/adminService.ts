@@ -1405,16 +1405,28 @@ export const getAdminficheDetail = async (orderId: string) => {
  * Update any fiche field (Admin CRUD)
  */
 export const updatefiche = async (orderId: string, data: any) => {
-    // Filter out fields that don't exist in reviews_orders table
-    // These are read-only fields from JOINs or computed values
-    const invalidFields = ['pack_reviews_per_fiche', 'pack_features', 'pack_name', 'artisan_name', 'artisan_email', 'artisan_company'];
+    // Whitelist des champs réellement éditables via le CRUD admin (UI).
+    // Tout autre champ envoyé par le frontend (JOINs, valeurs calculées, FKs,
+    // timestamps système) est silencieusement ignoré — évite les erreurs SQL
+    // "Unknown column" quand le frontend renvoie tout l'objet.
+    const EDITABLE_FIELDS = new Set([
+        'fiche_name', 'company_name', 'company_context',
+        'sector', 'sector_id', 'sector_slug', 'sector_difficulty',
+        'zones', 'positioning', 'client_types', 'desired_tone',
+        'metadata', 'staff_names', 'specific_instructions', 'services',
+        'google_business_url', 'publication_pace',
+        'reviews_per_day', 'rhythme_mode', 'estimated_duration_days',
+        'client_cities', 'payout_per_review',
+        'establishment_id', 'city', 'initial_review_count',
+        'status', 'paused_at', 'status_before_pause',
+    ]);
 
-    const filteredData = Object.keys(data)
-        .filter(key => !invalidFields.includes(key))
-        .reduce((obj: any, key) => {
-            obj[key] = data[key];
-            return obj;
-        }, {});
+    const filteredData: Record<string, any> = {};
+    for (const [key, val] of Object.entries(data || {})) {
+        if (EDITABLE_FIELDS.has(key)) {
+            filteredData[key] = val;
+        }
+    }
 
     const fields = Object.keys(filteredData);
     const values = Object.values(filteredData);
@@ -1423,17 +1435,16 @@ export const updatefiche = async (orderId: string, data: any) => {
 
     const setClause = fields.map(field => `${field} = ?`).join(', ');
 
-    // Perform the update on reviews_orders
     const result = await query(
-        `UPDATE reviews_orders SET ${setClause} WHERE id = ?`,
+        `UPDATE reviews_orders SET ${setClause} WHERE id = ? AND deleted_at IS NULL`,
         [...values, orderId]
     );
 
-    // If payout_per_review was updated, cascade the change to PENDING submissions
+    // Si payout_per_review a changé, on propage aux submissions pending.
     if (filteredData.payout_per_review !== undefined) {
         await query(
-            `UPDATE reviews_submissions 
-             SET earnings = ? 
+            `UPDATE reviews_submissions
+             SET earnings = ?
              WHERE order_id = ? AND status = 'pending'`,
             [filteredData.payout_per_review, orderId]
         );
