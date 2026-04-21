@@ -300,9 +300,9 @@ export const getGlobalStats = async () => {
                 AND p.status = 'completed'
             ), 0) as total_revenue,
             COALESCE((
-                SELECT SUM(pr.amount) 
-                FROM payout_requests pr 
-                WHERE DATE(pr.requested_at) = d.day 
+                SELECT SUM(pr.amount)
+                FROM payout_requests pr
+                WHERE DATE(pr.processed_at) = d.day
                 AND pr.status = 'paid'
             ), 0) as total_payouts
         FROM days d
