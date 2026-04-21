@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { LoadingOverlay } from '../common/LoadingOverlay';
+import { pickAdminLandingRoute } from '../../utils/adminLanding';
 
 interface ProtectedRouteProps {
     allowedRoles?: ('artisan' | 'guide' | 'admin')[];
@@ -53,7 +54,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
         // Redirect to appropriate dashboard based on actual role
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;
         if (user.role === 'guide') return <Navigate to="/guide" replace />;
-        if (user.role === 'admin') return <Navigate to="/admin" replace />;
+        if (user.role === 'admin') return <Navigate to={pickAdminLandingRoute(user)} replace />;
         return <Navigate to="/" replace />;
     }
 
@@ -74,7 +75,7 @@ export const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children
         }
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;
         if (user.role === 'guide') return <Navigate to="/guide" replace />;
-        if (user.role === 'admin') return <Navigate to="/admin" replace />;
+        if (user.role === 'admin') return <Navigate to={pickAdminLandingRoute(user)} replace />;
         return <Navigate to="/" replace />;
     }
 

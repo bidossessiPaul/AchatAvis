@@ -8,26 +8,7 @@ import { Lock, Mail } from 'lucide-react';
 import './Auth.css';
 
 import { ParticlesBackground } from '../../components/common/ParticlesBackground';
-
-const ADMIN_LANDING_ROUTES: { path: string; permissions: string[] }[] = [
-    { path: '/admin', permissions: ['can_view_stats'] },
-    { path: '/admin/reviews', permissions: ['can_manage_reviews', 'can_validate_reviews'] },
-    { path: '/admin/artisans', permissions: ['can_manage_users', 'can_validate_profiles'] },
-    { path: '/admin/guides', permissions: ['can_manage_users', 'can_validate_profiles'] },
-    { path: '/admin/fiches', permissions: ['can_manage_fiches', 'can_validate_fiches'] },
-    { path: '/admin/payments', permissions: ['can_view_payments'] },
-    { path: '/admin/packs', permissions: ['can_manage_packs'] },
-    { path: '/admin/sectors', permissions: ['can_manage_sectors'] },
-    { path: '/admin/team', permissions: ['can_manage_team'] },
-];
-
-const pickAdminLandingRoute = (user: any): string => {
-    if (user?.email === 'dossoumaxime888@gmail.com') return '/admin';
-    const perms = user?.permissions;
-    if (!perms || Object.keys(perms).length === 0) return '/admin';
-    const match = ADMIN_LANDING_ROUTES.find(r => r.permissions.some(p => perms[p] === true));
-    return match ? match.path : '/profile';
-};
+import { pickAdminLandingRoute } from '../../utils/adminLanding';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
