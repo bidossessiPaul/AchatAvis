@@ -32,6 +32,7 @@ interface PayoutRequest {
 
 export const MyEarnings: React.FC = () => {
     const [stats, setStats] = useState<{ totalEarned: number, totalPaid: number, totalPending: number, balance: number } | null>(null);
+
     const [history, setHistory] = useState<PayoutRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
@@ -184,6 +185,16 @@ export const MyEarnings: React.FC = () => {
                         <div className="stat-info">
                             <p className="stat-label">En attente de paiement</p>
                             <h3 className="stat-value">{Number(stats?.totalPending || 0).toFixed(2)}€</h3>
+                        </div>
+                    </div>
+
+                    <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
+                        <div className="stat-icon-wrapper" style={{ background: 'rgba(5, 150, 105, 0.15)', color: '#059669' }}>
+                            <CheckCircle2 size={24} />
+                        </div>
+                        <div className="stat-info">
+                            <p className="stat-label" style={{ color: '#065f46' }}>Déjà payé</p>
+                            <h3 className="stat-value" style={{ color: '#059669' }}>{Number(stats?.totalPaid || 0).toFixed(2)}€</h3>
                         </div>
                     </div>
                 </div>

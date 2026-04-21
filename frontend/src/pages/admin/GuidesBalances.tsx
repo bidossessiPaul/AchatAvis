@@ -48,6 +48,7 @@ export const GuidesBalances: React.FC = () => {
     const [showPayModal, setShowPayModal] = useState(false);
     const [selectedGuide, setSelectedGuide] = useState<GuideBalance | null>(null);
     const [adminNote, setAdminNote] = useState('');
+    const [amountToPay, setAmountToPay] = useState<string>('');
     const [isPaying, setIsPaying] = useState(false);
     const navigate = useNavigate();
 
@@ -70,15 +71,30 @@ export const GuidesBalances: React.FC = () => {
     const openPayModal = (guide: GuideBalance) => {
         setSelectedGuide(guide);
         setAdminNote('');
+        // Pré-remplir avec le solde actuel ; l'admin peut modifier si le paiement
+        // réel diffère (ex: entre l'export CSV et le virement, de nouveaux avis
+        // ont pu être validés).
+        setAmountToPay(Number(guide.balance).toFixed(2));
         setShowPayModal(true);
     };
 
     const handleForcePay = async () => {
         if (!selectedGuide) return;
 
+        const amount = Number(amountToPay);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            showError('Montant invalide', 'Veuillez saisir un montant supérieur à 0.');
+            return;
+        }
+        if (amount > Number(selectedGuide.balance)) {
+            showError('Montant trop élevé', `Le solde actuel est de ${Number(selectedGuide.balance).toFixed(2)}€. Vous ne pouvez pas payer plus.`);
+            return;
+        }
+
+        const remaining = Number(selectedGuide.balance) - amount;
         const result = await showConfirm(
             'Confirmer le paiement',
-            `Payer ${Number(selectedGuide.balance).toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?`
+            `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNouveau solde du guide : ${remaining.toFixed(2)}€`
         );
         if (!result.isConfirmed) return;
 
@@ -86,10 +102,13 @@ export const GuidesBalances: React.FC = () => {
         try {
             await adminService.forcePayGuide(
                 selectedGuide.id,
-                Number(selectedGuide.balance),
+                amount,
                 adminNote || undefined
             );
-            showSuccess('Paiement effectué', `${Number(selectedGuide.balance).toFixed(2)}€ payé avec succès. Le guide verra ce paiement dans son historique.`);
+            showSuccess(
+                'Paiement enregistré',
+                `${amount.toFixed(2)}€ payé. Nouveau solde du guide : ${remaining.toFixed(2)}€. Le guide verra ce paiement dans son historique.`
+            );
             setShowPayModal(false);
             setSelectedGuide(null);
             loadGuides(true);
@@ -512,8 +531,8 @@ export const GuidesBalances: React.FC = () => {
                                     <DollarSign size={24} strokeWidth={3} />
                                 </div>
                                 <div>
-                                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Paiement Encouragement</h2>
-                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)' }}>Payer le solde du guide directement</p>
+                                    <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Enregistrer un paiement</h2>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--gray-500)' }}>Saisis le montant réellement versé — le solde sera recalculé</p>
                                 </div>
                             </div>
                             <button onClick={() => setShowPayModal(false)} className="modal-close">
@@ -550,17 +569,109 @@ export const GuidesBalances: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Amount display */}
-                                <div style={{
-                                    background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
-                                    borderRadius: '12px',
-                                    padding: '1.5rem',
-                                    textAlign: 'center',
-                                    border: '2px solid #a7f3d0'
-                                }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#047857', fontWeight: 600, marginBottom: '4px' }}>Montant à payer</div>
-                                    <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#059669' }}>{Number(selectedGuide.balance).toFixed(2)}€</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#065f46', marginTop: '4px' }}>Le solde du guide passera à 0.00€</div>
+                                {/* Solde actuel (lecture seule) */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                    <div style={{
+                                        background: '#f0f9ff',
+                                        borderRadius: '10px',
+                                        padding: '0.9rem',
+                                        border: '1px solid #bae6fd',
+                                        textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solde actuel</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0c4a6e', marginTop: '2px' }}>
+                                            {Number(selectedGuide.balance).toFixed(2)}€
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        background: (() => {
+                                            const amt = Number(amountToPay);
+                                            const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
+                                            if (Math.abs(remaining) < 0.01) return '#ecfdf5';
+                                            return '#fffbeb';
+                                        })(),
+                                        borderRadius: '10px',
+                                        padding: '0.9rem',
+                                        border: (() => {
+                                            const amt = Number(amountToPay);
+                                            const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
+                                            if (Math.abs(remaining) < 0.01) return '1px solid #a7f3d0';
+                                            return '1px solid #fde68a';
+                                        })(),
+                                        textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#b45309', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nouveau solde</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#78350f', marginTop: '2px' }}>
+                                            {(() => {
+                                                const amt = Number(amountToPay);
+                                                const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
+                                                return remaining.toFixed(2);
+                                            })()}€
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Montant payé (éditable) */}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.5rem' }}>
+                                        Montant réellement payé (€) *
+                                    </label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max={Number(selectedGuide.balance)}
+                                            value={amountToPay}
+                                            onChange={(e) => setAmountToPay(e.target.value)}
+                                            placeholder="0.00"
+                                            autoFocus
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.9rem 2.5rem 0.9rem 1rem',
+                                                borderRadius: '10px',
+                                                border: '2px solid #059669',
+                                                fontSize: '1.5rem',
+                                                fontWeight: 800,
+                                                color: '#059669',
+                                                outline: 'none',
+                                                fontFamily: 'inherit',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        />
+                                        <span style={{
+                                            position: 'absolute',
+                                            right: '1rem',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            fontSize: '1.25rem',
+                                            fontWeight: 700,
+                                            color: '#059669',
+                                            pointerEvents: 'none'
+                                        }}>€</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmountToPay(Number(selectedGuide.balance).toFixed(2))}
+                                            style={{
+                                                padding: '0.35rem 0.7rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #e5e7eb',
+                                                background: 'white',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                color: 'var(--gray-700)',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Tout le solde ({Number(selectedGuide.balance).toFixed(2)}€)
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.5rem', lineHeight: 1.4 }}>
+                                        Saisis le montant réellement transféré au guide.
+                                        Si des avis ont été validés depuis l'export du CSV, le solde peut être supérieur au montant payé — le reste sera conservé pour le prochain paiement.
+                                    </p>
                                 </div>
 
                                 {/* Admin note */}
@@ -598,9 +709,11 @@ export const GuidesBalances: React.FC = () => {
                                 onClick={handleForcePay}
                                 className="admin-btn-primary"
                                 style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}
-                                disabled={isPaying}
+                                disabled={isPaying || !amountToPay || Number(amountToPay) <= 0}
                             >
-                                {isPaying ? 'Paiement en cours...' : `Confirmer le paiement de ${Number(selectedGuide.balance).toFixed(2)}€`}
+                                {isPaying
+                                    ? 'Paiement en cours...'
+                                    : `Confirmer le paiement de ${(Number(amountToPay) || 0).toFixed(2)}€`}
                             </button>
                         </div>
                     </div>
