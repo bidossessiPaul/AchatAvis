@@ -133,10 +133,16 @@ export const approveVerification = async (verificationId: string, adminId: strin
         [adminId, verificationId]
     );
 
-    // Reactivate user account
+    // Reactivate user account.
+    // IMPORTANT : on reset aussi fiches_viewed à 0. Sans ça, le check
+    // anti-scraping (5 vues + 0 submission = suspendre) re-déclenche dès que
+    // le guide consulte une nouvelle fiche, même après approbation KYC —
+    // car le compteur cumulé était déjà au-dessus du seuil.
     await query(
         `UPDATE users
-         SET status = 'active', suspension_reason = NULL
+         SET status = 'active',
+             suspension_reason = NULL,
+             fiches_viewed = 0
          WHERE id = ?`,
         [verif.user_id]
     );
