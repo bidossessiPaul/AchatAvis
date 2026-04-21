@@ -123,6 +123,16 @@ export const AdminLevelVerifications: React.FC = () => {
 
     const pendingCount = verifications.filter(v => v.status === 'pending').length;
 
+    const formatDateTime = (iso: string | null | undefined): string => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '—';
+        return d.toLocaleString('fr-FR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     if (isLoading) {
         return (
             <DashboardLayout title="Vérification Niveaux Local Guide">
@@ -250,6 +260,7 @@ export const AdminLevelVerifications: React.FC = () => {
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Guide</th>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Gmail</th>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Niveau</th>
+                                <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Demandée le</th>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Preuves</th>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Statut</th>
                                 <th style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
@@ -309,6 +320,10 @@ export const AdminLevelVerifications: React.FC = () => {
                                                 </span>
                                             </div>
                                         </td>
+                                        {/* Demandée le */}
+                                        <td style={{ padding: '0.875rem 1rem', textAlign: 'center', fontSize: '0.8rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                            {formatDateTime(v.created_at)}
+                                        </td>
                                         {/* Proofs */}
                                         <td style={{ padding: '0.875rem 1rem', textAlign: 'center' }}>
                                             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
@@ -352,9 +367,14 @@ export const AdminLevelVerifications: React.FC = () => {
                                                 {v.status === 'rejected' && <XCircle size={13} />}
                                                 {config.label}
                                             </span>
-                                            {v.reviewer_name && (
-                                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.25rem' }}>
-                                                    par {v.reviewer_name}
+                                            {v.status !== 'pending' && (v.reviewer_name || v.reviewed_at) && (
+                                                <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.4rem', lineHeight: 1.4 }}>
+                                                    {v.reviewer_name && (
+                                                        <div>Traité par <strong style={{ color: '#475569' }}>{v.reviewer_name}</strong></div>
+                                                    )}
+                                                    {v.reviewed_at && (
+                                                        <div style={{ color: '#94a3b8' }}>{formatDateTime(v.reviewed_at)}</div>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>
@@ -390,9 +410,7 @@ export const AdminLevelVerifications: React.FC = () => {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                    {v.reviewed_at ? new Date(v.reviewed_at).toLocaleDateString('fr-FR') : '—'}
-                                                </span>
+                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>—</span>
                                             )}
                                         </td>
                                     </tr>
@@ -430,6 +448,13 @@ export const AdminLevelVerifications: React.FC = () => {
                                     <div className="lv-card-row">
                                         <span className="lv-card-label">Gmail</span>
                                         <span className="lv-card-value">{v.gmail_email}</span>
+                                    </div>
+
+                                    <div className="lv-card-row">
+                                        <span className="lv-card-label">Demandée le</span>
+                                        <span className="lv-card-value" style={{ fontSize: '0.8rem', color: '#475569' }}>
+                                            {formatDateTime(v.created_at)}
+                                        </span>
                                     </div>
 
                                     <div className="lv-card-row">
@@ -475,14 +500,22 @@ export const AdminLevelVerifications: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {v.reviewer_name && (
+                                    {v.status !== 'pending' && v.reviewer_name && (
                                         <div className="lv-card-row">
-                                            <span className="lv-card-label">Validé par</span>
-                                            <span className="lv-card-value" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{v.reviewer_name}</span>
+                                            <span className="lv-card-label">Traité par</span>
+                                            <span className="lv-card-value" style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600 }}>{v.reviewer_name}</span>
+                                        </div>
+                                    )}
+                                    {v.status !== 'pending' && v.reviewed_at && (
+                                        <div className="lv-card-row">
+                                            <span className="lv-card-label">Le</span>
+                                            <span className="lv-card-value" style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                                                {formatDateTime(v.reviewed_at)}
+                                            </span>
                                         </div>
                                     )}
 
-                                    {v.status === 'pending' ? (
+                                    {v.status === 'pending' && (
                                         <div className="lv-card-actions">
                                             <button
                                                 onClick={() => handleApprove(v.id)}
@@ -510,13 +543,6 @@ export const AdminLevelVerifications: React.FC = () => {
                                             >
                                                 <XCircle size={15} /> Rejeter
                                             </button>
-                                        </div>
-                                    ) : v.reviewed_at && (
-                                        <div className="lv-card-row">
-                                            <span className="lv-card-label">Date</span>
-                                            <span className="lv-card-value" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                                                {new Date(v.reviewed_at).toLocaleDateString('fr-FR')}
-                                            </span>
                                         </div>
                                     )}
                                 </div>
