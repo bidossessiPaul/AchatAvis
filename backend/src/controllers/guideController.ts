@@ -17,7 +17,7 @@ const FICHE_RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
  * If a guide has viewed 5+ fiches AND has 0 submissions ever → auto-suspend.
  * Only applies to guides who never submitted (scraper pattern).
  */
-const SCRAPER_VIEW_THRESHOLD = 5;
+const SCRAPER_VIEW_THRESHOLD = 15;
 
 export const guideController = {
     async getAvailablefiches(req: Request, res: Response) {
