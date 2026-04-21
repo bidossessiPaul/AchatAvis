@@ -524,7 +524,7 @@ export const GuidesBalances: React.FC = () => {
             {/* Pay Modal */}
             {showPayModal && selectedGuide && (
                 <div className="modal-overlay" onClick={() => setShowPayModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
                         <div className="modal-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
                                 <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #059669, #047857)', borderRadius: 'var(--radius-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
@@ -541,81 +541,91 @@ export const GuidesBalances: React.FC = () => {
                         </div>
 
                         <div className="modal-body">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                {/* Guide info */}
-                                <div style={{ background: 'var(--gray-50)', borderRadius: '12px', padding: '1.25rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
-                                        {selectedGuide.avatar_url ? (
-                                            <img src={getFileUrl(selectedGuide.avatar_url)} alt="" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
-                                        ) : (
-                                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--gray-200)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <User size={20} color="var(--gray-500)" />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <div style={{ fontWeight: 700, fontSize: '1rem' }}>{selectedGuide.full_name || selectedGuide.google_email}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>{selectedGuide.email}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                                {/* Guide info — compact row */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    padding: '0.75rem',
+                                    background: 'var(--gray-50)',
+                                    borderRadius: '10px'
+                                }}>
+                                    {selectedGuide.avatar_url ? (
+                                        <img src={getFileUrl(selectedGuide.avatar_url)} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                                    ) : (
+                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--gray-200)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <User size={18} color="var(--gray-500)" />
                                         </div>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                                        <div style={{ padding: '0.75rem', background: 'white', borderRadius: '8px', textAlign: 'center' }}>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)', fontWeight: 600, marginBottom: '2px' }}>Avis validés</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0369a1' }}>{selectedGuide.validated_reviews_count}</div>
+                                    )}
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {selectedGuide.full_name || selectedGuide.google_email}
                                         </div>
-                                        <div style={{ padding: '0.75rem', background: 'white', borderRadius: '8px', textAlign: 'center' }}>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--gray-500)', fontWeight: 600, marginBottom: '2px' }}>Total gagné</div>
-                                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--gray-700)' }}>{Number(selectedGuide.total_earned).toFixed(2)}€</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {selectedGuide.validated_reviews_count} avis · {Number(selectedGuide.total_earned).toFixed(2)}€ gagnés
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Solde actuel (lecture seule) */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                {/* Soldes côte à côte — compacts */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                     <div style={{
                                         background: '#f0f9ff',
-                                        borderRadius: '10px',
-                                        padding: '0.9rem',
+                                        borderRadius: '8px',
+                                        padding: '0.625rem',
                                         border: '1px solid #bae6fd',
                                         textAlign: 'center'
                                     }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Solde actuel</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#0c4a6e', marginTop: '2px' }}>
+                                        <div style={{ fontSize: '0.65rem', color: '#0369a1', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Solde actuel</div>
+                                        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0c4a6e', marginTop: '2px' }}>
                                             {Number(selectedGuide.balance).toFixed(2)}€
                                         </div>
                                     </div>
-                                    <div style={{
-                                        background: (() => {
-                                            const amt = Number(amountToPay);
-                                            const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
-                                            if (Math.abs(remaining) < 0.01) return '#ecfdf5';
-                                            return '#fffbeb';
-                                        })(),
-                                        borderRadius: '10px',
-                                        padding: '0.9rem',
-                                        border: (() => {
-                                            const amt = Number(amountToPay);
-                                            const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
-                                            if (Math.abs(remaining) < 0.01) return '1px solid #a7f3d0';
-                                            return '1px solid #fde68a';
-                                        })(),
-                                        textAlign: 'center'
-                                    }}>
-                                        <div style={{ fontSize: '0.7rem', color: '#b45309', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Nouveau solde</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#78350f', marginTop: '2px' }}>
-                                            {(() => {
-                                                const amt = Number(amountToPay);
-                                                const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
-                                                return remaining.toFixed(2);
-                                            })()}€
-                                        </div>
-                                    </div>
+                                    {(() => {
+                                        const amt = Number(amountToPay);
+                                        const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
+                                        const isSoldé = Math.abs(remaining) < 0.01;
+                                        return (
+                                            <div style={{
+                                                background: isSoldé ? '#ecfdf5' : '#fffbeb',
+                                                borderRadius: '8px',
+                                                padding: '0.625rem',
+                                                border: isSoldé ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                                                textAlign: 'center'
+                                            }}>
+                                                <div style={{ fontSize: '0.65rem', color: isSoldé ? '#047857' : '#b45309', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Nouveau solde</div>
+                                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isSoldé ? '#065f46' : '#78350f', marginTop: '2px' }}>
+                                                    {remaining.toFixed(2)}€
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Montant payé (éditable) */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.5rem' }}>
-                                        Montant réellement payé (€) *
-                                    </label>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--gray-700)' }}>
+                                            Montant réellement payé *
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmountToPay(Number(selectedGuide.balance).toFixed(2))}
+                                            style={{
+                                                padding: '0.2rem 0.55rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #e5e7eb',
+                                                background: 'white',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 600,
+                                                color: '#059669',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            Tout le solde
+                                        </button>
+                                    </div>
                                     <div style={{ position: 'relative' }}>
                                         <input
                                             type="number"
@@ -628,10 +638,10 @@ export const GuidesBalances: React.FC = () => {
                                             autoFocus
                                             style={{
                                                 width: '100%',
-                                                padding: '0.9rem 2.5rem 0.9rem 1rem',
-                                                borderRadius: '10px',
+                                                padding: '0.65rem 2.2rem 0.65rem 0.85rem',
+                                                borderRadius: '8px',
                                                 border: '2px solid #059669',
-                                                fontSize: '1.5rem',
+                                                fontSize: '1.2rem',
                                                 fontWeight: 800,
                                                 color: '#059669',
                                                 outline: 'none',
@@ -641,79 +651,67 @@ export const GuidesBalances: React.FC = () => {
                                         />
                                         <span style={{
                                             position: 'absolute',
-                                            right: '1rem',
+                                            right: '0.85rem',
                                             top: '50%',
                                             transform: 'translateY(-50%)',
-                                            fontSize: '1.25rem',
+                                            fontSize: '1rem',
                                             fontWeight: 700,
                                             color: '#059669',
                                             pointerEvents: 'none'
                                         }}>€</span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setAmountToPay(Number(selectedGuide.balance).toFixed(2))}
-                                            style={{
-                                                padding: '0.35rem 0.7rem',
-                                                borderRadius: '6px',
-                                                border: '1px solid #e5e7eb',
-                                                background: 'white',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 600,
-                                                color: 'var(--gray-700)',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Tout le solde ({Number(selectedGuide.balance).toFixed(2)}€)
-                                        </button>
-                                    </div>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '0.5rem', lineHeight: 1.4 }}>
-                                        Saisis le montant réellement transféré au guide.
-                                        Si des avis ont été validés depuis l'export du CSV, le solde peut être supérieur au montant payé — le reste sera conservé pour le prochain paiement.
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', lineHeight: 1.35 }}>
+                                        Si de nouveaux avis ont été validés depuis l'export, le reste non payé sera conservé pour le prochain cycle.
                                     </p>
                                 </div>
 
                                 {/* Admin note */}
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.5rem' }}>
-                                        Note admin (optionnel)
+                                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.4rem' }}>
+                                        Note (optionnel)
                                     </label>
                                     <textarea
                                         value={adminNote}
                                         onChange={(e) => setAdminNote(e.target.value)}
-                                        placeholder="Ex: Encouragement suite aux avis supprimés..."
+                                        placeholder="Ex: Virement bancaire du 21/04..."
                                         style={{
                                             width: '100%',
-                                            padding: '0.75rem',
+                                            padding: '0.6rem',
                                             borderRadius: '8px',
                                             border: '1px solid var(--gray-300)',
-                                            fontSize: '0.875rem',
-                                            minHeight: '80px',
+                                            fontSize: '0.85rem',
+                                            minHeight: '56px',
                                             resize: 'vertical',
-                                            fontFamily: 'inherit'
+                                            fontFamily: 'inherit',
+                                            boxSizing: 'border-box'
                                         }}
                                     />
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '4px' }}>
-                                        Cette note sera visible dans l'historique des paiements du guide.
-                                    </p>
                                 </div>
                             </div>
                         </div>
 
                         <div className="modal-footer">
-                            <button onClick={() => setShowPayModal(false)} className="btn-secondary">
+                            <button
+                                onClick={() => setShowPayModal(false)}
+                                className="btn-secondary"
+                                style={{ padding: '0.6rem 1.25rem', fontSize: '0.875rem' }}
+                            >
                                 Annuler
                             </button>
                             <button
                                 onClick={handleForcePay}
                                 className="admin-btn-primary"
-                                style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}
+                                style={{
+                                    background: 'linear-gradient(135deg, #059669, #047857)',
+                                    padding: '0.6rem 1.25rem',
+                                    fontSize: '0.875rem',
+                                    justifyContent: 'center'
+                                }}
                                 disabled={isPaying || !amountToPay || Number(amountToPay) <= 0}
                             >
                                 {isPaying
-                                    ? 'Paiement en cours...'
-                                    : `Confirmer le paiement de ${(Number(amountToPay) || 0).toFixed(2)}€`}
+                                    ? 'Paiement...'
+                                    : `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`}
                             </button>
                         </div>
                     </div>
