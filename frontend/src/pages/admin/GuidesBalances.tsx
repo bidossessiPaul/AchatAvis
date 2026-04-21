@@ -586,16 +586,23 @@ export const GuidesBalances: React.FC = () => {
                                         const amt = Number(amountToPay);
                                         const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
                                         const isSoldé = Math.abs(remaining) < 0.01;
+                                        const isOver = remaining < -0.01;
+                                        const bg = isOver ? '#fef2f2' : isSoldé ? '#ecfdf5' : '#fffbeb';
+                                        const border = isOver ? '1px solid #fecaca' : isSoldé ? '1px solid #a7f3d0' : '1px solid #fde68a';
+                                        const labelColor = isOver ? '#b91c1c' : isSoldé ? '#047857' : '#b45309';
+                                        const valueColor = isOver ? '#7f1d1d' : isSoldé ? '#065f46' : '#78350f';
                                         return (
                                             <div style={{
-                                                background: isSoldé ? '#ecfdf5' : '#fffbeb',
+                                                background: bg,
                                                 borderRadius: '8px',
                                                 padding: '0.625rem',
-                                                border: isSoldé ? '1px solid #a7f3d0' : '1px solid #fde68a',
+                                                border,
                                                 textAlign: 'center'
                                             }}>
-                                                <div style={{ fontSize: '0.65rem', color: isSoldé ? '#047857' : '#b45309', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>Nouveau solde</div>
-                                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: isSoldé ? '#065f46' : '#78350f', marginTop: '2px' }}>
+                                                <div style={{ fontSize: '0.65rem', color: labelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                                    {isOver ? 'Montant trop élevé' : 'Nouveau solde'}
+                                                </div>
+                                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: valueColor, marginTop: '2px' }}>
                                                     {remaining.toFixed(2)}€
                                                 </div>
                                             </div>
@@ -626,43 +633,57 @@ export const GuidesBalances: React.FC = () => {
                                             Tout le solde
                                         </button>
                                     </div>
-                                    <div style={{ position: 'relative' }}>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max={Number(selectedGuide.balance)}
-                                            value={amountToPay}
-                                            onChange={(e) => setAmountToPay(e.target.value)}
-                                            placeholder="0.00"
-                                            autoFocus
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.65rem 2.2rem 0.65rem 0.85rem',
-                                                borderRadius: '8px',
-                                                border: '2px solid #059669',
-                                                fontSize: '1.2rem',
-                                                fontWeight: 800,
-                                                color: '#059669',
-                                                outline: 'none',
-                                                fontFamily: 'inherit',
-                                                boxSizing: 'border-box'
-                                            }}
-                                        />
-                                        <span style={{
-                                            position: 'absolute',
-                                            right: '0.85rem',
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            fontSize: '1rem',
-                                            fontWeight: 700,
-                                            color: '#059669',
-                                            pointerEvents: 'none'
-                                        }}>€</span>
-                                    </div>
-                                    <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', lineHeight: 1.35 }}>
-                                        Si de nouveaux avis ont été validés depuis l'export, le reste non payé sera conservé pour le prochain cycle.
-                                    </p>
+                                    {(() => {
+                                        const amt = Number(amountToPay);
+                                        const isOver = Number.isFinite(amt) && amt > Number(selectedGuide.balance);
+                                        return (
+                                            <>
+                                                <div style={{ position: 'relative' }}>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        max={Number(selectedGuide.balance)}
+                                                        value={amountToPay}
+                                                        onChange={(e) => setAmountToPay(e.target.value)}
+                                                        placeholder="0.00"
+                                                        autoFocus
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '0.65rem 2.2rem 0.65rem 0.85rem',
+                                                            borderRadius: '8px',
+                                                            border: isOver ? '2px solid #dc2626' : '2px solid #059669',
+                                                            fontSize: '1.2rem',
+                                                            fontWeight: 800,
+                                                            color: isOver ? '#dc2626' : '#059669',
+                                                            outline: 'none',
+                                                            fontFamily: 'inherit',
+                                                            boxSizing: 'border-box'
+                                                        }}
+                                                    />
+                                                    <span style={{
+                                                        position: 'absolute',
+                                                        right: '0.85rem',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        fontSize: '1rem',
+                                                        fontWeight: 700,
+                                                        color: isOver ? '#dc2626' : '#059669',
+                                                        pointerEvents: 'none'
+                                                    }}>€</span>
+                                                </div>
+                                                {isOver ? (
+                                                    <p style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 600, marginTop: '0.4rem', lineHeight: 1.35 }}>
+                                                        Le montant dépasse le solde disponible ({Number(selectedGuide.balance).toFixed(2)}€).
+                                                    </p>
+                                                ) : (
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', lineHeight: 1.35 }}>
+                                                        Si de nouveaux avis ont été validés depuis l'export, le reste non payé sera conservé pour le prochain cycle.
+                                                    </p>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 {/* Admin note */}
@@ -698,21 +719,30 @@ export const GuidesBalances: React.FC = () => {
                             >
                                 Annuler
                             </button>
-                            <button
-                                onClick={handleForcePay}
-                                className="admin-btn-primary"
-                                style={{
-                                    background: 'linear-gradient(135deg, #059669, #047857)',
-                                    padding: '0.6rem 1.25rem',
-                                    fontSize: '0.875rem',
-                                    justifyContent: 'center'
-                                }}
-                                disabled={isPaying || !amountToPay || Number(amountToPay) <= 0}
-                            >
-                                {isPaying
-                                    ? 'Paiement...'
-                                    : `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`}
-                            </button>
+                            {(() => {
+                                const amt = Number(amountToPay);
+                                const isOver = Number.isFinite(amt) && amt > Number(selectedGuide.balance);
+                                const isInvalid = !amountToPay || !Number.isFinite(amt) || amt <= 0 || isOver;
+                                return (
+                                    <button
+                                        onClick={handleForcePay}
+                                        className="admin-btn-primary"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                            padding: '0.6rem 1.25rem',
+                                            fontSize: '0.875rem',
+                                            justifyContent: 'center',
+                                            opacity: isInvalid ? 0.5 : 1,
+                                            cursor: isInvalid ? 'not-allowed' : 'pointer'
+                                        }}
+                                        disabled={isPaying || isInvalid}
+                                    >
+                                        {isPaying
+                                            ? 'Paiement...'
+                                            : `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`}
+                                    </button>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
