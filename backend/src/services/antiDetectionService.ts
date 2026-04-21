@@ -403,40 +403,79 @@ class AntiDetectionService {
     }
 
     /**
-     * Recalculer le score de conformité global et récupérer les statistiques étendues
+     * Recalculer le score de conformité dynamique à partir des vraies soumissions
+     * du guide (validated / rejected), et récupérer les statistiques étendues.
+     *
+     * Score de conformité = reflet du taux de validation réel, pas un compteur
+     * statique. Un guide qui a des avis rejetés voit son score baisser.
+     *
+     * Formule (all-time) :
+     *   - Aucune soumission : 100% (bénéfice du doute pour un nouveau guide)
+     *   - Sinon : round((validated / (validated + rejected)) * 100)
+     *
+     * Les soumissions recyclées (rejected + recycled_at) comptent comme rejetées
+     * car c'était la faute du guide à l'origine.
      */
     async getExtendedComplianceData(userId: string): Promise<any> {
-        // 1. Récupérer le score actuel
-        const scoreResult: any = await query(`
-            SELECT * FROM guide_compliance_scores WHERE user_id = ?
-        `, [userId]);
-
-        let data = scoreResult?.[0] || { compliance_score: 100, rules_followed_count: 0, rules_violated_count: 0 };
-
-        // 2. Statistiques des 30 derniers jours
-        const statsResult: any = await query(`
-            SELECT 
+        // 1. Stats ALL-TIME pour calculer le vrai score de conformité
+        const allTimeResult: any = await query(`
+            SELECT
                 COUNT(CASE WHEN status = 'validated' THEN 1 END) as validated_count,
                 COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
             FROM reviews_submissions
-            WHERE guide_id = ? 
+            WHERE guide_id = ?
+        `, [userId]);
+
+        const allTime = allTimeResult[0] || { validated_count: 0, rejected_count: 0 };
+        const validatedAll = Number(allTime.validated_count) || 0;
+        const rejectedAll = Number(allTime.rejected_count) || 0;
+        const totalAll = validatedAll + rejectedAll;
+
+        // Score dynamique : 100% si aucune soumission (nouveau guide),
+        // sinon % de validation réel.
+        const computedScore = totalAll > 0
+            ? Math.round((validatedAll / totalAll) * 100)
+            : 100;
+
+        // 2. Métadonnées du compteur (rules_violated_count etc. — utilisés ailleurs
+        //    par le système anti-détection pour bloquer des fiches).
+        const scoreResult: any = await query(`
+            SELECT * FROM guide_compliance_scores WHERE user_id = ?
+        `, [userId]);
+        const storedMeta = scoreResult?.[0] || { rules_followed_count: 0, rules_violated_count: 0 };
+
+        // 3. Stats des 30 derniers jours (pour l'affichage détaillé dans le widget)
+        const statsResult: any = await query(`
+            SELECT
+                COUNT(CASE WHEN status = 'validated' THEN 1 END) as validated_count,
+                COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected_count
+            FROM reviews_submissions
+            WHERE guide_id = ?
             AND submitted_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
         `, [userId]);
 
         const stats = statsResult[0] || { validated_count: 0, rejected_count: 0 };
-
-        // 3. Calculer le taux de réussite sur 30 jours
-        const total = stats.validated_count + stats.rejected_count;
-        const successRate = total > 0 ? Math.round((stats.validated_count / total) * 100) : 100;
+        const validated30 = Number(stats.validated_count) || 0;
+        const rejected30 = Number(stats.rejected_count) || 0;
+        const total30 = validated30 + rejected30;
+        const successRate30 = total30 > 0
+            ? Math.round((validated30 / total30) * 100)
+            : 100;
 
         return {
-            ...data,
+            ...storedMeta,
+            compliance_score: computedScore,
+            all_time: {
+                validated: validatedAll,
+                rejected: rejectedAll,
+                total: totalAll,
+            },
             last_30_days: {
-                validated: stats.validated_count,
-                rejected: stats.rejected_count,
-                success_rate: successRate,
-                total
-            }
+                validated: validated30,
+                rejected: rejected30,
+                success_rate: successRate30,
+                total: total30,
+            },
         };
     }
 }
