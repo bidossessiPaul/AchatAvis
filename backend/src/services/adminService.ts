@@ -310,33 +310,38 @@ export const getGlobalStats = async () => {
         ORDER BY d.day ASC
     `);
 
-    // Total All Time Revenue
+    // Total All Time Revenue (exclut les users supprimés)
     const totalAllTimeRevenue: any = await query(`
         SELECT SUM(p.amount) as total
         FROM payments p
         JOIN users u ON p.user_id = u.id
         WHERE p.status = 'completed'
           AND u.status NOT IN ('suspended', 'deactivated', 'rejected')
+          AND u.deleted_at IS NULL
     `);
 
     // Submission Stats (for Donut Chart)
+    // Les submissions ne sont jamais supprimées — on les compte toutes.
     const submissionStats: any = await query(`
-        SELECT status, COUNT(*) as count 
-        FROM reviews_submissions 
+        SELECT status, COUNT(*) as count
+        FROM reviews_submissions
         GROUP BY status
     `);
 
-    // Top Sectors (for Bar Chart) - Based on orders
+    // Top Sectors (for Bar Chart) — basé sur les SUBMISSIONS actives, pas les fiches,
+    // pour refléter la vraie activité des guides (pas juste les intentions d'artisans).
     let sectorStats: any = [];
     try {
         sectorStats = await query(`
-            SELECT 
-                COALESCE(sd.sector_name, 'Autre') as label, 
-                COUNT(*) as value 
-            FROM reviews_orders o
+            SELECT
+                COALESCE(sd.sector_name, 'Autre') as label,
+                COUNT(s.id) as value
+            FROM reviews_submissions s
+            JOIN reviews_orders o ON s.order_id = o.id AND o.deleted_at IS NULL
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
-            GROUP BY label 
-            ORDER BY value DESC 
+            WHERE s.status != 'rejected'
+            GROUP BY label
+            ORDER BY value DESC
             LIMIT 6
         `);
     } catch (error) {
@@ -347,23 +352,25 @@ export const getGlobalStats = async () => {
     let trustDistribution: any = [];
     try {
         trustDistribution = await query(`
-            SELECT 
-                COALESCE(trust_level, 'BRONZE') as label, 
-                COUNT(*) as value 
-            FROM guide_gmail_accounts 
+            SELECT
+                COALESCE(trust_level, 'BRONZE') as label,
+                COUNT(*) as value
+            FROM guide_gmail_accounts
+            WHERE deleted_at IS NULL
             GROUP BY label
         `);
     } catch (error) {
         console.error('Failed to fetch trust distribution stats:', error);
     }
 
-    // User growth (last 12 months)
+    // User growth (last 12 months) — exclut les users supprimés
     const userGrowth: any = await query(`
-        SELECT 
+        SELECT
             COUNT(*) as count,
             role,
             DATE_FORMAT(created_at, '%Y-%m') as month
         FROM users
+        WHERE deleted_at IS NULL
         GROUP BY month, role
         ORDER BY month DESC
         LIMIT 12
@@ -371,45 +378,47 @@ export const getGlobalStats = async () => {
 
     // Pending actions
     const pendingActions: any = await query(`
-        SELECT 
+        SELECT
             (SELECT COUNT(*) FROM reviews_submissions WHERE status = 'pending' AND submitted_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)) as pending_reviews,
-            (SELECT COUNT(*) FROM users WHERE status = 'pending') as pending_users
+            (SELECT COUNT(*) FROM users WHERE status = 'pending' AND deleted_at IS NULL) as pending_users
     `);
 
-    // Total counts
+    // Total counts — n'inclut pas les soft-deleted
     const totalCounts: any = await query(`
-        SELECT 
-            (SELECT COUNT(*) FROM users WHERE role = 'artisan') as total_artisans,
-            (SELECT COUNT(*) FROM users WHERE role = 'guide') as total_guides,
-            (SELECT COUNT(*) FROM reviews_orders) as total_orders,
-            (SELECT COUNT(*) FROM review_proposals WHERE status = 'draft') as pending_proposals,
-            (SELECT COUNT(*) FROM reviews_orders WHERE status = 'submitted') as pending_fiches,
+        SELECT
+            (SELECT COUNT(*) FROM users WHERE role = 'artisan' AND deleted_at IS NULL) as total_artisans,
+            (SELECT COUNT(*) FROM users WHERE role = 'guide' AND deleted_at IS NULL) as total_guides,
+            (SELECT COUNT(*) FROM reviews_orders WHERE deleted_at IS NULL) as total_orders,
+            (SELECT COUNT(*) FROM review_proposals WHERE status = 'draft' AND deleted_at IS NULL) as pending_proposals,
+            (SELECT COUNT(*) FROM reviews_orders WHERE status = 'submitted' AND deleted_at IS NULL) as pending_fiches,
             (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as pending_payouts
     `);
 
-    // Recent Activities
+    // Recent Activities (exclut les users supprimés)
     const recentActivities: any = await query(`
         SELECT * FROM (
             -- New Users
             SELECT 'new_user' as type, full_name as title, CONCAT(role, ' ( Création de compte )') as subtitle, created_at as date, NULL as amount
             FROM users
+            WHERE deleted_at IS NULL
             UNION ALL
             -- New Submissions
             SELECT 'submission' as type, u.full_name as title, CONCAT(u.role, ' ( Nouvel avis soumis )') as subtitle, s.submitted_at as date, s.earnings as amount
             FROM reviews_submissions s
             JOIN users u ON s.guide_id = u.id
+            WHERE u.deleted_at IS NULL
             UNION ALL
             -- Validated Submissions
             SELECT 'validation' as type, u.full_name as title, CONCAT(u.role, ' ( Avis validé )') as subtitle, s.validated_at as date, s.earnings as amount
             FROM reviews_submissions s
             JOIN users u ON s.guide_id = u.id
-            WHERE s.status = 'validated' AND s.validated_at IS NOT NULL
+            WHERE s.status = 'validated' AND s.validated_at IS NOT NULL AND u.deleted_at IS NULL
             UNION ALL
             -- Payments
             SELECT 'payment' as type, u.full_name as title, p.description as subtitle, p.created_at as date, p.amount as amount
             FROM payments p
             JOIN users u ON p.user_id = u.id
-            WHERE p.status = 'completed'
+            WHERE p.status = 'completed' AND u.deleted_at IS NULL
         ) activities
         ORDER BY date DESC
         LIMIT 10
