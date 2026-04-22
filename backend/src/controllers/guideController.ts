@@ -56,7 +56,10 @@ export const guideController = {
             ficheViewTimestamps.set(userId, recent);
 
             // --- Anti-scraping: increment fiches_viewed + auto-suspend ---
-            // Fire-and-forget: increment counter and check if scraper pattern
+            // Fire-and-forget: increment counter and check if scraper pattern.
+            // RÈGLE ABSOLUE : un guide qui a déjà été validé KYC une fois ne
+            // sera JAMAIS re-suspendu pour KYC (quel que soit son pattern).
+            // On ne demande jamais deux fois la même pièce d'identité.
             (async () => {
                 try {
                     await query(
@@ -64,27 +67,30 @@ export const guideController = {
                         [userId]
                     );
 
-                    // Check scraper pattern: 5+ views, 0 submissions, still active
                     const rows: any = await query(`
                         SELECT u.fiches_viewed, u.status,
-                               (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id) as total_submissions
+                               (SELECT COUNT(*) FROM reviews_submissions WHERE guide_id = u.id) as total_submissions,
+                               (SELECT COUNT(*) FROM identity_verifications
+                                WHERE user_id = u.id AND status = 'approved' AND deleted_at IS NULL) as approved_kyc_count
                         FROM users u WHERE u.id = ?
                     `, [userId]);
 
                     const userData = rows?.[0];
+                    if (!userData || userData.status !== 'active') return;
+
+                    // Guide déjà KYC-validé : jamais de nouvelle demande de pièce.
+                    if (Number(userData.approved_kyc_count) > 0) return;
+
                     if (
-                        userData &&
-                        userData.status === 'active' &&
                         userData.fiches_viewed >= SCRAPER_VIEW_THRESHOLD &&
                         userData.total_submissions === 0
                     ) {
-                        // Auto-suspend: scraper pattern detected
                         await query(
                             `UPDATE users SET status = 'suspended', suspension_reason = ? WHERE id = ?`,
                             [SUSPENSION_REASON.IDENTITY_VERIFICATION, userId]
                         );
                         invalidateAuthCache(userId);
-                        console.log(`🚨 [Anti-scraping] Auto-suspended guide ${userId} — ${userData.fiches_viewed} fiches viewed, 0 submissions`);
+                        console.log(`🚨 [Anti-scraping] Auto-suspended (first-time KYC) guide ${userId} — ${userData.fiches_viewed} fiches viewed, 0 submissions`);
                     }
                 } catch (err: any) {
                     console.error('Anti-scraping check failed:', err?.message);
