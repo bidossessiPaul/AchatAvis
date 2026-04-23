@@ -108,7 +108,9 @@ router.get('/guides-balances', PAYMENTS, adminController.getGuidesWithBalance);
 router.post('/force-pay-guide', PAYMENTS, adminController.forcePayGuide);
 
 // Packs
-router.get('/packs', PACKS, adminController.getPacks);
+// Lecture libre pour tous les admins (nécessaire pour créer/modifier un artisan
+// avec un pack). Seules les mutations restent protégées par can_manage_packs.
+router.get('/packs', adminController.getPacks);
 router.post('/packs', PACKS, adminController.createPack);
 router.put('/packs/:id', PACKS, adminController.updatePack);
 router.delete('/packs/:id', PACKS, adminController.deletePack);
