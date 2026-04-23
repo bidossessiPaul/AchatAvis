@@ -48,6 +48,10 @@ import { countryCodeToFlag } from '../../utils/countryFlag';
 export const GuidesList: React.FC = () => {
     const currentUser = useAuthStore((s) => s.user);
     const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
+    const canImpersonate = isOwner
+        || !currentUser?.permissions
+        || Object.keys(currentUser.permissions).length === 0
+        || (currentUser.permissions as any)?.can_impersonate === true;
     const [guides, setGuides] = useState<Guide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -364,7 +368,7 @@ export const GuidesList: React.FC = () => {
                                                     >
                                                         <Eye size={18} />
                                                     </button>
-                                                    {isOwner && (
+                                                    {canImpersonate && (
                                                         <button
                                                             onClick={() => handleImpersonate(guide.id)}
                                                             className="action-btn"

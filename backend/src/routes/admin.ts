@@ -126,13 +126,7 @@ router.put('/communiques/:id', SECTORS, communique.adminUpdate);
 router.delete('/communiques/:id', SECTORS, communique.adminDelete);
 router.post('/communiques/:id/notify', SECTORS, communique.adminResendNotification);
 
-// Impersonation (owner only)
-router.post('/impersonate/:userId', (req, res, next): void => {
-    if (req.user?.email !== 'dossoumaxime888@gmail.com') {
-        res.status(403).json({ error: 'Accès réservé au propriétaire' });
-        return;
-    }
-    next();
-}, adminController.impersonateUser);
+// Impersonation — owner + admins ayant la permission can_impersonate
+router.post('/impersonate/:userId', checkPermission('can_impersonate'), adminController.impersonateUser);
 
 export default router;

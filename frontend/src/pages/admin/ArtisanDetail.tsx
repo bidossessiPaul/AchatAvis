@@ -108,6 +108,11 @@ export const ArtisanDetail: React.FC = () => {
     const navigate = useNavigate();
     const currentUser = useAuthStore((s) => s.user);
     const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
+    // Owner + super-admin (permissions vides/null) + admin ayant can_impersonate
+    const canImpersonate = isOwner
+        || !currentUser?.permissions
+        || Object.keys(currentUser.permissions).length === 0
+        || (currentUser.permissions as any)?.can_impersonate === true;
     const [data, setData] = useState<ArtisanDetailData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [packs, setPacks] = useState<Pack[]>([]);
@@ -893,7 +898,7 @@ export const ArtisanDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Actions Admin</h3>
                             <div className="action-premium-stack">
-                                {isOwner && (
+                                {canImpersonate && (
                                     <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
                                         <LogIn size={18} />
                                         Se connecter en tant que

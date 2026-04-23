@@ -82,6 +82,11 @@ export const GuideDetail: React.FC = () => {
     const navigate = useNavigate();
     const currentUser = useAuthStore((s) => s.user);
     const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
+    // Owner + super-admin (permissions vides/null) + admin ayant can_impersonate
+    const canImpersonate = isOwner
+        || !currentUser?.permissions
+        || Object.keys(currentUser.permissions).length === 0
+        || (currentUser.permissions as any)?.can_impersonate === true;
     const [profile, setProfile] = useState<GuideProfile | null>(null);
     const [submissions, setSubmissions] = useState<Submission[]>([]);
     const [stats, setStats] = useState<GuideStats | null>(null);
@@ -759,7 +764,7 @@ export const GuideDetail: React.FC = () => {
                         <div className="premium-card">
                             <h3>Contrôle du compte</h3>
                             <div className="action-premium-stack" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {isOwner && (
+                                {canImpersonate && (
                                     <button onClick={handleImpersonate} className="premium-action-btn" style={{ background: '#eff6ff', color: '#2383e2' }}>
                                         <LogIn size={18} />
                                         Se connecter en tant que
