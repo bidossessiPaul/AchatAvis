@@ -47,6 +47,14 @@ const refreshAccessToken = async (baseUrl: string): Promise<string | null> => {
  * and reopened on every re-render, which in turn caused a reconnect storm on
  * the server (visible in logs as rapid "SSE Client connected/disconnected").
  */
+// SSE désactivé sur le backend serverless (voir notificationController.stream).
+// Le hook reste exporté pour compatibilité des appels existants mais ne fait rien.
+// Les notifications sont toujours consultables via les endpoints REST classiques
+// (pull à l'arrivée sur une page). Pour activer un vrai temps-réel il faudra soit
+// déployer le backend sur un hébergement sans timeout (Railway etc.), soit
+// implémenter un endpoint de polling.
+const SSE_ENABLED = false;
+
 export const useNotifications = () => {
     // Select stable primitives — avoid returning objects that change identity.
     const userId = useAuthStore(state => state.user?.id ?? null);
@@ -59,6 +67,7 @@ export const useNotifications = () => {
     const baseCandidateIndexRef = useRef(0);
 
     useEffect(() => {
+        if (!SSE_ENABLED) return;
         if (!isAuthenticated || !userId) {
             // Teardown if the user logs out
             closedByUserRef.current = true;
