@@ -122,12 +122,15 @@ export const ReviewTracking360: React.FC = () => {
     // Extract unique fiches for filter
     const uniqueFiches = Array.from(new Set(items.map(item => item.fiche_name).filter(Boolean))).sort();
 
+    const _searchTermLower = searchTerm.toLowerCase().trim();
     const filteredItems = items.filter(item => {
-        const matchesSearch =
-            item.fiche_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.artisan_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.guide_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.proposal_author?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = !_searchTermLower || (
+            item.fiche_name?.toLowerCase().includes(_searchTermLower) ||
+            item.artisan_name?.toLowerCase().includes(_searchTermLower) ||
+            item.guide_name?.toLowerCase().includes(_searchTermLower) ||
+            item.proposal_author?.toLowerCase().includes(_searchTermLower) ||
+            item.proposal_content?.toLowerCase().includes(_searchTermLower)
+        );
 
         const status = item.submission_id ? item.submission_status : 'to_post';
         const matchesStatus = statusFilter === 'all' || status === statusFilter;
@@ -293,6 +296,7 @@ export const ReviewTracking360: React.FC = () => {
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem', width: '60px' }}></th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Entreprise</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Avis & Auteur</th>
+                                        <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Contenu de l'avis</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Local Guide</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Statut 360</th>
                                         <th style={{ background: 'transparent', border: 'none', paddingBottom: '1rem' }}>Dernière Action</th>
@@ -355,13 +359,12 @@ export const ReviewTracking360: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none' }}>
-                                                    <div style={{ maxWidth: '250px' }}>
+                                                    <div style={{ maxWidth: '180px' }}>
                                                         <div
                                                             style={{
                                                                 fontWeight: 600,
                                                                 color: '#374151',
                                                                 fontSize: '13px',
-                                                                maxWidth: '200px',
                                                                 whiteSpace: 'nowrap',
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis'
@@ -370,9 +373,26 @@ export const ReviewTracking360: React.FC = () => {
                                                         >
                                                             {item.proposal_author}
                                                         </div>
-                                                        <div style={{ color: '#6b7280', fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {item.proposal_content}
-                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td style={{ border: 'none' }}>
+                                                    <div
+                                                        title={item.proposal_content || ''}
+                                                        style={{
+                                                            maxWidth: '320px',
+                                                            color: '#374151',
+                                                            fontSize: '12.5px',
+                                                            lineHeight: '1.45',
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 3,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden',
+                                                            cursor: item.proposal_content && item.proposal_content.length > 120 ? 'help' : 'default',
+                                                        }}
+                                                    >
+                                                        {item.proposal_content || (
+                                                            <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>—</span>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none' }}>

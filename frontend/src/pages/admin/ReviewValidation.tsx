@@ -48,6 +48,8 @@ export const ReviewValidation: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [showOnlyOld, setShowOnlyOld] = useState(false);
+    const [artisanFilter, setArtisanFilter] = useState<string>('all');
+    const [ficheFilter, setFicheFilter] = useState<string>('all');
 
     // Modal state
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -106,16 +108,41 @@ export const ReviewValidation: React.FC = () => {
         return diffDays > 7;
     };
 
+    // Listes uniques pour les sélecteurs
+    const artisanOptions = Array.from(
+        new Map(
+            submissions
+                .filter(s => s.artisan_id && s.artisan_name)
+                .map(s => [s.artisan_id, { id: s.artisan_id, name: s.artisan_name }])
+        ).values()
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
+    // Fiches dépendantes de l'artisan sélectionné
+    const ficheOptions = Array.from(
+        new Set(
+            submissions
+                .filter(s => artisanFilter === 'all' || s.artisan_id === artisanFilter)
+                .map(s => s.fiche_name)
+                .filter(Boolean)
+        )
+    ).sort();
+
     const filteredSubmissions = submissions.filter(s => {
-        const matchesSearch =
-            s.guide_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.artisan_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            s.google_email?.toLowerCase().includes(searchTerm.toLowerCase());
+        const term = searchTerm.toLowerCase().trim();
+        const matchesSearch = !term || (
+            s.guide_name?.toLowerCase().includes(term) ||
+            s.artisan_name?.toLowerCase().includes(term) ||
+            s.google_email?.toLowerCase().includes(term) ||
+            s.fiche_name?.toLowerCase().includes(term) ||
+            s.proposal_content?.toLowerCase().includes(term)
+        );
 
         const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
         const matchesAge = !showOnlyOld || isOldReview(s.submitted_at);
+        const matchesArtisan = artisanFilter === 'all' || s.artisan_id === artisanFilter;
+        const matchesFiche = ficheFilter === 'all' || s.fiche_name === ficheFilter;
 
-        return matchesSearch && matchesStatus && matchesAge;
+        return matchesSearch && matchesStatus && matchesAge && matchesArtisan && matchesFiche;
     });
 
     const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
@@ -124,7 +151,7 @@ export const ReviewValidation: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, showOnlyOld]);
+    }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter]);
 
 
     return (
@@ -140,12 +167,12 @@ export const ReviewValidation: React.FC = () => {
                                 </p>
                             </div>
 
-                            <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <div className="admin-controls-premium" style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                                 <div className="search-box-premium" style={{ position: 'relative' }}>
                                     <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
                                     <input
                                         type="text"
-                                        placeholder="Guide, artisan, email..."
+                                        placeholder="Guide, artisan, email, fiche, contenu de l'avis..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         style={{
@@ -157,6 +184,57 @@ export const ReviewValidation: React.FC = () => {
                                         }}
                                     />
                                 </div>
+
+                                {/* Sélecteur Artisan + cascade Fiche */}
+                                <select
+                                    value={artisanFilter}
+                                    onChange={(e) => {
+                                        setArtisanFilter(e.target.value);
+                                        setFicheFilter('all'); // reset fiche quand on change d'artisan
+                                    }}
+                                    title="Filtrer par artisan"
+                                    style={{
+                                        padding: '0.6rem 0.9rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        background: 'white',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--gray-700)',
+                                        cursor: 'pointer',
+                                        maxWidth: '200px',
+                                    }}
+                                >
+                                    <option value="all">Tous les artisans</option>
+                                    {artisanOptions.map(a => (
+                                        <option key={a.id} value={a.id}>{a.name}</option>
+                                    ))}
+                                </select>
+                                <select
+                                    value={ficheFilter}
+                                    onChange={(e) => setFicheFilter(e.target.value)}
+                                    title="Filtrer par fiche"
+                                    disabled={ficheOptions.length === 0}
+                                    style={{
+                                        padding: '0.6rem 0.9rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        background: 'white',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--gray-700)',
+                                        cursor: ficheOptions.length === 0 ? 'not-allowed' : 'pointer',
+                                        opacity: ficheOptions.length === 0 ? 0.5 : 1,
+                                        maxWidth: '220px',
+                                    }}
+                                >
+                                    <option value="all">
+                                        {artisanFilter === 'all' ? 'Toutes les fiches' : 'Toutes les fiches de cet artisan'}
+                                    </option>
+                                    {ficheOptions.map(f => (
+                                        <option key={f} value={f}>{f}</option>
+                                    ))}
+                                </select>
 
                                 <div className="filter-group-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: 'var(--gray-50)', padding: '4px', borderRadius: '14px', border: '1px solid var(--gray-200)' }}>
                                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
