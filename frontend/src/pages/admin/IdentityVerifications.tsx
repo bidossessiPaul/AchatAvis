@@ -4,6 +4,7 @@ import { adminApi } from '../../services/api';
 import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { useAuthStore } from '../../context/authStore';
 import './AdminLists.css';
 
 type VerifStatus = 'pending' | 'approved' | 'rejected';
@@ -39,6 +40,12 @@ export const IdentityVerifications: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<VerifStatus>('pending');
     const [preview, setPreview] = useState<string | null>(null);
+
+    const currentUser = useAuthStore((s) => s.user);
+    const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
+    const isSuperAdmin = !currentUser?.permissions || Object.keys(currentUser.permissions).length === 0;
+    const canViewGeolocation = isOwner || isSuperAdmin
+        || (currentUser?.permissions as any)?.can_view_geolocation === true;
 
     const load = async () => {
         setIsLoading(true);
@@ -279,7 +286,7 @@ export const IdentityVerifications: React.FC = () => {
                                                 {v.declared_city && (
                                                     <div><span style={{ color: '#64748b' }}>Ville déclarée :</span> <strong>{v.declared_city}</strong></div>
                                                 )}
-                                                {(v.detected_city || v.detected_country) && (
+                                                {canViewGeolocation && (v.detected_city || v.detected_country) && (
                                                     <div>
                                                         <span style={{ color: '#64748b' }}>Localisation détectée :</span>{' '}
                                                         <strong>
@@ -305,8 +312,8 @@ export const IdentityVerifications: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Mismatch warning */}
-                                            {v.declared_city && v.detected_city &&
+                                            {/* Mismatch warning — masqué si pas le droit de voir la géoloc */}
+                                            {canViewGeolocation && v.declared_city && v.detected_city &&
                                                 v.declared_city.toLowerCase().trim() !== v.detected_city.toLowerCase().trim() && (
                                                     <div style={{
                                                         marginTop: '0.75rem',

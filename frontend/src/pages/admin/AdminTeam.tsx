@@ -23,6 +23,7 @@ const PERMISSIONS = [
     { key: 'can_manage_reviews', label: 'Gestion Avis', color: '#be123c' },
     { key: 'can_manage_fiches', label: 'Gestion Fiches', color: '#15803d' },
     { key: 'can_impersonate', label: 'Se connecter en tant que', color: '#2383e2' },
+    { key: 'can_view_geolocation', label: 'Voir localisation détectée', color: '#0d9488' },
 ];
 
 const parsePermissions = (raw: any): Record<string, boolean> => {

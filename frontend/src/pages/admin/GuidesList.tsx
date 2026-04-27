@@ -48,10 +48,11 @@ import { countryCodeToFlag } from '../../utils/countryFlag';
 export const GuidesList: React.FC = () => {
     const currentUser = useAuthStore((s) => s.user);
     const isOwner = currentUser?.email === 'dossoumaxime888@gmail.com';
-    const canImpersonate = isOwner
-        || !currentUser?.permissions
-        || Object.keys(currentUser.permissions).length === 0
-        || (currentUser.permissions as any)?.can_impersonate === true;
+    const isSuperAdmin = !currentUser?.permissions || Object.keys(currentUser.permissions).length === 0;
+    const canImpersonate = isOwner || isSuperAdmin
+        || (currentUser?.permissions as any)?.can_impersonate === true;
+    const canViewGeolocation = isOwner || isSuperAdmin
+        || (currentUser?.permissions as any)?.can_view_geolocation === true;
     const [guides, setGuides] = useState<Guide[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -216,9 +217,11 @@ export const GuidesList: React.FC = () => {
                                         <th>Local Guide</th>
                                         <th>Email Compte</th>
                                         <th>Ville (déclarée)</th>
-                                        <th title="Localisation détectée automatiquement via IP à la dernière connexion">
-                                            🛡️ Localisation détectée
-                                        </th>
+                                        {canViewGeolocation && (
+                                            <th title="Localisation détectée automatiquement via IP à la dernière connexion">
+                                                🛡️ Localisation détectée
+                                            </th>
+                                        )}
                                         <th
                                             onClick={() => setSortOrder(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none')}
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -267,6 +270,7 @@ export const GuidesList: React.FC = () => {
                                             </td>
                                             <td className="text-gray-500">{guide.email}</td>
                                             <td>{guide.city}</td>
+                                            {canViewGeolocation && (
                                             <td>
                                                 {guide.detected_city || guide.detected_country ? (
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -314,6 +318,7 @@ export const GuidesList: React.FC = () => {
                                                     </span>
                                                 )}
                                             </td>
+                                            )}
                                             <td>
                                                 <div style={{
                                                     display: 'flex',
