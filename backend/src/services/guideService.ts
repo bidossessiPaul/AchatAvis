@@ -418,6 +418,8 @@ export const guideService = {
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
+        // Solde peut être négatif si l'admin a versé une avance.
+        // Les futurs avis validés réduiront automatiquement la dette.
         const balance = totalEarned - totalPaid - totalPending;
 
         return {
@@ -425,7 +427,7 @@ export const guideService = {
             totalBonuses,
             totalPaid,
             totalPending,
-            balance: Math.max(0, balance)
+            balance,
         };
     },
 

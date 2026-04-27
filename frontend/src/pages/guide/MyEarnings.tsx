@@ -158,12 +158,12 @@ export const MyEarnings: React.FC = () => {
 
                 {/* Balance & Stats Cards */}
                 <div className="earnings-stats">
-                    <div className="stat-card balance">
+                    <div className="stat-card balance" style={Number(stats?.balance || 0) < 0 ? { background: 'linear-gradient(135deg, #dc2626, #b91c1c)' } : undefined}>
                         <div className="stat-icon-wrapper" style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}>
                             <Wallet size={24} />
                         </div>
                         <div className="stat-info">
-                            <p className="stat-label">Solde disponible</p>
+                            <p className="stat-label">{Number(stats?.balance || 0) < 0 ? 'Avance reçue (à rembourser)' : 'Solde disponible'}</p>
                             <h3 className="stat-value">{Number(stats?.balance || 0).toFixed(2)}€</h3>
                         </div>
                     </div>

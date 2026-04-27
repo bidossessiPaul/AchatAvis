@@ -86,16 +86,15 @@ export const GuidesBalances: React.FC = () => {
             showError('Montant invalide', 'Veuillez saisir un montant supérieur à 0.');
             return;
         }
-        if (amount > Number(selectedGuide.balance)) {
-            showError('Montant trop élevé', `Le solde actuel est de ${Number(selectedGuide.balance).toFixed(2)}€. Vous ne pouvez pas payer plus.`);
-            return;
-        }
 
         const remaining = Number(selectedGuide.balance) - amount;
-        const result = await showConfirm(
-            'Confirmer le paiement',
-            `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNouveau solde du guide : ${remaining.toFixed(2)}€`
-        );
+        const isAdvance = remaining < -0.01;
+
+        const confirmMessage = isAdvance
+            ? `Enregistrer une avance de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nLe solde du guide passera à ${remaining.toFixed(2)}€ (négatif). Les prochains avis validés rembourseront automatiquement cette avance.`
+            : `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNouveau solde du guide : ${remaining.toFixed(2)}€`;
+
+        const result = await showConfirm('Confirmer le paiement', confirmMessage);
         if (!result.isConfirmed) return;
 
         setIsPaying(true);
@@ -442,22 +441,22 @@ export const GuidesBalances: React.FC = () => {
                                                     alignItems: 'center',
                                                     gap: '6px',
                                                     padding: '0.4rem 0.8rem',
-                                                    backgroundColor: Number(guide.balance) > 0 ? '#ecfdf5' : 'var(--gray-50)',
+                                                    backgroundColor: Number(guide.balance) > 0 ? '#ecfdf5' : Number(guide.balance) < 0 ? '#fef2f2' : 'var(--gray-50)',
                                                     borderRadius: '10px',
                                                     width: 'fit-content'
                                                 }}>
-                                                    <Wallet size={14} style={{ color: Number(guide.balance) > 0 ? '#059669' : 'var(--gray-400)' }} />
+                                                    <Wallet size={14} style={{ color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)' }} />
                                                     <span style={{
                                                         fontSize: '1.1rem',
                                                         fontWeight: 800,
-                                                        color: Number(guide.balance) > 0 ? '#059669' : 'var(--gray-400)'
+                                                        color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)'
                                                     }}>
                                                         {Number(guide.balance).toFixed(2)}€
                                                     </span>
                                                 </div>
                                             </td>
                                             <td className="actions-cell">
-                                                {Number(guide.balance) > 0 ? (
+                                                {Number(guide.balance) !== 0 ? (
                                                     <button
                                                         onClick={() => openPayModal(guide)}
                                                         style={{
@@ -586,11 +585,12 @@ export const GuidesBalances: React.FC = () => {
                                         const amt = Number(amountToPay);
                                         const remaining = Number(selectedGuide.balance) - (Number.isFinite(amt) ? amt : 0);
                                         const isSoldé = Math.abs(remaining) < 0.01;
-                                        const isOver = remaining < -0.01;
-                                        const bg = isOver ? '#fef2f2' : isSoldé ? '#ecfdf5' : '#fffbeb';
-                                        const border = isOver ? '1px solid #fecaca' : isSoldé ? '1px solid #a7f3d0' : '1px solid #fde68a';
-                                        const labelColor = isOver ? '#b91c1c' : isSoldé ? '#047857' : '#b45309';
-                                        const valueColor = isOver ? '#7f1d1d' : isSoldé ? '#065f46' : '#78350f';
+                                        const isAdvance = remaining < -0.01;
+                                        const bg = isAdvance ? '#fef2f2' : isSoldé ? '#ecfdf5' : '#fffbeb';
+                                        const border = isAdvance ? '1px solid #fecaca' : isSoldé ? '1px solid #a7f3d0' : '1px solid #fde68a';
+                                        const labelColor = isAdvance ? '#b91c1c' : isSoldé ? '#047857' : '#b45309';
+                                        const valueColor = isAdvance ? '#7f1d1d' : isSoldé ? '#065f46' : '#78350f';
+                                        const labelText = isAdvance ? 'Avance — solde négatif' : 'Nouveau solde';
                                         return (
                                             <div style={{
                                                 background: bg,
@@ -600,7 +600,7 @@ export const GuidesBalances: React.FC = () => {
                                                 textAlign: 'center'
                                             }}>
                                                 <div style={{ fontSize: '0.65rem', color: labelColor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                                                    {isOver ? 'Montant trop élevé' : 'Nouveau solde'}
+                                                    {labelText}
                                                 </div>
                                                 <div style={{ fontSize: '1.15rem', fontWeight: 800, color: valueColor, marginTop: '2px' }}>
                                                     {remaining.toFixed(2)}€
@@ -635,7 +635,7 @@ export const GuidesBalances: React.FC = () => {
                                     </div>
                                     {(() => {
                                         const amt = Number(amountToPay);
-                                        const isOver = Number.isFinite(amt) && amt > Number(selectedGuide.balance);
+                                        const isAdvance = Number.isFinite(amt) && amt > Number(selectedGuide.balance);
                                         return (
                                             <>
                                                 <div style={{ position: 'relative' }}>
@@ -643,7 +643,6 @@ export const GuidesBalances: React.FC = () => {
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
-                                                        max={Number(selectedGuide.balance)}
                                                         value={amountToPay}
                                                         onChange={(e) => setAmountToPay(e.target.value)}
                                                         placeholder="0.00"
@@ -652,10 +651,10 @@ export const GuidesBalances: React.FC = () => {
                                                             width: '100%',
                                                             padding: '0.65rem 2.2rem 0.65rem 0.85rem',
                                                             borderRadius: '8px',
-                                                            border: isOver ? '2px solid #dc2626' : '2px solid #059669',
+                                                            border: '2px solid #059669',
                                                             fontSize: '1.2rem',
                                                             fontWeight: 800,
-                                                            color: isOver ? '#dc2626' : '#059669',
+                                                            color: '#059669',
                                                             outline: 'none',
                                                             fontFamily: 'inherit',
                                                             boxSizing: 'border-box'
@@ -668,13 +667,13 @@ export const GuidesBalances: React.FC = () => {
                                                         transform: 'translateY(-50%)',
                                                         fontSize: '1rem',
                                                         fontWeight: 700,
-                                                        color: isOver ? '#dc2626' : '#059669',
+                                                        color: '#059669',
                                                         pointerEvents: 'none'
                                                     }}>€</span>
                                                 </div>
-                                                {isOver ? (
-                                                    <p style={{ fontSize: '0.75rem', color: '#dc2626', fontWeight: 600, marginTop: '0.4rem', lineHeight: 1.35 }}>
-                                                        Le montant dépasse le solde disponible ({Number(selectedGuide.balance).toFixed(2)}€).
+                                                {isAdvance ? (
+                                                    <p style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 600, marginTop: '0.4rem', lineHeight: 1.35, background: '#fffbeb', padding: '0.5rem 0.625rem', borderRadius: '6px', border: '1px solid #fde68a' }}>
+                                                        ⚠ Avance : le solde du guide passera en négatif. Les prochains avis validés rembourseront automatiquement la dette.
                                                     </p>
                                                 ) : (
                                                     <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', lineHeight: 1.35 }}>
@@ -721,8 +720,7 @@ export const GuidesBalances: React.FC = () => {
                             </button>
                             {(() => {
                                 const amt = Number(amountToPay);
-                                const isOver = Number.isFinite(amt) && amt > Number(selectedGuide.balance);
-                                const isInvalid = !amountToPay || !Number.isFinite(amt) || amt <= 0 || isOver;
+                                const isInvalid = !amountToPay || !Number.isFinite(amt) || amt <= 0;
                                 return (
                                     <button
                                         onClick={handleForcePay}
