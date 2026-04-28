@@ -10,7 +10,7 @@ export const submitVerification = async (
     gmailAccountId: number,
     guideId: string,
     buffer: Buffer,
-    mimetype: string,
+    _mimetype: string,
     mapsProfileUrl: string
 ): Promise<any> => {
     // Upload du screenshot sur Cloudinary

@@ -154,6 +154,13 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
             closeVerifyModal();
             if (user) fetchGmailAccounts(user.id);
         } catch (e: any) {
+            if (e.response?.status === 404) {
+                showError(
+                    'Vérification indisponible',
+                    'La route de vérification Gmail n’est pas encore disponible sur le backend déployé. Un redéploiement backend est nécessaire.'
+                );
+                return;
+            }
             showError('Erreur', e.response?.data?.error || e.message);
         } finally {
             setVerifyLoading(false);

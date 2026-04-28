@@ -133,8 +133,9 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     });
 });
 
-// Start server (skip in serverless runtime that bootstraps the app itself)
-if (!process.env.VERCEL) {
+// Start server only when this file is the direct entry point.
+// This keeps imports side-effect free for serverless entrypoints and smoke tests.
+if (!process.env.VERCEL && require.main === module) {
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
     });

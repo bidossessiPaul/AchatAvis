@@ -55,8 +55,15 @@ export const AdminGmailVerifications: React.FC<any> = () => {
             const params = filter !== 'all' ? `?status=${filter}` : '';
             const r = await api.get(`/admin/gmail-verifications${params}`);
             setItems(r.data.verifications ?? r.data);
-        } catch {
-            showError('Erreur', 'Chargement impossible');
+        } catch (e: any) {
+            if (e.response?.status === 404) {
+                showError(
+                    'Vérifications indisponibles',
+                    'La route admin des vérifications Gmail n’est pas disponible sur le backend déployé.'
+                );
+            } else {
+                showError('Erreur', 'Chargement impossible');
+            }
         } finally {
             setLoading(false);
         }
