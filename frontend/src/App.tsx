@@ -68,6 +68,17 @@ const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsLis
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
 const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
 
+// Signalement (admin)
+const SignalementPacks = lazyNamed(() => import('./pages/admin/signalement/SignalementPacks'), 'SignalementPacks');
+const SignalementsList = lazyNamed(() => import('./pages/admin/signalement/SignalementsList'), 'SignalementsList');
+const SignalementValidations = lazyNamed(() => import('./pages/admin/signalement/SignalementValidations'), 'SignalementValidations');
+const SignalementConfig = lazyNamed(() => import('./pages/admin/signalement/SignalementConfig'), 'SignalementConfig');
+
+// Signalement (artisan + guide)
+const ArtisanSignalementDashboard = lazyNamed(() => import('./pages/artisan/signalement/ArtisanSignalementDashboard'), 'ArtisanSignalementDashboard');
+const GuideSignalementsList = lazyNamed(() => import('./pages/guide/signalement/GuideSignalementsList'), 'GuideSignalementsList');
+const GuideSignalementDetail = lazyNamed(() => import('./pages/guide/signalement/GuideSignalementDetail'), 'GuideSignalementDetail');
+
 const Profile = lazyNamed(() => import('./pages/Profile'), 'Profile');
 const NotFound = lazyNamed(() => import('./pages/NotFound'), 'NotFound');
 
@@ -605,6 +616,76 @@ function App() {
                                     <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
                                         <GmailAccountsList />
                                     </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Signalement — admin */}
+                        <Route
+                            path="/admin/signalement/packs"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission="can_manage_signalement_packs">
+                                        <SignalementPacks />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/signalement/avis"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission="can_manage_signalements">
+                                        <SignalementsList />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/signalement/validations"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission="can_validate_signalements">
+                                        <SignalementValidations />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/signalement/config"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission="can_manage_signalement_packs">
+                                        <SignalementConfig />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Signalement — artisan */}
+                        <Route
+                            path="/artisan/signalement"
+                            element={
+                                <ProtectedRoute allowedRoles={['artisan']}>
+                                    <ArtisanSignalementDashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Signalement — guide */}
+                        <Route
+                            path="/guide/signalement"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <GuideSignalementsList />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/guide/signalement/slot/:slotId"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <GuideSignalementDetail />
                                 </ProtectedRoute>
                             }
                         />

@@ -23,7 +23,9 @@ import {
     Wallet,
     XCircle,
     Activity,
-    Megaphone
+    Megaphone,
+    Flag,
+    Settings
 } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
@@ -62,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Vue d\'ensemble', path: '/artisan', icon: <LayoutDashboard size={20} /> },
                     { label: 'Mes commandes', path: '/artisan/orders', icon: <Package size={20} /> },
                     { label: 'Avis reçus', path: '/artisan/reviews', icon: <Star size={20} /> },
+                    { label: 'Signalement', path: '/artisan/signalement', icon: <Flag size={20} /> },
                     { label: 'Facturation', path: '/artisan/billing', icon: <CreditCard size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
                 ];
@@ -73,6 +76,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Corrections', path: '/guide/corrections', icon: <RefreshCw size={20} /> },
                     { label: 'Mes Gmails', path: '/guide/my-gmails', icon: <Mail size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
+                    { label: 'Signalement', path: '/guide/signalement', icon: <Flag size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
                     { label: 'Communiqués', path: '/guide/communiques', icon: <Megaphone size={20} /> },
                     { label: 'Règlement', path: '/guide/community-rules', icon: <BookOpen size={20} /> },
@@ -97,6 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Soldes Guides', path: '/admin/guides-balances', icon: <Wallet size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Comptes Gmail', path: '/admin/gmail-accounts', icon: <Mail size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_trust_scores'] },
+                    { label: 'Packs Signalement', path: '/admin/signalement/packs', icon: <Flag size={20} />, permissions: ['can_manage_signalement_packs'] },
+                    { label: 'Avis à signaler', path: '/admin/signalement/avis', icon: <Flag size={20} />, permissions: ['can_manage_signalements'] },
+                    { label: 'Validation Signalements', path: '/admin/signalement/validations', icon: <FileCheck size={20} />, permissions: ['can_validate_signalements'] },
+                    { label: 'Config Signalement', path: '/admin/signalement/config', icon: <Settings size={20} />, permissions: ['can_manage_signalement_packs'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];

@@ -1,0 +1,137 @@
+.gsig-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+
+.gsig-banner-warning {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    margin-bottom: 1.5rem;
+}
+.gsig-banner-warning ul { margin: 0.5rem 0 0; padding-left: 1.5rem; }
+
+.gsig-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.gsig-stat-card {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    padding: 1.25rem;
+    border-radius: 1rem;
+}
+.gsig-stat-card .label { font-size: 0.8rem; opacity: 0.9; text-transform: uppercase; font-weight: 600; }
+.gsig-stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 0.5rem; }
+.gsig-stat-card.alt-blue { background: linear-gradient(135deg, #2383e2, #0369a1); }
+.gsig-stat-card.alt-purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+
+.gsig-active-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+.gsig-active-card {
+    border: 1px solid #fde68a;
+    background: #fefce8;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.gsig-active-card a { color: #1e40af; }
+
+.gsig-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.gsig-card h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+.gsig-card .meta { font-size: 0.85rem; color: #64748b; margin-bottom: 0.75rem; }
+.gsig-card .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.gsig-card .payout {
+    font-weight: 700;
+    color: #059669;
+    font-size: 1.1rem;
+}
+.gsig-card .blocked {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.gsig-btn-take {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.25rem;
+    border-radius: 0.625rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.gsig-btn-take:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.gsig-empty { padding: 3rem 1rem; text-align: center; color: #94a3b8; }
+
+/* Detail / submit proof page */
+.gsig-detail-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.gsig-timer {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+.gsig-timer.warning { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+.gsig-instructions {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+.gsig-instructions ol { margin: 0.5rem 0 0; padding-left: 1.5rem; }
+.gsig-form-group { margin-bottom: 1rem; }
+.gsig-form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: #334155; }
+.gsig-form-group input[type="file"],
+.gsig-form-group input[type="url"],
+.gsig-form-group textarea {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+    font-family: inherit;
+}

@@ -24,6 +24,9 @@ const PERMISSIONS = [
     { key: 'can_manage_fiches', label: 'Gestion Fiches', color: '#15803d' },
     { key: 'can_impersonate', label: 'Se connecter en tant que', color: '#2383e2' },
     { key: 'can_view_geolocation', label: 'Voir localisation détectée', color: '#0d9488' },
+    { key: 'can_manage_signalement_packs', label: 'Signalement — Packs & Config', color: '#b91c1c' },
+    { key: 'can_manage_signalements', label: 'Signalement — Avis (vue globale)', color: '#dc2626' },
+    { key: 'can_validate_signalements', label: 'Signalement — Valider preuves', color: '#ef4444' },
 ];
 
 const parsePermissions = (raw: any): Record<string, boolean> => {

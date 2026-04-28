@@ -1,0 +1,295 @@
+/* Style partagé pour les 4 pages admin du module signalement.
+   Reprend la palette AchatAvis : vert primaire #059669, gris #f8fafc, etc. */
+
+.sig-admin-page {
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.sig-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.sig-admin-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sig-admin-header p {
+    margin: 0.25rem 0 0;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Stats bar (KPI cards) */
+.sig-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.sig-stat-card {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+    padding: 1.25rem;
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.sig-stat-card .label {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.sig-stat-card .value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+}
+
+.sig-stat-card.alt-blue { background: linear-gradient(135deg, #2383e2, #0369a1); }
+.sig-stat-card.alt-orange { background: linear-gradient(135deg, #d97706, #b45309); }
+.sig-stat-card.alt-purple { background: linear-gradient(135deg, #7c3aed, #6d28d9); }
+
+/* Filters */
+.sig-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+.sig-filters input,
+.sig-filters select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: #fff;
+}
+
+/* Tables */
+.sig-table-wrap {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.sig-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.sig-table thead th {
+    background: #f8fafc;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+    text-align: left;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+.sig-table tbody td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+    color: #334155;
+}
+.sig-table tbody tr:hover { background: #fafbfc; }
+.sig-table tbody tr:last-child td { border-bottom: none; }
+
+/* Buttons */
+.sig-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.625rem;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s;
+}
+.sig-btn-primary {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: #fff;
+}
+.sig-btn-primary:hover { opacity: 0.92; }
+.sig-btn-secondary {
+    background: #fff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.sig-btn-secondary:hover { background: #f8fafc; }
+.sig-btn-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.sig-btn-danger:hover { background: #fecaca; }
+.sig-btn-ghost {
+    background: transparent;
+    color: #64748b;
+    padding: 0.35rem 0.6rem;
+}
+.sig-btn-ghost:hover { background: #f1f5f9; color: #0f172a; }
+
+/* Badges */
+.sig-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sig-badge-active { background: #dcfce7; color: #166534; }
+.sig-badge-success { background: #d1fae5; color: #065f46; }
+.sig-badge-inconclusive { background: #fef3c7; color: #92400e; }
+.sig-badge-cancelled { background: #fee2e2; color: #991b1b; }
+.sig-badge-pending { background: #fef3c7; color: #92400e; }
+.sig-badge-validated { background: #dcfce7; color: #166534; }
+.sig-badge-rejected { background: #fee2e2; color: #991b1b; }
+
+/* Modal */
+.sig-modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+.sig-modal {
+    background: #fff;
+    border-radius: 1.25rem;
+    max-width: 600px;
+    width: 100%;
+    max-height: calc(100vh - 2rem);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+}
+.sig-modal-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sig-modal-header h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    color: #0f172a;
+}
+.sig-modal-body {
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+.sig-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.sig-form-group { margin-bottom: 1rem; }
+.sig-form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+}
+.sig-form-group input,
+.sig-form-group select,
+.sig-form-group textarea {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.sig-form-group input:focus,
+.sig-form-group select:focus,
+.sig-form-group textarea:focus {
+    outline: none;
+    border-color: #059669;
+}
+
+.sig-empty {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.sig-screenshot-thumb {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    object-fit: cover;
+}
+
+.sig-validation-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.sig-validation-card .header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.sig-validation-card .meta {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+.sig-validation-card .actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.sig-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+@media (max-width: 640px) {
+    .sig-admin-page { padding: 1rem; }
+    .sig-table { font-size: 0.8rem; }
+    .sig-table thead th, .sig-table tbody td { padding: 0.6rem 0.5rem; }
+    .sig-modal { border-radius: 1rem; }
+}

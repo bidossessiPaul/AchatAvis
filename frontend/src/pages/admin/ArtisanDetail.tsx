@@ -28,6 +28,7 @@ import {
 import { getFileUrl } from '../../utils/url';
 import { showConfirm, showSuccess, showError, showInput, showSelection } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { ArtisanSignalementSection } from '../../components/admin/ArtisanSignalementSection';
 import './AdminDetail.css';
 
 interface Order {
@@ -1184,6 +1185,8 @@ export const ArtisanDetail: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {id && <ArtisanSignalementSection artisanId={id} />}
             </div>
         </DashboardLayout>
     );
