@@ -45,3 +45,33 @@ export const remove = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }
 };
+
+export const updateNote = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { note } = req.body;
+        const updated = await attributionService.updateAttributionNote(
+            req.params.id,
+            typeof note === 'string' ? note.trim() || null : null
+        );
+        if (!updated) {
+            res.status(404).json({ error: 'Attribution introuvable' });
+            return;
+        }
+        res.json({ attribution: updated });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+export const togglePause = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const updated = await attributionService.toggleAttributionPause(req.params.id);
+        if (!updated) {
+            res.status(404).json({ error: 'Attribution introuvable' });
+            return;
+        }
+        res.json({ attribution: updated });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};

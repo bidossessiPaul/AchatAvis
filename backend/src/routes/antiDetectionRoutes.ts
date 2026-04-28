@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { antiDetectionController } from '../controllers/antiDetectionController';
 import { authenticate } from '../middleware/auth';
 import { uploadScreenshot } from '../middleware/upload';
+import * as gmailVerificationController from '../controllers/gmailVerificationController';
 
 const router = Router();
 
@@ -36,5 +37,9 @@ router.post('/generate-cities', authenticate, antiDetectionController.generateCi
 // Level Verification
 router.post('/level-verification/submit', authenticate, uploadScreenshot.single('screenshot'), antiDetectionController.submitLevelVerification);
 router.get('/level-verifications/mine', authenticate, antiDetectionController.getMyLevelVerifications);
+
+// Vérification manuelle des comptes Gmail (screenshot + lien Maps)
+router.post('/gmail-accounts/:accountId/verify', authenticate, uploadScreenshot.single('screenshot'), gmailVerificationController.submit);
+router.get('/gmail-accounts/:accountId/verification-status', authenticate, gmailVerificationController.getStatus);
 
 export default router;

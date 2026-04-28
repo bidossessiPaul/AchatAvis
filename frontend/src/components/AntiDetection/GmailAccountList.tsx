@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
-import { Trash2, Mail, AlertTriangle, Link as LinkIcon, Trophy, CheckCircle } from 'lucide-react';
+import { Trash2, Mail, AlertTriangle, Link as LinkIcon, Trophy, CheckCircle, ShieldCheck, Upload, X } from 'lucide-react';
+import api from '../../services/api';
 
 const LEVEL_BADGE_IMAGES: Record<number, string> = {
     4: 'https://services.google.com/fh/files/helpcenter/points-badge_level_four.png',
@@ -23,6 +24,22 @@ interface GmailAccountListProps {
 export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, onVerifyLevel }) => {
     const { user } = useAuthStore();
     const { gmailAccounts, fetchGmailAccounts, deleteGmailAccount, updateGmailAccount, loading } = useAntiDetectionStore();
+
+    // État modal vérification Gmail
+    const [verifyingAccount, setVerifyingAccount] = useState<any | null>(null);
+    const [verifyFile, setVerifyFile] = useState<File | null>(null);
+    const [verifyMapsUrl, setVerifyMapsUrl] = useState('');
+    const [verifyLoading, setVerifyLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // IDs des comptes déjà soumis (persistés en localStorage pour survivre au refresh)
+    const LS_KEY = `gmail_verif_submitted_${user?.id ?? ''}`;
+    const [submittedIds, setSubmittedIds] = useState<Set<number>>(() => {
+        try {
+            const raw = localStorage.getItem(`gmail_verif_submitted_${user?.id ?? ''}`);
+            return raw ? new Set(JSON.parse(raw) as number[]) : new Set();
+        } catch { return new Set(); }
+    });
 
     useEffect(() => {
         if (user) {
@@ -103,6 +120,43 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
             } catch (error: any) {
                 showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
             }
+        }
+    };
+
+    const openVerifyModal = (account: any) => {
+        setVerifyingAccount(account);
+        setVerifyFile(null);
+        setVerifyMapsUrl('');
+    };
+
+    const closeVerifyModal = () => {
+        setVerifyingAccount(null);
+        setVerifyFile(null);
+        setVerifyMapsUrl('');
+    };
+
+    const handleVerifySubmit = async () => {
+        if (!verifyFile) { showError('Capture requise', 'Sélectionnez une capture d\'écran'); return; }
+        if (!verifyMapsUrl.trim()) { showError('Lien requis', 'Collez votre lien profil Google Maps'); return; }
+        setVerifyLoading(true);
+        try {
+            const fd = new FormData();
+            fd.append('screenshot', verifyFile);
+            fd.append('maps_profile_url', verifyMapsUrl.trim());
+            await api.post(`/anti-detection/gmail-accounts/${verifyingAccount.id}/verify`, fd, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            showSuccess('Soumis pour vérification', 'Un admin examinera votre dossier sous 48h.');
+            // Mémoriser l'ID soumis pour changer l'affichage du bouton
+            const newIds = new Set(submittedIds).add(verifyingAccount.id);
+            setSubmittedIds(newIds);
+            localStorage.setItem(LS_KEY, JSON.stringify([...newIds]));
+            closeVerifyModal();
+            if (user) fetchGmailAccounts(user.id);
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || e.message);
+        } finally {
+            setVerifyLoading(false);
         }
     };
 
@@ -209,29 +263,42 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                                 {Math.min(account.validated_reviews_count || 0, 5)}/5 avis validés
                                             </span>
                                         </div>
-                                        {onVerifyLevel && (account.validated_reviews_count || 0) >= 5 && (
-                                            <button
-                                                onClick={() => onVerifyLevel(account.id)}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.4rem',
-                                                    background: '#fef3c7',
-                                                    color: '#92400e',
-                                                    border: '1px solid #fde68a',
-                                                    padding: '0.25rem 0.6rem',
-                                                    borderRadius: '0.5rem',
-                                                    fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    whiteSpace: 'nowrap',
-                                                    width: 'fit-content'
-                                                }}
-                                            >
-                                                <Trophy size={13} />
-                                                Vérifier mon niveau
-                                            </button>
-                                        )}
+                                        {/* Boutons d'action sur chaque carte */}
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                                            {/* Vérifier ce compte Gmail */}
+                                            {account.manual_verification_status === 'verified' ? (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#dcfce7', color: '#166534', border: '1px solid #a7f3d0', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                    <ShieldCheck size={13} />
+                                                    Mail vérifié
+                                                </span>
+                                            ) : submittedIds.has(account.id) ? (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'default' }}>
+                                                    <ShieldCheck size={13} />
+                                                    En attente de validation par un admin
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => openVerifyModal(account)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#dc2626', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                >
+                                                    <ShieldCheck size={13} />
+                                                    Vérifier ce mail
+                                                </button>
+                                            )}
+
+                                            {/* Vérifier mon niveau */}
+                                            {onVerifyLevel && (
+                                                <button
+                                                    onClick={() => (account.validated_reviews_count || 0) >= 5 ? onVerifyLevel(account.id) : null}
+                                                    disabled={(account.validated_reviews_count || 0) < 5}
+                                                    title={(account.validated_reviews_count || 0) < 5 ? `Encore ${5 - (account.validated_reviews_count || 0)} avis validés requis` : 'Soumettre votre niveau'}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: (account.validated_reviews_count || 0) >= 5 ? '#fef3c7' : '#f1f5f9', color: (account.validated_reviews_count || 0) >= 5 ? '#92400e' : '#94a3b8', border: `1px solid ${(account.validated_reviews_count || 0) >= 5 ? '#fde68a' : '#e2e8f0'}`, padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 600, cursor: (account.validated_reviews_count || 0) >= 5 ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}
+                                                >
+                                                    <Trophy size={13} />
+                                                    Vérifier mon niveau
+                                                </button>
+                                            )}
+                                        </div>
                                     </>
                                 )}
                             </div>
@@ -247,6 +314,87 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Modal vérification Gmail */}
+            {verifyingAccount && (
+                <div onClick={closeVerifyModal} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '1.25rem', padding: '1.5rem', width: '100%', maxWidth: 480, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <ShieldCheck size={18} color="#dc2626" />
+                                Vérifier ce compte Gmail
+                            </h3>
+                            <button onClick={closeVerifyModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+                        </div>
+
+                        <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 8, padding: '1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#92400e' }}>
+                            <p style={{ margin: '0 0 0.75rem', fontWeight: 700 }}>
+                                Avant de soumettre <strong>{verifyingAccount.email}</strong>, vérifiez que les 3 conditions suivantes sont remplies :
+                            </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                    <span style={{ fontWeight: 700, flexShrink: 0 }}>1.</span>
+                                    <span><strong>Nom d'affichage français</strong> — Le nom du compte doit paraître français ou international (ex : Jean Dupont, Sophie Martin). Les noms typiquement régionaux (béninois, togolais, ivoiriens...) sont refusés.</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                    <span style={{ fontWeight: 700, flexShrink: 0 }}>2.</span>
+                                    <span><strong>Anciens avis masqués</strong> — Archivez ou supprimez les avis sur des entreprises/lieux au Bénin, et désactivez la visibilité de votre historique si votre localisation était en Afrique.</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                    <span style={{ fontWeight: 700, flexShrink: 0 }}>3.</span>
+                                    <span><strong>Photo de profil neutre</strong> — Utilisez une image sobre (paysage, illustration neutre). Pas de selfie, pas de photo de vous, pas d'image floue ou bizarre.</span>
+                                </div>
+                            </div>
+                            <p style={{ margin: '0.75rem 0 0', fontSize: '0.78rem', fontStyle: 'italic' }}>
+                                Soumettez une capture prouvant que le compte est conforme + votre lien profil Google Maps.
+                            </p>
+                        </div>
+
+                        {/* Upload capture */}
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: '0.4rem' }}>
+                                Capture d'écran de la boîte mail *
+                            </label>
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{ border: `2px dashed ${verifyFile ? '#059669' : '#cbd5e1'}`, borderRadius: 8, padding: '1rem', textAlign: 'center', cursor: 'pointer', background: verifyFile ? '#f0fdf4' : '#f8fafc' }}
+                            >
+                                {verifyFile ? (
+                                    <span style={{ color: '#059669', fontWeight: 600, fontSize: '0.85rem' }}>✓ {verifyFile.name}</span>
+                                ) : (
+                                    <span style={{ color: '#94a3b8', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                                        <Upload size={16} /> Cliquez pour sélectionner (JPG, PNG, WEBP — max 5 Mo)
+                                    </span>
+                                )}
+                            </div>
+                            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }} onChange={e => setVerifyFile(e.target.files?.[0] || null)} />
+                        </div>
+
+                        {/* Lien Maps */}
+                        <div style={{ marginBottom: '1.25rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#374151', marginBottom: '0.4rem' }}>
+                                Lien profil Google Maps *
+                            </label>
+                            <input
+                                type="url"
+                                value={verifyMapsUrl}
+                                onChange={e => setVerifyMapsUrl(e.target.value)}
+                                placeholder="https://www.google.com/maps/contrib/..."
+                                style={{ width: '100%', padding: '0.65rem 0.85rem', border: `2px solid ${verifyMapsUrl ? '#059669' : '#e2e8f0'}`, borderRadius: 8, fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button onClick={closeVerifyModal} style={{ flex: 1, padding: '0.65rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600, color: '#475569' }}>
+                                Annuler
+                            </button>
+                            <button onClick={handleVerifySubmit} disabled={verifyLoading} style={{ flex: 1, padding: '0.65rem', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff', cursor: verifyLoading ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: verifyLoading ? 0.7 : 1 }}>
+                                {verifyLoading ? 'Envoi...' : 'Soumettre'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

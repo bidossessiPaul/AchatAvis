@@ -65,6 +65,7 @@ const AdminLevelVerifications = lazyNamed(() => import('./pages/admin/AdminLevel
 const IdentityVerifications = lazyNamed(() => import('./pages/admin/IdentityVerifications'), 'IdentityVerifications');
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
+const AdminGmailVerifications = lazyNamed(() => import('./pages/admin/AdminGmailVerifications'), 'AdminGmailVerifications');
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
 const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
 
@@ -615,6 +616,16 @@ function App() {
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
                                         <GmailAccountsList />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/gmail-verifications"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                                        <AdminGmailVerifications />
                                     </PermissionGuard>
                                 </ProtectedRoute>
                             }

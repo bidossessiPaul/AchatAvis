@@ -2,7 +2,7 @@
 // Affiche les attributions de packs signalement de l'artisan + permet d'en attribuer un nouveau.
 
 import { useState, useEffect } from 'react';
-import { Flag, Plus } from 'lucide-react';
+import { Flag, Plus, Edit3, Pause, Play, Trash2 } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
 import Swal from 'sweetalert2';
 import { adminAttributionApi, adminPacksApi } from '../../services/signalement';
@@ -61,11 +61,73 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
                 confirmButtonText: 'Confirmer',
                 cancelButtonText: 'Annuler',
             });
-            // note peut être '' ou undefined — on continue dans tous les cas (pas obligatoire)
 
             await adminAttributionApi.create({ artisan_id: artisanId, pack_id: packId, note: note || undefined });
             showSuccess('Pack attribué');
             load();
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || e.message);
+        }
+    };
+
+    const editNote = async (a: SignalementAttribution) => {
+        const { value: note, isConfirmed } = await Swal.fire({
+            title: 'Modifier la note',
+            input: 'textarea',
+            inputValue: a.note ?? '',
+            inputPlaceholder: 'Note interne…',
+            showCancelButton: true,
+            confirmButtonText: 'Enregistrer',
+            cancelButtonText: 'Annuler',
+        });
+        if (!isConfirmed) return;
+        try {
+            const updated = await adminAttributionApi.updateNote(a.id, note ?? '');
+            setAttributions(prev => prev.map(x => x.id === a.id ? updated : x));
+            showSuccess('Note mise à jour');
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || e.message);
+        }
+    };
+
+    const togglePause = async (a: SignalementAttribution) => {
+        const action = a.is_paused ? 'reprendre' : 'mettre en pause';
+        const { isConfirmed } = await Swal.fire({
+            title: `${a.is_paused ? 'Reprendre' : 'Mettre en pause'} l'attribution ?`,
+            text: a.is_paused
+                ? 'L\'artisan pourra à nouveau utiliser ce crédit.'
+                : 'L\'artisan ne pourra plus créer de nouveaux avis depuis ce crédit.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: `Oui, ${action}`,
+            cancelButtonText: 'Annuler',
+        });
+        if (!isConfirmed) return;
+        try {
+            const updated = await adminAttributionApi.togglePause(a.id);
+            setAttributions(prev => prev.map(x => x.id === a.id ? updated : x));
+            showSuccess(a.is_paused ? 'Attribution reprise' : 'Attribution mise en pause');
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || e.message);
+        }
+    };
+
+    const remove = async (a: SignalementAttribution) => {
+        const { isConfirmed } = await Swal.fire({
+            title: 'Supprimer l\'attribution ?',
+            text: 'Les avis en cours rattachés à ce crédit resteront actifs. Action irréversible.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Supprimer',
+            cancelButtonColor: '#d33',
+            cancelButtonText: 'Annuler',
+        });
+        if (!isConfirmed) return;
+        try {
+            await adminAttributionApi.remove(a.id);
+            setAttributions(prev => prev.filter(x => x.id !== a.id));
+            showSuccess('Attribution supprimée');
+            load(); // recalcule remaining
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || e.message);
         }
@@ -100,16 +162,53 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
                                 <th>Date attribution</th>
                                 <th>Avis (consommé / total)</th>
                                 <th>Signalements / avis</th>
+                                <th>Statut</th>
                                 <th>Note</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {attributions.map(a => (
-                                <tr key={a.id}>
+                                <tr key={a.id} style={{ opacity: a.is_paused ? 0.6 : 1 }}>
                                     <td>{new Date(a.attributed_at).toLocaleDateString('fr-FR')}</td>
                                     <td>{a.nb_avis_consumed} / {a.nb_avis_total}</td>
                                     <td>{a.nb_signalements_par_avis}</td>
-                                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>{a.note || '—'}</td>
+                                    <td>
+                                        {a.is_paused ? (
+                                            <span style={{ background: '#fef3c7', color: '#92400e', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                En pause
+                                            </span>
+                                        ) : (
+                                            <span style={{ background: '#dcfce7', color: '#166534', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                                                Actif
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td style={{ fontSize: '0.85rem', color: '#64748b', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {a.note || '—'}
+                                    </td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                            <button
+                                                onClick={() => editNote(a)}
+                                                title="Modifier la note"
+                                                style={{ background: '#f1f5f9', border: 'none', borderRadius: 6, padding: '0.3rem 0.5rem', cursor: 'pointer', color: '#475569', display: 'inline-flex', alignItems: 'center' }}>
+                                                <Edit3 size={14} />
+                                            </button>
+                                            <button
+                                                onClick={() => togglePause(a)}
+                                                title={a.is_paused ? 'Reprendre' : 'Mettre en pause'}
+                                                style={{ background: a.is_paused ? '#dcfce7' : '#fef3c7', border: 'none', borderRadius: 6, padding: '0.3rem 0.5rem', cursor: 'pointer', color: a.is_paused ? '#166534' : '#92400e', display: 'inline-flex', alignItems: 'center' }}>
+                                                {a.is_paused ? <Play size={14} /> : <Pause size={14} />}
+                                            </button>
+                                            <button
+                                                onClick={() => remove(a)}
+                                                title="Supprimer"
+                                                style={{ background: '#fee2e2', border: 'none', borderRadius: 6, padding: '0.3rem 0.5rem', cursor: 'pointer', color: '#991b1b', display: 'inline-flex', alignItems: 'center' }}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

@@ -163,6 +163,29 @@ export const softDeleteAttribution = async (id: string): Promise<void> => {
     );
 };
 
+export const updateAttributionNote = async (
+    id: string,
+    note: string | null
+): Promise<SignalementAttribution | null> => {
+    await query(
+        `UPDATE signalement_attributions SET note = ?
+         WHERE id = ? AND deleted_at IS NULL`,
+        [note ?? null, id]
+    );
+    return getAttributionById(id);
+};
+
+export const toggleAttributionPause = async (
+    id: string
+): Promise<SignalementAttribution | null> => {
+    await query(
+        `UPDATE signalement_attributions SET is_paused = 1 - is_paused
+         WHERE id = ? AND deleted_at IS NULL`,
+        [id]
+    );
+    return getAttributionById(id);
+};
+
 function rowToAttribution(row: any): SignalementAttribution {
     return {
         id: row.id,
@@ -171,6 +194,7 @@ function rowToAttribution(row: any): SignalementAttribution {
         nb_avis_total: row.nb_avis_total,
         nb_signalements_par_avis: row.nb_signalements_par_avis,
         nb_avis_consumed: row.nb_avis_consumed,
+        is_paused: row.is_paused === 1 || row.is_paused === true,
         attributed_by: row.attributed_by,
         attributed_at: row.attributed_at,
         note: row.note,

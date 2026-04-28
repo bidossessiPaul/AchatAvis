@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS signalement_attributions (
     nb_avis_total INT NOT NULL,
     nb_signalements_par_avis INT NOT NULL,
     nb_avis_consumed INT DEFAULT 0,
-    attributed_by VARCHAR(36) NOT NULL,
+    attributed_by VARCHAR(36),
     attributed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     note TEXT,
     deleted_at DATETIME DEFAULT NULL,

@@ -36,6 +36,7 @@ export interface SignalementAttribution {
     nb_avis_total: number;
     nb_signalements_par_avis: number;
     nb_avis_consumed: number;
+    is_paused: boolean;
     attributed_by: string;
     attributed_at: string;
     note: string | null;

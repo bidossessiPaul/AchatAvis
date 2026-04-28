@@ -11,6 +11,8 @@ const PERM = checkPermission('can_manage_signalement_packs');
 
 router.post('/', PERM, attributionController.create);
 router.get('/artisan/:artisan_id', PERM, attributionController.listForArtisan);
+router.patch('/:id/note', PERM, attributionController.updateNote);
+router.patch('/:id/pause', PERM, attributionController.togglePause);
 router.delete('/:id', PERM, attributionController.remove);
 
 export default router;

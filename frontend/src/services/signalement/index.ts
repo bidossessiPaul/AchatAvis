@@ -65,6 +65,14 @@ export const adminAttributionApi = {
         const r = await api.get(`/signalement/admin/attributions/artisan/${artisanId}`);
         return r.data;
     },
+    updateNote: async (id: string, note: string): Promise<SignalementAttribution> => {
+        const r = await api.patch(`/signalement/admin/attributions/${id}/note`, { note });
+        return r.data.attribution;
+    },
+    togglePause: async (id: string): Promise<SignalementAttribution> => {
+        const r = await api.patch(`/signalement/admin/attributions/${id}/pause`);
+        return r.data.attribution;
+    },
     remove: async (id: string): Promise<void> => {
         await api.delete(`/signalement/admin/attributions/${id}`);
     },

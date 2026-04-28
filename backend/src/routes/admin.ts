@@ -2,6 +2,7 @@ import express from 'express';
 import * as adminController from '../controllers/adminController';
 import * as identityVerif from '../controllers/identityVerificationController';
 import * as communique from '../controllers/communiqueController';
+import * as adminGmailVerif from '../controllers/gmailVerificationController';
 import { authenticate, authorize, checkPermission } from '../middleware/auth';
 
 import { LogService } from '../services/logService';
@@ -75,6 +76,11 @@ router.post('/identity-verifications/:id/relaunch', USERS, identityVerif.adminRe
 // Gmail accounts
 router.get('/gmail-accounts', USERS, adminController.getGmailAccounts);
 router.patch('/gmail-accounts/:accountId/block', USERS, adminController.toggleGmailBlock);
+
+// Vérifications manuelles Gmail (screenshot + lien Maps soumis par les guides)
+router.get('/gmail-verifications', USERS, adminGmailVerif.list);
+router.patch('/gmail-verifications/:id/approve', USERS, adminGmailVerif.approve);
+router.patch('/gmail-verifications/:id/reject', USERS, adminGmailVerif.reject);
 
 // Submissions & Reviews
 router.get('/subscriptions', PAYMENTS, adminController.getAllSubscriptions);

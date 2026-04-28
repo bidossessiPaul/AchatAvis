@@ -10,8 +10,8 @@ export const teamService = {
      * Invite a new team member
      */
     async inviteMember(email: string, permissions: any, adminId: string, baseUrl?: string) {
-        // 1. Check if user already exists
-        const existingUsers: any = await query('SELECT id FROM users WHERE email = ?', [email]);
+        // 1. Check if user already exists (ignorer les comptes soft-deleted)
+        const existingUsers: any = await query('SELECT id FROM users WHERE email = ? AND deleted_at IS NULL', [email]);
         if (existingUsers.length > 0) {
             throw new Error("Cet email est déjà utilisé par un compte existant.");
         }

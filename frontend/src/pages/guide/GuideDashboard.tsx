@@ -9,6 +9,8 @@ import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidge
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { EarningsChart, DistributionChart } from '../../components/Dashboard/DashboardCharts';
 import { GuideLeaderboard } from './GuideLeaderboard';
+import { GmailVerificationBanner } from '../../components/guide/GmailVerificationBanner';
+import { GmailVerificationReminderModal } from '../../components/guide/GmailVerificationReminderModal';
 import { motion } from 'framer-motion';
 import './GuideDashboard.css';
 
@@ -16,7 +18,7 @@ export const GuideDashboard: React.FC = () => {
     const [fiches, setfiches] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const { complianceData, fetchComplianceData } = useAntiDetectionStore();
+    const { complianceData, fetchComplianceData, gmailAccounts } = useAntiDetectionStore();
     const navigate = useNavigate();
     const { user } = useAuthStore();
 
@@ -43,8 +45,14 @@ export const GuideDashboard: React.FC = () => {
         }
     };
 
+    // Comptes Gmail non vérifiés et non supprimés
+    const unverifiedGmails = gmailAccounts.filter(
+        (a) => a.manual_verification_status !== 'verified' && !a.deleted_at
+    );
+
     return (
         <DashboardLayout title="fiches Disponibles">
+            <GmailVerificationBanner userId={user?.id} />
             <div className="guide-dashboard-hero">
                 <div className="guide-dashboard-hero-content">
                     <div className="guide-dashboard-hero-text">
@@ -323,6 +331,7 @@ export const GuideDashboard: React.FC = () => {
                     </p>
                 </div>
             )}
+            <GmailVerificationReminderModal gmailAccounts={unverifiedGmails} />
         </DashboardLayout>
     );
 };

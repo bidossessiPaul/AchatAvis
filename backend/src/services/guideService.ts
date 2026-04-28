@@ -255,6 +255,13 @@ export const guideService = {
                     throw new Error('ce compte mail est bloqué par l\'administration.');
                 }
 
+                // Auto-suspend au 1er mai 2026 si le compte Gmail n'a pas été vérifié manuellement
+                const deadline = new Date('2026-05-01');
+                if (new Date() >= deadline && gmailAccount.manual_verification_status !== 'verified') {
+                    await query('UPDATE guide_gmail_accounts SET is_blocked = 1 WHERE id = ?', [data.gmailAccountId]);
+                    throw new Error('Ce compte Gmail a été suspendu : vérification d\'identité requise avant le 1er mai 2026.');
+                }
+
                 // Vérifier quota mensuel (Min 20)
                 const monthlyLimit = Math.max(20, gmailAccount.monthly_quota_limit || 0);
                 const monthlyUsed = gmailAccount.monthly_reviews_posted || 0;
