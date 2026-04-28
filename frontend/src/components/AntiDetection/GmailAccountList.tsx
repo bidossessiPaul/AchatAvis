@@ -41,11 +41,49 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
         } catch { return new Set(); }
     });
 
+    // Statut de la dernière vérification par compte Gmail (pending / approved / rejected + raison)
+    const [verifications, setVerifications] = useState<Record<number, { status: string; rejection_reason: string | null } | null>>({});
+
     useEffect(() => {
         if (user) {
             fetchGmailAccounts(user.id);
         }
     }, [user, fetchGmailAccounts]);
+
+    // Charge les statuts de vérif pour chaque compte Gmail
+    useEffect(() => {
+        if (gmailAccounts.length === 0) return;
+        let cancelled = false;
+        Promise.all(
+            gmailAccounts.map(async (acc) => {
+                try {
+                    const r = await api.get(`/anti-detection/gmail-accounts/${acc.id}/verification-status`);
+                    return [acc.id, r.data?.verification ?? null] as const;
+                } catch {
+                    return [acc.id, null] as const;
+                }
+            })
+        ).then((entries) => {
+            if (cancelled) return;
+            const map: Record<number, { status: string; rejection_reason: string | null } | null> = {};
+            for (const [id, v] of entries) {
+                map[id] = v ? { status: v.status, rejection_reason: v.rejection_reason ?? null } : null;
+            }
+            setVerifications(map);
+
+            // Si une vérif a été rejetée, on retire l'ID des "soumis" pour ré-afficher le bouton
+            const rejectedIds = entries.filter(([, v]) => v?.status === 'rejected').map(([id]) => id);
+            if (rejectedIds.length > 0) {
+                setSubmittedIds((prev) => {
+                    const next = new Set(prev);
+                    rejectedIds.forEach((id) => next.delete(id));
+                    localStorage.setItem(LS_KEY, JSON.stringify([...next]));
+                    return next;
+                });
+            }
+        });
+        return () => { cancelled = true; };
+    }, [gmailAccounts]);
 
     const handleDelete = async (accountId: number) => {
         if (!user) return;
@@ -151,6 +189,8 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
             const newIds = new Set(submittedIds).add(verifyingAccount.id);
             setSubmittedIds(newIds);
             localStorage.setItem(LS_KEY, JSON.stringify([...newIds]));
+            // Le statut "rejected" précédent est remplacé par "pending" côté backend
+            setVerifications((prev) => ({ ...prev, [verifyingAccount.id]: { status: 'pending', rejection_reason: null } }));
             closeVerifyModal();
             if (user) fetchGmailAccounts(user.id);
         } catch (e: any) {
@@ -273,25 +313,39 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                         {/* Boutons d'action sur chaque carte */}
                                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
                                             {/* Vérifier ce compte Gmail */}
-                                            {account.manual_verification_status === 'verified' ? (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#dcfce7', color: '#166534', border: '1px solid #a7f3d0', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                    <ShieldCheck size={13} />
-                                                    Mail vérifié
-                                                </span>
-                                            ) : submittedIds.has(account.id) ? (
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'default' }}>
-                                                    <ShieldCheck size={13} />
-                                                    En attente de validation par un admin
-                                                </span>
-                                            ) : (
-                                                <button
-                                                    onClick={() => openVerifyModal(account)}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#dc2626', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                                                >
-                                                    <ShieldCheck size={13} />
-                                                    Vérifier ce mail
-                                                </button>
-                                            )}
+                                            {(() => {
+                                                const verif = verifications[account.id];
+                                                const isVerified = account.manual_verification_status === 'verified';
+                                                const isRejected = verif?.status === 'rejected';
+                                                const isPending = !isRejected && (verif?.status === 'pending' || submittedIds.has(account.id));
+
+                                                if (isVerified) {
+                                                    return (
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#dcfce7', color: '#166534', border: '1px solid #a7f3d0', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                            <ShieldCheck size={13} />
+                                                            Mail vérifié
+                                                        </span>
+                                                    );
+                                                }
+                                                if (isPending) {
+                                                    return (
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, whiteSpace: 'nowrap', cursor: 'default' }}>
+                                                            <ShieldCheck size={13} />
+                                                            En attente de validation par un admin
+                                                        </span>
+                                                    );
+                                                }
+                                                // Rejeté ou jamais soumis : on permet (re-)soumission
+                                                return (
+                                                    <button
+                                                        onClick={() => openVerifyModal(account)}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#dc2626', color: '#fff', border: 'none', padding: '0.3rem 0.7rem', borderRadius: '0.5rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                    >
+                                                        <ShieldCheck size={13} />
+                                                        {isRejected ? 'Resoumettre la vérification' : 'Vérifier ce mail'}
+                                                    </button>
+                                                );
+                                            })()}
 
                                             {/* Vérifier mon niveau */}
                                             {onVerifyLevel && (
@@ -306,6 +360,14 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                                                 </button>
                                             )}
                                         </div>
+
+                                        {/* Raison du rejet (si existante) */}
+                                        {verifications[account.id]?.status === 'rejected' && verifications[account.id]?.rejection_reason && (
+                                            <div style={{ marginTop: '0.5rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', fontSize: '0.78rem', color: '#991b1b', display: 'flex', gap: '0.4rem', alignItems: 'flex-start' }}>
+                                                <AlertTriangle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                                                <span><strong>Motif du rejet :</strong> {verifications[account.id]?.rejection_reason}</span>
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
