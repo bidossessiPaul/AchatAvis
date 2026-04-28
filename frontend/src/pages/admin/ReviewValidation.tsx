@@ -50,6 +50,9 @@ export const ReviewValidation: React.FC = () => {
     const [showOnlyOld, setShowOnlyOld] = useState(false);
     const [artisanFilter, setArtisanFilter] = useState<string>('all');
     const [ficheFilter, setFicheFilter] = useState<string>('all');
+    // Tri par date de soumission. Défaut = plus anciens d'abord, demandé par
+    // l'admin pour traiter en priorité les avis en attente depuis longtemps.
+    const [sortOrder, setSortOrder] = useState<'oldest' | 'newest'>('oldest');
 
     // Modal state
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -127,23 +130,29 @@ export const ReviewValidation: React.FC = () => {
         )
     ).sort();
 
-    const filteredSubmissions = submissions.filter(s => {
-        const term = searchTerm.toLowerCase().trim();
-        const matchesSearch = !term || (
-            s.guide_name?.toLowerCase().includes(term) ||
-            s.artisan_name?.toLowerCase().includes(term) ||
-            s.google_email?.toLowerCase().includes(term) ||
-            s.fiche_name?.toLowerCase().includes(term) ||
-            s.proposal_content?.toLowerCase().includes(term)
-        );
+    const filteredSubmissions = submissions
+        .filter(s => {
+            const term = searchTerm.toLowerCase().trim();
+            const matchesSearch = !term || (
+                s.guide_name?.toLowerCase().includes(term) ||
+                s.artisan_name?.toLowerCase().includes(term) ||
+                s.google_email?.toLowerCase().includes(term) ||
+                s.fiche_name?.toLowerCase().includes(term) ||
+                s.proposal_content?.toLowerCase().includes(term)
+            );
 
-        const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
-        const matchesAge = !showOnlyOld || isOldReview(s.submitted_at);
-        const matchesArtisan = artisanFilter === 'all' || s.artisan_id === artisanFilter;
-        const matchesFiche = ficheFilter === 'all' || s.fiche_name === ficheFilter;
+            const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
+            const matchesAge = !showOnlyOld || isOldReview(s.submitted_at);
+            const matchesArtisan = artisanFilter === 'all' || s.artisan_id === artisanFilter;
+            const matchesFiche = ficheFilter === 'all' || s.fiche_name === ficheFilter;
 
-        return matchesSearch && matchesStatus && matchesAge && matchesArtisan && matchesFiche;
-    });
+            return matchesSearch && matchesStatus && matchesAge && matchesArtisan && matchesFiche;
+        })
+        .sort((a, b) => {
+            const ta = new Date(a.submitted_at).getTime();
+            const tb = new Date(b.submitted_at).getTime();
+            return sortOrder === 'oldest' ? ta - tb : tb - ta;
+        });
 
     const totalPages = Math.ceil(filteredSubmissions.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -151,7 +160,7 @@ export const ReviewValidation: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter]);
+    }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter, sortOrder]);
 
 
     return (
@@ -285,6 +294,26 @@ export const ReviewValidation: React.FC = () => {
                                         <Clock size={16} />
                                         <span>{showOnlyOld ? '> 7 jours' : 'Tout'}</span>
                                     </button>
+
+                                    <select
+                                        value={sortOrder}
+                                        onChange={(e) => setSortOrder(e.target.value as 'oldest' | 'newest')}
+                                        title="Ordre de tri par date de soumission"
+                                        style={{
+                                            padding: '0.6rem 0.9rem',
+                                            borderRadius: '10px',
+                                            border: 'none',
+                                            background: 'white',
+                                            fontSize: '0.875rem',
+                                            fontWeight: 600,
+                                            color: 'var(--gray-700)',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}
+                                    >
+                                        <option value="oldest">Plus anciens d'abord</option>
+                                        <option value="newest">Plus récents d'abord</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -454,8 +483,16 @@ export const ReviewValidation: React.FC = () => {
                                                         submission.status === 'validated' ? 'Validé' : 'Rejeté'}
                                                 </span>
                                                 {submission.validated_by_name && (submission.status === 'validated' || submission.status === 'rejected') && (
-                                                    <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '0.2rem', fontWeight: 500 }}>
-                                                        par {submission.validated_by_name}
+                                                    <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '0.2rem', fontWeight: 500, lineHeight: 1.3 }}>
+                                                        <div>par {submission.validated_by_name}</div>
+                                                        {submission.validated_at && (
+                                                            <div style={{ color: '#94a3b8' }}>
+                                                                {new Date(submission.validated_at).toLocaleString('fr-FR', {
+                                                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                                                    hour: '2-digit', minute: '2-digit'
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
                                             </td>
