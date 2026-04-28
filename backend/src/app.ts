@@ -17,6 +17,7 @@ import establishmentRoutes from './routes/establishment';
 import notificationRoutes from './routes/notifications';
 import trustScoreRoutes from './routes/trustScore';
 import communiquesRoutes from './routes/communiques';
+import signalementRoutes from './routes/signalement';
 import { sanitizeInputs } from './middleware/sanitize';
 // Refreshing routes...
 
@@ -107,6 +108,7 @@ app.use('/api/establishments', establishmentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
 app.use('/api/communiques', communiquesRoutes);
+app.use('/api/signalement', signalementRoutes);
 
 // SPA fallback disabled — frontend is deployed separately
 app.get('*', (req: Request, res: Response) => {

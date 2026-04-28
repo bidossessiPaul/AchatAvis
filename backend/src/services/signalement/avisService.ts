@@ -20,7 +20,6 @@ import {
     pickAttributionWithFreeSlot,
     consumeOneAvisSlot,
     refundOneAvisSlot,
-    getAttributionById,
 } from './attributionService';
 
 /**
