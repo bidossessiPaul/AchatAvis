@@ -20,9 +20,23 @@ export const GmailVerificationBanner: React.FC<GmailVerificationBannerProps> = (
         }
     }, [userId, fetchGmailAccounts]);
 
-    // Filtre les comptes non vérifiés et non supprimés
+    // Récupère les IDs des comptes déjà soumis (en attente de validation admin) depuis localStorage
+    const submittedIds: Set<number> = (() => {
+        if (!userId) return new Set();
+        try {
+            const raw = localStorage.getItem(`gmail_verif_submitted_${userId}`);
+            return raw ? new Set(JSON.parse(raw)) : new Set();
+        } catch {
+            return new Set();
+        }
+    })();
+
+    // Filtre : non vérifié + non supprimé + pas déjà soumis (en attente de validation)
     const unverified = gmailAccounts.filter(
-        (a) => a.manual_verification_status !== 'verified' && !a.deleted_at
+        (a) =>
+            a.manual_verification_status !== 'verified' &&
+            !a.deleted_at &&
+            !submittedIds.has(a.id)
     );
 
     if (unverified.length === 0) return null;

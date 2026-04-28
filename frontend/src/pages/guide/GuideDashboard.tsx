@@ -45,9 +45,23 @@ export const GuideDashboard: React.FC = () => {
         }
     };
 
-    // Comptes Gmail non vérifiés et non supprimés
+    // IDs des comptes déjà soumis (en attente de validation admin) — lus depuis localStorage
+    const submittedIds: Set<number> = (() => {
+        if (!user?.id) return new Set();
+        try {
+            const raw = localStorage.getItem(`gmail_verif_submitted_${user.id}`);
+            return raw ? new Set(JSON.parse(raw)) : new Set();
+        } catch {
+            return new Set();
+        }
+    })();
+
+    // Comptes Gmail non vérifiés, non supprimés ET pas encore soumis pour vérification
     const unverifiedGmails = gmailAccounts.filter(
-        (a) => a.manual_verification_status !== 'verified' && !a.deleted_at
+        (a) =>
+            a.manual_verification_status !== 'verified' &&
+            !a.deleted_at &&
+            !submittedIds.has(a.id)
     );
 
     return (
