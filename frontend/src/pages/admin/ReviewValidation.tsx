@@ -50,9 +50,12 @@ export const ReviewValidation: React.FC = () => {
     const [showOnlyOld, setShowOnlyOld] = useState(false);
     const [artisanFilter, setArtisanFilter] = useState<string>('all');
     const [ficheFilter, setFicheFilter] = useState<string>('all');
-    // Tri par date de soumission. Défaut = plus anciens d'abord, demandé par
-    // l'admin pour traiter en priorité les avis en attente depuis longtemps.
-    const [sortOrder, setSortOrder] = useState<'oldest' | 'newest'>('oldest');
+    // Tri par date de soumission. Défaut = plus récents d'abord (comportement
+    // historique). Quand `showOnlyOld` est activé on bascule automatiquement
+    // sur 'oldest' pour traiter le backlog. Le dropdown permet de forcer
+    // manuellement n'importe quel ordre.
+    const [sortOrder, setSortOrder] = useState<'oldest' | 'newest'>('newest');
+    const [sortOrderManual, setSortOrderManual] = useState(false);
 
     // Modal state
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -161,6 +164,15 @@ export const ReviewValidation: React.FC = () => {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter, sortOrder]);
+
+    // Quand on (dé)coche "> 7 jours", on aligne automatiquement le tri :
+    // - >7 jours coché → plus anciens d'abord (priorité au backlog)
+    // - décoché       → plus récents d'abord (comportement historique)
+    // Sauf si l'admin a explicitement choisi un ordre via le dropdown.
+    useEffect(() => {
+        if (sortOrderManual) return;
+        setSortOrder(showOnlyOld ? 'oldest' : 'newest');
+    }, [showOnlyOld, sortOrderManual]);
 
 
     return (
@@ -297,7 +309,10 @@ export const ReviewValidation: React.FC = () => {
 
                                     <select
                                         value={sortOrder}
-                                        onChange={(e) => setSortOrder(e.target.value as 'oldest' | 'newest')}
+                                        onChange={(e) => {
+                                            setSortOrder(e.target.value as 'oldest' | 'newest');
+                                            setSortOrderManual(true);
+                                        }}
                                         title="Ordre de tri par date de soumission"
                                         style={{
                                             padding: '0.6rem 0.9rem',
@@ -311,8 +326,8 @@ export const ReviewValidation: React.FC = () => {
                                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                                         }}
                                     >
-                                        <option value="oldest">Plus anciens d'abord</option>
                                         <option value="newest">Plus récents d'abord</option>
+                                        <option value="oldest">Plus anciens d'abord</option>
                                     </select>
                                 </div>
                             </div>
@@ -482,9 +497,11 @@ export const ReviewValidation: React.FC = () => {
                                                     {submission.status === 'pending' ? 'En attente' :
                                                         submission.status === 'validated' ? 'Validé' : 'Rejeté'}
                                                 </span>
-                                                {submission.validated_by_name && (submission.status === 'validated' || submission.status === 'rejected') && (
+                                                {(submission.status === 'validated' || submission.status === 'rejected') && (submission.validated_by_name || submission.validated_at) && (
                                                     <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '0.2rem', fontWeight: 500, lineHeight: 1.3 }}>
-                                                        <div>par {submission.validated_by_name}</div>
+                                                        {submission.validated_by_name && (
+                                                            <div>par {submission.validated_by_name}</div>
+                                                        )}
                                                         {submission.validated_at && (
                                                             <div style={{ color: '#94a3b8' }}>
                                                                 {new Date(submission.validated_at).toLocaleString('fr-FR', {
