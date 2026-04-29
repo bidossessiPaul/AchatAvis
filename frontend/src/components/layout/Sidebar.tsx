@@ -92,7 +92,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Validation Avis', path: '/admin/reviews', icon: <FileCheck size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Avis Rejetés', path: '/admin/rejected-reviews', icon: <XCircle size={20} />, permissions: ['can_manage_reviews', 'can_validate_reviews'] },
                     { label: 'Pièces d\'identité', path: '/admin/identity-verifications', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
-                    { label: 'Vérifications Gmail', path: '/admin/gmail-verifications', icon: <Mail size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
+                    { label: 'Vérifications Gmail', path: '/admin/gmail-verifications', icon: <Mail size={20} />, permissions: ['can_validate_gmail'] },
                     { label: 'Validation des preuves', path: '/admin/level-verifications', icon: <Trophy size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Communiqués', path: '/admin/communiques', icon: <Megaphone size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },

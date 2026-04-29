@@ -16,6 +16,7 @@ const PAYMENTS = checkPermission('can_view_payments');
 const PACKS = checkPermission('can_manage_packs');
 const SECTORS = checkPermission('can_manage_sectors');
 const STATS = checkPermission('can_view_stats');
+const GMAIL_VERIF = checkPermission('can_validate_gmail');
 
 // Middleware to ensure admin access
 router.use(authenticate, authorize('admin'));
@@ -78,9 +79,9 @@ router.get('/gmail-accounts', USERS, adminController.getGmailAccounts);
 router.patch('/gmail-accounts/:accountId/block', USERS, adminController.toggleGmailBlock);
 
 // Vérifications manuelles Gmail (screenshot + lien Maps soumis par les guides)
-router.get('/gmail-verifications', USERS, adminGmailVerif.list);
-router.patch('/gmail-verifications/:id/approve', USERS, adminGmailVerif.approve);
-router.patch('/gmail-verifications/:id/reject', USERS, adminGmailVerif.reject);
+router.get('/gmail-verifications', GMAIL_VERIF, adminGmailVerif.list);
+router.patch('/gmail-verifications/:id/approve', GMAIL_VERIF, adminGmailVerif.approve);
+router.patch('/gmail-verifications/:id/reject', GMAIL_VERIF, adminGmailVerif.reject);
 
 // Submissions & Reviews
 router.get('/subscriptions', PAYMENTS, adminController.getAllSubscriptions);

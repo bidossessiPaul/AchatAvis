@@ -27,6 +27,7 @@ const PERMISSIONS = [
     { key: 'can_manage_signalement_packs', label: 'Signalement — Packs & Config', color: '#b91c1c' },
     { key: 'can_manage_signalements', label: 'Signalement — Avis (vue globale)', color: '#dc2626' },
     { key: 'can_validate_signalements', label: 'Signalement — Valider preuves', color: '#ef4444' },
+    { key: 'can_validate_gmail', label: 'Vérifications Gmail (valider/rejeter)', color: '#0891b2' },
 ];
 
 const parsePermissions = (raw: any): Record<string, boolean> => {
