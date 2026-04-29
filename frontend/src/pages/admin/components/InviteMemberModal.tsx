@@ -13,6 +13,7 @@ interface PermissionsState {
     can_validate_profiles: boolean;
     can_validate_reviews: boolean;
     can_validate_fiches: boolean;
+    can_validate_gmail: boolean;
     can_view_payments: boolean;
     can_view_stats: boolean;
     can_manage_users: boolean;
@@ -23,12 +24,18 @@ interface PermissionsState {
     can_manage_team: boolean;
     can_manage_reviews: boolean;
     can_manage_fiches: boolean;
+    can_impersonate: boolean;
+    can_view_geolocation: boolean;
+    can_manage_signalement_packs: boolean;
+    can_manage_signalements: boolean;
+    can_validate_signalements: boolean;
 }
 
 const initialPermissions: PermissionsState = {
     can_validate_profiles: false,
     can_validate_reviews: false,
     can_validate_fiches: false,
+    can_validate_gmail: false,
     can_view_payments: false,
     can_view_stats: false,
     can_manage_users: false,
@@ -38,7 +45,12 @@ const initialPermissions: PermissionsState = {
     can_manage_packs: false,
     can_manage_team: false,
     can_manage_reviews: false,
-    can_manage_fiches: false
+    can_manage_fiches: false,
+    can_impersonate: false,
+    can_view_geolocation: false,
+    can_manage_signalement_packs: false,
+    can_manage_signalements: false,
+    can_validate_signalements: false,
 };
 
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, onClose, onInvite, onUpdate, memberToEdit }) => {
@@ -64,6 +76,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                 can_validate_profiles: !!parsedPermissions.can_validate_profiles,
                 can_validate_reviews: !!parsedPermissions.can_validate_reviews,
                 can_validate_fiches: !!parsedPermissions.can_validate_fiches,
+                can_validate_gmail: !!parsedPermissions.can_validate_gmail,
                 can_view_payments: !!parsedPermissions.can_view_payments,
                 can_view_stats: !!parsedPermissions.can_view_stats,
                 can_manage_users: !!parsedPermissions.can_manage_users,
@@ -73,7 +86,12 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
                 can_manage_packs: !!parsedPermissions.can_manage_packs,
                 can_manage_team: !!parsedPermissions.can_manage_team,
                 can_manage_reviews: !!parsedPermissions.can_manage_reviews,
-                can_manage_fiches: !!parsedPermissions.can_manage_fiches
+                can_manage_fiches: !!parsedPermissions.can_manage_fiches,
+                can_impersonate: !!parsedPermissions.can_impersonate,
+                can_view_geolocation: !!parsedPermissions.can_view_geolocation,
+                can_manage_signalement_packs: !!parsedPermissions.can_manage_signalement_packs,
+                can_manage_signalements: !!parsedPermissions.can_manage_signalements,
+                can_validate_signalements: !!parsedPermissions.can_validate_signalements,
             });
         } else if (isOpen) {
             setEmail('');
@@ -121,13 +139,19 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, on
         { key: 'can_validate_profiles', label: 'Artisans & Guides', desc: 'Gestion des comptes et validation des profils' },
         { key: 'can_validate_reviews', label: 'Modération Avis', desc: 'Validation et rejet des avis soumis par les guides' },
         { key: 'can_validate_fiches', label: 'Gestion des Fiches', desc: 'Approuver les fiches et gérer les secteurs' },
+        { key: 'can_validate_gmail', label: 'Vérifications Gmail', desc: 'Valider ou rejeter les vérifications Gmail des guides' },
         { key: 'can_manage_sectors', label: 'Secteurs d\'activité', desc: 'Accès complet à la configuration des secteurs' },
         { key: 'can_view_payments', label: 'Finance & Paiements', desc: 'Consulter les transactions et abonnements' },
         { key: 'can_manage_packs', label: 'Gestion des Packs', desc: 'Créer et modifier les offres d\'abonnement' },
         { key: 'can_manage_trust_scores', label: 'Trust Scores', desc: 'Ajuster les algorithmes de score de confiance' },
         { key: 'can_manage_suspensions', label: 'Suspensions & Bans', desc: 'Gérer les restrictions de compte et bannissements' },
         { key: 'can_manage_team', label: 'Gestion d\'Équipe', desc: 'Inviter et gérer les autres administrateurs' },
-        { key: 'can_view_stats', label: 'Statistiques', desc: 'Accès au tableau de bord des performances' }
+        { key: 'can_view_stats', label: 'Statistiques', desc: 'Accès au tableau de bord des performances' },
+        { key: 'can_impersonate', label: 'Se connecter en tant que', desc: 'Prendre le contrôle d\'un compte utilisateur pour le support' },
+        { key: 'can_view_geolocation', label: 'Voir localisation détectée', desc: 'Consulter les données IP/VPN/géolocalisation des guides' },
+        { key: 'can_manage_signalement_packs', label: 'Signalement — Packs & Config', desc: 'Gérer les packs de signalements et la configuration' },
+        { key: 'can_manage_signalements', label: 'Signalement — Avis (vue globale)', desc: 'Voir tous les signalements en cours sur la plateforme' },
+        { key: 'can_validate_signalements', label: 'Signalement — Valider preuves', desc: 'Valider ou rejeter les preuves de signalement soumises' },
     ];
 
     const isEditing = !!memberToEdit;

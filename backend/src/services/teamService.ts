@@ -157,6 +157,10 @@ export const teamService = {
             [JSON.stringify(permissions), userId]
         );
 
+        // Invalide le cache d'auth : la prochaine requête de cet admin relira
+        // les permissions depuis la DB (effet immédiat sans re-login)
+        invalidateAuthCache(userId);
+
         await LogService.logAction(adminId, 'UPDATE_PERficheS', 'USER', undefined, { targetUserId: userId, newPermissions: permissions });
 
         return { message: "Permissions mises à jour." };

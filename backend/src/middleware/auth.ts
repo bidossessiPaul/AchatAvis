@@ -32,6 +32,7 @@ const CACHE_MAX_ENTRIES = 5000;
 interface StatusCacheEntry {
     status: string;
     suspension_reason: string | null;
+    permissions: any;
     expiresAt: number;
 }
 
@@ -119,16 +120,18 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
         let userStatus: string;
         let suspensionReason: string | null;
+        let freshPermissions: any = null;
 
         if (cached && cached.expiresAt > now) {
             // Cache hit: skip the SELECT entirely
             userStatus = cached.status;
             suspensionReason = cached.suspension_reason;
+            freshPermissions = cached.permissions;
         } else {
             // Cache miss or expired: fetch from DB
             const { query } = await import('../config/database');
             const rows: any = await query(
-                'SELECT status, suspension_reason, detected_ip FROM users WHERE id = ? AND deleted_at IS NULL',
+                'SELECT status, suspension_reason, detected_ip, permissions FROM users WHERE id = ? AND deleted_at IS NULL',
                 [payload.userId]
             );
 
@@ -139,6 +142,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
             userStatus = rows[0].status;
             suspensionReason = rows[0].suspension_reason || null;
+            // Parse permissions JSON column for live permission checks
+            try {
+                freshPermissions = typeof rows[0].permissions === 'string'
+                    ? JSON.parse(rows[0].permissions)
+                    : rows[0].permissions;
+            } catch {
+                freshPermissions = null;
+            }
             // Cache geo-filled status from the same query (no extra SELECT later)
             if (rows[0].detected_ip) {
                 geoFilledUsers.add(payload.userId);
@@ -146,9 +157,17 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             statusCache.set(payload.userId, {
                 status: userStatus,
                 suspension_reason: suspensionReason,
+                permissions: freshPermissions,
                 expiresAt: now + STATUS_TTL_MS,
             });
             pruneIfNeeded(statusCache);
+        }
+
+        // Override JWT permissions with the fresh DB value so admin permission
+        // updates take effect within STATUS_TTL_MS without forcing a re-login.
+        // Owner is left untouched (full access via email check downstream).
+        if (req.user && payload.role === 'admin' && payload.email !== 'dossoumaxime888@gmail.com') {
+            req.user.permissions = freshPermissions || {};
         }
 
         // Enforce suspension in real-time (still respected thanks to short TTL).
