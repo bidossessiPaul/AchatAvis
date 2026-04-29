@@ -1547,3 +1547,103 @@ export const sendAdminLoginOtp = async (email: string, fullName: string, otp: st
         throw error;
     }
 };
+
+/**
+ * Email envoyé après l'inscription d'un artisan : bienvenue + invitation
+ * à choisir un pack pour propulser sa fiche. Reprend la charte graphique
+ * (logo + bandeau orange + 3 boutons packs + WhatsApp + footer noir).
+ */
+export const sendArtisanWelcomePackEmail = async (
+    email: string,
+    fullName: string,
+    companyName: string,
+    baseUrl?: string
+) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl || 'https://manager.achatavis.com';
+    const planUrl = `${frontendUrl}/artisan/plan`;
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: '🚀 Bienvenue sur AchatAvis — Choisissez un pack pour propulser votre fiche',
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #f0f4fb; padding: 20px; margin: 0;">
+  <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+
+    <!-- Header logo -->
+    <div style="background-color: #ffffff; padding: 28px; text-align: center; border-bottom: 1px solid #eeeeee;">
+      <img src="https://achatavis.com/wp-content/uploads/2026/02/2-e1711237032367-1.png" alt="AchatAvis" style="max-width: 220px; height: auto; display: block; margin: 0 auto;">
+      <p style="color: #555555; margin: 12px 0 0; font-size: 14px;">Bienvenue sur la plateforme</p>
+    </div>
+
+    <!-- Bandeau orange -->
+    <div style="background-color: #F26522; padding: 12px 24px; text-align: center;">
+      <p style="margin: 0; color: white; font-weight: bold; font-size: 14px;">🎁 Profitez de 5 avis gratuits dès votre première commande !</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px;">
+      <p style="font-size: 16px; color: #333; margin-top: 0;">
+        Bonjour <strong style="color: #2383E2;">${fullName}</strong>,
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        Nous avons constaté que vous venez de vous inscrire sur <strong style="color: #2383E2;">AchatAvis</strong>${companyName ? ` pour votre établissement <strong style="color: #2383E2;">${companyName}</strong>` : ''}.
+        Bienvenue dans la communauté des artisans qui prennent leur visibilité Google en main !
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        Pour propulser votre fiche à un niveau supérieur et commencer à recevoir de vrais avis vérifiés, il ne reste qu'une étape&nbsp;: <strong>sélectionnez l'un de nos packs ci-dessous</strong>. Vous serez immédiatement redirigé vers votre tableau de bord pour finaliser le paiement en toute sécurité.
+      </p>
+
+      <!-- Offres -->
+      <div style="margin: 24px 0;">
+        <a href="${planUrl}"
+           style="display: block; background-color: #2383E2; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold; margin-bottom: 14px;">
+          💎 STARTER 235€ / 30 avis
+        </a>
+        <a href="${planUrl}"
+           style="display: block; background-color: #E91E63; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold; margin-bottom: 14px;">
+          🌟 PROFESSIONNEL 299€ / 60 avis
+        </a>
+        <a href="${planUrl}"
+           style="display: block; background-color: #2383E2; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold;">
+          🚀 ENTREPRISE 499€ / 90 avis
+        </a>
+      </div>
+
+      <p style="font-size: 16px; color: #333; font-weight: bold; text-align: center; margin: 28px 0 8px;">ACHATAVIS ! PLUS D'AVIS, PLUS DE CLIENTS ⭐</p>
+
+      <hr style="border: none; border-top: 2px solid #2383E2; margin: 24px 0;">
+
+      <p style="font-size: 14px; color: #555; text-align: center; margin-bottom: 16px;">
+        Une question avant de choisir ? Notre équipe vous répond sur WhatsApp.
+      </p>
+      <div style="text-align: center;">
+        <a href="https://wa.me/33644678642"
+           style="display: inline-block; background-color: #25D366; color: white; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 16px; font-weight: bold;">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="20" height="20" style="vertical-align: middle; margin-right: 8px;">
+          <span style="vertical-align: middle;">+33 6 44 67 86 42</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #000000; padding: 16px; text-align: center;">
+      <p style="margin: 0; font-size: 12px; color: #cccccc;">© ${new Date().getFullYear()} AchatAvis.com — Tous droits réservés</p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Welcome pack email sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending welcome pack email to ${email}:`, error);
+        // Non bloquant : l'inscription continue même si le mail échoue
+    }
+};
+

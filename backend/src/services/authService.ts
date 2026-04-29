@@ -10,7 +10,7 @@ import { User, UserResponse } from '../models/types';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
-import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail, sendAdminLoginOtp } from './emailService';
+import { sendResetPasswordEmail, sendVerificationEmail, sendWelcomeEmail, sendNewUserRegistrationAdminEmail, sendAdminLoginOtp, sendArtisanWelcomePackEmail } from './emailService';
 
 // OTP admin store : DB-backed (table admin_otp_tokens) pour que ça fonctionne
 // en environnement serverless (Vercel). Un Map en mémoire perdrait ses données
@@ -129,6 +129,9 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
 
         // Send verification email
         await sendVerificationEmail(user.email, user.full_name, verificationToken, baseUrl);
+
+        // Email de bienvenue invitant l'artisan à choisir un pack — non bloquant
+        sendArtisanWelcomePackEmail(data.email, data.fullName, data.companyName, baseUrl).catch(() => {});
 
         // Notify admin of new artisan registration
         sendNewUserRegistrationAdminEmail(data.fullName, data.email, 'artisan', {
