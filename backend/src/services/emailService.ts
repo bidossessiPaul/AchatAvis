@@ -1666,3 +1666,118 @@ export const sendArtisanWelcomePackEmail = async (
     }
 };
 
+/**
+ * Mail de clarification de rôle envoyé aux artisans inscrits qui n'ont
+ * activé aucun pack — propose deux issues :
+ *   1) Ils sont vraiment artisans → activer un pack
+ *   2) Ils voulaient s'inscrire en tant que Local Guide → créer un compte guide
+ */
+export const sendArtisanRoleClarificationEmail = async (
+    email: string,
+    fullName: string,
+    baseUrl?: string
+) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl || 'https://manager.achatavis.com';
+    const planUrl = `${frontendUrl}/artisan/plan`;
+    const guideRegisterUrl = `${frontendUrl}/register/guide`;
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: '🤔 Vous êtes artisan ou Local Guide ? Une vérification rapide',
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #f0f4fb; padding: 20px; margin: 0;">
+  <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+
+    <!-- Header logo -->
+    <div style="background-color: #ffffff; padding: 28px; text-align: center; border-bottom: 1px solid #eeeeee;">
+      <img src="https://achatavis.com/wp-content/uploads/2026/02/2-e1711237032367-1.png" alt="AchatAvis" style="max-width: 220px; height: auto; display: block; margin: 0 auto;">
+      <p style="color: #555555; margin: 12px 0 0; font-size: 14px;">Une petite vérification</p>
+    </div>
+
+    <!-- Bandeau orange -->
+    <div style="background-color: #F26522; padding: 12px 24px; text-align: center;">
+      <p style="margin: 0; color: white; font-weight: bold; font-size: 14px;">⚠️ Compte artisan inactif — Action requise</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px;">
+      <p style="font-size: 16px; color: #333; margin-top: 0;">
+        Bonjour <strong style="color: #2383E2;">${fullName}</strong>,
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        Nous avons remarqué que vous êtes inscrit sur <strong>AchatAvis</strong> en tant qu'<strong>artisan</strong>, mais vous n'avez pas encore activé de pack pour démarrer la collecte d'avis sur votre fiche Google.
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        <strong>Beaucoup de personnes se trompent de rôle au moment de l'inscription</strong> : elles veulent en réalité publier des avis pour gagner de l'argent (ce sont des <strong>Local Guides</strong>), mais créent par erreur un compte <strong>artisan</strong>.
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        Avant de procéder à un nettoyage de notre base, nous voulons être sûrs. Cliquez sur le choix qui correspond à votre situation&nbsp;:
+      </p>
+
+      <!-- Choix 1 : artisan -->
+      <div style="margin: 24px 0 14px; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 18px;">
+        <p style="margin: 0 0 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+          🛠️ Je suis bien artisan
+        </p>
+        <p style="margin: 0 0 12px; font-size: 13px; color: #334155; line-height: 1.5;">
+          Activez un pack pour propulser votre fiche Google et recevoir des avis vérifiés. Après le paiement, écrivez-nous sur WhatsApp pour finaliser l'activation.
+        </p>
+        <a href="${planUrl}"
+           style="display: block; background-color: #2383E2; color: white; text-align: center; padding: 14px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold;">
+          Activer un pack artisan
+        </a>
+      </div>
+
+      <!-- Choix 2 : guide -->
+      <div style="margin: 14px 0 24px; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px;">
+        <p style="margin: 0 0 10px; font-size: 14px; font-weight: bold; color: #14532d;">
+          ⭐ Je voulais m'inscrire comme Local Guide (pour gagner de l'argent)
+        </p>
+        <p style="margin: 0 0 12px; font-size: 13px; color: #334155; line-height: 1.5;">
+          Créez un compte Local Guide pour publier des avis vérifiés sur les fiches des artisans et être rémunéré. Votre compte artisan actuel sera ensuite supprimé pour éviter les doublons.
+        </p>
+        <a href="${guideRegisterUrl}"
+           style="display: block; background-color: #16a34a; color: white; text-align: center; padding: 14px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold;">
+          Créer mon compte Local Guide
+        </a>
+      </div>
+
+      <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #F26522; border-radius: 10px; padding: 14px 16px; margin: 18px 0; font-size: 13px; color: #7c2d12; line-height: 1.6;">
+        <strong>⏰ Important</strong> : sans réponse de votre part, votre compte artisan inactif sera supprimé prochainement. Vous pourrez toujours vous réinscrire dans le bon rôle.
+      </div>
+
+      <hr style="border: none; border-top: 2px solid #2383E2; margin: 24px 0;">
+
+      <p style="font-size: 14px; color: #555; text-align: center; margin-bottom: 16px;">
+        Une question ou un doute ? Notre équipe répond sur WhatsApp.
+      </p>
+      <div style="text-align: center;">
+        <a href="https://wa.me/33644678642"
+           style="display: inline-block; background-color: #25D366; color: white; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 16px; font-weight: bold;">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="20" height="20" style="vertical-align: middle; margin-right: 8px;">
+          <span style="vertical-align: middle;">+33 6 44 67 86 42</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #000000; padding: 16px; text-align: center;">
+      <p style="margin: 0; font-size: 12px; color: #cccccc;">© ${new Date().getFullYear()} AchatAvis.com — Tous droits réservés</p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Role clarification email sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending role clarification email to ${email}:`, error);
+    }
+};
+
