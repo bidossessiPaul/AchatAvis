@@ -103,11 +103,13 @@ export const getProofById = async (id: string): Promise<SignalementProof | null>
 };
 
 /**
- * Liste les preuves en attente de validation (queue admin).
+ * Liste les preuves pour la queue admin.
+ * Si statusFilter est précisé : pending / validated / rejected / all.
  */
 export const listPendingProofs = async (
     limit = 50,
-    offset = 0
+    offset = 0,
+    statusFilter: 'pending' | 'validated' | 'rejected' | 'all' = 'pending'
 ): Promise<Array<SignalementProof & {
     google_review_url: string;
     raison: string;
@@ -115,14 +117,22 @@ export const listPendingProofs = async (
     artisan_id: string;
     guide_email: string;
 }>> => {
+    // Pour les pending : tri du plus ancien (FIFO) ; sinon, plus récemment traité d'abord.
+    const where = statusFilter === 'all'
+        ? `p.deleted_at IS NULL`
+        : `p.status = '${statusFilter}' AND p.deleted_at IS NULL`;
+    const orderBy = statusFilter === 'pending'
+        ? 'p.submitted_at ASC'
+        : 'COALESCE(p.validated_at, p.submitted_at) DESC';
+
     const rows: any = await query(
         `SELECT p.*, a.google_review_url, a.raison, a.raison_details, a.artisan_id,
                 u.email AS guide_email
          FROM signalement_proofs p
          JOIN signalement_avis a ON a.id = p.avis_id
          JOIN users u ON u.id = p.guide_id
-         WHERE p.status = 'pending' AND p.deleted_at IS NULL
-         ORDER BY p.submitted_at ASC
+         WHERE ${where}
+         ORDER BY ${orderBy}
          LIMIT ${Number(limit)} OFFSET ${Number(offset)}`
     );
     return rows.map((r: any) => ({

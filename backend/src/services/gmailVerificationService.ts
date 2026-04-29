@@ -85,7 +85,8 @@ export const listPending = async (status?: string): Promise<any[]> => {
         params.push(status);
     }
 
-    sql += ` ORDER BY gv.submitted_at DESC`;
+    // Tri : date de traitement desc pour les traités, sinon date de soumission desc
+    sql += ` ORDER BY COALESCE(gv.reviewed_at, gv.submitted_at) DESC`;
     return await query(sql, params) as any[];
 };
 

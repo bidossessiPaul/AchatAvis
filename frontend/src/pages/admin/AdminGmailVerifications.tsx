@@ -216,16 +216,22 @@ export const AdminGmailVerifications: React.FC<any> = () => {
                                             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#0f172a' }}>{v.gmail_email}</span>
                                         </div>
 
-                                        {/* Date + statut */}
+                                        {/* Dates + statut */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', color: '#94a3b8' }}>
                                                 <Clock size={12} />
-                                                Soumis le {new Date(v.submitted_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                Soumis le {new Date(v.submitted_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                             <span style={{ background: st.bg, color: st.color, border: `1px solid ${st.border}`, padding: '0.15rem 0.6rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                                                 {st.label}
                                             </span>
                                         </div>
+                                        {v.reviewed_at && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem', color: v.status === 'approved' ? '#166534' : '#991b1b' }}>
+                                                <Clock size={12} />
+                                                {v.status === 'approved' ? 'Validé le' : 'Rejeté le'} {new Date(v.reviewed_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        )}
 
                                         {v.rejection_reason && (
                                             <div style={{ fontSize: '0.8rem', color: '#991b1b', background: '#fff1f2', border: '1px solid #fecaca', borderRadius: 6, padding: '0.4rem 0.6rem' }}>

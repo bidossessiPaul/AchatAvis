@@ -50,6 +50,7 @@ export const ReviewValidation: React.FC = () => {
     const [showOnlyOld, setShowOnlyOld] = useState(false);
     const [artisanFilter, setArtisanFilter] = useState<string>('all');
     const [ficheFilter, setFicheFilter] = useState<string>('all');
+    const [validatorFilter, setValidatorFilter] = useState<string>('all');
     // Tri par date de soumission. Défaut = plus récents d'abord (comportement
     // historique). Quand `showOnlyOld` est activé on bascule automatiquement
     // sur 'oldest' pour traiter le backlog. Le dropdown permet de forcer
@@ -133,6 +134,15 @@ export const ReviewValidation: React.FC = () => {
         )
     ).sort();
 
+    // Liste unique des admins ayant déjà traité au moins un avis
+    const validatorOptions = Array.from(
+        new Set(
+            submissions
+                .filter(s => s.validated_by_name && s.status !== 'pending')
+                .map(s => s.validated_by_name as string)
+        )
+    ).sort();
+
     const filteredSubmissions = submissions
         .filter(s => {
             const term = searchTerm.toLowerCase().trim();
@@ -148,8 +158,9 @@ export const ReviewValidation: React.FC = () => {
             const matchesAge = !showOnlyOld || isOldReview(s.submitted_at);
             const matchesArtisan = artisanFilter === 'all' || s.artisan_id === artisanFilter;
             const matchesFiche = ficheFilter === 'all' || s.fiche_name === ficheFilter;
+            const matchesValidator = validatorFilter === 'all' || s.validated_by_name === validatorFilter;
 
-            return matchesSearch && matchesStatus && matchesAge && matchesArtisan && matchesFiche;
+            return matchesSearch && matchesStatus && matchesAge && matchesArtisan && matchesFiche && matchesValidator;
         })
         .sort((a, b) => {
             const ta = new Date(a.submitted_at).getTime();
@@ -163,7 +174,7 @@ export const ReviewValidation: React.FC = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter, sortOrder]);
+    }, [searchTerm, statusFilter, showOnlyOld, artisanFilter, ficheFilter, validatorFilter, sortOrder]);
 
     // Quand on (dé)coche "> 7 jours", on aligne automatiquement le tri :
     // - >7 jours coché → plus anciens d'abord (priorité au backlog)
@@ -254,6 +265,31 @@ export const ReviewValidation: React.FC = () => {
                                     </option>
                                     {ficheOptions.map(f => (
                                         <option key={f} value={f}>{f}</option>
+                                    ))}
+                                </select>
+
+                                {/* Filtre par admin validateur */}
+                                <select
+                                    value={validatorFilter}
+                                    onChange={(e) => setValidatorFilter(e.target.value)}
+                                    title="Filtrer par admin ayant traité l'avis"
+                                    disabled={validatorOptions.length === 0}
+                                    style={{
+                                        padding: '0.6rem 0.9rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        background: 'white',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--gray-700)',
+                                        cursor: validatorOptions.length === 0 ? 'not-allowed' : 'pointer',
+                                        opacity: validatorOptions.length === 0 ? 0.5 : 1,
+                                        maxWidth: '220px',
+                                    }}
+                                >
+                                    <option value="all">Traité par tous les admins</option>
+                                    {validatorOptions.map(name => (
+                                        <option key={name} value={name}>Traité par {name}</option>
                                     ))}
                                 </select>
 

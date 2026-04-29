@@ -9,8 +9,13 @@ export const listPending = async (req: Request, res: Response): Promise<void> =>
         const page = Math.max(1, parseInt(req.query.page as string) || 1);
         const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
         const offset = (page - 1) * limit;
-        const proofs = await proofService.listPendingProofs(limit, offset);
-        res.json({ proofs, page, limit });
+        const statusRaw = (req.query.status as string) || 'pending';
+        const status: 'pending' | 'validated' | 'rejected' | 'all' =
+            ['pending', 'validated', 'rejected', 'all'].includes(statusRaw)
+                ? (statusRaw as any)
+                : 'pending';
+        const proofs = await proofService.listPendingProofs(limit, offset, status);
+        res.json({ proofs, page, limit, status });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }

@@ -118,12 +118,17 @@ export const adminAvisApi = {
 
 // ========== ADMIN — VALIDATIONS ==========
 export const adminValidationsApi = {
-    listPending: async (page = 1, limit = 50): Promise<{
+    listPending: async (
+        page = 1,
+        limit = 50,
+        status: 'pending' | 'validated' | 'rejected' | 'all' = 'pending'
+    ): Promise<{
         proofs: SignalementProofWithContext[];
         page: number;
         limit: number;
+        status: string;
     }> => {
-        const r = await api.get(`/signalement/admin/validations/pending?page=${page}&limit=${limit}`);
+        const r = await api.get(`/signalement/admin/validations/pending?page=${page}&limit=${limit}&status=${status}`);
         return r.data;
     },
     stats: async (): Promise<GlobalSignalementStats> => {
