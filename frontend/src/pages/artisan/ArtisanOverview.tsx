@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
 import { ReviewOrder } from '../../types';
-import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target, Trash2 } from 'lucide-react';
+import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target, Trash2, Clock, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
@@ -53,6 +53,29 @@ export const ArtisanOverview: React.FC = () => {
     };
 
     const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
+    const [showHoursReminder, setShowHoursReminder] = useState(false);
+
+    // Affiche le rappel horaires une seule fois si l'artisan a au moins une fiche
+    useEffect(() => {
+        if (!user?.id || orders.length === 0) return;
+        const seen = localStorage.getItem(`artisan_hours_reminder_${user.id}`);
+        if (!seen) setShowHoursReminder(true);
+    }, [user?.id, orders.length]);
+
+    const dismissHoursReminder = () => {
+        if (user?.id) localStorage.setItem(`artisan_hours_reminder_${user.id}`, '1');
+        setShowHoursReminder(false);
+    };
+
+    const goToHoursEdition = () => {
+        dismissHoursReminder();
+        // S'il n'a qu'une fiche : direct sur la page de détail. Sinon, liste.
+        if (orders.length === 1) {
+            navigate(`/artisan/orders/${orders[0].id}`);
+        } else {
+            navigate('/artisan/orders');
+        }
+    };
 
     const loadDashboardData = async () => {
         setIsLoading(true);
@@ -384,6 +407,83 @@ export const ArtisanOverview: React.FC = () => {
                     )}
                 </div>
             </PremiumBlurOverlay>
+
+            {/* Modal de rappel : horaires de disponibilité par défaut */}
+            {showHoursReminder && (
+                <div
+                    onClick={dismissHoursReminder}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 3000,
+                        background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: '#fff', borderRadius: '1.25rem', padding: '1.75rem',
+                            width: '100%', maxWidth: 460,
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                            position: 'relative',
+                        }}
+                    >
+                        <button
+                            onClick={dismissHoursReminder}
+                            style={{
+                                position: 'absolute', top: 12, right: 12, background: 'none', border: 'none',
+                                cursor: 'pointer', color: '#94a3b8', padding: 4,
+                            }}
+                            aria-label="Fermer"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                            <div style={{
+                                width: 56, height: 56, borderRadius: '50%',
+                                background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Clock size={26} color="#2383e2" />
+                            </div>
+                        </div>
+
+                        <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', textAlign: 'center', marginBottom: '0.6rem' }}>
+                            Horaires de réception des avis
+                        </h2>
+
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: '#475569', lineHeight: 1.6, textAlign: 'center', marginBottom: '1rem' }}>
+                            Par défaut, vos fiches reçoivent des avis entre <strong>07h et 23h</strong> (heure de Paris).
+                            Souhaitez-vous modifier cette plage horaire pour éviter par exemple de recevoir un grand nombre d'avis tard le soir ou très tôt le matin&nbsp;?
+                        </p>
+
+                        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.7rem 0.9rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#475569' }}>
+                            <strong style={{ color: '#0f172a' }}>Bon à savoir :</strong> en dehors de la plage que vous fixez, aucun guide ne pourra prendre une fiche pour publier un avis. Cela vous permet d'avoir des avis répartis sur des plages crédibles.
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                            <button
+                                onClick={goToHoursEdition}
+                                style={{
+                                    background: 'linear-gradient(135deg, #2383e2, #0369a1)', color: '#fff', border: 'none',
+                                    borderRadius: 8, padding: '0.75rem 1rem', fontSize: '0.95rem', fontWeight: 700, cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                }}
+                            >
+                                Modifier les horaires <ArrowRight size={16} />
+                            </button>
+                            <button
+                                onClick={dismissHoursReminder}
+                                style={{
+                                    background: '#fff', color: '#64748b', border: '1px solid #e2e8f0',
+                                    borderRadius: 8, padding: '0.65rem 1rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                                }}
+                            >
+                                Garder les horaires par défaut (07h–23h)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </DashboardLayout>
     );
 };
