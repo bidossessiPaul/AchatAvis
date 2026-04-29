@@ -48,6 +48,13 @@ export const AdminGmailVerifications: React.FC<any> = () => {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterStatus>('pending');
     const [preview, setPreview] = useState<string | null>(null);
+    const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 900);
+
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth < 900);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
 
     const load = async () => {
         setLoading(true);
@@ -116,32 +123,6 @@ export const AdminGmailVerifications: React.FC<any> = () => {
 
     return (
         <DashboardLayout title="Vérifications Gmail">
-            <style>{`
-                .gmail-verif-card-grid {
-                    padding: 1.25rem;
-                    display: grid;
-                    grid-template-columns: 1.2fr 1fr auto;
-                    gap: 1.5rem;
-                    align-items: center;
-                }
-                @media (max-width: 768px) {
-                    .gmail-verif-card-grid {
-                        grid-template-columns: 1fr;
-                        gap: 1rem;
-                        padding: 1rem;
-                    }
-                    .gmail-verif-actions {
-                        flex-direction: row !important;
-                        min-width: 0 !important;
-                    }
-                    .gmail-verif-actions button {
-                        flex: 1;
-                    }
-                    .gmail-verif-screenshot {
-                        height: 160px !important;
-                    }
-                }
-            `}</style>
 
             {/* En-tête */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem' }}>
@@ -193,7 +174,13 @@ export const AdminGmailVerifications: React.FC<any> = () => {
                                 {/* Bande statut en haut */}
                                 <div style={{ height: 4, background: v.status === 'approved' ? '#059669' : v.status === 'rejected' ? '#dc2626' : '#f59e0b' }} />
 
-                                <div className="gmail-verif-card-grid">
+                                <div style={{
+                                    padding: isMobile ? '1rem' : '1.25rem',
+                                    display: 'grid',
+                                    gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr auto',
+                                    gap: isMobile ? '1rem' : '1.5rem',
+                                    alignItems: isMobile ? 'stretch' : 'center',
+                                }}>
 
                                     {/* Colonne gauche : Guide + Gmail */}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -243,7 +230,7 @@ export const AdminGmailVerifications: React.FC<any> = () => {
                                     {/* Colonne centre : capture + lien Maps */}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                         {/* Miniature capture cliquable */}
-                                        <div className="gmail-verif-screenshot" onClick={() => setPreview(v.screenshot_url)} style={{ cursor: 'pointer', position: 'relative', borderRadius: 8, overflow: 'hidden', border: '2px solid #e2e8f0', height: 100, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        <div onClick={() => setPreview(v.screenshot_url)} style={{ cursor: 'pointer', position: 'relative', borderRadius: 8, overflow: 'hidden', border: '2px solid #e2e8f0', height: isMobile ? 200 : 100, background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                             title="Cliquer pour agrandir">
                                             {v.screenshot_url ? (
                                                 <img src={v.screenshot_url} alt="Capture" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -270,11 +257,11 @@ export const AdminGmailVerifications: React.FC<any> = () => {
 
                                     {/* Colonne droite : actions */}
                                     {v.status === 'pending' && (
-                                        <div className="gmail-verif-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: 120 }}>
-                                            <button onClick={() => approve(v)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.6rem 1rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+                                        <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', gap: '0.6rem', minWidth: isMobile ? 0 : 120 }}>
+                                            <button onClick={() => approve(v)} style={{ flex: isMobile ? 1 : 'unset', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.6rem 1rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
                                                 <CheckCircle2 size={15} /> Valider
                                             </button>
-                                            <button onClick={() => reject(v)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '0.6rem 1rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
+                                            <button onClick={() => reject(v)} style={{ flex: isMobile ? 1 : 'unset', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', background: '#fff', color: '#dc2626', border: '1px solid #fecaca', borderRadius: 8, padding: '0.6rem 1rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}>
                                                 <XCircle size={15} /> Rejeter
                                             </button>
                                         </div>
