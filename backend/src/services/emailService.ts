@@ -1627,7 +1627,7 @@ export const sendArtisanWelcomePackEmail = async (
       <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #F26522; border-radius: 10px; padding: 16px 18px; margin: 24px 0;">
         <p style="margin: 0 0 6px; font-size: 14px; font-weight: bold; color: #9a3412;">📲 Étape suivante après le paiement</p>
         <p style="margin: 0; font-size: 14px; color: #7c2d12; line-height: 1.6;">
-          Une fois votre pack payé, écrivez-nous sur WhatsApp au <strong style="color: #2383E2;">+33 6 44 67 86 42</strong> pour finaliser <strong>l'activation de votre pack</strong> et démarrer la collecte d'avis.
+          Une fois votre pack payé, écrivez-nous sur WhatsApp au <a href="https://wa.me/33644678642" style="color: #2383E2; font-weight: bold; text-decoration: none;">+33 6 44 67 86 42</a> pour finaliser <strong>l'activation de votre pack</strong> et démarrer la collecte d'avis.
         </p>
       </div>
 
