@@ -1562,6 +1562,17 @@ export const sendArtisanWelcomePackEmail = async (
     const frontendUrl = baseUrl || emailConfig.frontendUrl || 'https://manager.achatavis.com';
     const planUrl = `${frontendUrl}/artisan/plan`;
 
+    // Date et heure de l'inscription (Europe/Paris) — inséré dans le mail
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', {
+        timeZone: 'Europe/Paris',
+        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    });
+    const timeStr = now.toLocaleTimeString('fr-FR', {
+        timeZone: 'Europe/Paris',
+        hour: '2-digit', minute: '2-digit',
+    });
+
     const mailOptions = {
         from: emailConfig.from,
         to: email,
@@ -1589,7 +1600,7 @@ export const sendArtisanWelcomePackEmail = async (
         Bonjour <strong style="color: #2383E2;">${fullName}</strong>,
       </p>
       <p style="font-size: 15px; color: #555; line-height: 1.7;">
-        Nous avons constaté que vous venez de vous inscrire sur <strong style="color: #2383E2;">AchatAvis</strong>${companyName ? ` pour votre établissement <strong style="color: #2383E2;">${companyName}</strong>` : ''}.
+        Nous avons constaté que vous venez de vous inscrire sur <strong style="color: #2383E2;">AchatAvis</strong>${companyName ? ` pour votre établissement <strong style="color: #2383E2;">${companyName}</strong>` : ''}, le <strong style="color: #2383E2;">${dateStr}</strong> à <strong style="color: #2383E2;">${timeStr}</strong>.
         Bienvenue dans la communauté des artisans qui prennent leur visibilité Google en main !
       </p>
       <p style="font-size: 15px; color: #555; line-height: 1.7;">
@@ -1612,12 +1623,20 @@ export const sendArtisanWelcomePackEmail = async (
         </a>
       </div>
 
+      <!-- Étape post-paiement : contact obligatoire WhatsApp -->
+      <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #F26522; border-radius: 10px; padding: 16px 18px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-size: 14px; font-weight: bold; color: #9a3412;">📲 Étape suivante après le paiement</p>
+        <p style="margin: 0; font-size: 14px; color: #7c2d12; line-height: 1.6;">
+          Une fois votre pack payé, écrivez-nous sur WhatsApp au <strong style="color: #2383E2;">+33 6 44 67 86 42</strong> pour finaliser <strong>l'activation de votre pack</strong> et démarrer la collecte d'avis.
+        </p>
+      </div>
+
       <p style="font-size: 16px; color: #333; font-weight: bold; text-align: center; margin: 28px 0 8px;">ACHATAVIS ! PLUS D'AVIS, PLUS DE CLIENTS ⭐</p>
 
       <hr style="border: none; border-top: 2px solid #2383E2; margin: 24px 0;">
 
       <p style="font-size: 14px; color: #555; text-align: center; margin-bottom: 16px;">
-        Une question avant de choisir ? Notre équipe vous répond sur WhatsApp.
+        Une question avant de choisir ou besoin d'activer votre pack ? Notre équipe répond sur WhatsApp.
       </p>
       <div style="text-align: center;">
         <a href="https://wa.me/33644678642"
