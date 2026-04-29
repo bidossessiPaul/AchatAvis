@@ -1781,3 +1781,121 @@ export const sendArtisanRoleClarificationEmail = async (
     }
 };
 
+/**
+ * Mail promo orienté action — destiné aux artisans FR/BE inscrits
+ * sans pack activé. Met en avant les bénéfices business, les 3 packs
+ * et l'étape WhatsApp post-paiement pour activer le pack.
+ */
+export const sendArtisanPackPromoEmail = async (
+    email: string,
+    fullName: string,
+    companyName: string | null,
+    baseUrl?: string
+) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl || 'https://manager.achatavis.com';
+    const planUrl = `${frontendUrl}/artisan/plan`;
+    const firstName = (fullName || '').split(' ')[0] || fullName || 'cher artisan';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: '🚀 Votre fiche Google n\'attend que vous — Activez un pack et boostez votre chiffre',
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: Arial, sans-serif; background-color: #f0f4fb; padding: 20px; margin: 0;">
+  <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.15);">
+
+    <!-- Header logo -->
+    <div style="background-color: #ffffff; padding: 28px; text-align: center; border-bottom: 1px solid #eeeeee;">
+      <img src="https://achatavis.com/wp-content/uploads/2026/02/2-e1711237032367-1.png" alt="AchatAvis" style="max-width: 220px; height: auto; display: block; margin: 0 auto;">
+      <p style="color: #555555; margin: 12px 0 0; font-size: 14px;">Votre fiche est prête à décoller</p>
+    </div>
+
+    <!-- Bandeau orange -->
+    <div style="background-color: #F26522; padding: 12px 24px; text-align: center;">
+      <p style="margin: 0; color: white; font-weight: bold; font-size: 14px;">🎁 5 avis OFFERTS dès votre première commande !</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 32px;">
+      <p style="font-size: 16px; color: #333; margin-top: 0;">
+        Bonjour <strong style="color: #2383E2;">${firstName}</strong>,
+      </p>
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        Votre compte ${companyName ? `<strong style="color: #2383E2;">${companyName}</strong>` : 'AchatAvis'} est créé, votre fiche Google est en place… <strong>il ne manque plus qu'une chose pour faire exploser votre visibilité&nbsp;: activer un pack d'avis vérifiés.</strong>
+      </p>
+
+      <!-- Bénéfices chiffrés -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 22px 0;">
+        <p style="margin: 0 0 10px; font-size: 14px; font-weight: bold; color: #0f172a;">📈 Pourquoi c'est urgent</p>
+        <ul style="margin: 0; padding-left: 18px; color: #475569; font-size: 14px; line-height: 1.7;">
+          <li><strong>+0,5 étoile</strong> sur Google = jusqu'à <strong>+9% de chiffre d'affaires</strong> (étude Harvard Business School)</li>
+          <li><strong>87% des clients</strong> consultent les avis avant de choisir un artisan</li>
+          <li>Une fiche bien notée vous fait passer <strong>devant la concurrence locale</strong> sur Google Maps</li>
+          <li><strong>Avis vérifiés et 100% conformes</strong> — postés par de vrais Local Guides français</li>
+        </ul>
+      </div>
+
+      <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        On a trois formules pensées pour différents budgets. Vous voyez tout de suite combien d'avis vous obtenez et à quel prix&nbsp;:
+      </p>
+
+      <!-- Offres -->
+      <div style="margin: 24px 0;">
+        <a href="${planUrl}"
+           style="display: block; background-color: #2383E2; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold; margin-bottom: 14px;">
+          💎 STARTER 235€ / 30 avis
+        </a>
+        <a href="${planUrl}"
+           style="display: block; background-color: #E91E63; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold; margin-bottom: 14px;">
+          🌟 PROFESSIONNEL 299€ / 60 avis ⭐ Le + populaire
+        </a>
+        <a href="${planUrl}"
+           style="display: block; background-color: #2383E2; color: white; text-align: center; padding: 16px 20px; border-radius: 10px; text-decoration: none; font-size: 15px; font-weight: bold;">
+          🚀 ENTREPRISE 499€ / 90 avis
+        </a>
+      </div>
+
+      <!-- Étape post-paiement -->
+      <div style="background-color: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #F26522; border-radius: 10px; padding: 16px 18px; margin: 24px 0;">
+        <p style="margin: 0 0 6px; font-size: 14px; font-weight: bold; color: #9a3412;">📲 Étape suivante après le paiement</p>
+        <p style="margin: 0; font-size: 14px; color: #7c2d12; line-height: 1.6;">
+          Une fois votre pack payé, écrivez-nous sur WhatsApp au <a href="https://wa.me/33644678642" style="color: #2383E2; font-weight: bold; text-decoration: none;">+33 6 44 67 86 42</a> pour finaliser <strong>l'activation de votre pack</strong> et démarrer la collecte d'avis.
+        </p>
+      </div>
+
+      <p style="font-size: 16px; color: #333; font-weight: bold; text-align: center; margin: 28px 0 8px;">⭐ ACHATAVIS — PLUS D'AVIS, PLUS DE CLIENTS ⭐</p>
+
+      <hr style="border: none; border-top: 2px solid #2383E2; margin: 24px 0;">
+
+      <p style="font-size: 14px; color: #555; text-align: center; margin-bottom: 16px;">
+        Une question avant de choisir ? Notre équipe répond instantanément sur WhatsApp.
+      </p>
+      <div style="text-align: center;">
+        <a href="https://wa.me/33644678642"
+           style="display: inline-block; background-color: #25D366; color: white; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-size: 16px; font-weight: bold;">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" width="20" height="20" style="vertical-align: middle; margin-right: 8px;">
+          <span style="vertical-align: middle;">+33 6 44 67 86 42</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #000000; padding: 16px; text-align: center;">
+      <p style="margin: 0; font-size: 12px; color: #cccccc;">© ${new Date().getFullYear()} AchatAvis.com — Tous droits réservés</p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Promo pack email sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending promo pack email to ${email}:`, error);
+    }
+};
+
