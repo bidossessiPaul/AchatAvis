@@ -102,7 +102,7 @@ export const guideController = {
             return res.json(fiche);
         } catch (error: any) {
             console.error('❌ Error fetching fiche details:', error.message, error.stack);
-            const knownErrors = ['fiche non trouvée', 'fiche_FULL', 'DAILY_QUOTA_FULL', 'fiche_LOCKED', 'TRUST_SCORE_BLOCKED', 'TRUST_LEVEL_INSUFFICIENT'];
+            const knownErrors = ['fiche non trouvée', 'fiche_FULL', 'DAILY_QUOTA_FULL', 'fiche_LOCKED', 'TRUST_SCORE_BLOCKED', 'TRUST_LEVEL_INSUFFICIENT', 'fiche_OUTSIDE_HOURS'];
             const isKnown = knownErrors.some(e => error.message?.includes(e));
             return res.status(isKnown ? 403 : 500).json({
                 error: 'Failed to fetch fiche details',

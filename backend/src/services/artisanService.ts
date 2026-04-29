@@ -117,7 +117,9 @@ export const artisanService = {
             'staff_names', 'specific_instructions', 'city',
             // Anti-Detection Fields
             'sector_id', 'sector_slug', 'sector_difficulty', 'reviews_per_day', 'rhythme_mode',
-            'estimated_duration_days', 'client_cities', 'initial_review_count'
+            'estimated_duration_days', 'client_cities', 'initial_review_count',
+            // Plage horaire de disponibilité de la fiche pour les guides
+            'available_from', 'available_to'
         ];
 
         for (const field of updateableFields) {

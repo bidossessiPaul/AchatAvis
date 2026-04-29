@@ -170,6 +170,26 @@ export const guideService = {
             }
         }
 
+        // 3.bis Plage horaire de disponibilité (Europe/Paris).
+        // Le guide qui a déjà verrouillé peut finir librement (skip du check).
+        if (order.locked_by !== guide_id) {
+            const nowParis = new Date().toLocaleString('en-GB', {
+                timeZone: 'Europe/Paris',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            }); // ex: "14:32:05"
+            const fromStr = String(order.available_from || '07:00:00').slice(0, 8);
+            const toStr = String(order.available_to || '23:00:00').slice(0, 8);
+            const inWindow = fromStr <= toStr
+                ? (nowParis >= fromStr && nowParis <= toStr)
+                : (nowParis >= fromStr || nowParis <= toStr); // plage qui passe minuit
+            if (!inWindow) {
+                throw new Error(`fiche_OUTSIDE_HOURS:${fromStr.slice(0, 5)}-${toStr.slice(0, 5)}`);
+            }
+        }
+
         // 3. Acquire/Refresh Lock (30 minutes)
         await query(`
             UPDATE reviews_orders 

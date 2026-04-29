@@ -155,6 +155,9 @@ export interface ReviewOrder {
     estimated_duration_days?: number;
     client_cities?: string[] | string;
     payout_per_review?: number;
+    // Plage horaire de disponibilité pour les guides (heures Europe/Paris)
+    available_from?: string;
+    available_to?: string;
     establishment_id?: string;
     city?: string;
     daily_submissions_count?: number;

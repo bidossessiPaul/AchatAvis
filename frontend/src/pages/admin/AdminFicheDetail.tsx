@@ -43,6 +43,8 @@ interface FicheDetailData {
     pack_fiches_used?: number;
     reviews_per_day?: number;
     payout_per_review?: number;
+    available_from?: string;
+    available_to?: string;
 }
 
 export const AdminFicheDetail: React.FC = () => {
@@ -291,6 +293,24 @@ export const AdminFicheDetail: React.FC = () => {
                                     className="admin-input"
                                     value={formData.reviews_per_day ?? 3}
                                     onChange={(e) => setFormData({ ...formData, reviews_per_day: parseInt(e.target.value) || 1 })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Disponible à partir de (heure)</label>
+                                <input
+                                    type="time"
+                                    className="admin-input"
+                                    value={String(formData.available_from || '07:00:00').slice(0, 5)}
+                                    onChange={(e) => setFormData({ ...formData, available_from: `${e.target.value}:00` })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Disponible jusqu'à (heure)</label>
+                                <input
+                                    type="time"
+                                    className="admin-input"
+                                    value={String(formData.available_to || '23:00:00').slice(0, 5)}
+                                    onChange={(e) => setFormData({ ...formData, available_to: `${e.target.value}:00` })}
                                 />
                             </div>
                             <div className="form-group admin-col-span-2">

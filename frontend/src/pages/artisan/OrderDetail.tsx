@@ -174,6 +174,38 @@ export const OrderDetail: React.FC = () => {
         }
     };
 
+    // Horaires de disponibilité de la fiche pour les guides
+    const [hoursFrom, setHoursFrom] = useState('07:00');
+    const [hoursTo, setHoursTo] = useState('23:00');
+    const [hoursSaving, setHoursSaving] = useState(false);
+    const [hoursSaved, setHoursSaved] = useState(false);
+
+    useEffect(() => {
+        if (order) {
+            setHoursFrom(String(order.available_from || '07:00:00').slice(0, 5));
+            setHoursTo(String(order.available_to || '23:00:00').slice(0, 5));
+        }
+    }, [order?.id]);
+
+    const handleSaveHours = async () => {
+        if (!order) return;
+        setHoursSaving(true);
+        setHoursSaved(false);
+        try {
+            const updated = await artisanService.updateDraft(order.id, {
+                available_from: `${hoursFrom}:00`,
+                available_to: `${hoursTo}:00`,
+            } as any);
+            setOrder(updated);
+            setHoursSaved(true);
+            setTimeout(() => setHoursSaved(false), 2500);
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Erreur lors de l'enregistrement des horaires.");
+        } finally {
+            setHoursSaving(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <DashboardLayout title="Chargement...">
@@ -600,6 +632,44 @@ export const OrderDetail: React.FC = () => {
                                 </button>
                             </div>
                         )}
+
+                        {/* Horaires de disponibilité */}
+                        <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+                            <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+                                Horaires de disponibilité
+                            </h3>
+                            <p style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                                Plage horaire pendant laquelle les guides peuvent prendre cette fiche pour poster un avis.
+                                En dehors, ils sont bloqués avec un message clair. Heures locales (Europe/Paris).
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                                <div style={{ flex: 1, minWidth: 110 }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.3rem' }}>Début</label>
+                                    <input
+                                        type="time"
+                                        value={hoursFrom}
+                                        onChange={e => setHoursFrom(e.target.value)}
+                                        style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 110 }}>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#475569', marginBottom: '0.3rem' }}>Fin</label>
+                                    <input
+                                        type="time"
+                                        value={hoursTo}
+                                        onChange={e => setHoursTo(e.target.value)}
+                                        style={{ width: '100%', padding: '0.55rem 0.7rem', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: '0.875rem', boxSizing: 'border-box' }}
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleSaveHours}
+                                disabled={hoursSaving}
+                                style={{ marginTop: '1rem', width: '100%', padding: '0.65rem', background: hoursSaved ? '#16a34a' : '#0f172a', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: '0.8125rem', cursor: hoursSaving ? 'wait' : 'pointer', opacity: hoursSaving ? 0.7 : 1 }}
+                            >
+                                {hoursSaving ? 'Enregistrement...' : hoursSaved ? 'Horaires enregistrés' : 'Enregistrer les horaires'}
+                            </button>
+                        </div>
 
                         {/* Danger Zone */}
                         <div style={{ background: '#fff1f2', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #ffe4e6' }}>

@@ -96,6 +96,10 @@ export const FicheDetail: React.FC = () => {
             } else if (message === 'fiche_LOCKED') {
                 setLockedByOther(true);
                 setError("Un autre guide est déjà en train de traiter cette fiche. Veuillez réessayer dans quelques minutes.");
+            } else if (message && message.includes('fiche_OUTSIDE_HOURS')) {
+                // Format: "fiche_OUTSIDE_HOURS:07:00-23:00"
+                const range = message.split(':').slice(1).join(':');
+                setError(`Cette fiche n'est pas disponible en ce moment. Plage horaire autorisée : ${range} (heure de Paris). Réessayez dans cette fenêtre.`);
             } else if (message && message.includes('TRUST_SCORE_BLOCKED')) {
                 setError("Votre compte est restreint à cause d'un Score de Confiance insuffisant. Veuillez mettre à jour vos preuves ou contacter le support.");
             } else {

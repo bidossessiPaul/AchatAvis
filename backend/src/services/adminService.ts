@@ -1419,6 +1419,8 @@ export const updatefiche = async (orderId: string, data: any) => {
         'client_cities', 'payout_per_review',
         'establishment_id', 'city', 'initial_review_count',
         'status', 'paused_at', 'status_before_pause',
+        // Plage horaire de disponibilité de la fiche pour les guides
+        'available_from', 'available_to',
     ]);
 
     const filteredData: Record<string, any> = {};
