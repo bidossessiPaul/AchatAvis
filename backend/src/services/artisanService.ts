@@ -342,14 +342,19 @@ export const artisanService = {
         const values: any[] = [];
         const placeholders: string[] = [];
 
+        const validExperienceTypes = ['tested', 'visited', 'online', 'hearsay'];
+
         for (const p of proposals) {
             const id = uuidv4();
-            placeholders.push('(?, ?, ?, ?, ?, "draft")');
-            values.push(id, orderId, p.content || '', p.rating || 5, p.author_name || 'Anonyme');
+            const expType = validExperienceTypes.includes((p as any).experience_type)
+                ? (p as any).experience_type
+                : 'tested';
+            placeholders.push('(?, ?, ?, ?, ?, "draft", ?)');
+            values.push(id, orderId, p.content || '', p.rating || 5, p.author_name || 'Anonyme', expType);
         }
 
         await query(
-            `INSERT INTO review_proposals (id, order_id, content, rating, author_name, status)
+            `INSERT INTO review_proposals (id, order_id, content, rating, author_name, status, experience_type)
              VALUES ${placeholders.join(', ')}`,
             values
         );

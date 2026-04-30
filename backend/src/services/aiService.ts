@@ -19,6 +19,71 @@ const getAnthropicClient = (): Anthropic => {
     return anthropicClient;
 };
 
+type ExperienceType = 'tested' | 'visited' | 'online' | 'hearsay';
+
+// Distribution des types selon la catégorie de secteur.
+// "visited" = 0 pour les métiers de dépannage (plombier, serrurier...) : ça n'a aucun sens qu'un client "passe devant".
+const SECTOR_DISTRIBUTIONS: Record<string, Record<ExperienceType, number>> = {
+    depannage:        { tested: 0.65, online: 0.25, hearsay: 0.10, visited: 0.00 },
+    commerce:         { tested: 0.50, online: 0.20, hearsay: 0.15, visited: 0.15 },
+    artisan_chantier: { tested: 0.60, online: 0.22, hearsay: 0.13, visited: 0.05 },
+    service_pro:      { tested: 0.55, online: 0.30, hearsay: 0.15, visited: 0.00 },
+    default:          { tested: 0.60, online: 0.22, hearsay: 0.13, visited: 0.05 },
+};
+
+const SECTOR_SLUG_MAP: Record<string, string> = {
+    plumber: 'depannage', plomberie: 'depannage', electricite: 'depannage',
+    'chauffage-climo': 'depannage', assainissement: 'depannage', 'anti-nuisible': 'depannage',
+    restaurant: 'commerce', coiffure: 'commerce', fleuriste: 'commerce',
+    boutique: 'commerce', automobile: 'commerce', 'marchand-de-voitures-doccasion': 'commerce',
+    'toiture-couverture': 'artisan_chantier', couvreur: 'artisan_chantier',
+    batiment: 'artisan_chantier', 'entrepreneur-general': 'artisan_chantier',
+    paysagiste: 'artisan_chantier', 'jardinage-paysage': 'artisan_chantier',
+    demenagement: 'artisan_chantier',
+    immobilier: 'service_pro', juridique: 'service_pro', 'marketing-web': 'service_pro',
+    'courtier-en-credit-et-assurance': 'service_pro', 'centre-de-formation': 'service_pro',
+    medical: 'service_pro', orthodontiste: 'service_pro', voyage: 'service_pro',
+    loisirs: 'service_pro', 'e-commerce': 'service_pro',
+};
+
+// Description détaillée de chaque type — injectée dans le prompt par slot pour forcer la cohérence.
+const EXPERIENCE_TYPE_DESCRIPTIONS: Record<ExperienceType, string> = {
+    tested:  "Le client a REELLEMENT utilise le service (intervention physique, chantier, achat, prestation). Mentionne un detail vecu : duree, tarif, resultat, comportement de l'artisan. PAS de mention de site web ou de bouche-a-oreille.",
+    online:  "Le client a UNIQUEMENT observe en ligne (fiche Google, photos, site web, avis existants). PAS d'intervention physique. Mentionne ce qu'il a vu sur Internet : photos, note, descriptions. N'invente pas de visite ou d'utilisation.",
+    hearsay: "Le client a ENTENDU PARLER par bouche-a-oreille (ami, voisin, collegue). Il n'a PAS utilise le service et n'a PAS vu les locaux. Mentionne la source de la recommandation.",
+    visited: "Le client est PASSE DEVANT ou a rencontre l'artisan (devis sur place, vitrine, chantier visible) SANS consommer. Mentionne ce qu'il a constate en passant. N'invente pas d'utilisation du service.",
+};
+
+// Pré-calcule la distribution des types pour un batch et mélange aléatoirement.
+// La répartition est faite ici, pas laissée au modèle.
+function assignExperienceTypes(quantity: number, sectorSlug?: string): ExperienceType[] {
+    const category = (sectorSlug && SECTOR_SLUG_MAP[sectorSlug]) || 'default';
+    const dist = SECTOR_DISTRIBUTIONS[category];
+
+    const counts: Record<ExperienceType, number> = {
+        tested:  Math.round(quantity * dist.tested),
+        online:  Math.round(quantity * dist.online),
+        hearsay: Math.round(quantity * dist.hearsay),
+        visited: Math.round(quantity * dist.visited),
+    };
+    // Ajustement pour que le total soit exactement quantity
+    const total = counts.tested + counts.online + counts.hearsay + counts.visited;
+    counts.tested += quantity - total;
+
+    const types: ExperienceType[] = [];
+    for (let i = 0; i < counts.tested;  i++) types.push('tested');
+    for (let i = 0; i < counts.online;  i++) types.push('online');
+    for (let i = 0; i < counts.hearsay; i++) types.push('hearsay');
+    for (let i = 0; i < counts.visited; i++) types.push('visited');
+
+    // Fisher-Yates shuffle
+    for (let i = types.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [types[i], types[j]] = [types[j], types[i]];
+    }
+    return types;
+}
+
 interface GenerateReviewsParams {
     companyName: string;
     ficheName?: string;
@@ -26,6 +91,7 @@ interface GenerateReviewsParams {
     quantity: number;
     context?: string;
     sector?: string;
+    sectorSlug?: string;
     zones?: string;
     services?: string;
     staffNames?: string;
@@ -40,83 +106,72 @@ export const aiService = {
             quantity,
             context,
             sector,
+            sectorSlug,
             zones,
             services,
             staffNames,
             specificInstructions
         } = params;
 
-        const systemPrompt = `Tu es une IA experte qui simule des avis clients pour des artisans.
-TON OBJECTIF : CRÉER DE LA DIVERSITÉ EXTRÊME, DU RÉALISME BRUT ET DE LA COHÉRENCE.
+        // Pré-assignation des types AVANT l'appel IA — la répartition est déterministe, pas laissée au modèle
+        const assignedTypes = assignExperienceTypes(quantity, sectorSlug);
+        console.log(`Distribution types (sector: ${sectorSlug || 'default'}):`, assignedTypes.reduce((acc, t) => {
+            acc[t] = (acc[t] || 0) + 1; return acc;
+        }, {} as Record<string, number>));
 
-⚠️ RÈGLES DE QUALITÉ ABSOLUES :
-1. **LANGAGE** : Interdiction formelle d'utiliser des mots grossiers, vulgaires ou insultants. Reste poli et respectueux, même dans les avis familiers.
-2. **COHÉRENCE** : L'avis doit avoir un sens. Évite le "faux grave" (phrases qui ne veulent rien dire ou qui sont absurdes).
-3. **ABRÉVIATIONS** : Tu peux utiliser des abréviations courantes de clients (ex: "rdv", "sup", "bcp", "tt"), mais l'avis doit rester compréhensible.
-4. **DÉTAILS** : Mentionne des aspects concrets de l'intervention (ponctualité, propreté du chantier, amabilité).
-5. **DISTINCTION NOM/ENTREPRISE** : Ne confonds JAMAIS le nom de l'entreprise avec une personne physique. Si l'entreprise s'appelle "Plomberie Dupont", n'écris pas "Monsieur Plomberie Dupont". Utilise le nom de l'entreprise pour l'entité, et les noms des collaborateurs (si fournis) pour les personnes. Ne mets pas "Mr" ou "Monsieur" devant un nom d'entreprise qui n'est pas manifestement un nom de famille seul.
+        const systemPrompt = `Tu es une IA experte qui simule des avis clients authentiques pour des artisans et professionnels.
 
-⛔️ INTERDICTIONS FORMELLES (Si tu utilises ces phrases, tu échoues) :
+REGLES DE QUALITE :
+1. LANGAGE : Poli et respectueux, meme dans les avis familiers. Pas de grossieretes.
+2. COHERENCE : L'avis doit avoir du sens. Pas de phrases absurdes.
+3. ABREVIATIONS : OK (rdv, bcp, tt, dsl) mais l'avis reste lisible.
+4. DISTINCTION NOM/ENTREPRISE : Ne mets jamais "Monsieur" devant un nom d'entreprise. Utilise les noms de collaborateurs fournis pour les personnes.
+
+INTERDICTIONS FORMELLES :
 - "Intervention rapide et efficace"
 - "Je recommande vivement cette entreprise"
-- "Travail soigné et professionnel"
+- "Travail soigne et professionnel"
 - "Je suis pleinement satisfait"
-- "Un grand merci à toute l'équipe"
-- Pas de structure répétitive "Problème X à Ville Y résolu".
+- "Un grand merci a toute l'equipe"
 
-✅ TES DIRECTIVES CRÉATIVES :
-1. **RACONTE DES HISTOIRES** : Invente des détails (un dégât des eaux évité de justesse, une chaudière qui lâche en plein hiver, un artisan qui explique bien les choses).
-2. **BRISURE DE STYLE** :
-   - Fais des avis SANS ponctuation.
-   - Fais des avis avec des fautes légères de naturel (sa va, merçi, dsl).
-   - Fais des avis centrés sur le ressenti humain ("Il a pris le temps de tout m'expliquer, c'est rare").
-3. **ÉMOTIONS RÉELLES** : Soulagement, confiance retrouvée, satisfaction d'un travail bien fait.
+STYLES DE REDACTION a varier dans le batch :
+- LE SCEPTIQUE CONVERTI : "J'y croyais pas... finalement top"
+- LE ROMANCIER (>100 mots) : histoire precise avec details sensoriels
+- LE RUSH (<10 mots) : "super boulot merci", sans majuscule ni ponctuation
+- L'ANCIEN : poli, vouvoie, phrases construites
+- LE POINTILLEUX : mentionne un detail technique precis
+
+REGLE ABSOLUE SUR LE TYPE D'EXPERIENCE : Chaque avis a un type assigne. Tu dois respecter STRICTEMENT ce type. Un avis "online" ne peut PAS mentionner une intervention physique. Un avis "hearsay" ne peut PAS decrire une utilisation du service. PAS DE MELANGE entre types dans un meme avis.
 
 FORMAT : JSON valide uniquement.`;
 
-        const userPrompt = `Génère ${quantity} avis positifs (5 étoiles OBLIGATOIRE pour CHAQUE avis) pour l'entreprise "${companyName}" (${trade}).
+        const typesList = assignedTypes
+            .map((t, i) => `Avis ${i + 1} -> type="${t}" : ${EXPERIENCE_TYPE_DESCRIPTIONS[t]}`)
+            .join('\n');
+
+        const userPrompt = `Genere exactement ${quantity} avis positifs (5 etoiles OBLIGATOIRE pour CHAQUE avis) pour "${companyName}" (${trade}).
 Contexte : ${context || 'Artisan local'}
 Secteur : ${sector || trade}
 Services : ${services || 'Tous services'}
 Zones : ${zones || 'Locale'}
-Collaborateurs : ${staffNames || ''}
-Instructions : ${specificInstructions || ''}
+Collaborateurs : ${staffNames || 'non precise'}
+Instructions specifiques : ${specificInstructions || 'aucune'}
 
-GÉNÈRE UN MÉLANGE HÉTÉROGÈNE SELON CES PROFILS (Mélange l'ordre d'apparition) :
+TYPES D'EXPERIENCE ASSIGNES - respecte-les dans l'ordre exact :
+${typesList}
 
-1. 😡➡️😍 **LE SCEPTIQUE CONVERTI (20%)**
-   - "J'y croyais pas", "J'avais peur de l'arnaque", "On m'avait dit du mal des artisans".
-   - Finition : "Finalement, top".
+REGLE ABSOLUE : Genere les avis dans l'ordre ci-dessus. L'avis N dans le JSON doit correspondre au type assigne a l'Avis N. Le champ "experience_type" dans le JSON doit etre identique au type assigne.
+Pour les avis localises, integre la ville naturellement dans la phrase (pas juste a la fin).
 
-2. 📖 **LE ROMANCIER (30%)**
-   - LONGUEUR OBLIGATOIRE : > 100 mots.
-   - Doit raconter une histoire précise (ex: "C'était dimanche soir, l'eau coulait partout...").
-   - Doit citer des détails sensoriels (bruit, froid, odeur).
-
-3. ⚡️ **LE RUSH (25%)**
-   - Max 10 mots.
-   - Pas de majuscules, pas de points.
-   - Ex: "super boulot merci", "top du top", "vrai pro rien a dire".
-
-4. 👴 **L'ANCIEN (15%)**
-   - Poli, vouvoie, phrases longues et bien construites.
-   - Exemple: "L'artisan de [Entreprise] a été d'une politesse rare..." ou "Monsieur [Nom d'un Collaborateur] a été exemplaire."
-
-5. 🧐 **LE POINTILLEUX (10%)**
-   - Parle d'un détail technique précis (la marque du joint, la propreté du chantier après départ).
-
-IMPORTANT : Pour les avis localisés, intègre la ville ("à [Ville]") de manière naturelle DANS la phrase, pas juste à la fin.
-Exemple : "Même en habitant tout au fond de [Ville], ils sont venus vite."
-
-Format de sortie attendu (JSON) :
+Format de sortie (JSON) :
 {
     "reviews": [
-        {"author_name": "...", "content": "...", "rating": 5}
+        {"author_name": "...", "content": "...", "rating": 5, "experience_type": "tested"}
     ]
 }`;
 
         try {
-            console.log("🤖 Appel Claude pour generation d'avis...");
+            console.log("Appel Claude pour generation d'avis...");
             const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 8192,
@@ -127,26 +182,21 @@ Format de sortie attendu (JSON) :
                 ]
             });
 
-            // Check for truncation
             if (response.stop_reason === 'max_tokens') {
-                console.warn("⚠️ Réponse AI tronquée (max_tokens atteint). Tentative de parsing partiel...");
+                console.warn("Reponse AI tronquee (max_tokens atteint). Tentative de parsing partiel...");
             }
 
-            // Handle the content block safely
             const textBlock = response.content[0];
             if (textBlock.type !== 'text') {
-                throw new Error("Réponse inattendue de Claude (pas de texte)");
+                throw new Error("Reponse inattendue de Claude (pas de texte)");
             }
 
             let rawContent = textBlock.text.trim();
 
-            // Handle the case where the AI might have repeated the pre-filled '{'
             if (!rawContent.startsWith('{') && !rawContent.startsWith('[')) {
                 rawContent = '{' + rawContent;
             }
 
-            // Try to extract the JSON object containing "reviews" array
-            // Use a balanced brace approach to find the correct closing brace
             const extractJSON = (str: string): string => {
                 let depth = 0;
                 let start = str.indexOf('{');
@@ -159,7 +209,6 @@ Format de sortie attendu (JSON) :
                         if (depth === 0) return str.substring(start, i + 1);
                     }
                 }
-                // Fallback: use lastIndexOf if balanced search fails
                 const lastBrace = str.lastIndexOf('}');
                 if (lastBrace === -1) throw new Error("Format AI invalide (pas de JSON)");
                 return str.substring(start, lastBrace + 1);
@@ -168,57 +217,63 @@ Format de sortie attendu (JSON) :
             try {
                 const jsonStr = extractJSON(rawContent);
                 const parsed = JSON.parse(jsonStr);
-                console.log("✅ Réponse AI reçue et parsée");
+                console.log("Reponse AI recue et parsee");
 
-                // Force all ratings to 5 (safety net if AI ignores the instruction)
-                const forceRating5 = (reviews: any[]) => reviews.map(r => ({ ...r, rating: 5 }));
-                if (Array.isArray(parsed.reviews)) return forceRating5(parsed.reviews);
-                if (Array.isArray(parsed)) return forceRating5(parsed);
+                // Force rating 5 + fallback experience_type si l'IA l'a oublié
+                const normalize = (reviews: any[]) => reviews.map((r, i) => ({
+                    ...r,
+                    rating: 5,
+                    experience_type: r.experience_type || assignedTypes[i] || 'tested',
+                }));
+
+                if (Array.isArray(parsed.reviews)) return normalize(parsed.reviews);
+                if (Array.isArray(parsed)) return normalize(parsed);
                 throw new Error("Format JSON invalide (pas un tableau)");
             } catch (e: any) {
-                // If truncated, try to salvage complete review objects
                 if (response.stop_reason === 'max_tokens') {
-                    console.warn("⚠️ Tentative de récupération des avis complets depuis JSON tronqué...");
+                    console.warn("Tentative de recuperation des avis complets depuis JSON tronque...");
                     try {
-                        // Find all complete review objects using regex
-                        const reviewRegex = /\{\s*"author_name"\s*:\s*"[^"]*"\s*,\s*"content"\s*:\s*"[^"]*"\s*,\s*"rating"\s*:\s*\d+\s*\}/g;
+                        const reviewRegex = /\{\s*"author_name"\s*:\s*"[^"]*"\s*,\s*"content"\s*:\s*"[^"]*"\s*,\s*"rating"\s*:\s*\d+(?:\s*,\s*"experience_type"\s*:\s*"[^"]*")?\s*\}/g;
                         const matches = rawContent.match(reviewRegex);
                         if (matches && matches.length > 0) {
-                            const salvaged = matches.map(m => ({ ...JSON.parse(m), rating: 5 }));
-                            console.log(`✅ ${salvaged.length} avis récupérés depuis réponse tronquée`);
+                            const salvaged = matches.map((m, i) => {
+                                const obj = JSON.parse(m);
+                                return { ...obj, rating: 5, experience_type: obj.experience_type || assignedTypes[i] || 'tested' };
+                            });
+                            console.log(`${salvaged.length} avis recuperes depuis reponse tronquee`);
                             return salvaged;
                         }
                     } catch (salvageErr) {
-                        console.error("❌ Récupération impossible:", salvageErr);
+                        console.error("Recuperation impossible:", salvageErr);
                     }
                 }
-                console.error("❌ Erreur parsing JSON AI. Contenu brut:", rawContent.substring(0, 500));
-                throw new Error(`Erreur parsing réponse IA: ${e.message}`);
+                console.error("Erreur parsing JSON AI. Contenu brut:", rawContent.substring(0, 500));
+                throw new Error(`Erreur parsing reponse IA: ${e.message}`);
             }
 
         } catch (error: any) {
-            console.error("❌ Erreur AI Service:", error.message);
+            console.error("Erreur AI Service:", error.message);
             throw error;
         }
     },
 
     async generateNearbyCities(baseCity: string, count: number) {
-        const systemPrompt = "Tu es un expert en géographie mondiale et zones de chalandise. Réponds uniquement en JSON.";
+        const systemPrompt = "Tu es un expert en geographie mondiale et zones de chalandise. Reponds uniquement en JSON.";
         const userPrompt = `
-            Basé sur l'emplacement de "${baseCity}". 
-            Génère une liste de ${count} villes/communes proches (max 20-30km) dans le MÊME PAYS.
-            
-            Règles :
-            1. Réalisme géographique.
-            2. Diversité (résidentiel/activité).
-            3. Format : JSON avec clé "cities" (tableau de strings).
-            4. Pas de ville inventée.
-            
+            Base sur l'emplacement de "${baseCity}".
+            Genere une liste de ${count} villes/communes proches (max 20-30km) dans le MEME PAYS.
+
+            Regles :
+            1. Realisme geographique.
+            2. Diversite (residentiel/activite).
+            3. Format : JSON avec cle "cities" (tableau de strings).
+            4. Pas de ville inventee.
+
             Exemple : { "cities": ["Ville A", "Ville B"] }
         `;
 
         try {
-            console.log("🤖 Appel Claude pour generation de villes pour:", baseCity);
+            console.log("Appel Claude pour generation de villes pour:", baseCity);
             const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
@@ -230,7 +285,7 @@ Format de sortie attendu (JSON) :
             });
 
             const textBlock = response.content[0];
-            if (textBlock.type !== 'text') throw new Error("Réponse vide de Claude");
+            if (textBlock.type !== 'text') throw new Error("Reponse vide de Claude");
 
             const content = "{" + textBlock.text;
             const parsed = JSON.parse(content);
@@ -238,29 +293,29 @@ Format de sortie attendu (JSON) :
             if (Array.isArray(parsed.cities)) return parsed.cities;
             return [];
         } catch (error: any) {
-            console.error("❌ Erreur AI City Gen:", error.message);
+            console.error("Erreur AI City Gen:", error.message);
             throw error;
         }
     },
 
     async generateReviewResponse(reviewContent: string, authorName: string) {
-        const systemPrompt = "Tu es un assistant de gestion de réputation pour artisans.";
+        const systemPrompt = "Tu es un assistant de gestion de reputation pour artisans.";
         const userPrompt = `
-            Tu es un artisan professionnel. Réponds à cet avis client :
+            Tu es un artisan professionnel. Reponds a cet avis client :
             Client : ${authorName}
             Avis : "${reviewContent}"
-            
+
             Consignes :
             1. Remercie chaleureusement.
             2. Personnalise si possible.
             3. Concis (2-3 phrases).
             4. Poli mais pas trop formel.
             5. Touche positive.
-            6. Réponds UNIQUEMENT avec le texte de la réponse.
+            6. Reponds UNIQUEMENT avec le texte de la reponse.
         `;
 
         try {
-            console.log("🤖 Génération de réponse IA pour l'avis de:", authorName);
+            console.log("Generation de reponse IA pour l'avis de:", authorName);
             const response = await getAnthropicClient().messages.create({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 1024,
@@ -271,11 +326,11 @@ Format de sortie attendu (JSON) :
             });
 
             const textBlock = response.content[0];
-            if (textBlock.type !== 'text') throw new Error("Réponse vide de Claude");
+            if (textBlock.type !== 'text') throw new Error("Reponse vide de Claude");
 
             return textBlock.text.trim();
         } catch (error: any) {
-            console.error("❌ Erreur AI Response Gen:", error.message);
+            console.error("Erreur AI Response Gen:", error.message);
             throw error;
         }
     }

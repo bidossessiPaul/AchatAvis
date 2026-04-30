@@ -175,6 +175,7 @@ export interface ReviewProposal {
     rating: number;
     author_name: string;
     status: 'draft' | 'approved' | 'rejected';
+    experience_type?: 'tested' | 'visited' | 'online' | 'hearsay';
     images?: ProposalImage[];
     created_at: string;
     updated_at: string;

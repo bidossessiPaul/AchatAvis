@@ -1,8 +1,38 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { ReviewOrder, ReviewProposal, ProposalImage } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
-import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle, Star, ImagePlus, X, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Check, RefreshCw, Sparkles, AlertCircle, Star, ImagePlus, X, Image as ImageIcon } from 'lucide-react';
 import { showConfirm, showError } from '../../../utils/Swal';
+
+const EXPERIENCE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
+    tested:  { label: 'Testé',            bg: '#dcfce7', color: '#166534' },
+    visited: { label: 'Visité',           bg: '#dbeafe', color: '#1d4ed8' },
+    online:  { label: 'Observé en ligne', bg: '#ede9fe', color: '#6d28d9' },
+    hearsay: { label: 'Bouche-à-oreille', bg: '#fef3c7', color: '#92400e' },
+};
+
+function ExperienceBadge({ type }: { type?: string }) {
+    if (!type) return null;
+    const cfg = EXPERIENCE_LABELS[type];
+    if (!cfg) return null;
+    return (
+        <span style={{
+            display: 'inline-block',
+            padding: '0.15rem 0.5rem',
+            borderRadius: '1rem',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.03em',
+            background: cfg.bg,
+            color: cfg.color,
+            marginTop: '0.3rem',
+            whiteSpace: 'nowrap',
+        }}>
+            {cfg.label}
+        </span>
+    );
+}
 
 // Mirror du backend : 30→5, 60→10, 90→25, défaut 5
 function getImageQuotaForQuantity(quantity: number): number {
@@ -23,9 +53,6 @@ interface Step3Props {
 
 export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNext, onBack, setProposals, onError }) => {
     const [isGenerating, setIsGenerating] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editValue, setEditValue] = useState("");
-    const [editRating, setEditRating] = useState<number>(5);
     const [progress, setProgress] = useState<{ current: number, target: number } | null>(null);
     const abortRef = useRef(false);
 
@@ -88,23 +115,6 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
             setProposals(prev => prev.filter(item => item.id !== p.id));
         } catch (error) {
             console.error("Delete failed", error);
-        }
-    };
-
-    const handleEdit = (p: ReviewProposal) => {
-        if (p.submission_id) return;
-        setEditingId(p.id);
-        setEditValue(p.content);
-        setEditRating(p.rating || 5);
-    };
-
-    const handleSaveEdit = async (id: string) => {
-        try {
-            await artisanService.updateProposal(id, { content: editValue, rating: editRating });
-            setProposals(prev => prev.map(p => p.id === id ? { ...p, content: editValue, rating: editRating } : p));
-            setEditingId(null);
-        } catch (error) {
-            console.error("Edit failed", error);
         }
     };
 
@@ -473,11 +483,11 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                 </tr>
                             </thead>
                             <tbody>
-                                {proposals.map((p) => (
+                                {proposals.map((p, index) => (
                                     <tr key={p.id}>
                                         <td className="pt-cell pt-cell-author">
                                             <div className="pt-author-info">
-                                                <span className="pt-author-name">{p.author_name}</span>
+                                                <span className="pt-author-name">Avis {index + 1}</span>
                                                 {p.submission_id && (
                                                     <span className="pt-published-badge">
                                                         <Check size={10} /> PUBLIÉ
@@ -486,20 +496,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                             </div>
                                         </td>
                                         <td className="pt-cell pt-cell-stars">
-                                            {editingId === p.id ? (
-                                                <div className="pt-stars-row">
-                                                    {[1, 2, 3, 4, 5].map((star) => (
-                                                        <Star
-                                                            key={star}
-                                                            size={20}
-                                                            fill={star <= editRating ? '#f59e0b' : 'none'}
-                                                            color={star <= editRating ? '#f59e0b' : '#d1d5db'}
-                                                            style={{ cursor: 'pointer' }}
-                                                            onClick={() => setEditRating(star)}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.2rem' }}>
                                                 <div className="pt-stars-row">
                                                     {[1, 2, 3, 4, 5].map((star) => (
                                                         <Star
@@ -510,29 +507,16 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                         />
                                                     ))}
                                                 </div>
-                                            )}
+                                                <ExperienceBadge type={p.experience_type} />
+                                            </div>
                                         </td>
                                         <td className="pt-cell pt-cell-content">
-                                            {editingId === p.id ? (
-                                                <textarea
-                                                    className="form-textarea"
-                                                    value={editValue}
-                                                    onChange={(e) => setEditValue(e.target.value)}
-                                                    style={{ minHeight: '100px', marginBottom: 0, color: '#000' }}
-                                                />
-                                            ) : (
-                                                <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
-                                            )}
+                                            <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
                                             {renderImagesBlock(p)}
                                         </td>
                                         <td className="pt-cell pt-cell-actions">
                                             {!p.submission_id && (
                                                 <div className="pt-action-btns">
-                                                    {editingId === p.id ? (
-                                                        <button onClick={() => handleSaveEdit(p.id)} className="pt-btn-save"><Check size={18} /></button>
-                                                    ) : (
-                                                        <button onClick={() => handleEdit(p)} className="pt-btn-edit"><Edit2 size={16} /></button>
-                                                    )}
                                                     <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
                                                 </div>
                                             )}
@@ -545,11 +529,11 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
 
                     {/* Mobile: Card layout */}
                     <div className="proposals-mobile">
-                        {proposals.map((p) => (
+                        {proposals.map((p, index) => (
                             <div key={p.id} className="proposal-card-mobile">
                                 <div className="pcm-header">
                                     <div className="pcm-author-row">
-                                        <span className="pt-author-name">{p.author_name}</span>
+                                        <span className="pt-author-name">Avis {index + 1}</span>
                                         {p.submission_id && (
                                             <span className="pt-published-badge">
                                                 <Check size={10} /> PUBLIÉ
@@ -558,30 +542,12 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                     </div>
                                     {!p.submission_id && (
                                         <div className="pt-action-btns">
-                                            {editingId === p.id ? (
-                                                <button onClick={() => handleSaveEdit(p.id)} className="pt-btn-save"><Check size={18} /></button>
-                                            ) : (
-                                                <button onClick={() => handleEdit(p)} className="pt-btn-edit"><Edit2 size={16} /></button>
-                                            )}
                                             <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
                                         </div>
                                     )}
                                 </div>
                                 <div className="pcm-stars">
-                                    {editingId === p.id ? (
-                                        <div className="pt-stars-row">
-                                            {[1, 2, 3, 4, 5].map((star) => (
-                                                <Star
-                                                    key={star}
-                                                    size={22}
-                                                    fill={star <= editRating ? '#f59e0b' : 'none'}
-                                                    color={star <= editRating ? '#f59e0b' : '#d1d5db'}
-                                                    style={{ cursor: 'pointer' }}
-                                                    onClick={() => setEditRating(star)}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         <div className="pt-stars-row">
                                             {[1, 2, 3, 4, 5].map((star) => (
                                                 <Star
@@ -592,19 +558,11 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                 />
                                             ))}
                                         </div>
-                                    )}
+                                        <ExperienceBadge type={p.experience_type} />
+                                    </div>
                                 </div>
                                 <div className="pcm-content">
-                                    {editingId === p.id ? (
-                                        <textarea
-                                            className="form-textarea"
-                                            value={editValue}
-                                            onChange={(e) => setEditValue(e.target.value)}
-                                            style={{ minHeight: '100px', marginBottom: 0, color: '#000' }}
-                                        />
-                                    ) : (
-                                        <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
-                                    )}
+                                    <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
                                     {renderImagesBlock(p)}
                                 </div>
                             </div>

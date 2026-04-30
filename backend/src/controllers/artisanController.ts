@@ -120,6 +120,7 @@ export const artisanController = {
                 quantity: currentBatchSize,
                 context: order.company_context,
                 sector: order.sector,
+                sectorSlug: order.sector_slug,
                 zones: order.zones,
                 services: order.services,
                 staffNames: order.staff_names,
