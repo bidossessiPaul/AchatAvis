@@ -5,6 +5,7 @@ import { invalidateAuthCache } from '../middleware/auth';
 import { TokenPayload } from '../utils/token';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
+import { parseImages } from './artisanService';
 
 /**
  * Get all artisans with their profiles
@@ -1388,9 +1389,14 @@ export const getAdminficheDetail = async (orderId: string) => {
 
     if (!orders || orders.length === 0) return null;
 
-    const proposals = await query(`
+    const proposals: any[] = await query(`
         SELECT * FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL ORDER BY created_at ASC
     `, [orderId]);
+
+    // Parse les images JSON pour que l'admin les voie sur chaque proposition
+    for (const p of proposals) {
+        p.images = parseImages(p.images);
+    }
 
     const order = orders[0];
     return {

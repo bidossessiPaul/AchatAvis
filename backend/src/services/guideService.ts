@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
 import { sendAdminEventNotification } from './emailService';
+import { parseImages } from './artisanService';
 
 export const guideService = {
     /**
@@ -202,11 +203,16 @@ export const guideService = {
         console.log(`[GUIDE] Fetching global details for ${order_id}`);
         // Fetch ALL proposals for this order
 
-        const proposals = await query(`
+        const proposals: any[] = await query(`
             SELECT * FROM review_proposals
             WHERE order_id = ? AND deleted_at IS NULL
             ORDER BY created_at ASC
         `, [order_id]);
+
+        // Parse les images JSON pour que le guide puisse les voir/télécharger
+        for (const p of proposals) {
+            p.images = parseImages(p.images);
+        }
 
         // Fetch ALL submissions for this order (from ALL guides)
         const submissions = await query(`

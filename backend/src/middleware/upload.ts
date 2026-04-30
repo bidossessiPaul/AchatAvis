@@ -48,3 +48,14 @@ export const uploadIdentityDocument = multer({
         fileSize: 8 * 1024 * 1024 // 8MB
     }
 });
+
+// Multer pour images attachées aux avis (review_proposals.images)
+// Le quota global par fiche est vérifié dans le service (5/10/25 selon pack)
+export const uploadReviewImages = multer({
+    storage,
+    fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB par image (photos smartphones modernes)
+        files: 25 // max 25 images par requête (limite haute du pack 90)
+    }
+});

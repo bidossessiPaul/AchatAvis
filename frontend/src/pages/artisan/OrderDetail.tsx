@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
-import { ReviewOrder, ReviewProposal } from '../../types';
+import { ReviewOrder, ReviewProposal, ProposalImage } from '../../types';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../context/authStore';
+import { showConfirm, showError } from '../../utils/Swal';
 import {
     ArrowLeft,
     Calendar,
@@ -28,8 +29,20 @@ import {
     X,
     Star,
     Pause,
-    Play
+    Play,
+    ImagePlus,
+    Image as ImageIcon,
+    RefreshCw
 } from 'lucide-react';
+
+// Mirror du backend (artisanService.getImageQuotaForQuantity) :
+// 30 avis → 5 images, 60 → 10, 90 → 25, défaut 5
+function getImageQuotaForQuantity(quantity: number): number {
+    if (!quantity || quantity < 30) return 5;
+    if (quantity >= 90) return 25;
+    if (quantity >= 60) return 10;
+    return 5;
+}
 
 const getTradeInfo = (trade: string) => {
     const t = trade?.toLowerCase() || '';
@@ -58,6 +71,18 @@ export const OrderDetail: React.FC = () => {
     const [editForm, setEditForm] = useState({ content: '', author_name: '', rating: 5 });
     const [isSaving, setIsSaving] = useState(false);
     const [isPausing, setIsPausing] = useState(false);
+
+    // États gestion images attachées aux propositions
+    const [uploadingProposalId, setUploadingProposalId] = useState<string | null>(null);
+    const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+    // Quota d'images global (5/10/25 selon pack 30/60/90)
+    const imageQuota = useMemo(() => getImageQuotaForQuantity(order?.quantity || 0), [order?.quantity]);
+    const imagesUsed = useMemo(
+        () => (order?.proposals || []).reduce((sum, p) => sum + (p.images?.length || 0), 0),
+        [order?.proposals]
+    );
+    const imagesRemaining = Math.max(0, imageQuota - imagesUsed);
 
     const tradeInfo = getTradeInfo(order?.sector || order?.company_name || '');
 
@@ -186,6 +211,215 @@ export const OrderDetail: React.FC = () => {
             setHoursTo(String(order.available_to || '23:00:00').slice(0, 5));
         }
     }, [order?.id]);
+
+    // ---- Handlers images ----
+    const handlePickImages = (proposalId: string) => {
+        const input = fileInputRefs.current[proposalId];
+        if (input) input.click();
+    };
+
+    const handleUploadImages = async (proposalId: string, fileList: FileList | null) => {
+        if (!fileList || fileList.length === 0 || !order) return;
+        const files = Array.from(fileList);
+
+        // Pré-check taille (10 Mo max par image, comme côté serveur)
+        const MAX_BYTES = 10 * 1024 * 1024;
+        const tooLarge = files.find(f => f.size > MAX_BYTES);
+        if (tooLarge) {
+            showError(
+                'Image trop volumineuse',
+                `${tooLarge.name} fait ${(tooLarge.size / (1024 * 1024)).toFixed(1)} Mo (max 10 Mo).`
+            );
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+            return;
+        }
+
+        // Pré-check quota client (le backend re-vérifie de toute façon)
+        if (files.length > imagesRemaining) {
+            showError(
+                'Quota dépassé',
+                `Il reste ${imagesRemaining} image${imagesRemaining > 1 ? 's' : ''} sur ${imageQuota} pour cette fiche.`
+            );
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+            return;
+        }
+
+        setUploadingProposalId(proposalId);
+        try {
+            const { images } = await artisanService.uploadProposalImages(proposalId, files);
+            setOrder({
+                ...order,
+                proposals: order.proposals.map(p => p.id === proposalId ? { ...p, images } : p)
+            });
+        } catch (err: any) {
+            console.error('Upload images failed', err);
+            const msg = err?.response?.data?.message || err?.message || 'Erreur upload';
+            showError("Échec de l'upload", msg);
+        } finally {
+            setUploadingProposalId(null);
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+        }
+    };
+
+    const handleDeleteImage = async (proposalId: string, publicId: string) => {
+        if (!order) return;
+        const confirm = await showConfirm("Supprimer cette image ?", "L'image sera retirée de l'avis.");
+        if (!confirm.isConfirmed) return;
+        try {
+            const { images } = await artisanService.deleteProposalImage(proposalId, publicId);
+            setOrder({
+                ...order,
+                proposals: order.proposals.map(p => p.id === proposalId ? { ...p, images } : p)
+            });
+        } catch (err: any) {
+            console.error('Delete image failed', err);
+            showError('Échec de la suppression', err?.response?.data?.message || err?.message || 'Erreur');
+        }
+    };
+
+    // Bloc thumbnails + bouton ajouter (réutilisé sur les avis en attente ET publiés)
+    const renderImagesBlock = (p: ReviewProposal, opts: { readOnly?: boolean } = {}) => {
+        const imgs: ProposalImage[] = p.images || [];
+        const readOnly = opts.readOnly === true;
+        const isUploading = uploadingProposalId === p.id;
+        const canAdd = !readOnly && imagesRemaining > 0 && !isUploading;
+
+        if (readOnly && imgs.length === 0) return null;
+
+        return (
+            <div style={{ marginTop: '0.75rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                    {imgs.map(img => (
+                        <div
+                            key={img.publicId}
+                            style={{
+                                position: 'relative',
+                                width: 56,
+                                height: 56,
+                                borderRadius: 8,
+                                overflow: 'hidden',
+                                border: '1px solid #e2e8f0',
+                                background: '#f8fafc'
+                            }}
+                        >
+                            <a href={img.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
+                                <img
+                                    src={img.url}
+                                    alt=""
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                />
+                            </a>
+                            {!readOnly && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteImage(p.id, img.publicId)}
+                                    title="Supprimer"
+                                    style={{
+                                        position: 'absolute',
+                                        top: 2,
+                                        right: 2,
+                                        width: 18,
+                                        height: 18,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: 'rgba(220, 38, 38, 0.9)',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: 0
+                                    }}
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+
+                    {!readOnly && (
+                        <>
+                            <input
+                                ref={el => { fileInputRefs.current[p.id] = el; }}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleUploadImages(p.id, e.target.files)}
+                            />
+                            <button
+                                type="button"
+                                disabled={!canAdd}
+                                onClick={() => handlePickImages(p.id)}
+                                title={imagesRemaining === 0 ? 'Quota atteint pour cette fiche' : 'Ajouter une ou plusieurs images'}
+                                style={{
+                                    width: 56,
+                                    height: 56,
+                                    borderRadius: 8,
+                                    border: '1px dashed #94a3b8',
+                                    background: canAdd ? '#f8fafc' : '#f1f5f9',
+                                    color: canAdd ? '#059669' : '#94a3b8',
+                                    cursor: canAdd ? 'pointer' : 'not-allowed',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0
+                                }}
+                            >
+                                {isUploading ? <RefreshCw size={18} className="spin" /> : <ImagePlus size={20} />}
+                            </button>
+                        </>
+                    )}
+                </div>
+                {imgs.length > 0 && (
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.3rem' }}>
+                        {imgs.length} image{imgs.length > 1 ? 's' : ''} attachée{imgs.length > 1 ? 's' : ''}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Bandeau global du quota images
+    const ImagesQuotaBanner = () => {
+        const percent = imageQuota > 0 ? Math.min(100, Math.round((imagesUsed / imageQuota) * 100)) : 0;
+        const reached = imagesUsed >= imageQuota;
+        return (
+            <div
+                style={{
+                    backgroundColor: reached ? '#fef3c7' : '#f0fdfa',
+                    border: `1px solid ${reached ? '#fbbf24' : '#5eead4'}`,
+                    padding: '0.75rem 1rem',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                }}
+            >
+                <ImageIcon size={18} style={{ color: reached ? '#92400e' : '#0f766e', flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: reached ? '#92400e' : '#0f766e' }}>
+                            Images de la fiche
+                        </span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: reached ? '#92400e' : '#0f766e' }}>
+                            {imagesUsed} / {imageQuota}
+                        </span>
+                    </div>
+                    <div style={{ width: '100%', height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
+                        <div style={{ width: `${percent}%`, height: '100%', background: reached ? '#d97706' : '#0d9488', transition: 'width 0.3s ease' }} />
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 4 }}>
+                        Pack {order?.quantity || 0} avis — {imageQuota} images max au total. {reached ? 'Quota atteint.' : `Reste ${imagesRemaining} image${imagesRemaining > 1 ? 's' : ''}.`}
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     const handleSaveHours = async () => {
         if (!order) return;
@@ -404,6 +638,9 @@ export const OrderDetail: React.FC = () => {
 
                         {/* Proposals Section */}
                         <div>
+                            {/* Compteur global d'images de la fiche */}
+                            <ImagesQuotaBanner />
+
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <CheckCircle size={20} color="#10b981" /> Avis Publiés ({order.proposals?.filter(p => p.submission_id && p.submission_status === 'validated').length})
                             </h2>
@@ -433,12 +670,16 @@ export const OrderDetail: React.FC = () => {
                                             </div>
                                             <p style={{ margin: '0 0 1rem', color: '#4b5563', lineHeight: 1.6, fontSize: '0.95rem' }}>"{proposal.content}"</p>
 
+                                            {/* Images attachées (read-only après publication) */}
+                                            {renderImagesBlock(proposal, { readOnly: true })}
+
                                             <div style={{
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
                                                 alignItems: 'center',
                                                 paddingTop: '0.75rem',
-                                                borderTop: '1px solid #f3f4f6'
+                                                borderTop: '1px solid #f3f4f6',
+                                                marginTop: '0.75rem'
                                             }}>
                                                 <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
                                                     Publié le {new Date(proposal.submitted_at!).toLocaleDateString()}
@@ -530,6 +771,9 @@ export const OrderDetail: React.FC = () => {
                                                 </div>
                                             </div>
                                             <p style={{ margin: 0, color: '#4b5563', lineHeight: 1.6, fontSize: '0.95rem' }}>"{proposal.content}"</p>
+
+                                            {/* Images attachées + bouton ajout */}
+                                            {renderImagesBlock(proposal)}
                                         </div>
                                     ))
                                 ) : (

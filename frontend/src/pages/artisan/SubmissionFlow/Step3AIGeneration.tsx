@@ -1,8 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { ReviewOrder, ReviewProposal } from '../../../types';
+import React, { useState, useRef, useMemo } from 'react';
+import { ReviewOrder, ReviewProposal, ProposalImage } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
-import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle, Star } from 'lucide-react';
-import { showConfirm } from '../../../utils/Swal';
+import { Trash2, Edit2, Check, RefreshCw, Sparkles, AlertCircle, Star, ImagePlus, X, Image as ImageIcon } from 'lucide-react';
+import { showConfirm, showError } from '../../../utils/Swal';
+
+// Mirror du backend : 30→5, 60→10, 90→25, défaut 5
+function getImageQuotaForQuantity(quantity: number): number {
+    if (!quantity || quantity < 30) return 5;
+    if (quantity >= 90) return 25;
+    if (quantity >= 60) return 10;
+    return 5;
+}
 
 interface Step3Props {
     order: ReviewOrder;
@@ -98,6 +106,213 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         } catch (error) {
             console.error("Edit failed", error);
         }
+    };
+
+    // ---- Gestion images attachées aux propositions ----
+    const [uploadingProposalId, setUploadingProposalId] = useState<string | null>(null);
+    const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+    const imageQuota = useMemo(() => getImageQuotaForQuantity(order.quantity || 0), [order.quantity]);
+    const imagesUsed = useMemo(
+        () => proposals.reduce((sum, p) => sum + (p.images?.length || 0), 0),
+        [proposals]
+    );
+    const imagesRemaining = Math.max(0, imageQuota - imagesUsed);
+
+    const handlePickImages = (proposalId: string) => {
+        const input = fileInputRefs.current[proposalId];
+        if (input) input.click();
+    };
+
+    const handleUploadImages = async (proposalId: string, fileList: FileList | null) => {
+        if (!fileList || fileList.length === 0) return;
+        const files = Array.from(fileList);
+
+        // Pré-check taille (10 Mo max par image, comme côté serveur)
+        const MAX_BYTES = 10 * 1024 * 1024;
+        const tooLarge = files.find(f => f.size > MAX_BYTES);
+        if (tooLarge) {
+            showError(
+                'Image trop volumineuse',
+                `${tooLarge.name} fait ${(tooLarge.size / (1024 * 1024)).toFixed(1)} Mo (max 10 Mo).`
+            );
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+            return;
+        }
+
+        // Pré-check quota côté client (le backend re-vérifie)
+        if (files.length > imagesRemaining) {
+            showError(
+                'Quota dépassé',
+                `Il reste ${imagesRemaining} image${imagesRemaining > 1 ? 's' : ''} sur ${imageQuota} pour cette fiche.`
+            );
+            // Reset input
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+            return;
+        }
+
+        setUploadingProposalId(proposalId);
+        try {
+            const { images } = await artisanService.uploadProposalImages(proposalId, files);
+            setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, images } : p));
+        } catch (error: any) {
+            console.error('Upload images failed', error);
+            const msg = error?.response?.data?.message || error?.message || 'Erreur upload';
+            showError("Échec de l'upload", msg);
+        } finally {
+            setUploadingProposalId(null);
+            const input = fileInputRefs.current[proposalId];
+            if (input) input.value = '';
+        }
+    };
+
+    const handleDeleteImage = async (proposalId: string, publicId: string) => {
+        const confirm = await showConfirm("Supprimer cette image ?", "L'image sera retirée de l'avis.");
+        if (!confirm.isConfirmed) return;
+        try {
+            const { images } = await artisanService.deleteProposalImage(proposalId, publicId);
+            setProposals(prev => prev.map(p => p.id === proposalId ? { ...p, images } : p));
+        } catch (error: any) {
+            console.error('Delete image failed', error);
+            showError('Échec de la suppression', error?.response?.data?.message || error?.message || 'Erreur');
+        }
+    };
+
+    // Bloc compact réutilisé desktop + mobile : thumbs + bouton ajouter
+    const renderImagesBlock = (p: ReviewProposal) => {
+        const imgs: ProposalImage[] = p.images || [];
+        const isUploading = uploadingProposalId === p.id;
+        const canAdd = imagesRemaining > 0 && !p.submission_id && !isUploading;
+        return (
+            <div style={{ marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+                    {imgs.map(img => (
+                        <div
+                            key={img.publicId}
+                            style={{
+                                position: 'relative',
+                                width: 56,
+                                height: 56,
+                                borderRadius: 8,
+                                overflow: 'hidden',
+                                border: '1px solid #e2e8f0',
+                                background: '#f8fafc'
+                            }}
+                        >
+                            <img
+                                src={img.url}
+                                alt=""
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                            {!p.submission_id && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteImage(p.id, img.publicId)}
+                                    title="Supprimer"
+                                    style={{
+                                        position: 'absolute',
+                                        top: 2,
+                                        right: 2,
+                                        width: 18,
+                                        height: 18,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: 'rgba(220, 38, 38, 0.9)',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: 0
+                                    }}
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+                    ))}
+
+                    {!p.submission_id && (
+                        <>
+                            <input
+                                ref={el => { fileInputRefs.current[p.id] = el; }}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                multiple
+                                style={{ display: 'none' }}
+                                onChange={(e) => handleUploadImages(p.id, e.target.files)}
+                            />
+                            <button
+                                type="button"
+                                disabled={!canAdd}
+                                onClick={() => handlePickImages(p.id)}
+                                title={imagesRemaining === 0 ? 'Quota atteint pour cette fiche' : 'Ajouter une ou plusieurs images'}
+                                style={{
+                                    width: 56,
+                                    height: 56,
+                                    borderRadius: 8,
+                                    border: '1px dashed #94a3b8',
+                                    background: canAdd ? '#f8fafc' : '#f1f5f9',
+                                    color: canAdd ? '#059669' : '#94a3b8',
+                                    cursor: canAdd ? 'pointer' : 'not-allowed',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 0
+                                }}
+                            >
+                                {isUploading ? <RefreshCw size={18} className="spin" /> : <ImagePlus size={20} />}
+                            </button>
+                        </>
+                    )}
+                </div>
+                {imgs.length > 0 && (
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem' }}>
+                        {imgs.length} image{imgs.length > 1 ? 's' : ''} attachée{imgs.length > 1 ? 's' : ''}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Bandeau global de quota images (au-dessus de la liste)
+    const ImagesQuotaBanner = () => {
+        const percent = imageQuota > 0 ? Math.min(100, Math.round((imagesUsed / imageQuota) * 100)) : 0;
+        const reached = imagesUsed >= imageQuota;
+        return (
+            <div
+                style={{
+                    backgroundColor: reached ? '#fef3c7' : '#f0fdfa',
+                    border: `1px solid ${reached ? '#fbbf24' : '#5eead4'}`,
+                    padding: '0.75rem 1rem',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                }}
+            >
+                <ImageIcon size={18} style={{ color: reached ? '#92400e' : '#0f766e' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: reached ? '#92400e' : '#0f766e' }}>
+                            Images de la fiche
+                        </span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: reached ? '#92400e' : '#0f766e' }}>
+                            {imagesUsed} / {imageQuota}
+                        </span>
+                    </div>
+                    <div style={{ width: '100%', height: 6, background: '#e2e8f0', borderRadius: 3, overflow: 'hidden', marginTop: 6 }}>
+                        <div style={{ width: `${percent}%`, height: '100%', background: reached ? '#d97706' : '#0d9488', transition: 'width 0.3s ease' }} />
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: 4 }}>
+                        Pack {order.quantity || 0} avis — {imageQuota} images max au total. {reached ? 'Quota atteint.' : `Reste ${imagesRemaining} image${imagesRemaining > 1 ? 's' : ''}.`}
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     const handleNextClick = () => {
@@ -211,6 +426,9 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                     {/* Progress bar during incremental generation */}
                     {isGenerating && <ProgressBar />}
 
+                    {/* Compteur global d'images de la fiche */}
+                    <ImagesQuotaBanner />
+
                     {/* Status banner (only when NOT generating) */}
                     {!isGenerating && (
                         <div className={`proposals-status-banner ${(order.quantity || 0) > proposals.length ? 'incomplete' : 'complete'}`}>
@@ -305,6 +523,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                             ) : (
                                                 <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
                                             )}
+                                            {renderImagesBlock(p)}
                                         </td>
                                         <td className="pt-cell pt-cell-actions">
                                             {!p.submission_id && (
@@ -386,6 +605,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                     ) : (
                                         <p style={{ margin: 0, fontWeight: 500 }}>{p.content}</p>
                                     )}
+                                    {renderImagesBlock(p)}
                                 </div>
                             </div>
                         ))}

@@ -163,6 +163,11 @@ export interface ReviewOrder {
     daily_submissions_count?: number;
 }
 
+export interface ProposalImage {
+    url: string;
+    publicId: string;
+}
+
 export interface ReviewProposal {
     id: string;
     order_id: string;
@@ -170,6 +175,7 @@ export interface ReviewProposal {
     rating: number;
     author_name: string;
     status: 'draft' | 'approved' | 'rejected';
+    images?: ProposalImage[];
     created_at: string;
     updated_at: string;
     // Joined from submissions

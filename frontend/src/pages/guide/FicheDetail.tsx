@@ -15,8 +15,17 @@ import {
     Star,
     Send,
     Shield,
-    AlertTriangle
+    AlertTriangle,
+    Download,
+    Image as ImageIcon
 } from 'lucide-react';
+
+// Force le téléchargement Cloudinary via le flag fl_attachment
+function getDownloadUrl(url: string): string {
+    if (!url) return url;
+    if (url.includes('/upload/fl_attachment')) return url;
+    return url.replace('/upload/', '/upload/fl_attachment/');
+}
 import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
 import { FicheCompatibilityModal } from '../../components/AntiDetection/FicheCompatibilityModal';
@@ -390,6 +399,94 @@ export const FicheDetail: React.FC = () => {
                                                 <p className={`review-content ${!isChecklistValidated ? 'blurred' : ''}`}>
                                                     {proposal.content}
                                                 </p>
+
+                                                {/* Images fournies par l'artisan : à télécharger et joindre au moment de poster */}
+                                                {proposal.images && proposal.images.length > 0 && (
+                                                    <div className={`review-images ${!isChecklistValidated ? 'blurred' : ''}`} style={{ margin: '0.75rem 0 1rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: '#0f172a' }}>
+                                                                <ImageIcon size={16} /> Images à joindre à l'avis ({proposal.images.length})
+                                                            </span>
+                                                            <button
+                                                                type="button"
+                                                                disabled={!isChecklistValidated}
+                                                                onClick={() => {
+                                                                    if (!isChecklistValidated) {
+                                                                        showError('Action requise', "Veuillez d'abord valider les consignes de sécurité.");
+                                                                        return;
+                                                                    }
+                                                                    // Déclenche le téléchargement de toutes les images en série
+                                                                    proposal.images!.forEach((img, idx) => {
+                                                                        const a = document.createElement('a');
+                                                                        a.href = getDownloadUrl(img.url);
+                                                                        a.download = `image-${idx + 1}`;
+                                                                        a.target = '_blank';
+                                                                        a.rel = 'noopener';
+                                                                        document.body.appendChild(a);
+                                                                        a.click();
+                                                                        document.body.removeChild(a);
+                                                                    });
+                                                                }}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '0.4rem',
+                                                                    padding: '0.4rem 0.75rem',
+                                                                    background: isChecklistValidated ? '#059669' : '#cbd5e1',
+                                                                    color: '#fff',
+                                                                    border: 'none',
+                                                                    borderRadius: '0.5rem',
+                                                                    fontSize: '0.75rem',
+                                                                    fontWeight: 700,
+                                                                    cursor: isChecklistValidated ? 'pointer' : 'not-allowed'
+                                                                }}
+                                                            >
+                                                                <Download size={14} /> Tout télécharger
+                                                            </button>
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                            {proposal.images.map((img, idx) => (
+                                                                <div key={img.publicId} style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                                                                    <a
+                                                                        href={isChecklistValidated ? img.url : undefined}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        title="Ouvrir en grand"
+                                                                        style={{ display: 'block', width: '100%', height: '100%', pointerEvents: isChecklistValidated ? 'auto' : 'none' }}
+                                                                    >
+                                                                        <img src={img.url} alt={`Image ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                                    </a>
+                                                                    {isChecklistValidated && (
+                                                                        <a
+                                                                            href={getDownloadUrl(img.url)}
+                                                                            download={`image-${idx + 1}`}
+                                                                            title="Télécharger cette image"
+                                                                            style={{
+                                                                                position: 'absolute',
+                                                                                bottom: 2,
+                                                                                right: 2,
+                                                                                width: 22,
+                                                                                height: 22,
+                                                                                borderRadius: '50%',
+                                                                                background: 'rgba(5, 150, 105, 0.95)',
+                                                                                color: '#fff',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                textDecoration: 'none'
+                                                                            }}
+                                                                        >
+                                                                            <Download size={12} />
+                                                                        </a>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.4rem' }}>
+                                                            Téléchargez ces images puis joignez-les à votre avis Google.
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 <div className="review-actions">
                                                     <button

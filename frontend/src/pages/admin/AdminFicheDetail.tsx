@@ -12,7 +12,8 @@ import {
     Edit2,
     X,
     Check,
-    Mail
+    Mail,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Swal, { showConfirm, showSuccess, showError } from '../../utils/Swal';
@@ -361,7 +362,38 @@ export const AdminFicheDetail: React.FC = () => {
                                                         }}
                                                     />
                                                 ) : (
-                                                    p.content
+                                                    <div>{p.content}</div>
+                                                )}
+
+                                                {/* Images attachées par l'artisan (lecture seule côté admin) */}
+                                                {Array.isArray(p.images) && p.images.length > 0 && (
+                                                    <div style={{ marginTop: '0.5rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '0.35rem' }}>
+                                                            <ImageIcon size={13} /> {p.images.length} image{p.images.length > 1 ? 's' : ''}
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                                            {p.images.map((img: any) => (
+                                                                <a
+                                                                    key={img.publicId}
+                                                                    href={img.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="Ouvrir en grand"
+                                                                    style={{
+                                                                        display: 'block',
+                                                                        width: 48,
+                                                                        height: 48,
+                                                                        borderRadius: 6,
+                                                                        overflow: 'hidden',
+                                                                        border: '1px solid #e2e8f0',
+                                                                        background: '#f8fafc'
+                                                                    }}
+                                                                >
+                                                                    <img src={img.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 )}
                                             </td>
                                             <td>

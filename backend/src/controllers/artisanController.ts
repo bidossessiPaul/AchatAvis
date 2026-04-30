@@ -328,6 +328,64 @@ export const artisanController = {
         }
     },
 
+    async uploadProposalImages(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const files = (req.files as Express.Multer.File[]) || [];
+            if (files.length === 0) {
+                return res.status(400).json({ error: 'Aucune image fournie' });
+            }
+
+            const images = await artisanService.addProposalImages(user.userId, id, files);
+
+            // Renvoie aussi l'usage global de la fiche pour rafraîchir le compteur côté UI
+            const propRows: any = await query('SELECT order_id FROM review_proposals WHERE id = ?', [id]);
+            const usage = propRows && propRows[0]
+                ? await artisanService.getProposalImageUsage(propRows[0].order_id)
+                : null;
+
+            return res.json({ success: true, images, usage });
+        } catch (error: any) {
+            console.error('Error uploading proposal images:', error);
+            const status = error.message?.includes('Quota') ? 400 : 500;
+            return res.status(status).json({
+                error: 'Failed to upload images',
+                message: error.message
+            });
+        }
+    },
+
+    async deleteProposalImage(req: Request, res: Response) {
+        try {
+            const user = req.user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const { publicId } = req.query;
+            if (!publicId || typeof publicId !== 'string') {
+                return res.status(400).json({ error: 'publicId manquant' });
+            }
+
+            const images = await artisanService.deleteProposalImage(user.userId, id, publicId);
+
+            const propRows: any = await query('SELECT order_id FROM review_proposals WHERE id = ?', [id]);
+            const usage = propRows && propRows[0]
+                ? await artisanService.getProposalImageUsage(propRows[0].order_id)
+                : null;
+
+            return res.json({ success: true, images, usage });
+        } catch (error: any) {
+            console.error('Error deleting proposal image:', error);
+            return res.status(500).json({
+                error: 'Failed to delete image',
+                message: error.message
+            });
+        }
+    },
+
     async sendReviewValidationEmail(req: Request, res: Response) {
         const { id: orderId } = req.params;
         const { emails } = req.body;

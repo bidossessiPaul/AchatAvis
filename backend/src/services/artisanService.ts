@@ -1,6 +1,27 @@
 import { query } from '../config/database';
 import { ReviewOrder, ReviewProposal } from '../models/types';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadToCloudinary, deleteFromCloudinary } from './cloudinaryService';
+
+// Quota d'images selon la taille du pack (avis commandés sur la fiche).
+// 30 avis → 5 images, 60 → 10, 90 → 25 (par défaut 5).
+export function getImageQuotaForQuantity(quantity: number): number {
+    if (!quantity || quantity < 30) return 5;
+    if (quantity >= 90) return 25;
+    if (quantity >= 60) return 10;
+    return 5;
+}
+
+export type ProposalImage = { url: string; publicId: string };
+
+export function parseImages(raw: any): ProposalImage[] {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') {
+        try { return JSON.parse(raw) || []; } catch { return []; }
+    }
+    return [];
+}
 
 export const artisanService = {
     /**
@@ -214,7 +235,7 @@ export const artisanService = {
             }
         }
         const proposals: any = await query(`
-            SELECT 
+            SELECT
                 p.*,
                 s.id as submission_id,
                 s.review_url,
@@ -225,6 +246,11 @@ export const artisanService = {
             WHERE p.order_id = ? AND p.deleted_at IS NULL
             ORDER BY p.created_at ASC
         `, [orderId]);
+
+        // Parse les images JSON pour chaque proposition (toujours un tableau)
+        for (const p of proposals) {
+            p.images = parseImages(p.images);
+        }
 
         return {
             ...order,
@@ -433,6 +459,130 @@ export const artisanService = {
         );
 
         return { success: true, message: 'Proposition supprimée avec succès' };
+    },
+
+    /**
+     * Récupère le quota d'images de la fiche + nombre déjà utilisé
+     * (somme sur toutes les propositions non supprimées de la fiche).
+     */
+    async getProposalImageUsage(orderId: string): Promise<{ used: number; quota: number; quantity: number }> {
+        const orderRows: any = await query(
+            'SELECT quantity, payment_id FROM reviews_orders WHERE id = ?',
+            [orderId]
+        );
+        if (!orderRows || orderRows.length === 0) {
+            throw new Error('Fiche introuvable');
+        }
+        let quantity = orderRows[0].quantity || 0;
+
+        // La quantité réelle peut être surchargée par le pack (review_credits)
+        if (orderRows[0].payment_id) {
+            const [p]: any = await query(
+                'SELECT review_credits FROM payments WHERE id = ?',
+                [orderRows[0].payment_id]
+            );
+            if (p && p.review_credits) quantity = p.review_credits;
+        }
+
+        const rows: any = await query(
+            'SELECT images FROM review_proposals WHERE order_id = ? AND deleted_at IS NULL',
+            [orderId]
+        );
+        let used = 0;
+        for (const r of rows) used += parseImages(r.images).length;
+
+        return { used, quota: getImageQuotaForQuantity(quantity), quantity };
+    },
+
+    /**
+     * Ajoute des images à une proposition après vérification d'ownership et de quota.
+     * Renvoie la liste finale d'images de la proposition.
+     */
+    async addProposalImages(artisanId: string, proposalId: string, files: Express.Multer.File[]): Promise<ProposalImage[]> {
+        if (!files || files.length === 0) {
+            throw new Error('Aucune image fournie');
+        }
+
+        // 1. Ownership + récupération orderId / images existantes
+        const existing: any = await query(`
+            SELECT rp.id, rp.images, rp.order_id, ro.artisan_id
+            FROM review_proposals rp
+            JOIN reviews_orders ro ON rp.order_id = ro.id
+            WHERE rp.id = ? AND rp.deleted_at IS NULL
+        `, [proposalId]);
+
+        if (!existing || existing.length === 0) {
+            throw new Error('Proposition non trouvée');
+        }
+        if (existing[0].artisan_id !== artisanId) {
+            throw new Error('Non autorisé à modifier cette proposition');
+        }
+
+        const orderId = existing[0].order_id;
+        const currentImages = parseImages(existing[0].images);
+
+        // 2. Vérifie le quota global de la fiche
+        const usage = await this.getProposalImageUsage(orderId);
+        if (usage.used + files.length > usage.quota) {
+            const remaining = Math.max(0, usage.quota - usage.used);
+            throw new Error(
+                `Quota d'images dépassé pour cette fiche. Quota: ${usage.quota}, déjà utilisé: ${usage.used}, restant: ${remaining}.`
+            );
+        }
+
+        // 3. Upload Cloudinary séquentiel (pour ne pas saturer)
+        const uploaded: ProposalImage[] = [];
+        for (const file of files) {
+            const result = await uploadToCloudinary(file.buffer, 'review-images', { skipTransform: true });
+            uploaded.push({ url: result.secure_url, publicId: result.public_id });
+        }
+
+        const finalImages = [...currentImages, ...uploaded];
+
+        // 4. Persiste
+        await query(
+            'UPDATE review_proposals SET images = ? WHERE id = ?',
+            [JSON.stringify(finalImages), proposalId]
+        );
+
+        return finalImages;
+    },
+
+    /**
+     * Supprime une image d'une proposition (suppression Cloudinary + JSON).
+     */
+    async deleteProposalImage(artisanId: string, proposalId: string, publicId: string): Promise<ProposalImage[]> {
+        if (!publicId) throw new Error('publicId manquant');
+
+        const existing: any = await query(`
+            SELECT rp.id, rp.images, ro.artisan_id
+            FROM review_proposals rp
+            JOIN reviews_orders ro ON rp.order_id = ro.id
+            WHERE rp.id = ? AND rp.deleted_at IS NULL
+        `, [proposalId]);
+
+        if (!existing || existing.length === 0) {
+            throw new Error('Proposition non trouvée');
+        }
+        if (existing[0].artisan_id !== artisanId) {
+            throw new Error('Non autorisé à modifier cette proposition');
+        }
+
+        const currentImages = parseImages(existing[0].images);
+        const target = currentImages.find(img => img.publicId === publicId);
+        if (!target) throw new Error('Image non trouvée');
+
+        const finalImages = currentImages.filter(img => img.publicId !== publicId);
+
+        await query(
+            'UPDATE review_proposals SET images = ? WHERE id = ?',
+            [JSON.stringify(finalImages), proposalId]
+        );
+
+        // Best-effort sur Cloudinary (pas bloquant si erreur réseau)
+        try { await deleteFromCloudinary(publicId); } catch (e) { console.error('Cloudinary delete failed:', e); }
+
+        return finalImages;
     },
 
     /**

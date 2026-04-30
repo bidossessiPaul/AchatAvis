@@ -1,5 +1,7 @@
 import api from './api';
-import { ReviewOrder, ReviewProposal } from '../types';
+import { ReviewOrder, ReviewProposal, ProposalImage } from '../types';
+
+export type ImageUsage = { used: number; quota: number; quantity: number };
 
 export const artisanService = {
     /**
@@ -54,6 +56,26 @@ export const artisanService = {
      */
     async deleteProposal(proposalId: string): Promise<void> {
         await api.delete(`/artisan/proposals/${proposalId}`);
+    },
+
+    /**
+     * Upload une ou plusieurs images sur une proposition (quota global par fiche)
+     */
+    async uploadProposalImages(proposalId: string, files: File[]): Promise<{ images: ProposalImage[]; usage: ImageUsage | null }> {
+        const formData = new FormData();
+        for (const f of files) formData.append('images', f);
+        const response = await api.post(`/artisan/proposals/${proposalId}/images`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return { images: response.data.images, usage: response.data.usage };
+    },
+
+    /**
+     * Supprime une image d'une proposition (par publicId Cloudinary)
+     */
+    async deleteProposalImage(proposalId: string, publicId: string): Promise<{ images: ProposalImage[]; usage: ImageUsage | null }> {
+        const response = await api.delete(`/artisan/proposals/${proposalId}/images`, { params: { publicId } });
+        return { images: response.data.images, usage: response.data.usage };
     },
 
     /**
