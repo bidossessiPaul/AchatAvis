@@ -6,7 +6,7 @@ import { showConfirm } from '../../../utils/Swal';
 
 const EXPERIENCE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
     tested:  { label: 'Testé',            bg: '#dcfce7', color: '#166534' },
-    visited: { label: 'Visité',           bg: '#dbeafe', color: '#1d4ed8' },
+    visited: { label: 'Sans tester',      bg: '#dbeafe', color: '#1d4ed8' },
     online:  { label: 'Observé en ligne', bg: '#ede9fe', color: '#6d28d9' },
     hearsay: { label: 'Bouche-à-oreille', bg: '#fef3c7', color: '#92400e' },
 };

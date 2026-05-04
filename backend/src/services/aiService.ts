@@ -21,14 +21,14 @@ const getAnthropicClient = (): Anthropic => {
 
 type ExperienceType = 'tested' | 'visited' | 'online' | 'hearsay';
 
-// Distribution des types selon la catégorie de secteur.
-// "visited" = 0 pour les métiers de dépannage (plombier, serrurier...) : ça n'a aucun sens qu'un client "passe devant".
+// Distribution : "Sans tester" (visited/online/hearsay) = 33% chacun, "Testé" = 1%.
+// Tous les secteurs partagent la même distribution.
 const SECTOR_DISTRIBUTIONS: Record<string, Record<ExperienceType, number>> = {
-    depannage:        { tested: 0.65, online: 0.25, hearsay: 0.10, visited: 0.00 },
-    commerce:         { tested: 0.50, online: 0.20, hearsay: 0.15, visited: 0.15 },
-    artisan_chantier: { tested: 0.60, online: 0.22, hearsay: 0.13, visited: 0.05 },
-    service_pro:      { tested: 0.55, online: 0.30, hearsay: 0.15, visited: 0.00 },
-    default:          { tested: 0.60, online: 0.22, hearsay: 0.13, visited: 0.05 },
+    depannage:        { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
+    commerce:         { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
+    artisan_chantier: { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
+    service_pro:      { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
+    default:          { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
 };
 
 const SECTOR_SLUG_MAP: Record<string, string> = {
@@ -49,26 +49,24 @@ const SECTOR_SLUG_MAP: Record<string, string> = {
 // Description détaillée de chaque type — injectée dans le prompt par slot pour forcer la cohérence.
 const EXPERIENCE_TYPE_DESCRIPTIONS: Record<ExperienceType, string> = {
     tested:  "Le client a REELLEMENT utilise le service (intervention physique, chantier, achat, prestation). Mentionne un detail vecu : duree, tarif, resultat, comportement de l'artisan. PAS de mention de site web ou de bouche-a-oreille.",
-    online:  "Le client a UNIQUEMENT observe en ligne (fiche Google, photos, site web, avis existants). PAS d'intervention physique. Mentionne ce qu'il a vu sur Internet : photos, note, descriptions. N'invente pas de visite ou d'utilisation.",
-    hearsay: "Le client a ENTENDU PARLER par bouche-a-oreille (ami, voisin, collegue). Il n'a PAS utilise le service et n'a PAS vu les locaux. Mentionne la source de la recommandation.",
-    visited: "Le client est PASSE DEVANT ou a rencontre l'artisan (devis sur place, vitrine, chantier visible) SANS consommer. Mentionne ce qu'il a constate en passant. N'invente pas d'utilisation du service.",
+    online:  "Le client a UNIQUEMENT consulte leur presence en ligne (fiche Google, photos, site web, reseaux sociaux). PAS d'intervention physique. Mentionne precisement ce qu'il a vu sur Internet. N'invente pas de visite ou d'utilisation.",
+    hearsay: "Le client connait l'entreprise par bouche-a-oreille (ami, voisin, collegue, reputation locale). Il n'a PAS utilise le service et n'a PAS vu les locaux. Mentionne la source de la recommandation.",
+    visited: "Le client est PASSE DEVANT l'etablissement (sans y entrer). Decrit uniquement ce qu'il a vu de l'exterieur : facade, vitrine, proprete, emplacement, accessibilite. N'invente pas d'utilisation du service.",
 };
 
-// Pré-calcule la distribution des types pour un batch et mélange aléatoirement.
-// La répartition est faite ici, pas laissée au modèle.
+// Pré-calcule la distribution des types via la méthode des plus grands restes.
+// Garantit un total exact sans compteur négatif (cas 1% sur petits batches).
 function assignExperienceTypes(quantity: number, sectorSlug?: string): ExperienceType[] {
     const category = (sectorSlug && SECTOR_SLUG_MAP[sectorSlug]) || 'default';
     const dist = SECTOR_DISTRIBUTIONS[category];
 
-    const counts: Record<ExperienceType, number> = {
-        tested:  Math.round(quantity * dist.tested),
-        online:  Math.round(quantity * dist.online),
-        hearsay: Math.round(quantity * dist.hearsay),
-        visited: Math.round(quantity * dist.visited),
-    };
-    // Ajustement pour que le total soit exactement quantity
-    const total = counts.tested + counts.online + counts.hearsay + counts.visited;
-    counts.tested += quantity - total;
+    const keys: ExperienceType[] = ['tested', 'online', 'hearsay', 'visited'];
+    const floats = keys.map(k => ({ k, floor: Math.floor(quantity * dist[k]), rem: (quantity * dist[k]) % 1 }));
+    let remaining = quantity - floats.reduce((s, f) => s + f.floor, 0);
+    floats.sort((a, b) => b.rem - a.rem);
+    for (let i = 0; i < remaining; i++) floats[i].floor++;
+
+    const counts = Object.fromEntries(floats.map(f => [f.k, f.floor])) as Record<ExperienceType, number>;
 
     const types: ExperienceType[] = [];
     for (let i = 0; i < counts.tested;  i++) types.push('tested');
