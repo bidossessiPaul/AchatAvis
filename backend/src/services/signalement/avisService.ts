@@ -1,12 +1,8 @@
 // Avis Google à signaler — création (avec génération des N slots), liste,
 // transitions de statut, relance, annulation admin.
 //
-// Création = transaction multi-tables :
-//   1. Pick l'attribution la plus ancienne avec slot dispo (FOR UPDATE)
-//   2. Consume 1 slot sur l'attribution (nb_avis_consumed +1)
-//   3. INSERT signalement_avis
-//   4. INSERT N signalement_slots (1 ligne par signalement à faire)
-// COMMIT ou ROLLBACK.
+// Quota : 5 signalements par pack 499€ (review_credits >= 90) actif.
+// attribution_id = NULL pour les avis créés via ce nouveau chemin.
 
 import { v4 as uuidv4 } from 'uuid';
 import { query, pool } from '../../config/database';
@@ -16,24 +12,47 @@ import {
     CreateAvisInput,
 } from '../../types/signalement';
 import { isValidRaison } from '../../constants/signalementRaisons';
-import {
-    pickAttributionWithFreeSlot,
-    consumeOneAvisSlot,
-    refundOneAvisSlot,
-} from './attributionService';
+import { refundOneAvisSlot } from './attributionService';
+
+// 5 signalements par pack 499€ (= review_credits >= 90)
+const SIGNALEMENTS_PER_PACK = 5;
+
+/**
+ * Quota total de signalements pour un artisan = nb de packs 499€ × 5.
+ */
+export const getArtisanSignalementQuota = async (artisanId: string): Promise<number> => {
+    const rows: any = await query(
+        `SELECT COUNT(*) AS nb_packs
+         FROM payments
+         WHERE user_id = ? AND review_credits >= 90
+           AND status = 'completed' AND type = 'subscription'`,
+        [artisanId]
+    );
+    return (rows[0]?.nb_packs ?? 0) * SIGNALEMENTS_PER_PACK;
+};
+
+/**
+ * Nombre de signalements déjà utilisés (non annulés, non supprimés).
+ */
+export const getArtisanSignalementUsed = async (artisanId: string): Promise<number> => {
+    const rows: any = await query(
+        `SELECT COUNT(*) AS used
+         FROM signalement_avis
+         WHERE artisan_id = ? AND status != 'cancelled_by_admin' AND deleted_at IS NULL`,
+        [artisanId]
+    );
+    return rows[0]?.used ?? 0;
+};
 
 /**
  * Crée un nouvel avis à signaler pour un artisan.
- * Throw si l'URL est invalide, la raison est inconnue, ou l'artisan n'a plus
- * de slot dispo dans aucune attribution.
+ * Quota basé sur les packs 499€ (review_credits >= 90) actifs.
  */
 export const createAvisForArtisan = async (
     artisanId: string,
     input: CreateAvisInput,
     options?: { relaunchedFromAvisId?: string }
 ): Promise<SignalementAvis> => {
-    // Validation URL souple : doit contenir "google" (couvre google.com, maps.google,
-    // google.fr, etc.). On reste large pour ne pas rejeter des URLs valides exotiques.
     if (!input.google_review_url || !input.google_review_url.toLowerCase().includes('google')) {
         throw new Error('URL invalide : doit être un lien Google');
     }
@@ -45,18 +64,37 @@ export const createAvisForArtisan = async (
     try {
         await connection.beginTransaction();
 
-        const attribution = await pickAttributionWithFreeSlot(artisanId, connection);
-        if (!attribution) {
-            throw new Error('Aucun avis restant dans votre pack signalement');
+        // Vérif quota pack-based (FOR UPDATE sur les avis existants)
+        const [quotaRows]: any = await connection.execute(
+            `SELECT COUNT(*) AS nb_packs FROM payments
+             WHERE user_id = ? AND review_credits >= 90
+               AND status = 'completed' AND type = 'subscription'`,
+            [artisanId]
+        );
+        const totalQuota = (quotaRows[0]?.nb_packs ?? 0) * SIGNALEMENTS_PER_PACK;
+
+        const [usedRows]: any = await connection.execute(
+            `SELECT COUNT(*) AS used FROM signalement_avis
+             WHERE artisan_id = ? AND status != 'cancelled_by_admin' AND deleted_at IS NULL
+             FOR UPDATE`,
+            [artisanId]
+        );
+        const used = usedRows[0]?.used ?? 0;
+
+        if (totalQuota === 0) {
+            throw new Error('Vous devez activer le pack 499€ (90 avis) pour accéder au signalement');
+        }
+        if (used >= totalQuota) {
+            throw new Error(`Quota de signalements atteint (${used}/${totalQuota})`);
         }
 
-        await consumeOneAvisSlot(attribution.id, connection);
-
-        // Lit le payout par défaut depuis la config globale
+        // Lit config : nb_signalements_par_avis (combien de guides par avis) + payout
         const [configRows]: any = await connection.execute(
-            `SELECT default_payout_cents FROM signalement_config WHERE id = 'global'`
+            `SELECT default_payout_cents, nb_signalements_par_avis_default
+             FROM signalement_config WHERE id = 'global'`
         );
-        const defaultPayout = configRows[0]?.default_payout_cents ?? 35;
+        const payout = configRows[0]?.default_payout_cents ?? 10;
+        const nbSlots = configRows[0]?.nb_signalements_par_avis_default ?? 1;
 
         const avisId = uuidv4();
         await connection.execute(
@@ -64,25 +102,22 @@ export const createAvisForArtisan = async (
              (id, artisan_id, attribution_id, google_review_url, raison, raison_details,
               nb_signalements_target, payout_per_signalement_cents,
               relaunched_from_avis_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
             [
                 avisId,
                 artisanId,
-                attribution.id,
                 input.google_review_url,
                 input.raison,
                 input.raison_details ?? null,
-                attribution.nb_signalements_par_avis,
-                defaultPayout,
+                nbSlots,
+                payout,
                 options?.relaunchedFromAvisId ?? null,
             ]
         );
 
-        // Crée les N slots (slot_index 1..N)
-        for (let i = 1; i <= attribution.nb_signalements_par_avis; i++) {
+        for (let i = 1; i <= nbSlots; i++) {
             await connection.execute(
-                `INSERT INTO signalement_slots (id, avis_id, slot_index)
-                 VALUES (?, ?, ?)`,
+                `INSERT INTO signalement_slots (id, avis_id, slot_index) VALUES (?, ?, ?)`,
                 [uuidv4(), avisId, i]
             );
         }

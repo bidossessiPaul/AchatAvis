@@ -112,11 +112,11 @@ export interface SignalementConfig {
 
 export interface ArtisanSignalementSummary {
     avis_remaining: number;
+    avis_quota_total: number;
     avis_in_progress: number;
     avis_terminated_success: number;
     avis_terminated_inconclusive: number;
-    has_active_attribution: boolean;
-    nb_signalements_par_avis_default: number | null;
+    has_active_pack: boolean;
 }
 
 export interface GuideEligibility {

@@ -62,6 +62,21 @@ export const reserveSlotForGuide = async (
             throw new Error('Vous avez déjà un slot sur cet avis');
         }
 
+        // 2b. Le guide a-t-il déjà 1 slot en attente pour le même artisan ?
+        // (max 1 signalement en pending par artisan pour un même guide)
+        const [artisanRows]: any = await connection.execute(
+            `SELECT COUNT(*) AS n
+             FROM signalement_slots ss
+             JOIN signalement_avis sa ON ss.avis_id = sa.id
+             WHERE sa.artisan_id = (SELECT artisan_id FROM signalement_avis WHERE id = ? LIMIT 1)
+               AND ss.reserved_by_guide_id = ?
+               AND ss.status IN ('reserved', 'submitted')`,
+            [slot.avis_id, guideId]
+        );
+        if ((artisanRows[0]?.n ?? 0) > 0) {
+            throw new Error('Vous avez déjà un signalement en cours pour cet artisan');
+        }
+
         // 3. L'avis est-il toujours actif ?
         const [avisRows]: any = await connection.execute(
             `SELECT status FROM signalement_avis WHERE id = ? AND deleted_at IS NULL`,

@@ -75,7 +75,7 @@ export const ArtisanSignalementDashboard = () => {
 
     if (loading) return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
 
-    const noPack = !summary?.has_active_attribution;
+    const noPack = !summary?.has_active_pack;
 
     return (
         <DashboardLayout>
@@ -89,14 +89,20 @@ export const ArtisanSignalementDashboard = () => {
 
                 {noPack && (
                     <div className="art-sig-banner">
-                        <strong>Aucun pack signalement actif.</strong>
-                        <div style={{ marginTop: 4 }}>Contactez-nous pour activer ce service sur votre compte.</div>
+                        <strong>Fonctionnalité réservée au pack 499€ (90 avis).</strong>
+                        <div style={{ marginTop: 4 }}>
+                            Activez le pack 499€ pour bénéficier de 5 signalements d'avis Google inclus.
+                            Chaque pack supplémentaire vous donne 5 signalements additionnels.
+                        </div>
                     </div>
                 )}
 
                 {summary && (
                     <div className="art-sig-stats">
-                        <div className="art-sig-stat"><div className="label">Avis restants</div><div className="value">{summary.avis_remaining}</div></div>
+                        <div className="art-sig-stat">
+                            <div className="label">Signalements restants</div>
+                            <div className="value">{summary.avis_remaining} / {summary.avis_quota_total}</div>
+                        </div>
                         <div className="art-sig-stat alt-blue"><div className="label">En cours</div><div className="value">{summary.avis_in_progress}</div></div>
                         <div className="art-sig-stat alt-purple"><div className="label">Succès Google</div><div className="value">{summary.avis_terminated_success}</div></div>
                         <div className="art-sig-stat alt-orange"><div className="label">Non concluants</div><div className="value">{summary.avis_terminated_inconclusive}</div></div>

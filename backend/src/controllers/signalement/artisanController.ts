@@ -2,7 +2,6 @@
 
 import { Request, Response } from 'express';
 import * as avisService from '../../services/signalement/avisService';
-import * as attributionService from '../../services/signalement/attributionService';
 import { isValidRaison } from '../../constants/signalementRaisons';
 import { query } from '../../config/database';
 
@@ -14,7 +13,11 @@ export const summary = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const remaining = await attributionService.getRemainingAvisForArtisan(artisanId);
+        const [quota, used] = await Promise.all([
+            avisService.getArtisanSignalementQuota(artisanId),
+            avisService.getArtisanSignalementUsed(artisanId),
+        ]);
+        const remaining = Math.max(0, quota - used);
 
         const counts: any = await query(
             `SELECT
@@ -27,22 +30,13 @@ export const summary = async (req: Request, res: Response): Promise<void> => {
         );
         const c = counts[0] || {};
 
-        // Attribution la plus récente active pour récupérer nb_signalements_par_avis (info UI)
-        const lastAttrib: any = await query(
-            `SELECT nb_signalements_par_avis FROM signalement_attributions
-             WHERE artisan_id = ? AND deleted_at IS NULL
-               AND nb_avis_consumed < nb_avis_total
-             ORDER BY attributed_at DESC LIMIT 1`,
-            [artisanId]
-        );
-
         res.json({
             avis_remaining: remaining,
+            avis_quota_total: quota,
             avis_in_progress: Number(c.in_progress ?? 0),
             avis_terminated_success: Number(c.terminated_success ?? 0),
             avis_terminated_inconclusive: Number(c.terminated_inconclusive ?? 0),
-            has_active_attribution: remaining > 0,
-            nb_signalements_par_avis_default: lastAttrib[0]?.nb_signalements_par_avis ?? null,
+            has_active_pack: quota > 0,
         });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
