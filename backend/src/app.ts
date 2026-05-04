@@ -19,6 +19,7 @@ import trustScoreRoutes from './routes/trustScore';
 import communiquesRoutes from './routes/communiques';
 import signalementRoutes from './routes/signalement';
 import { sanitizeInputs } from './middleware/sanitize';
+import { startCronJobs } from './services/cronJobs';
 // Refreshing routes...
 
 // Load environment variables
@@ -138,6 +139,7 @@ app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
 if (!process.env.VERCEL && require.main === module) {
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Server running on port ${PORT}`);
+        startCronJobs();
     });
 }
 
