@@ -388,6 +388,22 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
 
     return (
         <div>
+            <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                backgroundColor: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: '0.75rem',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.5rem',
+                alignItems: 'flex-start',
+            }}>
+                <AlertCircle size={20} style={{ color: '#d97706', flexShrink: 0, marginTop: '2px' }} />
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#92400e', lineHeight: 1.6, fontWeight: 500 }}>
+                    <strong>Important :</strong> Les avis affichés ici sont des exemples que nos Guides Locaux utilisent comme référence pour rédiger leurs propres avis sur votre fiche. Ils illustrent les bonnes pratiques de la Charte de Qualité &amp; d'Authenticité des Avis – Guides Locaux. Ce ne sont pas les avis qui seront publiés tels quels, et ils ne sont pas modifiables depuis la plateforme.
+                </p>
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h2 className="submission-card-title" style={{ margin: 0 }}>Génération des avis</h2>
                 {proposals.length === 0 && !isGenerating && (
