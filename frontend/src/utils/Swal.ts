@@ -59,7 +59,8 @@ export const showConfirm = (title: string, text: string) => {
             confirmButton: 'clean-swal-confirm',
             cancelButton: 'clean-swal-cancel',
         },
-        buttonsStyling: false
+        buttonsStyling: false,
+        zIndex: 9999,
     });
 };
 
@@ -75,6 +76,7 @@ export const showInput = (title: string, text: string, placeholder: string = '')
         cancelButtonText: 'Annuler',
         confirmButtonColor: '#0ea5e9',
         cancelButtonColor: '#94a3b8',
+        zIndex: 9999,
     });
 };
 
@@ -93,8 +95,9 @@ export const showSelection = (title: string, text: string, options: string[]) =>
         showCancelButton: true,
         confirmButtonText: 'Valider',
         cancelButtonText: 'Annuler',
-        confirmButtonColor: '#10b981', // Green for positive action selecting
-        cancelButtonColor: '#FF6B35', // Brand red
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#FF6B35',
+        zIndex: 9999,
         inputValidator: (value) => {
             return new Promise((resolve) => {
                 if (value) {
