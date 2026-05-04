@@ -13,7 +13,8 @@ import {
     CheckCircle,
     X,
     DollarSign,
-    Download
+    Download,
+    Mail
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getFileUrl } from '../../utils/url';
@@ -50,6 +51,7 @@ export const GuidesBalances: React.FC = () => {
     const [adminNote, setAdminNote] = useState('');
     const [amountToPay, setAmountToPay] = useState<string>('');
     const [isPaying, setIsPaying] = useState(false);
+    const [isSendingReminders, setIsSendingReminders] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -205,6 +207,24 @@ export const GuidesBalances: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
+    const sendPaymentReminders = async () => {
+        const eligible = guides.filter(g => Number(g.balance) > 0).length;
+        const confirm = await showConfirm(
+            'Envoyer les rappels',
+            `Un email sera envoyé à ${eligible} guide${eligible > 1 ? 's' : ''} avec un solde > 0€ pour leur demander de vérifier leur moyen de paiement.`
+        );
+        if (!confirm.isConfirmed) return;
+        setIsSendingReminders(true);
+        try {
+            const result = await adminService.sendPaymentMethodReminders();
+            showSuccess('Emails envoyés', `${result.sent} email${result.sent > 1 ? 's' : ''} envoyé${result.sent > 1 ? 's' : ''} avec succès.`);
+        } catch {
+            showError('Erreur', 'Impossible d\'envoyer les rappels.');
+        } finally {
+            setIsSendingReminders(false);
+        }
+    };
+
     // Stats
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
     const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
@@ -286,6 +306,29 @@ export const GuidesBalances: React.FC = () => {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
+                            <button
+                                onClick={sendPaymentReminders}
+                                disabled={isLoading || isSendingReminders || guidesWithBalance === 0}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '0.5rem 1rem',
+                                    background: 'linear-gradient(135deg, #059669, #047857)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 700,
+                                    fontSize: '0.85rem',
+                                    cursor: isLoading || isSendingReminders || guidesWithBalance === 0 ? 'not-allowed' : 'pointer',
+                                    opacity: isLoading || isSendingReminders || guidesWithBalance === 0 ? 0.5 : 1,
+                                    transition: 'all 0.2s',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                <Mail size={16} />
+                                {isSendingReminders ? 'Envoi...' : `Rappel paiement (${guidesWithBalance})`}
+                            </button>
                             <button
                                 onClick={exportCSV}
                                 disabled={isLoading || sortedGuides.length === 0}

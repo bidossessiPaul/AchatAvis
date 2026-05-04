@@ -1899,3 +1899,82 @@ export const sendArtisanPackPromoEmail = async (
     }
 };
 
+/**
+ * Rappel moyen de paiement — envoyé aux guides avec un solde > 0 sans moyen de paiement configuré
+ */
+export const sendPaymentMethodReminderEmail = async (email: string, fullName: string, balance: number) => {
+    const firstName = fullName?.split(' ')[0] || 'Guide';
+    const dashboardUrl = 'https://manager.achatavis.com/guide/earnings';
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: `Vous avez ${balance.toFixed(2)}€ à encaisser — ajoutez votre moyen de paiement`,
+        html: `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <div style="max-width:600px;margin:40px auto;padding:20px;">
+
+    <!-- Header -->
+    <div style="background-color:#0a0a0a;border-radius:16px 16px 0 0;padding:28px 32px;text-align:center;">
+      <img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height:40px;">
+    </div>
+
+    <!-- Corps -->
+    <div style="background-color:#ffffff;padding:40px 32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+
+      <h2 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#0a0a0a;">Bonjour ${firstName},</h2>
+      <p style="margin:0 0 28px;font-size:16px;color:#374151;line-height:1.6;">
+        Vous avez un solde disponible sur votre compte AchatAvis — mais nous ne pouvons pas vous le verser tant qu'aucun moyen de paiement n'est configuré.
+      </p>
+
+      <!-- Solde card -->
+      <div style="background:linear-gradient(135deg,#059669,#047857);border-radius:14px;padding:28px;text-align:center;margin-bottom:28px;">
+        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#a7f3d0;text-transform:uppercase;letter-spacing:0.08em;">Solde disponible</p>
+        <p style="margin:0;font-size:40px;font-weight:800;color:#ffffff;">${balance.toFixed(2)}&nbsp;€</p>
+      </div>
+
+      <!-- Action -->
+      <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+        Pour recevoir votre paiement, rendez-vous dans <strong>Mes gains</strong> et vérifiez que votre mode de règlement est bien renseigné (IBAN ou PayPal).
+      </p>
+      <p style="margin:0 0 32px;font-size:15px;color:#374151;line-height:1.6;">
+        Si c'est déjà fait, vous n'avez rien d'autre à faire — le virement sera traité lors du prochain cycle.
+      </p>
+
+      <div style="text-align:center;margin-bottom:32px;">
+        <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#059669,#047857);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:14px 36px;border-radius:10px;">
+          Configurer mon moyen de paiement
+        </a>
+      </div>
+
+      <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+        Des questions ? Écrivez-nous directement sur WhatsApp au <a href="https://wa.me/33644678642" style="color:#059669;text-decoration:none;font-weight:600;">+33 6 44 67 86 42</a>.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color:#0a0a0a;border-radius:0 0 16px 16px;padding:18px 32px;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} AchatAvis.com — Tous droits réservés</p>
+    </div>
+
+  </div>
+</body>
+</html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Payment reminder sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending payment reminder to ${email}:`, error);
+        throw error;
+    }
+};
+

@@ -113,6 +113,7 @@ router.post('/payments/:paymentId/block', PAYMENTS, adminController.blockPayment
 router.delete('/payments/:paymentId/status', PAYMENTS, adminController.deletePaymentStatus);
 router.get('/guides-balances', PAYMENTS, adminController.getGuidesWithBalance);
 router.post('/force-pay-guide', PAYMENTS, adminController.forcePayGuide);
+router.post('/guides-balances/send-payment-reminders', PAYMENTS, adminController.sendPaymentMethodReminders);
 
 // Packs
 // Lecture libre pour tous les admins (nécessaire pour créer/modifier un artisan

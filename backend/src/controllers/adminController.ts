@@ -896,6 +896,30 @@ export const forcePayGuide = async (req: Request, res: Response) => {
     }
 };
 
+export const sendPaymentMethodReminders = async (_req: Request, res: Response) => {
+    try {
+        const { sendPaymentMethodReminderEmail } = await import('../services/emailService');
+        const guides: any[] = await adminService.getGuidesWithBalance();
+        const eligible = guides.filter(g => Number(g.balance) > 0);
+
+        let sent = 0;
+        const errors: string[] = [];
+        for (const guide of eligible) {
+            try {
+                await sendPaymentMethodReminderEmail(guide.email, guide.full_name || guide.google_email, Number(guide.balance));
+                sent++;
+            } catch {
+                errors.push(guide.email);
+            }
+        }
+
+        return res.json({ sent, total: eligible.length, errors });
+    } catch (error: any) {
+        console.error('Send payment reminders error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
 export const getGmailAccounts = async (_req: Request, res: Response) => {
     try {
         const accounts = await adminService.getAllGmailAccounts();

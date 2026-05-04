@@ -204,6 +204,11 @@ export const adminService = {
         return response.data;
     },
 
+    sendPaymentMethodReminders: async () => {
+        const response = await api.post('/admin/guides-balances/send-payment-reminders');
+        return response.data;
+    },
+
     getGmailAccounts: async () => {
         const response = await api.get('/admin/gmail-accounts');
         return response.data;
