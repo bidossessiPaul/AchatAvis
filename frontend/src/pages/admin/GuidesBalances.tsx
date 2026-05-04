@@ -207,6 +207,8 @@ export const GuidesBalances: React.FC = () => {
 
     // Stats
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
+    const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
+    const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid), 0);
     const guidesWithBalance = guides.filter(g => Number(g.balance) > 0).length;
     const totalValidatedReviews = guides.reduce((sum, g) => sum + Number(g.validated_reviews_count), 0);
 
@@ -220,10 +222,21 @@ export const GuidesBalances: React.FC = () => {
                         padding: '1.25rem 1.5rem',
                         color: 'white',
                         flex: 1,
-                        minWidth: '200px'
+                        minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{guidesWithBalance}</div>
                         <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Guides avec solde &gt; 0</div>
+                    </div>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #475569, #334155)',
+                        borderRadius: '1rem',
+                        padding: '1.25rem 1.5rem',
+                        color: 'white',
+                        flex: 1,
+                        minWidth: '160px'
+                    }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalEarned.toFixed(2)}€</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Total gagné (validé)</div>
                     </div>
                     <div style={{
                         background: 'linear-gradient(135deg, #0369a1, #0284c7)',
@@ -231,10 +244,21 @@ export const GuidesBalances: React.FC = () => {
                         padding: '1.25rem 1.5rem',
                         color: 'white',
                         flex: 1,
-                        minWidth: '200px'
+                        minWidth: '160px'
+                    }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalPaid.toFixed(2)}€</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Déjà payé</div>
+                    </div>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                        borderRadius: '1rem',
+                        padding: '1.25rem 1.5rem',
+                        color: 'white',
+                        flex: 1,
+                        minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBalance.toFixed(2)}€</div>
-                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Total des soldes</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Reste à payer</div>
                     </div>
                     <div style={{
                         background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
@@ -242,7 +266,7 @@ export const GuidesBalances: React.FC = () => {
                         padding: '1.25rem 1.5rem',
                         color: 'white',
                         flex: 1,
-                        minWidth: '200px'
+                        minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalValidatedReviews}</div>
                         <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Avis validés total</div>
