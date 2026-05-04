@@ -357,15 +357,51 @@ export const FicheDetail: React.FC = () => {
                             </div>
 
                             {fiche.google_business_url && (
-                                <a
-                                    href={fiche.google_business_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="maps-link-btn"
-                                    style={{ marginBottom: 'var(--space-8)' }}
-                                >
-                                    Voir sur Google Maps <ExternalLink size={16} />
-                                </a>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.65rem 0.85rem',
+                                    background: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    borderRadius: '0.5rem',
+                                    marginBottom: 'var(--space-8)',
+                                }}>
+                                    <span style={{
+                                        flex: 1,
+                                        fontSize: '0.8rem',
+                                        color: '#475569',
+                                        wordBreak: 'break-all',
+                                        fontFamily: 'monospace',
+                                        lineHeight: 1.4,
+                                    }}>
+                                        {fiche.google_business_url}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(fiche.google_business_url!);
+                                            showSuccess('Lien copié', 'Collez-le dans votre navigateur pour éviter toute détection.');
+                                        }}
+                                        style={{
+                                            flexShrink: 0,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.35rem',
+                                            padding: '0.45rem 0.85rem',
+                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            fontWeight: 700,
+                                            fontSize: '0.8rem',
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        <Copy size={14} /> Copier le lien
+                                    </button>
+                                </div>
                             )}
 
                             {/* Pending Reviews Section */}
