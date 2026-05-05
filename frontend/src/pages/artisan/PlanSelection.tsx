@@ -29,7 +29,7 @@ const PACK_STYLES: Record<string, PackStyle> = {
         checkColor: '#10b981',
         buttonClass: 'plan-btn-blue',
         originalPrice: 449,
-        discount: 39,
+        discount: 47,
         subtext: '-10% sur votre prochaine commande',
     },
     growth: {
@@ -38,7 +38,7 @@ const PACK_STYLES: Record<string, PackStyle> = {
         checkColor: '#10b981',
         buttonClass: 'plan-btn-pink',
         originalPrice: 552,
-        discount: 44,
+        discount: 46,
         subtext: '-15% sur votre prochaine commande',
     },
     expert: {
@@ -47,7 +47,7 @@ const PACK_STYLES: Record<string, PackStyle> = {
         checkColor: '#10b981',
         buttonClass: 'plan-btn-blue',
         originalPrice: 1123,
-        discount: 39,
+        discount: 56,
         subtext: '-10% sur votre prochaine commande',
     },
 };
@@ -74,17 +74,18 @@ export const PlanSelection: React.FC = () => {
 
     const loadPacks = async () => {
         try {
-            const [packsData, availablePacksData] = await Promise.all([
-                artisanService.getSubscriptionPacks(),
-                artisanService.getAvailablePacks()
-            ]);
+            const packsData = await artisanService.getSubscriptionPacks();
             setPacks(packsData);
-            setAvailablePacks(availablePacksData);
         } catch (error) {
             console.error("Failed to load packs", error);
-        } finally {
-            setIsFetching(false);
         }
+        try {
+            const availablePacksData = await artisanService.getAvailablePacks();
+            setAvailablePacks(availablePacksData);
+        } catch {
+            // Non connecté — on masque juste la bannière
+        }
+        setIsFetching(false);
     };
 
     const getStyle = (packId: string) => PACK_STYLES[packId] || DEFAULT_STYLE;

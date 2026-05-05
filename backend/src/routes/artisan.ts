@@ -32,6 +32,9 @@ const handleReviewImagesUpload = (req: Request, res: Response, next: NextFunctio
 
 const router = Router();
 
+// Route publique — pas besoin d'être connecté pour voir les packs
+router.get('/packs', artisanController.getSubscriptionPacks);
+
 // Routes protected by authentication and artisan role
 router.use(authenticate);
 router.use(authorize('artisan'));

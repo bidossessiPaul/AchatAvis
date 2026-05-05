@@ -172,11 +172,7 @@ function App() {
                         {/* Artisan Routes */}
                         <Route
                             path="/artisan/plan"
-                            element={
-                                <ProtectedRoute allowedRoles={['artisan']}>
-                                    <PlanSelection />
-                                </ProtectedRoute>
-                            }
+                            element={<PlanSelection />}
                         />
 
                         <Route
