@@ -127,13 +127,17 @@ export const GuidesBalances: React.FC = () => {
         g.phone?.includes(searchTerm)
     );
 
-    const sortedGuides = balanceSort === 'none'
-        ? filteredGuides
-        : [...filteredGuides].sort((a, b) =>
+    const sortedGuides = (() => {
+        // Guides avec demande de retrait en attente toujours en tête
+        const withPending = filteredGuides.filter(g => Number(g.total_pending) > 0);
+        const withoutPending = filteredGuides.filter(g => Number(g.total_pending) === 0);
+        const sortFn = (a: GuideBalance, b: GuideBalance) =>
             balanceSort === 'asc'
                 ? Number(a.balance) - Number(b.balance)
-                : Number(b.balance) - Number(a.balance)
-        );
+                : Number(b.balance) - Number(a.balance);
+        if (balanceSort === 'none') return [...withPending, ...withoutPending];
+        return [...withPending.sort(sortFn), ...withoutPending.sort(sortFn)];
+    })();
 
     const totalPages = Math.ceil(sortedGuides.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -145,7 +149,7 @@ export const GuidesBalances: React.FC = () => {
 
     const exportCSV = () => {
         const dataToExport = sortedGuides;
-        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'Solde (€)'];
+        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'En attente retrait (€)', 'Solde disponible (€)'];
 
         const escapeCSV = (value: string) => {
             if (value.includes(',') || value.includes('"') || value.includes('\n')) {
@@ -194,6 +198,7 @@ export const GuidesBalances: React.FC = () => {
             String(guide.validated_reviews_count),
             Number(guide.total_earned).toFixed(2),
             Number(guide.total_paid).toFixed(2),
+            Number(guide.total_pending).toFixed(2),
             Number(guide.balance).toFixed(2),
         ].join(','));
 
@@ -229,6 +234,8 @@ export const GuidesBalances: React.FC = () => {
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
     const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
     const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid), 0);
+    const totalPending = guides.reduce((sum, g) => sum + Number(g.total_pending), 0);
+    const guidesWithPending = guides.filter(g => Number(g.total_pending) > 0).length;
     const guidesWithBalance = guides.filter(g => Number(g.balance) > 0).length;
     const totalValidatedReviews = guides.reduce((sum, g) => sum + Number(g.validated_reviews_count), 0);
 
@@ -278,7 +285,18 @@ export const GuidesBalances: React.FC = () => {
                         minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBalance.toFixed(2)}€</div>
-                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Reste à payer</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Solde disponible total</div>
+                    </div>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #d97706, #b45309)',
+                        borderRadius: '1rem',
+                        padding: '1.25rem 1.5rem',
+                        color: 'white',
+                        flex: 1,
+                        minWidth: '160px'
+                    }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalPending.toFixed(2)}€</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>En attente retrait ({guidesWithPending} guides)</div>
                     </div>
                     <div style={{
                         background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
@@ -370,12 +388,13 @@ export const GuidesBalances: React.FC = () => {
                                         <th>Total Gagné</th>
                                         <th>Déjà Payé</th>
                                         <th>Moyen de paiement</th>
+                                        <th>En attente retrait</th>
                                         <th
                                             onClick={() => setBalanceSort(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none')}
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                Solde
+                                                Solde disponible
                                                 {balanceSort === 'none' && <ArrowUpDown size={14} style={{ opacity: 0.4 }} />}
                                                 {balanceSort === 'desc' && <ArrowDown size={14} style={{ color: '#059669' }} />}
                                                 {balanceSort === 'asc' && <ArrowUp size={14} style={{ color: '#059669' }} />}
@@ -387,7 +406,7 @@ export const GuidesBalances: React.FC = () => {
                                 <tbody>
                                     {paginatedGuides.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+                                            <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
                                                 Aucun guide avec des avis validés trouvé
                                             </td>
                                         </tr>
@@ -500,6 +519,26 @@ export const GuidesBalances: React.FC = () => {
                                                     <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontStyle: 'italic' }}>
                                                         Non défini
                                                     </span>
+                                                )}
+                                            </td>
+                                            <td>
+                                                {Number(guide.total_pending) > 0 ? (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        padding: '0.4rem 0.8rem',
+                                                        backgroundColor: '#fef3c7',
+                                                        borderRadius: '10px',
+                                                        width: 'fit-content',
+                                                        border: '1px solid #fde68a'
+                                                    }}>
+                                                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>
+                                                            {Number(guide.total_pending).toFixed(2)}€
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>—</span>
                                                 )}
                                             </td>
                                             <td>
