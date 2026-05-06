@@ -740,7 +740,7 @@ export const guideService = {
             WHERE u.role = 'guide'
             GROUP BY u.id, u.full_name
             HAVING total_posted > 0
-            ORDER BY validation_rate DESC, total_validated DESC
+            ORDER BY total_validated DESC, validation_rate DESC
             LIMIT 20
         `);
 

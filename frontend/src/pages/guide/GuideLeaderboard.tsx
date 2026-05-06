@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { guideService } from '../../services/guideService';
-import { Trophy, Medal, ChevronUp, CheckCircle, XCircle, TrendingUp, Send, Clock } from 'lucide-react';
+import { Trophy, Medal, ChevronUp, CheckCircle, XCircle, TrendingUp, Send, Clock, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './GuideLeaderboard.css';
+
+const REFRESH_INTERVAL_MS = 60_000;
 
 interface LeaderboardEntry {
     rank: number;
@@ -18,20 +20,39 @@ interface LeaderboardEntry {
 export const GuideLeaderboard: React.FC = () => {
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    useEffect(() => {
-        loadLeaderboard();
-    }, []);
-
-    const loadLeaderboard = async () => {
+    const loadLeaderboard = useCallback(async (silent = false) => {
+        if (silent) setRefreshing(true);
+        else setLoading(true);
         try {
             const data = await guideService.getLeaderboard();
             setEntries(data);
+            setLastUpdated(new Date());
         } catch (error) {
             console.error('Failed to load leaderboard:', error);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    }, []);
+
+    useEffect(() => {
+        loadLeaderboard();
+        intervalRef.current = setInterval(() => loadLeaderboard(true), REFRESH_INTERVAL_MS);
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+        };
+    }, [loadLeaderboard]);
+
+    const formatLastUpdated = () => {
+        if (!lastUpdated) return '';
+        const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+        if (diff < 10) return 'à l\'instant';
+        if (diff < 60) return `il y a ${diff}s`;
+        return `il y a ${Math.floor(diff / 60)}min`;
     };
 
     const getRankIcon = (rank: number) => {
@@ -68,12 +89,30 @@ export const GuideLeaderboard: React.FC = () => {
         <div className="leaderboard-card">
             <div className="lb-header">
                 <h3 className="lb-title"><Trophy size={18} color="#f59e0b" /> Classement des Guides</h3>
-                {currentUserRank && (
-                    <div className="lb-my-rank">
-                        <ChevronUp size={14} />
-                        <span>Vous êtes <strong>#{currentUserRank}</strong></span>
-                    </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {lastUpdated && (
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                            Mis à jour {formatLastUpdated()}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => loadLeaderboard(true)}
+                        disabled={refreshing}
+                        style={{
+                            background: 'none', border: 'none', cursor: refreshing ? 'default' : 'pointer',
+                            color: '#94a3b8', padding: '0.2rem', display: 'flex', alignItems: 'center'
+                        }}
+                        title="Rafraîchir"
+                    >
+                        <RefreshCw size={13} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
+                    </button>
+                    {currentUserRank && (
+                        <div className="lb-my-rank">
+                            <ChevronUp size={14} />
+                            <span>Vous êtes <strong>#{currentUserRank}</strong></span>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Column headers */}
