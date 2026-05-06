@@ -343,7 +343,7 @@ export const authApi = {
 // Payout API
 export const payoutApi = {
     // Guide: Get earnings stats
-    getEarnings: async (): Promise<{ totalEarned: number, totalPaid: number, totalPending: number, balance: number }> => {
+    getEarnings: async (): Promise<{ totalEarned: number, totalPaid: number, totalPending: number, sigPending: number, balance: number }> => {
         const response = await api.get('/payouts/guide/earnings');
         return response.data;
     },

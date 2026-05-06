@@ -463,12 +463,23 @@ export const guideService = {
             WHERE guide_id = ?
         `, [guideId]);
 
-        const totalEarned = Number(stats[0].total_earned) + Number(bonuses[0].total_bonuses);
+        // Gains signalement : validés = s'ajoutent au solde, en attente = affichés séparément
+        const sigStats: any = await query(`
+            SELECT
+                COALESCE(SUM(CASE WHEN status = 'validated' THEN earnings_cents ELSE 0 END), 0) AS sig_earned_cents,
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN earnings_cents ELSE 0 END), 0) AS sig_pending_cents
+            FROM signalement_proofs
+            WHERE guide_id = ? AND deleted_at IS NULL
+        `, [guideId]);
+
+        const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
+        const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
+
+        const totalEarned = Number(stats[0].total_earned) + Number(bonuses[0].total_bonuses) + sigEarned;
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
         // Solde peut être négatif si l'admin a versé une avance.
-        // Les futurs avis validés réduiront automatiquement la dette.
         const balance = totalEarned - totalPaid - totalPending;
 
         return {
@@ -476,6 +487,7 @@ export const guideService = {
             totalBonuses,
             totalPaid,
             totalPending,
+            sigPending,   // montant en attente de validation (signalements soumis)
             balance,
         };
     },

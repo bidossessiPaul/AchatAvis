@@ -15,7 +15,8 @@ import {
     Plus,
     X,
     Banknote,
-    Smartphone
+    Smartphone,
+    Flag
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import './MyEarnings.css';
@@ -31,7 +32,7 @@ interface PayoutRequest {
 }
 
 export const MyEarnings: React.FC = () => {
-    const [stats, setStats] = useState<{ totalEarned: number, totalPaid: number, totalPending: number, balance: number } | null>(null);
+    const [stats, setStats] = useState<{ totalEarned: number, totalPaid: number, totalPending: number, sigPending: number, balance: number } | null>(null);
 
     const [history, setHistory] = useState<PayoutRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -187,6 +188,18 @@ export const MyEarnings: React.FC = () => {
                             <h3 className="stat-value">{Number(stats?.totalPending || 0).toFixed(2)}€</h3>
                         </div>
                     </div>
+
+                    {!!stats?.sigPending && (
+                        <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)' }}>
+                            <div className="stat-icon-wrapper" style={{ background: 'rgba(109, 40, 217, 0.15)', color: '#6d28d9' }}>
+                                <Flag size={24} />
+                            </div>
+                            <div className="stat-info">
+                                <p className="stat-label" style={{ color: '#5b21b6' }}>Signalements en attente</p>
+                                <h3 className="stat-value" style={{ color: '#6d28d9' }}>{Number(stats.sigPending).toFixed(2)}€</h3>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="stat-card" style={{ background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)' }}>
                         <div className="stat-icon-wrapper" style={{ background: 'rgba(5, 150, 105, 0.15)', color: '#059669' }}>
