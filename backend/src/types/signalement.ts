@@ -72,6 +72,7 @@ export type SignalementAvisStatus =
 export interface SignalementAvis {
     id: string;
     artisan_id: string;
+    order_id: string | null;
     attribution_id: string;
     google_review_url: string;
     raison: SignalementRaisonKey;
@@ -92,6 +93,7 @@ export interface CreateAvisInput {
     google_review_url: string;
     raison: SignalementRaisonKey;
     raison_details?: string;
+    order_id?: string | null;
 }
 
 // ========== Slot (1 par signalement à faire) ==========

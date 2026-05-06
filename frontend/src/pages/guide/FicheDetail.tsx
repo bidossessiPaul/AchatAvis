@@ -17,8 +17,10 @@ import {
     Shield,
     AlertTriangle,
     Download,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Flag,
 } from 'lucide-react';
+import { guideSignalementApi } from '../../services/signalement';
 
 // Force le téléchargement Cloudinary via le flag fl_attachment
 function getDownloadUrl(url: string): string {
@@ -60,6 +62,7 @@ export const FicheDetail: React.FC = () => {
     const [pendingProposalId, setPendingProposalId] = useState<string | null>(null);
     const [quotaData, setQuotaData] = useState<any>(null);
     const [showStarsWarning, setShowStarsWarning] = useState(true);
+    const [reservingSlotId, setReservingSlotId] = useState<string | null>(null);
 
     useEffect(() => {
         if (orderId) {
@@ -295,6 +298,19 @@ export const FicheDetail: React.FC = () => {
         );
     }
 
+    const handleReserveSlot = async (avisId: string) => {
+        setReservingSlotId(avisId);
+        try {
+            await guideSignalementApi.reserveAnySlot(avisId);
+            showSuccess('Slot réservé', 'Rendez-vous sur votre page Signalement pour uploader la preuve.');
+            if (orderId) loadficheDetails(orderId);
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || e.message);
+        } finally {
+            setReservingSlotId(null);
+        }
+    };
+
     // Filter proposals into pending and published (exclude rejected submissions)
     const activeSubmissions = fiche.submissions.filter((s: any) => s.status !== 'rejected');
     const publishedProposalIds = activeSubmissions.map((s: any) => s.proposal_id);
@@ -402,6 +418,66 @@ export const FicheDetail: React.FC = () => {
                                         <Copy size={14} /> Copier le lien
                                     </button>
                                 </div>
+                            )}
+
+                            {/* Signalements liés à cette fiche */}
+                            {(fiche as any).signalements?.length > 0 && (
+                                <section style={{ marginBottom: '1.5rem' }}>
+                                    <h3 className="section-header" style={{ marginTop: 0 }}>
+                                        <Flag size={20} color="#dc2626" /> Avis Google à signaler ({(fiche as any).signalements.length})
+                                    </h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {(fiche as any).signalements.map((s: any) => (
+                                            <div key={s.avis_id} style={{
+                                                border: '1px solid #fecaca',
+                                                borderRadius: '0.75rem',
+                                                padding: '1rem 1.25rem',
+                                                background: '#fff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                gap: '1rem',
+                                                flexWrap: 'wrap',
+                                            }}>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', marginBottom: 4 }}>
+                                                        Avis à signaler
+                                                    </div>
+                                                    <a href={s.google_review_url} target="_blank" rel="noreferrer"
+                                                        style={{ fontSize: '0.85rem', color: '#2383e2', wordBreak: 'break-all' }}>
+                                                        {s.google_review_url}
+                                                    </a>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 4 }}>
+                                                        {s.nb_signalements_validated}/{s.nb_signalements_target} signalements · {(s.payout_per_signalement_cents / 100).toFixed(2)}€/signalement
+                                                    </div>
+                                                </div>
+                                                {s.guide_has_slot > 0 ? (
+                                                    <span style={{ fontSize: '0.78rem', background: '#dcfce7', color: '#166534', padding: '0.3rem 0.75rem', borderRadius: '1rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                        Slot pris
+                                                    </span>
+                                                ) : s.nb_slots_remaining > 0 ? (
+                                                    <button
+                                                        onClick={() => handleReserveSlot(s.avis_id)}
+                                                        disabled={reservingSlotId === s.avis_id}
+                                                        style={{
+                                                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+                                                            color: '#fff', border: 'none', borderRadius: '0.625rem',
+                                                            padding: '0.5rem 1rem', fontWeight: 700, fontSize: '0.85rem',
+                                                            cursor: 'pointer', whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        <Flag size={13} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                                        {reservingSlotId === s.avis_id ? 'Réservation…' : 'Prendre le slot'}
+                                                    </button>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.78rem', background: '#f1f5f9', color: '#64748b', padding: '0.3rem 0.75rem', borderRadius: '1rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                        Complet
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
                             )}
 
                             {/* Pending Reviews Section */}

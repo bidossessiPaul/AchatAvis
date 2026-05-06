@@ -59,15 +59,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         if (!user) return [];
 
         switch (user.role) {
-            case 'artisan':
-                return [
+            case 'artisan': {
+                // Signalement visible uniquement si pack 499€ actif (90 avis)
+                const hasPack499 = (user.monthly_reviews_quota ?? 0) >= 90;
+                const artisanItems = [
                     { label: 'Vue d\'ensemble', path: '/artisan', icon: <LayoutDashboard size={20} /> },
                     { label: 'Mes commandes', path: '/artisan/orders', icon: <Package size={20} /> },
                     { label: 'Avis reçus', path: '/artisan/reviews', icon: <Star size={20} /> },
-                    { label: 'Signalement', path: '/artisan/signalement', icon: <Flag size={20} /> },
                     { label: 'Facturation', path: '/artisan/billing', icon: <CreditCard size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
                 ];
+                if (hasPack499) {
+                    artisanItems.splice(3, 0, { label: 'Signalement', path: '/artisan/signalement', icon: <Flag size={20} /> });
+                }
+                return artisanItems;
+            }
             case 'guide':
                 return [
                     { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },

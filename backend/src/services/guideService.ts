@@ -223,11 +223,27 @@ export const guideService = {
             ORDER BY s.submitted_at DESC
         `, [order_id]);
 
+        // Signalements liés à cette fiche (avis Google à signaler)
+        const signalements: any[] = await query(`
+            SELECT sa.id AS avis_id, sa.google_review_url, sa.raison, sa.raison_details,
+                   sa.payout_per_signalement_cents, sa.nb_signalements_target,
+                   sa.nb_signalements_validated, sa.status AS avis_status,
+                   (SELECT COUNT(*) FROM signalement_slots ss
+                    WHERE ss.avis_id = sa.id AND ss.status = 'available') AS nb_slots_remaining,
+                   (SELECT COUNT(*) FROM signalement_slots ss2
+                    WHERE ss2.avis_id = sa.id AND ss2.reserved_by_guide_id = ?
+                      AND ss2.status IN ('reserved', 'submitted', 'validated')) AS guide_has_slot
+            FROM signalement_avis sa
+            WHERE sa.order_id = ? AND sa.status = 'active' AND sa.deleted_at IS NULL
+            ORDER BY sa.created_at ASC
+        `, [guide_id, order_id]);
+
         return {
             ...order,
             proposals,
             submissions,
-            daily_submissions_count: dailyCount
+            daily_submissions_count: dailyCount,
+            signalements,
         };
     },
 

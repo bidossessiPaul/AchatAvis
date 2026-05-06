@@ -64,7 +64,7 @@ export const submitAvis = async (req: Request, res: Response): Promise<void> => 
             res.status(401).json({ error: 'Non authentifié' });
             return;
         }
-        const { google_review_url, raison, raison_details } = req.body;
+        const { google_review_url, raison, raison_details, order_id } = req.body;
 
         if (!google_review_url || typeof google_review_url !== 'string') {
             res.status(400).json({ error: 'google_review_url requise' });
@@ -79,6 +79,7 @@ export const submitAvis = async (req: Request, res: Response): Promise<void> => 
             google_review_url: google_review_url.trim(),
             raison,
             raison_details: raison_details?.trim(),
+            order_id: order_id || null,
         });
         res.status(201).json({ avis });
     } catch (err: any) {

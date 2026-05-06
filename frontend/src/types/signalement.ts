@@ -46,6 +46,7 @@ export interface SignalementAttribution {
 export interface SignalementAvis {
     id: string;
     artisan_id: string;
+    order_id: string | null;
     attribution_id: string;
     google_review_url: string;
     raison: SignalementRaisonKey;

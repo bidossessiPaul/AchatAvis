@@ -174,6 +174,7 @@ export const artisanSignalementApi = {
         google_review_url: string;
         raison: string;
         raison_details?: string;
+        order_id?: string | null;
     }): Promise<SignalementAvis> => {
         const r = await api.post('/signalement/artisan/me/avis', input);
         return r.data.avis;

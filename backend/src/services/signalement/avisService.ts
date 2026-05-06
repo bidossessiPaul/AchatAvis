@@ -53,8 +53,8 @@ export const createAvisForArtisan = async (
     input: CreateAvisInput,
     options?: { relaunchedFromAvisId?: string }
 ): Promise<SignalementAvis> => {
-    if (!input.google_review_url || !input.google_review_url.toLowerCase().includes('google')) {
-        throw new Error('URL invalide : doit être un lien Google');
+    if (!input.google_review_url?.trim()) {
+        throw new Error('URL requise');
     }
     if (!isValidRaison(input.raison)) {
         throw new Error(`Raison inconnue : ${input.raison}`);
@@ -99,13 +99,14 @@ export const createAvisForArtisan = async (
         const avisId = uuidv4();
         await connection.execute(
             `INSERT INTO signalement_avis
-             (id, artisan_id, attribution_id, google_review_url, raison, raison_details,
+             (id, artisan_id, order_id, attribution_id, google_review_url, raison, raison_details,
               nb_signalements_target, payout_per_signalement_cents,
               relaunched_from_avis_id)
-             VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
             [
                 avisId,
                 artisanId,
+                input.order_id ?? null,
                 input.google_review_url,
                 input.raison,
                 input.raison_details ?? null,
@@ -362,6 +363,7 @@ function rowToAvis(row: any): SignalementAvis {
     return {
         id: row.id,
         artisan_id: row.artisan_id,
+        order_id: row.order_id ?? null,
         attribution_id: row.attribution_id,
         google_review_url: row.google_review_url,
         raison: row.raison,

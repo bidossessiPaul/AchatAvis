@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Flag, Plus, RefreshCw, ExternalLink } from 'lucide-react';
+import { Flag, Plus, RefreshCw, ExternalLink, Lock } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../../utils/Swal';
 import { artisanSignalementApi } from '../../../services/signalement';
+import { artisanService } from '../../../services/artisanService';
 import type { ArtisanSignalementSummary, SignalementAvis } from '../../../types/signalement';
+import type { ReviewOrder } from '../../../types';
 import { SIGNALEMENT_RAISONS, SIGNALEMENT_RAISONS_DESCRIPTIONS } from '../../../constants/signalementRaisons';
 import './ArtisanSignalementDashboard.css';
 
@@ -16,24 +19,28 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export const ArtisanSignalementDashboard = () => {
+    const navigate = useNavigate();
     const [summary, setSummary] = useState<ArtisanSignalementSummary | null>(null);
     const [avis, setAvis] = useState<SignalementAvis[]>([]);
+    const [fiches, setFiches] = useState<ReviewOrder[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [form, setForm] = useState({ google_review_url: '', raison: 'HORS_SUJET', raison_details: '' });
+    const [form, setForm] = useState({ google_review_url: '', raison: 'HORS_SUJET', raison_details: '', order_id: '' });
 
     useEffect(() => { load(); }, []);
 
     const load = async () => {
         setLoading(true);
         try {
-            const [s, a] = await Promise.all([
+            const [s, a, f] = await Promise.all([
                 artisanSignalementApi.summary(),
                 artisanSignalementApi.listMyAvis(),
+                artisanService.getMyOrders(),
             ]);
             setSummary(s);
             setAvis(a);
+            setFiches(f.filter((o: ReviewOrder) => !['cancelled', 'draft'].includes(o.status)));
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || e.message);
         } finally {
@@ -49,10 +56,11 @@ export const ArtisanSignalementDashboard = () => {
                 google_review_url: form.google_review_url.trim(),
                 raison: form.raison,
                 raison_details: form.raison_details.trim() || undefined,
+                order_id: form.order_id || null,
             });
             showSuccess('Avis soumis — les guides vont commencer le signalement');
             setModalOpen(false);
-            setForm({ google_review_url: '', raison: 'HORS_SUJET', raison_details: '' });
+            setForm({ google_review_url: '', raison: 'HORS_SUJET', raison_details: '', order_id: '' });
             load();
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || e.message);
@@ -77,6 +85,30 @@ export const ArtisanSignalementDashboard = () => {
 
     const noPack = !summary?.has_active_pack;
 
+    // Page bloquée si pas de pack 499
+    if (noPack) {
+        return (
+            <DashboardLayout>
+                <div style={{ maxWidth: 520, margin: '4rem auto', textAlign: 'center', padding: '2.5rem', background: '#fff', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+                        <Lock size={26} color="#d97706" />
+                    </div>
+                    <h2 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', color: '#0f172a' }}>Fonctionnalité réservée au pack 499€</h2>
+                    <p style={{ color: '#64748b', margin: '0 0 1.5rem', lineHeight: 1.6 }}>
+                        Le signalement d'avis Google est inclus dans le <strong>pack 499€ (90 avis)</strong>.
+                        Chaque pack vous donne <strong>5 signalements</strong> pour faire retirer des avis diffamatoires ou abusifs.
+                    </p>
+                    <button
+                        onClick={() => navigate('/artisan/billing')}
+                        style={{ background: 'linear-gradient(135deg, #059669, #047857)', color: '#fff', border: 'none', padding: '0.7rem 1.5rem', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
+                    >
+                        Voir les packs disponibles
+                    </button>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout>
             <div className="art-sig-page">
@@ -86,16 +118,6 @@ export const ArtisanSignalementDashboard = () => {
                 <p style={{ color: '#64748b', marginTop: 4, marginBottom: 24 }}>
                     Faites signaler les avis Google diffamatoires ou abusifs sur vos fiches.
                 </p>
-
-                {noPack && (
-                    <div className="art-sig-banner">
-                        <strong>Fonctionnalité réservée au pack 499€ (90 avis).</strong>
-                        <div style={{ marginTop: 4 }}>
-                            Activez le pack 499€ pour bénéficier de 5 signalements d'avis Google inclus.
-                            Chaque pack supplémentaire vous donne 5 signalements additionnels.
-                        </div>
-                    </div>
-                )}
 
                 {summary && (
                     <div className="art-sig-stats">
@@ -164,6 +186,20 @@ export const ArtisanSignalementDashboard = () => {
                     <div className="art-sig-modal-overlay" onClick={() => setModalOpen(false)}>
                         <div className="art-sig-modal" onClick={e => e.stopPropagation()}>
                             <h2>Signaler un avis Google</h2>
+                            {fiches.length > 0 && (
+                                <>
+                                    <label>Fiche concernée (optionnel)</label>
+                                    <select value={form.order_id} onChange={e => setForm({...form, order_id: e.target.value})}>
+                                        <option value="">— Aucune fiche associée —</option>
+                                        {fiches.map(f => (
+                                            <option key={f.id} value={f.id}>
+                                                {f.fiche_name || f.company_name}{f.city ? ` — ${f.city}` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <small style={{ marginBottom: 12, display: 'block' }}>En associant une fiche, les guides verront cet avis directement sur la page de la fiche.</small>
+                                </>
+                            )}
                             <label>URL de l'avis Google</label>
                             <input value={form.google_review_url} onChange={e => setForm({...form, google_review_url: e.target.value})} placeholder="https://www.google.com/maps/..." />
 
