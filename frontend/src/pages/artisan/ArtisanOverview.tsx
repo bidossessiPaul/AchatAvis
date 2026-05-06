@@ -52,7 +52,7 @@ export const ArtisanOverview: React.FC = () => {
         }
     };
 
-    const [hasActivePacks, setHasActivePacks] = useState<boolean>(true);
+    const [hasActivePacks, setHasActivePacks] = useState<boolean | null>(null);
     const [showHoursReminder, setShowHoursReminder] = useState(false);
 
     // Affiche le rappel horaires une seule fois si l'artisan a au moins une fiche
@@ -120,9 +120,19 @@ export const ArtisanOverview: React.FC = () => {
         }
     };
 
+    if (hasActivePacks === null) {
+        return (
+            <DashboardLayout title="Vue d'ensemble">
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: '#94a3b8', fontSize: '0.95rem' }}>
+                    Chargement...
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     return (
         <DashboardLayout title="Vue d'ensemble">
-            <PremiumBlurOverlay isActive={isLoading || hasActivePacks || orders.length > 0}>
+            <PremiumBlurOverlay isActive={hasActivePacks || orders.length > 0}>
                 {/* Hero Section with Blue-White Gradient */}
                 <div className="artisan-dashboard-hero">
                     <div className="artisan-dashboard-hero-content">
