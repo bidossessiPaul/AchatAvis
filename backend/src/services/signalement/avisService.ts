@@ -88,11 +88,28 @@ export const createAvisForArtisan = async (
             throw new Error(`Quota de signalements atteint (${used}/${totalQuota})`);
         }
 
-        // Lit config : nb_signalements_par_avis (combien de guides par avis) + payout
+        // Lit config : nb_signalements_par_avis + payout + cooldown
         const [configRows]: any = await connection.execute(
-            `SELECT default_payout_cents, nb_signalements_par_avis_default
+            `SELECT default_payout_cents, nb_signalements_par_avis_default, cooldown_hours_between_signalements
              FROM signalement_config WHERE id = 'global'`
         );
+
+        // Vérifie le cooldown : 1 soumission max par période configurée
+        const cooldownHours = configRows[0]?.cooldown_hours_between_signalements ?? 24;
+        const [lastRows]: any = await connection.execute(
+            `SELECT created_at FROM signalement_avis
+             WHERE artisan_id = ? AND status != 'cancelled_by_admin' AND deleted_at IS NULL
+             ORDER BY created_at DESC LIMIT 1`,
+            [artisanId]
+        );
+        if (lastRows[0]) {
+            const lastCreated = new Date(lastRows[0].created_at);
+            const diffHours = (Date.now() - lastCreated.getTime()) / 3600000;
+            if (diffHours < cooldownHours) {
+                const heuresRestantes = Math.ceil(cooldownHours - diffHours);
+                throw new Error(`Vous devez attendre encore ${heuresRestantes}h avant de soumettre un nouvel avis`);
+            }
+        }
         const payout = configRows[0]?.default_payout_cents ?? 10;
         const nbSlots = configRows[0]?.nb_signalements_par_avis_default ?? 1;
 
