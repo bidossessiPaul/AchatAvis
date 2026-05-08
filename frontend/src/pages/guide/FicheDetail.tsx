@@ -67,6 +67,7 @@ export const FicheDetail: React.FC = () => {
     const [countdown, setCountdown] = useState<string>('');
     const [slotExpired, setSlotExpired] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
+    const [isRefreshingSlot, setIsRefreshingSlot] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -940,10 +941,53 @@ export const FicheDetail: React.FC = () => {
 
                         <button
                             className="stars-warning-btn"
-                            style={{ background: 'linear-gradient(135deg, #0369a1, #0284c7)' }}
-                            onClick={() => setShowStarsWarning(false)}
+                            style={{
+                                background: isRefreshingSlot
+                                    ? 'linear-gradient(135deg, #64748b, #94a3b8)'
+                                    : 'linear-gradient(135deg, #0369a1, #0284c7)',
+                                cursor: isRefreshingSlot ? 'not-allowed' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                            }}
+                            disabled={isRefreshingSlot}
+                            onClick={async () => {
+                                if (!orderId) { setShowStarsWarning(false); return; }
+                                setIsRefreshingSlot(true);
+                                try {
+                                    const updated = await apiClient.post(`/guide/fiches/${orderId}/refresh-slot`);
+                                    const newProposal = updated.data;
+                                    // Met à jour le contenu du proposal directement dans le state
+                                    setfiche((prev: any) => {
+                                        if (!prev) return prev;
+                                        return {
+                                            ...prev,
+                                            proposals: prev.proposals.map((p: any) =>
+                                                p.id === newProposal.id
+                                                    ? { ...p, content: newProposal.content, author_name: newProposal.author_name, experience_type: newProposal.experience_type }
+                                                    : p
+                                            ),
+                                        };
+                                    });
+                                } catch {
+                                    // En cas d'erreur on ferme juste le modal
+                                } finally {
+                                    setIsRefreshingSlot(false);
+                                    setShowStarsWarning(false);
+                                }
+                            }}
                         >
-                            J'ai compris
+                            {isRefreshingSlot ? (
+                                <>
+                                    <span style={{
+                                        width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)',
+                                        borderTopColor: '#fff', borderRadius: '50%',
+                                        display: 'inline-block', animation: 'spin 0.7s linear infinite',
+                                    }} />
+                                    Génération en cours…
+                                </>
+                            ) : 'J\'ai compris — générer mon avis'}
                         </button>
                     </div>
                 </div>

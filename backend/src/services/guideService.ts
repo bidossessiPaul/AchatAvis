@@ -404,6 +404,71 @@ export const guideService = {
         return { success: true };
     },
 
+    // Régénère le slot actuel du guide de façon synchrone (appelé sur "J'ai compris").
+    // Le slot reste réservé au guide après la régénération.
+    async refreshCurrentSlot(orderId: string, guideId: string) {
+        const slots: any[] = await query(`
+            SELECT p.id FROM review_proposals p
+            WHERE p.order_id = ? AND p.reserved_by = ? AND p.reserved_until > NOW()
+              AND p.deleted_at IS NULL
+              AND p.id NOT IN (
+                  SELECT proposal_id FROM reviews_submissions
+                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+              )
+            LIMIT 1
+        `, [orderId, guideId, orderId]);
+
+        if (!slots || slots.length === 0) throw new Error('NO_ACTIVE_SLOT');
+
+        const proposalId = slots[0].id;
+
+        // Récupère les infos de la commande pour la génération IA
+        const orderResult: any = await query(`
+            SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
+                   o.specific_instructions, o.zones,
+                   sd.sector_name, sd.sector_slug,
+                   a.city
+            FROM reviews_orders o
+            JOIN artisans_profiles a ON o.artisan_id = a.user_id
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+            WHERE o.id = ?
+        `, [orderId]);
+
+        if (!orderResult || orderResult.length === 0) throw new Error('ORDER_NOT_FOUND');
+
+        const order = orderResult[0];
+        const reviews = await aiService.generateReviews({
+            companyName: order.company_name || 'Entreprise locale',
+            ficheName: order.fiche_name,
+            trade: order.sector_name || 'Artisan',
+            quantity: 1,
+            sector: order.sector_name,
+            sectorSlug: order.sector_slug,
+            zones: order.zones || order.city,
+            services: order.services,
+            staffNames: order.staff_names,
+            specificInstructions: order.specific_instructions,
+        });
+
+        if (!reviews || reviews.length === 0) throw new Error('GENERATION_FAILED');
+
+        const r = reviews[0];
+        // Met à jour le contenu sans toucher à reserved_by / reserved_until (slot reste au guide)
+        await query(`
+            UPDATE review_proposals
+            SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW()
+            WHERE id = ? AND reserved_by = ?
+        `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId, guideId]);
+
+        // Retourne le contenu frais
+        const updated: any[] = await query(
+            `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,
+            [proposalId]
+        );
+        if (!updated || updated.length === 0) throw new Error('PROPOSAL_NOT_FOUND');
+        return updated[0];
+    },
+
     async getMySubmissions(guideId: string) {
         return query(`
             SELECT 

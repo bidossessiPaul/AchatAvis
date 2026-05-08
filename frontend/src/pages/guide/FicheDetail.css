@@ -742,6 +742,10 @@
     }
 }
 
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Additional Styles for Refactoring */
 
 .loading-container {

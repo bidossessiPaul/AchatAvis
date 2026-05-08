@@ -173,6 +173,21 @@ export const guideController = {
         }
     },
 
+    async refreshSlot(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const proposal = await guideService.refreshCurrentSlot(id, user.userId);
+            return res.json(proposal);
+        } catch (error: any) {
+            console.error('Error refreshing slot:', error);
+            const status = error.message === 'NO_ACTIVE_SLOT' ? 404 : 500;
+            return res.status(status).json({ error: error.message });
+        }
+    },
+
     async getCorrectableSubmissions(req: Request, res: Response) {
         try {
             const user = (req as any).user;
