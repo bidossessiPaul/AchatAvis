@@ -59,10 +59,11 @@ export const FicheCompatibilityModal: React.FC<Props> = ({
                     width: '100%',
                     maxWidth: '480px',
                     borderRadius: '2rem',
-                    padding: '2.5rem',
-                    textAlign: 'center',
                     boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
                     position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxHeight: 'calc(100vh - 2rem)',
                     overflow: 'hidden'
                 }}
             >
@@ -75,10 +76,12 @@ export const FicheCompatibilityModal: React.FC<Props> = ({
                     height: '150px',
                     background: result.can_take ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)',
                     borderRadius: '50%',
-                    zIndex: 0
+                    zIndex: 0,
+                    pointerEvents: 'none'
                 }} />
 
-                <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Scrollable body */}
+                <div style={{ position: 'relative', zIndex: 1, overflowY: 'auto', padding: '2rem 1.5rem', textAlign: 'center' }}>
                     <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
                         <div style={{
                             padding: '1.5rem',
@@ -193,27 +196,30 @@ export const FicheCompatibilityModal: React.FC<Props> = ({
                         </div>
                     )}
 
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        <button
-                            onClick={onClose}
-                            style={{
-                                padding: '1.25rem',
-                                borderRadius: '1.25rem',
-                                border: 'none',
-                                background: result.can_take ? '#111827' : '#ef4444',
-                                color: 'white',
-                                fontWeight: 800,
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                boxShadow: result.can_take ? '0 10px 15px -3px rgba(17, 24, 39, 0.4)' : '0 10px 15px -3px rgba(239, 68, 68, 0.4)',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                        >
-                            {result.can_take ? 'Démarrer la publication' : 'Compris'}
-                        </button>
-                    </div>
+                </div>
+
+                {/* Footer fixe */}
+                <div style={{ padding: '1rem 1.5rem 1.5rem', borderTop: '1px solid #f1f5f9', background: 'white', zIndex: 1, position: 'relative' }}>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            width: '100%',
+                            padding: '1rem',
+                            borderRadius: '1.25rem',
+                            border: 'none',
+                            background: result.can_take ? '#111827' : '#ef4444',
+                            color: 'white',
+                            fontWeight: 800,
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            boxShadow: result.can_take ? '0 10px 15px -3px rgba(17, 24, 39, 0.4)' : '0 10px 15px -3px rgba(239, 68, 68, 0.4)',
+                            transition: 'transform 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                        {result.can_take ? 'Démarrer la publication' : 'Compris'}
+                    </button>
                 </div>
             </motion.div>
         </div>
