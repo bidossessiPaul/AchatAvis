@@ -2170,10 +2170,12 @@ export const regenerateProposal = async (proposalId: string): Promise<{ content:
         SELECT p.id, p.order_id, p.author_name, p.rating,
                ro.company_name, ro.fiche_name, ro.company_context, ro.sector,
                ro.zones, ro.services, ro.staff_names, ro.specific_instructions,
-               ap.company_name as artisan_company, ap.trade
+               ap.company_name as artisan_company, ap.trade,
+               sd.sector_slug
         FROM review_proposals p
         JOIN reviews_orders ro ON p.order_id = ro.id
         JOIN artisans_profiles ap ON ro.artisan_id = ap.user_id
+        LEFT JOIN sector_difficulty sd ON ro.sector_id = sd.id
         WHERE p.id = ?
     `, [proposalId]);
 
@@ -2192,6 +2194,7 @@ export const regenerateProposal = async (proposalId: string): Promise<{ content:
         quantity: 1,
         context: order.company_context,
         sector: order.sector,
+        sectorSlug: order.sector_slug,
         zones: order.zones,
         services: order.services,
         staffNames: order.staff_names,

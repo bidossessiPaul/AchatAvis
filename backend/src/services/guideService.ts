@@ -10,7 +10,10 @@ import { aiService } from './aiService';
 async function regenerateSingleProposal(proposalId: string, orderId: string): Promise<void> {
     try {
         const orderResult: any = await query(`
-            SELECT o.company_name, sd.sector_name, sd.sector_slug, a.city
+            SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
+                   o.specific_instructions, o.zones,
+                   sd.sector_name, sd.sector_slug,
+                   a.city
             FROM reviews_orders o
             JOIN artisans_profiles a ON o.artisan_id = a.user_id
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
@@ -25,28 +28,43 @@ async function regenerateSingleProposal(proposalId: string, orderId: string): Pr
         const order = orderResult[0];
         const reviews = await aiService.generateReviews({
             companyName: order.company_name || 'Entreprise locale',
+            ficheName: order.fiche_name,
             trade: order.sector_name || 'Artisan',
             quantity: 1,
             sector: order.sector_name,
             sectorSlug: order.sector_slug,
-            zones: order.city,
+            zones: order.zones || order.city,
+            services: order.services,
+            staffNames: order.staff_names,
+            specificInstructions: order.specific_instructions,
         });
 
         if (reviews && reviews.length > 0) {
             const r = reviews[0];
+            // Met à jour le contenu toujours.
+            // Libère la réservation UNIQUEMENT si personne d'actif ne tient le slot
+            // (évite d'écraser la réservation d'un guide qui a pris le slot pendant la regen).
             await query(`
                 UPDATE review_proposals
-                SET content = ?, author_name = ?, experience_type = ?,
-                    reserved_by = NULL, reserved_until = NULL, updated_at = NOW()
+                SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW(),
+                    reserved_by = CASE WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL ELSE reserved_by END,
+                    reserved_until = CASE WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL ELSE reserved_until END
                 WHERE id = ?
             `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId]);
         } else {
-            await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
+            await query(`
+                UPDATE review_proposals
+                SET reserved_by = NULL, reserved_until = NULL
+                WHERE id = ? AND (reserved_until IS NULL OR reserved_until < NOW())
+            `, [proposalId]);
         }
     } catch (err) {
         console.error(`Erreur régénération proposal ${proposalId}:`, err);
-        // En cas d'erreur IA, libérer quand même pour ne pas bloquer le slot indéfiniment
-        await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
+        // En cas d'erreur IA, libérer uniquement si le slot n'est plus actif
+        await query(`
+            UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL
+            WHERE id = ? AND (reserved_until IS NULL OR reserved_until < NOW())
+        `, [proposalId]);
     }
 }
 
@@ -333,6 +351,16 @@ export const guideService = {
     },
 
     async releaseficheLock(order_id: string, guide_id: string) {
+        // Récupère les proposals qui vont être libérés AVANT de les libérer
+        const toRelease: any[] = await query(`
+            SELECT id FROM review_proposals
+            WHERE order_id = ? AND reserved_by = ?
+              AND id NOT IN (
+                  SELECT proposal_id FROM reviews_submissions
+                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+              )
+        `, [order_id, guide_id, order_id]);
+
         // Ancien verrou fiche (legacy, on garde pour compatibilité)
         await query(`
             UPDATE reviews_orders
@@ -341,15 +369,25 @@ export const guideService = {
         `, [order_id, guide_id]);
 
         // Libère le slot réservé par ce guide s'il n'a pas soumis de preuve
-        await query(`
-            UPDATE review_proposals
-            SET reserved_by = NULL, reserved_until = NULL
-            WHERE order_id = ? AND reserved_by = ?
-              AND id NOT IN (
-                  SELECT proposal_id FROM reviews_submissions
-                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
-              )
-        `, [order_id, guide_id, order_id]);
+        if (toRelease.length > 0) {
+            await query(`
+                UPDATE review_proposals
+                SET reserved_by = NULL, reserved_until = NULL
+                WHERE order_id = ? AND reserved_by = ?
+                  AND id NOT IN (
+                      SELECT proposal_id FROM reviews_submissions
+                      WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+                  )
+            `, [order_id, guide_id, order_id]);
+
+            // Régénère le contenu en arrière-plan (fire & forget)
+            // Le prochain guide qui entre aura du contenu frais, sans attendre
+            for (const slot of toRelease) {
+                regenerateSingleProposal(slot.id, order_id).catch(err =>
+                    console.error(`Regen background (releaseLock) proposal ${slot.id}:`, err)
+                );
+            }
+        }
 
         return { success: true };
     },

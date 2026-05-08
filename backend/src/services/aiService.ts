@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import dotenv from 'dotenv';
+import { getExamplesForSector } from '../data/reviewExamples';
 
 dotenv.config();
 
@@ -120,8 +121,9 @@ export const aiService = {
         const systemPrompt = `Tu es une IA qui genere des avis clients authentiques et VARIES pour des artisans et professionnels.
 
 DIVERSITE OBLIGATOIRE — REGLE N°1 :
-Aucun avis ne peut commencer par les memes deux mots qu'un autre avis du batch.
-Varier ABSOLUMENT : le mot d'ouverture, la structure de la phrase, la longueur, le ton, le sujet aborde.
+Aucun avis ne peut partager les memes 5 premiers mots qu'un autre avis du batch.
+Aucun avis ne peut avoir la meme structure de phrase qu'un autre.
+Varier ABSOLUMENT : le mot d'ouverture, la structure, la longueur, le ton, le sujet aborde, le style.
 
 LONGUEURS IMPOSEES (distribuer dans le batch) :
 - ULTRA-COURT (3-8 mots) : "super accueil merci" / "nickel comme d'hab" / "site tres clair"
@@ -187,6 +189,16 @@ FORMAT : JSON valide uniquement.`;
             .map((t, i) => `Avis ${i + 1} -> type="${t}" | longueur="${assignedLengths[i]}" | sujet prefere="${assignedSubjects[i]}" | description: ${EXPERIENCE_TYPE_DESCRIPTIONS[t]}`)
             .join('\n');
 
+        // Exemples sectoriels — on injecte quantity × 1.5 exemples (plafonné à 150)
+        // pour que chaque avis du batch ait un ancrage différent
+        const sectorExamples = getExamplesForSector(sectorSlug, quantity);
+        const examplesBlock = sectorExamples.length > 0
+            ? `\nEXEMPLES D'AVIS DU MEME SECTEUR — ${sectorExamples.length} exemples (vocabulaire, ton, sujets a respecter — NE PAS copier, NE PAS paraphraser) :\n${sectorExamples.map((e, i) => `${i + 1}. "${e}"`).join('\n')}\n`
+            : '';
+        if (sectorExamples.length > 0) {
+            console.log(`${sectorExamples.length} exemples sectoriels injectes pour le secteur: ${sectorSlug || 'inconnu'}`);
+        }
+
         const userPrompt = `Genere exactement ${quantity} avis positifs (5 etoiles OBLIGATOIRE) pour "${companyName}" (${trade}).
 Contexte : ${context || 'Artisan local'}
 Secteur : ${sector || trade}
@@ -194,12 +206,13 @@ Services : ${services || 'Tous services'}
 Zones : ${zones || 'Locale'}
 Collaborateurs : ${staffNames || 'non precise'}
 Instructions specifiques : ${specificInstructions || 'aucune'}
-
+${examplesBlock}
 TYPES, LONGUEURS ET SUJETS ASSIGNES (ordre strict) :
 ${typesList}
 
-RAPPEL DIVERSITE : aucun avis ne commence par les memes deux mots qu'un autre. Longueur, ton, sujet, style = tous differents.
+RAPPEL DIVERSITE ABSOLUE : aucun avis ne partage les 5 premiers mots d'un autre. Longueur, ton, sujet aborde, style de redaction = tous differents entre chaque avis.
 Integre la ville naturellement si pertinent (pas juste en fin de phrase).
+Inspire-toi des exemples ci-dessus pour le vocabulaire metier et le registre de langue — sans jamais les reproduire.
 
 Format JSON :
 {

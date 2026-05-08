@@ -66,6 +66,7 @@ export const FicheDetail: React.FC = () => {
     const [slotExpiresAt, setSlotExpiresAt] = useState<Date | null>(null);
     const [countdown, setCountdown] = useState<string>('');
     const [slotExpired, setSlotExpired] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -89,6 +90,7 @@ export const FicheDetail: React.FC = () => {
         if (pending && (pending as any).reserved_until) {
             setSlotExpiresAt(new Date((pending as any).reserved_until));
             setSlotExpired(false);
+            setIsRegenerating(false);
         }
     }, [fiche]);
 
@@ -100,7 +102,12 @@ export const FicheDetail: React.FC = () => {
             if (remaining <= 0) {
                 setCountdown('00:00');
                 setSlotExpired(true);
+                setIsRegenerating(true);
                 clearInterval(interval);
+                // Régénération automatique : recharge la fiche après 2s pour récupérer le nouveau slot
+                setTimeout(() => {
+                    if (orderId) loadficheDetails(orderId);
+                }, 2000);
             } else {
                 const mins = Math.floor(remaining / 60000);
                 const secs = Math.floor((remaining % 60000) / 1000);
@@ -557,7 +564,9 @@ export const FicheDetail: React.FC = () => {
                                                     }}>
                                                         <Clock size={13} />
                                                         {slotExpired
-                                                            ? <>Slot expiré — <button onClick={() => orderId && loadficheDetails(orderId)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#991b1b', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>Recharger un nouveau slot</button></>
+                                                            ? isRegenerating
+                                                                ? <>Génération d'un nouvel avis en cours…</>
+                                                                : <>Slot expiré — <button onClick={() => orderId && loadficheDetails(orderId)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#991b1b', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>Recharger un nouveau slot</button></>
                                                             : <>Slot réservé pour vous — expire dans <strong style={{ marginLeft: '0.25rem' }}>{countdown}</strong></>
                                                         }
                                                     </div>
