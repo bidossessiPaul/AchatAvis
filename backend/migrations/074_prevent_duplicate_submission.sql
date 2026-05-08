@@ -13,7 +13,6 @@ BEGIN
         SELECT 1 FROM reviews_submissions
         WHERE proposal_id = NEW.proposal_id
           AND status != 'rejected'
-          AND deleted_at IS NULL
     ) THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'DUPLICATE_SUBMISSION';
