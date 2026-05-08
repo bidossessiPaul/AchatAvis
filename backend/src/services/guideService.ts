@@ -41,29 +41,39 @@ async function regenerateSingleProposal(proposalId: string, orderId: string): Pr
 
         if (reviews && reviews.length > 0) {
             const r = reviews[0];
-            // Met à jour le contenu toujours.
-            // Libère la réservation UNIQUEMENT si personne d'actif ne tient le slot
-            // (évite d'écraser la réservation d'un guide qui a pris le slot pendant la regen).
+            // Met à jour le contenu + efface le marqueur 'regen_pending'.
+            // Si un autre guide a pris le slot entre-temps (reserved_by != 'regen_pending'
+            // et reserved_until > NOW()), on garde sa réservation mais on met quand même
+            // le nouveau contenu à jour (il verra le texte frais).
             await query(`
                 UPDATE review_proposals
                 SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW(),
-                    reserved_by = CASE WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL ELSE reserved_by END,
-                    reserved_until = CASE WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL ELSE reserved_until END
+                    reserved_by = CASE
+                        WHEN reserved_by = 'regen_pending' THEN NULL
+                        WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL
+                        ELSE reserved_by
+                    END,
+                    reserved_until = CASE
+                        WHEN reserved_by = 'regen_pending' THEN NULL
+                        WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL
+                        ELSE reserved_until
+                    END
                 WHERE id = ?
             `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId]);
         } else {
+            // Pas d'avis généré : libère le marqueur regen_pending ou les slots expirés
             await query(`
                 UPDATE review_proposals
                 SET reserved_by = NULL, reserved_until = NULL
-                WHERE id = ? AND (reserved_until IS NULL OR reserved_until < NOW())
+                WHERE id = ? AND (reserved_by = 'regen_pending' OR reserved_until IS NULL OR reserved_until < NOW())
             `, [proposalId]);
         }
     } catch (err) {
         console.error(`Erreur régénération proposal ${proposalId}:`, err);
-        // En cas d'erreur IA, libérer uniquement si le slot n'est plus actif
+        // En cas d'erreur IA, libère le marqueur regen_pending pour ne pas bloquer le slot indéfiniment
         await query(`
             UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL
-            WHERE id = ? AND (reserved_until IS NULL OR reserved_until < NOW())
+            WHERE id = ? AND (reserved_by = 'regen_pending' OR reserved_until IS NULL OR reserved_until < NOW())
         `, [proposalId]);
     }
 }
@@ -368,11 +378,14 @@ export const guideService = {
             WHERE id = ? AND locked_by = ?
         `, [order_id, guide_id]);
 
-        // Libère le slot réservé par ce guide s'il n'a pas soumis de preuve
+        // Marque le slot 'regen_pending' pendant la régénération (30s max).
+        // Rend le slot INVISIBLE aux autres guides jusqu'à ce que le nouveau contenu soit prêt.
+        // Après 30s, le slot redevient disponible via le lazy-regen de getficheDetails.
         if (toRelease.length > 0) {
             await query(`
                 UPDATE review_proposals
-                SET reserved_by = NULL, reserved_until = NULL
+                SET reserved_by = 'regen_pending',
+                    reserved_until = DATE_ADD(NOW(), INTERVAL 30 SECOND)
                 WHERE order_id = ? AND reserved_by = ?
                   AND id NOT IN (
                       SELECT proposal_id FROM reviews_submissions
@@ -380,8 +393,7 @@ export const guideService = {
                   )
             `, [order_id, guide_id, order_id]);
 
-            // Régénère le contenu en arrière-plan (fire & forget)
-            // Le prochain guide qui entre aura du contenu frais, sans attendre
+            // Regen en arrière-plan — efface 'regen_pending' dès que le nouveau contenu est prêt
             for (const slot of toRelease) {
                 regenerateSingleProposal(slot.id, order_id).catch(err =>
                     console.error(`Regen background (releaseLock) proposal ${slot.id}:`, err)
