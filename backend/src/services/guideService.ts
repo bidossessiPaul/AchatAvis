@@ -91,7 +91,7 @@ export const guideService = {
                 SELECT gga.*, u.email
                 FROM users u
                 JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
-                WHERE u.id = ?
+                WHERE u.id = ? AND gga.deleted_at IS NULL
                 LIMIT 1
             `, [guide_id]);
 
