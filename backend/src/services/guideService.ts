@@ -4,6 +4,51 @@ import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
 import { sendAdminEventNotification } from './emailService';
 import { parseImages } from './artisanService';
+import { aiService } from './aiService';
+
+// Régénère le contenu d'un slot expiré avec un nouvel avis IA, puis libère la réservation.
+async function regenerateSingleProposal(proposalId: string, orderId: string): Promise<void> {
+    try {
+        const orderResult: any = await query(`
+            SELECT o.company_name, sd.sector_name, sd.sector_slug, a.city
+            FROM reviews_orders o
+            JOIN artisans_profiles a ON o.artisan_id = a.user_id
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+            WHERE o.id = ?
+        `, [orderId]);
+
+        if (!orderResult || orderResult.length === 0) {
+            await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
+            return;
+        }
+
+        const order = orderResult[0];
+        const reviews = await aiService.generateReviews({
+            companyName: order.company_name || 'Entreprise locale',
+            trade: order.sector_name || 'Artisan',
+            quantity: 1,
+            sector: order.sector_name,
+            sectorSlug: order.sector_slug,
+            zones: order.city,
+        });
+
+        if (reviews && reviews.length > 0) {
+            const r = reviews[0];
+            await query(`
+                UPDATE review_proposals
+                SET content = ?, author_name = ?, experience_type = ?,
+                    reserved_by = NULL, reserved_until = NULL, updated_at = NOW()
+                WHERE id = ?
+            `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId]);
+        } else {
+            await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
+        }
+    } catch (err) {
+        console.error(`Erreur régénération proposal ${proposalId}:`, err);
+        // En cas d'erreur IA, libérer quand même pour ne pas bloquer le slot indéfiniment
+        await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
+    }
+}
 
 export const guideService = {
     /**
@@ -163,56 +208,75 @@ export const guideService = {
             throw new Error('DAILY_QUOTA_FULL');
         }
 
-        // 3. fiche Lock Check
-        if (order.locked_by && order.locked_by !== guide_id) {
-            const lockedUntil = new Date(order.locked_until);
-            if (lockedUntil > new Date()) {
-                throw new Error('fiche_LOCKED');
-            }
+        // 3. Plage horaire de disponibilité (Europe/Paris) — toujours appliqué.
+        const nowParis = new Date().toLocaleString('en-GB', {
+            timeZone: 'Europe/Paris',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+        });
+        const fromStr = String(order.available_from || '07:00:00').slice(0, 8);
+        const toStr = String(order.available_to || '23:00:00').slice(0, 8);
+        const inWindow = fromStr <= toStr
+            ? (nowParis >= fromStr && nowParis <= toStr)
+            : (nowParis >= fromStr || nowParis <= toStr);
+        if (!inWindow) {
+            throw new Error(`fiche_OUTSIDE_HOURS:${fromStr.slice(0, 5)}-${toStr.slice(0, 5)}`);
         }
 
-        // 3.bis Plage horaire de disponibilité (Europe/Paris).
-        // Le guide qui a déjà verrouillé peut finir librement (skip du check).
-        if (order.locked_by !== guide_id) {
-            const nowParis = new Date().toLocaleString('en-GB', {
-                timeZone: 'Europe/Paris',
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-            }); // ex: "14:32:05"
-            const fromStr = String(order.available_from || '07:00:00').slice(0, 8);
-            const toStr = String(order.available_to || '23:00:00').slice(0, 8);
-            const inWindow = fromStr <= toStr
-                ? (nowParis >= fromStr && nowParis <= toStr)
-                : (nowParis >= fromStr || nowParis <= toStr); // plage qui passe minuit
-            if (!inWindow) {
-                throw new Error(`fiche_OUTSIDE_HOURS:${fromStr.slice(0, 5)}-${toStr.slice(0, 5)}`);
-            }
+        // 4. Régénération lazy des slots expirés sans soumission.
+        // Si un guide est parti sans soumettre, on régénère le texte de son slot
+        // avant qu'il soit réassigné — évite les doublons Google.
+        const expiredSlots: any[] = await query(`
+            SELECT id FROM review_proposals
+            WHERE order_id = ?
+              AND deleted_at IS NULL
+              AND reserved_by IS NOT NULL
+              AND reserved_by != ?
+              AND reserved_until < NOW()
+              AND id NOT IN (
+                  SELECT proposal_id FROM reviews_submissions
+                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+              )
+        `, [order_id, guide_id, order_id]);
+
+        for (const slot of expiredSlots) {
+            await regenerateSingleProposal(slot.id, order_id);
         }
 
-        // 3. Acquire/Refresh Lock (30 minutes)
-        await query(`
-            UPDATE reviews_orders 
-            SET locked_by = ?, 
-                locked_until = DATE_ADD(NOW(), INTERVAL 30 MINUTE)
-            WHERE id = ?
-        `, [guide_id, order_id]);
-
-        // DEBUG: Ensuring global fetch
-        console.log(`[GUIDE] Fetching global details for ${order_id}`);
-        // Fetch ALL proposals for this order
-
-        const proposals: any[] = await query(`
+        // 5. Trouver/assigner un seul slot disponible pour ce guide (5 min).
+        // Priorité : son propre slot s'il en a déjà un, sinon le plus ancien libre.
+        const availableSlotRows: any[] = await query(`
             SELECT * FROM review_proposals
-            WHERE order_id = ? AND deleted_at IS NULL
-            ORDER BY created_at ASC
-        `, [order_id]);
+            WHERE order_id = ?
+              AND deleted_at IS NULL
+              AND (reserved_by = ? OR reserved_by IS NULL OR reserved_until < NOW())
+              AND id NOT IN (
+                  SELECT proposal_id FROM reviews_submissions
+                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+              )
+            ORDER BY
+              CASE WHEN reserved_by = ? THEN 0 ELSE 1 END,
+              created_at ASC
+            LIMIT 1
+        `, [order_id, guide_id, order_id, guide_id]);
 
-        // Parse les images JSON pour que le guide puisse les voir/télécharger
-        for (const p of proposals) {
-            p.images = parseImages(p.images);
+        if (!availableSlotRows || availableSlotRows.length === 0) {
+            throw new Error('NO_SLOT_AVAILABLE');
         }
+
+        const slot = availableSlotRows[0];
+
+        // Verrouiller le slot pour 5 minutes
+        await query(`
+            UPDATE review_proposals
+            SET reserved_by = ?, reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+            WHERE id = ?
+        `, [guide_id, slot.id]);
+
+        slot.reserved_until = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        slot.images = parseImages(slot.images);
 
         // Fetch ALL submissions for this order (from ALL guides)
         const submissions = await query(`
@@ -238,6 +302,27 @@ export const guideService = {
             ORDER BY sa.created_at ASC
         `, [guide_id, order_id]);
 
+        // Récupérer les proposals des soumissions actives pour la section "publiés" en sidebar.
+        // Le slot assigné au guide EST la seule proposal "en attente" retournée.
+        const activeSubIds: string[] = (submissions as any[])
+            .filter((s: any) => s.status !== 'rejected' && s.proposal_id && s.proposal_id !== slot.id)
+            .map((s: any) => s.proposal_id as string);
+
+        let proposals: any[] = [slot];
+
+        if (activeSubIds.length > 0) {
+            const uniqueIds = [...new Set(activeSubIds)];
+            const placeholders = uniqueIds.map(() => '?').join(',');
+            const publishedProps: any[] = await query(
+                `SELECT * FROM review_proposals WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
+                uniqueIds
+            );
+            for (const p of publishedProps) {
+                p.images = parseImages(p.images);
+            }
+            proposals = [slot, ...publishedProps];
+        }
+
         return {
             ...order,
             proposals,
@@ -248,12 +333,24 @@ export const guideService = {
     },
 
     async releaseficheLock(order_id: string, guide_id: string) {
+        // Ancien verrou fiche (legacy, on garde pour compatibilité)
         await query(`
-            UPDATE reviews_orders 
-            SET locked_by = NULL, 
-                locked_until = NULL
+            UPDATE reviews_orders
+            SET locked_by = NULL, locked_until = NULL
             WHERE id = ? AND locked_by = ?
         `, [order_id, guide_id]);
+
+        // Libère le slot réservé par ce guide s'il n'a pas soumis de preuve
+        await query(`
+            UPDATE review_proposals
+            SET reserved_by = NULL, reserved_until = NULL
+            WHERE order_id = ? AND reserved_by = ?
+              AND id NOT IN (
+                  SELECT proposal_id FROM reviews_submissions
+                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+              )
+        `, [order_id, guide_id, order_id]);
+
         return { success: true };
     },
 
@@ -376,9 +473,8 @@ export const guideService = {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
         `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null, payoutAmount]);
 
-        // 4. Increment reviews_received in order (slot count only).
-        // Le passage en 'completed' se fait désormais uniquement quand un avis est validé
-        // (dans adminService.updateSubmissionStatus), pas dès la soumission.
+        // 4. Increment reviews_received + libérer la réservation du slot.
+        // La soumission existe → le slot est "consommé", plus besoin de réservation.
         await query(`
             UPDATE reviews_orders
             SET reviews_received = reviews_received + 1,
@@ -386,6 +482,12 @@ export const guideService = {
                 locked_until = NULL
             WHERE id = ?
         `, [data.orderId]);
+
+        await query(`
+            UPDATE review_proposals
+            SET reserved_by = NULL, reserved_until = NULL
+            WHERE id = ?
+        `, [data.proposalId]);
 
         // 5. Mettre à jour les logs d'activité anti-détection
         if (data.gmailAccountId && currentSectorSlug) {

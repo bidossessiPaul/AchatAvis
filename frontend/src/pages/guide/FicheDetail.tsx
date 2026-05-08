@@ -63,6 +63,9 @@ export const FicheDetail: React.FC = () => {
     const [quotaData, setQuotaData] = useState<any>(null);
     const [showStarsWarning, setShowStarsWarning] = useState(true);
     const [reservingSlotId, setReservingSlotId] = useState<string | null>(null);
+    const [slotExpiresAt, setSlotExpiresAt] = useState<Date | null>(null);
+    const [countdown, setCountdown] = useState<string>('');
+    const [slotExpired, setSlotExpired] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -72,13 +75,40 @@ export const FicheDetail: React.FC = () => {
             fetchGmailAccounts(user.id);
             fetchComplianceData(user.id);
         }
-        // Cleanup: Release lock on unmount
+        // Libère le slot réservé si le guide quitte la page sans soumettre
         return () => {
             if (orderId) {
                 guideService.releaseLock(orderId).catch(console.error);
             }
         };
     }, [orderId, user, fetchGmailAccounts, fetchComplianceData]);
+
+    // Initialise le countdown à partir du reserved_until du slot assigné
+    useEffect(() => {
+        const pending = fiche?.proposals?.find((p: any) => !fiche.submissions?.some((s: any) => s.proposal_id === p.id && s.status !== 'rejected'));
+        if (pending && (pending as any).reserved_until) {
+            setSlotExpiresAt(new Date((pending as any).reserved_until));
+            setSlotExpired(false);
+        }
+    }, [fiche]);
+
+    // Ticker 1s pour le countdown
+    useEffect(() => {
+        if (!slotExpiresAt) return;
+        const interval = setInterval(() => {
+            const remaining = slotExpiresAt.getTime() - Date.now();
+            if (remaining <= 0) {
+                setCountdown('00:00');
+                setSlotExpired(true);
+                clearInterval(interval);
+            } else {
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                setCountdown(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [slotExpiresAt]);
 
     // Auto-select first Gmail account when loaded
     useEffect(() => {
@@ -114,6 +144,8 @@ export const FicheDetail: React.FC = () => {
                 setError(`Cette fiche n'est pas disponible en ce moment. Plage horaire autorisée : ${range} (heure de Paris). Réessayez dans cette fenêtre.`);
             } else if (message && message.includes('TRUST_SCORE_BLOCKED')) {
                 setError("Votre compte est restreint à cause d'un Score de Confiance insuffisant. Veuillez mettre à jour vos preuves ou contacter le support.");
+            } else if (message === 'NO_SLOT_AVAILABLE') {
+                setError("Tous les slots sont temporairement réservés par d'autres guides. Revenez dans quelques instants.");
             } else {
                 setError("Impossible de charger les détails de la fiche.");
             }
@@ -507,6 +539,29 @@ export const FicheDetail: React.FC = () => {
                                                         ))}
                                                     </div>
                                                 </div>
+
+                                                {/* Countdown réservation 5 min */}
+                                                {countdown && (
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.4rem',
+                                                        padding: '0.4rem 0.75rem',
+                                                        marginBottom: '0.75rem',
+                                                        borderRadius: '0.5rem',
+                                                        background: slotExpired ? '#fee2e2' : (parseInt(countdown.split(':')[0]) === 0 && parseInt(countdown.split(':')[1]) < 60 ? '#fef3c7' : '#f0fdf4'),
+                                                        border: `1px solid ${slotExpired ? '#fecaca' : (parseInt(countdown.split(':')[0]) === 0 && parseInt(countdown.split(':')[1]) < 60 ? '#fde68a' : '#bbf7d0')}`,
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 700,
+                                                        color: slotExpired ? '#991b1b' : (parseInt(countdown.split(':')[0]) === 0 && parseInt(countdown.split(':')[1]) < 60 ? '#92400e' : '#166534'),
+                                                    }}>
+                                                        <Clock size={13} />
+                                                        {slotExpired
+                                                            ? <>Slot expiré — <button onClick={() => orderId && loadficheDetails(orderId)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#991b1b', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>Recharger un nouveau slot</button></>
+                                                            : <>Slot réservé pour vous — expire dans <strong style={{ marginLeft: '0.25rem' }}>{countdown}</strong></>
+                                                        }
+                                                    </div>
+                                                )}
 
                                                 <p className={`review-content ${!isChecklistValidated ? 'blurred' : ''}`}>
                                                     {proposal.content}

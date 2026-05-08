@@ -117,37 +117,77 @@ export const aiService = {
             acc[t] = (acc[t] || 0) + 1; return acc;
         }, {} as Record<string, number>));
 
-        const systemPrompt = `Tu es une IA experte qui simule des avis clients authentiques pour des artisans et professionnels.
+        const systemPrompt = `Tu es une IA qui genere des avis clients authentiques et VARIES pour des artisans et professionnels.
 
-REGLES DE QUALITE :
-1. LANGAGE : Poli et respectueux, meme dans les avis familiers. Pas de grossieretes.
-2. COHERENCE : L'avis doit avoir du sens. Pas de phrases absurdes.
-3. ABREVIATIONS : OK (rdv, bcp, tt, dsl) mais l'avis reste lisible.
-4. DISTINCTION NOM/ENTREPRISE : Ne mets jamais "Monsieur" devant un nom d'entreprise. Utilise les noms de collaborateurs fournis pour les personnes.
+DIVERSITE OBLIGATOIRE — REGLE N°1 :
+Aucun avis ne peut commencer par les memes deux mots qu'un autre avis du batch.
+Varier ABSOLUMENT : le mot d'ouverture, la structure de la phrase, la longueur, le ton, le sujet aborde.
 
-INTERDICTIONS FORMELLES :
+LONGUEURS IMPOSEES (distribuer dans le batch) :
+- ULTRA-COURT (3-8 mots) : "super accueil merci" / "nickel comme d'hab" / "site tres clair"
+- COURT (15-30 mots) : une phrase simple, directe
+- MOYEN (40-70 mots) : 2-3 phrases, un detail concret
+- LONG (80-150 mots) : histoire avec contexte, detail vecu, emotion
+
+SUJETS POSSIBLES (varier dans le batch) :
+- Le resultat du service / de la prestation
+- L'accueil, la sympathie du personnel ou de l'agent d'accueil
+- La qualite du service client (reactivite, suivi, rappel)
+- Le site web : design, clarté, couleurs, facilite de navigation
+- La communication (emails, appels, messages)
+- Le rapport qualite/prix
+- La rapidite / les delais respectes
+- Une recommandation d'un proche qui s'est averee juste
+- L'ambiance des locaux / la vitrine / l'emplacement
+
+STYLES DE REDACTION (alterner) :
+- LE FLEMMARD : tout en minuscules, pas de ponctuation, familier ("pas decu du tout vraiment")
+- LE CONCIS : majuscule debut, point final, rien de plus ("Site tres bien fait, navigation claire.")
+- LE BAVARD : raconte une anecdote avec contexte ("j'avais contacte pour... au final...")
+- LE SCEPTIQUE CONVERTI : "j'avais des doutes... mais franchement")
+- L'ANCIEN : vouvoiement, tournures polies, phrases construites
+- LE DIRECT : commence par le resultat ("Tres bon accueil,")
+- LE SPONTANE : commence par une interjection ou exclamation ("Honnêtement", "Franchement", "Bon alors")
+
+NOM D'ENTREPRISE : tu peux abréger le nom en minuscules si c'est naturel (ex: "achat avis" → "achat avis", "AA", ou juste "eux"). Jamais "Monsieur" devant un nom d'entreprise.
+
+INTERDICTIONS FORMELLES (jamais utiliser) :
 - "Intervention rapide et efficace"
 - "Je recommande vivement cette entreprise"
 - "Travail soigne et professionnel"
-- "Je suis pleinement satisfait"
+- "Je suis pleinement satisfait(e)"
 - "Un grand merci a toute l'equipe"
+- "N'hesitez pas a faire appel"
+- "Tres serieux" en debut d'avis
+- "Excellent(e) prestation"
 
-STYLES DE REDACTION a varier dans le batch :
-- LE SCEPTIQUE CONVERTI : "J'y croyais pas... finalement top"
-- LE ROMANCIER (>100 mots) : histoire precise avec details sensoriels
-- LE RUSH (<10 mots) : "super boulot merci", sans majuscule ni ponctuation
-- L'ANCIEN : poli, vouvoie, phrases construites
-- LE POINTILLEUX : mentionne un detail technique precis
-
-REGLE ABSOLUE SUR LE TYPE D'EXPERIENCE : Chaque avis a un type assigne. Tu dois respecter STRICTEMENT ce type. Un avis "online" ne peut PAS mentionner une intervention physique. Un avis "hearsay" ne peut PAS decrire une utilisation du service. PAS DE MELANGE entre types dans un meme avis.
+REGLE ABSOLUE SUR LE TYPE D'EXPERIENCE : respecter strictement le type assigne. Un avis "online" = uniquement ce vu sur internet (site, photos, fiche Google). Un avis "hearsay" = bouche-a-oreille uniquement, pas d'utilisation du service. Un avis "visited" = passe devant, vu de l'exterieur uniquement. Un avis "tested" = prestation reelle vecue. PAS DE MELANGE.
 
 FORMAT : JSON valide uniquement.`;
 
+        // Longueurs distribuées de façon déterministe sur le batch
+        const LENGTH_POOL = ['ultra-court', 'court', 'moyen', 'long'] as const;
+        const assignedLengths = assignedTypes.map((_, i) => LENGTH_POOL[i % LENGTH_POOL.length]);
+
+        // Sujets possibles à varier (injectés par slot pour forcer la diversité)
+        const SUBJECT_POOL = [
+            "le resultat de la prestation",
+            "l'accueil et la sympathie du personnel",
+            "le service client (reactivite, suivi)",
+            "le site web (design, couleurs, navigation)",
+            "la communication (appels, messages, emails)",
+            "le rapport qualite/prix",
+            "la rapidite et les delais",
+            "une recommandation entendue qui s'est averee juste",
+            "l'ambiance ou l'aspect des locaux / vitrine",
+        ];
+        const assignedSubjects = assignedTypes.map((_, i) => SUBJECT_POOL[i % SUBJECT_POOL.length]);
+
         const typesList = assignedTypes
-            .map((t, i) => `Avis ${i + 1} -> type="${t}" : ${EXPERIENCE_TYPE_DESCRIPTIONS[t]}`)
+            .map((t, i) => `Avis ${i + 1} -> type="${t}" | longueur="${assignedLengths[i]}" | sujet prefere="${assignedSubjects[i]}" | description: ${EXPERIENCE_TYPE_DESCRIPTIONS[t]}`)
             .join('\n');
 
-        const userPrompt = `Genere exactement ${quantity} avis positifs (5 etoiles OBLIGATOIRE pour CHAQUE avis) pour "${companyName}" (${trade}).
+        const userPrompt = `Genere exactement ${quantity} avis positifs (5 etoiles OBLIGATOIRE) pour "${companyName}" (${trade}).
 Contexte : ${context || 'Artisan local'}
 Secteur : ${sector || trade}
 Services : ${services || 'Tous services'}
@@ -155,13 +195,13 @@ Zones : ${zones || 'Locale'}
 Collaborateurs : ${staffNames || 'non precise'}
 Instructions specifiques : ${specificInstructions || 'aucune'}
 
-TYPES D'EXPERIENCE ASSIGNES - respecte-les dans l'ordre exact :
+TYPES, LONGUEURS ET SUJETS ASSIGNES (ordre strict) :
 ${typesList}
 
-REGLE ABSOLUE : Genere les avis dans l'ordre ci-dessus. L'avis N dans le JSON doit correspondre au type assigne a l'Avis N. Le champ "experience_type" dans le JSON doit etre identique au type assigne.
-Pour les avis localises, integre la ville naturellement dans la phrase (pas juste a la fin).
+RAPPEL DIVERSITE : aucun avis ne commence par les memes deux mots qu'un autre. Longueur, ton, sujet, style = tous differents.
+Integre la ville naturellement si pertinent (pas juste en fin de phrase).
 
-Format de sortie (JSON) :
+Format JSON :
 {
     "reviews": [
         {"author_name": "...", "content": "...", "rating": 5, "experience_type": "tested"}
