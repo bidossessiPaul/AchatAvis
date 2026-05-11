@@ -1624,6 +1624,20 @@ export const cancelPayment = async (paymentId: string) => {
             [paymentId]
         );
 
+        // 4. Soft-delete les fiches et proposals liés à ce paiement
+        await connection.query(
+            `UPDATE review_proposals rp
+             JOIN reviews_orders ro ON rp.order_id = ro.id
+             SET rp.deleted_at = NOW()
+             WHERE ro.payment_id = ? AND rp.deleted_at IS NULL`,
+            [paymentId]
+        );
+        await connection.query(
+            `UPDATE reviews_orders SET deleted_at = NOW()
+             WHERE payment_id = ? AND deleted_at IS NULL`,
+            [paymentId]
+        );
+
         await connection.commit();
         return { success: true, message: "Paiement annulé et quotas mis à jour." };
 
@@ -1701,6 +1715,20 @@ export const deletePaymentStatus = async (paymentId: string) => {
 
         // 3. Set status to deleted
         await connection.query(`UPDATE payments SET status = 'deleted' WHERE id = ?`, [paymentId]);
+
+        // 4. Soft-delete les fiches et proposals liés à ce paiement
+        await connection.query(
+            `UPDATE review_proposals rp
+             JOIN reviews_orders ro ON rp.order_id = ro.id
+             SET rp.deleted_at = NOW()
+             WHERE ro.payment_id = ? AND rp.deleted_at IS NULL`,
+            [paymentId]
+        );
+        await connection.query(
+            `UPDATE reviews_orders SET deleted_at = NOW()
+             WHERE payment_id = ? AND deleted_at IS NULL`,
+            [paymentId]
+        );
 
         await connection.commit();
         return { success: true, message: "Paiement marqué comme supprimé." };

@@ -645,6 +645,8 @@ export const artisanService = {
             LEFT JOIN reviews_submissions s ON p.id = s.proposal_id
             LEFT JOIN users u ON s.guide_id = u.id
             WHERE o.artisan_id = ?
+              AND p.deleted_at IS NULL
+              AND o.deleted_at IS NULL
             ORDER BY COALESCE(s.submitted_at, p.created_at) DESC
         `, [artisanId]);
     },
