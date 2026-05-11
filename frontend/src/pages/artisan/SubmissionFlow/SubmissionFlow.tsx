@@ -39,22 +39,41 @@ export const SubmissionFlow: React.FC = () => {
     const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
     const [tempEstablishment, setTempEstablishment] = useState<any>(null);
 
+    // Split mode : quantité choisie pour cette fiche (30 ou 60), null = pas de split
+    const [splitQuantity, setSplitQuantity] = useState<30 | 60 | null>(null);
+    // Modal de choix split : 'ask' = on pose la question, 'choose' = choisir 30 ou 60, null = masqué
+    const [splitModalStep, setSplitModalStep] = useState<'ask' | 'choose' | null>(null);
+    // Info sur le pack split : crédits restants pour la 2ème fiche
+    const [splitPackInfo, setSplitPackInfo] = useState<{ remaining: number; packName: string } | null>(null);
+
     useEffect(() => {
         const init = async () => {
             setIsRefreshingAuth(true);
             try {
-                // Use silentRefresh instead of checkAuth to avoid global isLoading (which unmounts this component via ProtectedRoute)
                 await silentRefresh();
 
-                // 2. Double check specifically for available packs (unused)
                 const packs = await artisanService.getAvailablePacks();
 
-                // If we are editing an existing fiche (orderId exists), we don't block even if 0 unused packs remain
-                // because this fiche ALREADY used a pack.
                 if (orderId) {
                     setHasActivePacks(true);
                 } else {
                     setHasActivePacks(packs.length > 0);
+
+                    // Détecte si un pack 90+ crédits est dispo pour proposer le mode split
+                    if (!orderId) {
+                        const splitPack = packs.find((p: any) => p.review_credits >= 90);
+                        if (splitPack) {
+                            const remaining = splitPack.remaining_credits ?? splitPack.review_credits;
+                            // 2ème fiche du split : remaining < review_credits → quantité fixe, pas de question
+                            if (remaining < splitPack.review_credits && remaining > 0) {
+                                setSplitQuantity(remaining as 30 | 60);
+                                setSplitPackInfo({ remaining, packName: splitPack.pack_name });
+                            } else {
+                                // 1ère fiche : poser la question split
+                                setSplitModalStep('ask');
+                            }
+                        }
+                    }
                 }
             } catch (err) {
                 console.error("Auth/Packs refresh failed", err);
@@ -154,15 +173,15 @@ export const SubmissionFlow: React.FC = () => {
 
                 let updatedOrder;
                 if (!order?.id) {
-                    // Inject temp fiche data if available
                     const ficheData = {
                         ...data,
-                        // If we don't have a real establishment_id yet, we pass null
                         establishment_id: (tempEstablishment?.id || tempEstablishment?.establishment_id || data.establishment_id) || null,
                         company_name: tempEstablishment?.company_name || tempEstablishment?.name || data.name || data.company_name,
                         city: tempEstablishment?.city || data.city,
                         sector_slug: tempEstablishment?.sector_slug || data.sector_slug,
-                        google_business_url: tempEstablishment?.platform_links?.[selectedPlatform || '']?.url || data.platform_links?.[selectedPlatform || '']?.url || data.google_business_url
+                        google_business_url: tempEstablishment?.platform_links?.[selectedPlatform || '']?.url || data.platform_links?.[selectedPlatform || '']?.url || data.google_business_url,
+                        // Mode split : injecte quantity_override si défini
+                        ...(splitQuantity ? { quantity_override: splitQuantity } : {})
                     };
                     updatedOrder = await artisanService.createDraft(ficheData);
                     navigate(`/artisan/submit/${updatedOrder.id}`, { replace: true });
@@ -242,6 +261,88 @@ export const SubmissionFlow: React.FC = () => {
                 <ArrowLeft size={20} />
                 <span>Retour au tableau de bord</span>
             </button>
+
+            {/* Modal split — demande si le client veut activer 2 fiches */}
+            {splitModalStep !== null && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 2000,
+                    background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+                }}>
+                    <div style={{
+                        background: '#fff', borderRadius: '1.25rem', padding: '2rem',
+                        maxWidth: 480, width: '100%',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+                    }}>
+                        {splitModalStep === 'ask' ? (
+                            <>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
+                                    Activer 2 fiches avec votre pack ?
+                                </h3>
+                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                                    Votre pack 499€ vous permet de créer <strong>2 fiches</strong> : une avec <strong>60 avis</strong> et une avec <strong>30 avis</strong>. Vous pouvez soumettre la seconde fiche plus tard.
+                                </p>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                    <button
+                                        onClick={() => setSplitModalStep('choose')}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', borderRadius: '0.625rem',
+                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                            color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        Oui, 2 fiches
+                                    </button>
+                                    <button
+                                        onClick={() => { setSplitModalStep(null); setSplitQuantity(null); }}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', borderRadius: '0.625rem',
+                                            background: '#f8fafc', color: '#0f172a',
+                                            fontWeight: 700, border: '1px solid #e2e8f0', cursor: 'pointer', fontSize: '0.9rem'
+                                        }}
+                                    >
+                                        Non, 1 fiche (90 avis)
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
+                                    Combien d'avis pour cette fiche ?
+                                </h3>
+                                <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                                    Choisissez la quantité pour cette fiche. Vous soumettrez la seconde fiche plus tard.
+                                </p>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    {([60, 30] as const).map(qty => (
+                                        <button
+                                            key={qty}
+                                            onClick={() => { setSplitQuantity(qty); setSplitModalStep(null); }}
+                                            style={{
+                                                flex: 1, padding: '1.25rem', borderRadius: '0.75rem',
+                                                border: '2px solid #e2e8f0', background: '#f8fafc',
+                                                cursor: 'pointer', fontWeight: 700, fontSize: '1.1rem', color: '#0f172a',
+                                                transition: 'all 0.15s'
+                                            }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#059669'; (e.currentTarget as HTMLElement).style.background = '#f0fdf4'; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#e2e8f0'; (e.currentTarget as HTMLElement).style.background = '#f8fafc'; }}
+                                        >
+                                            {qty} avis
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => setSplitModalStep('ask')}
+                                    style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '0.85rem' }}
+                                >
+                                    ← Retour
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <PremiumBlurOverlay
                 isActive={hasActivePacks || !!order?.payment_id}
                 title="Aucun pack disponible"
@@ -252,6 +353,40 @@ export const SubmissionFlow: React.FC = () => {
                         <h1 className="submission-title">Soumettre une fiche</h1>
                         <p className="submission-subtitle">Créez vos avis personnalisés en quelques étapes</p>
                     </div>
+
+                    {/* Bannière 2ème fiche split : affiche les crédits restants */}
+                    {splitPackInfo && (
+                        <div style={{
+                            background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.75rem',
+                            padding: '0.875rem 1.25rem', marginBottom: '1rem',
+                            display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#166534', fontSize: '0.9rem'
+                        }}>
+                            <CheckCircle size={18} color="#059669" />
+                            <span>
+                                <strong>{splitPackInfo.packName}</strong> — 2ème fiche :
+                                vous avez <strong>{splitPackInfo.remaining} avis restants</strong> à utiliser.
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Récap split choisi pour la 1ère fiche */}
+                    {splitQuantity && !splitPackInfo && (
+                        <div style={{
+                            background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.75rem',
+                            padding: '0.875rem 1.25rem', marginBottom: '1rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.9rem'
+                        }}>
+                            <span style={{ color: '#1e40af' }}>
+                                Mode 2 fiches activé — cette fiche : <strong>{splitQuantity} avis</strong>
+                            </span>
+                            <button
+                                onClick={() => { setSplitQuantity(null); setSplitModalStep('ask'); }}
+                                style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                            >
+                                Modifier
+                            </button>
+                        </div>
+                    )}
 
                     <div className="progress-stepper">
                         {STEPS.map((step) => (

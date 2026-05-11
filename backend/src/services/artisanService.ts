@@ -48,6 +48,28 @@ export const artisanService = {
         if (packs.length === 0) throw new Error("Pack non trouvé ou invalide.");
         const pack = packs[0];
 
+        // Mode split : si quantity_override fourni sur un pack >= 90 crédits,
+        // on autorise 2 fiches et on valide que le total ne dépasse pas review_credits.
+        const quantityOverride: number | undefined = (data as any).quantity_override;
+        if (quantityOverride && pack.review_credits >= 90) {
+            if (![30, 60].includes(quantityOverride)) {
+                throw new Error("En mode split, la quantité doit être 30 ou 60.");
+            }
+            const usedResult: any = await query(
+                'SELECT COALESCE(SUM(quantity), 0) as used FROM reviews_orders WHERE payment_id = ? AND deleted_at IS NULL',
+                [payment_id]
+            );
+            const alreadyUsed = Number(usedResult[0]?.used || 0);
+            if (alreadyUsed + quantityOverride > pack.review_credits) {
+                throw new Error(`Quota dépassé : ${alreadyUsed + quantityOverride} avis demandés, max ${pack.review_credits}.`);
+            }
+            // Passe fiches_quota à 2 pour permettre la 2ème fiche du split
+            if (pack.fiches_quota < 2) {
+                await query('UPDATE payments SET fiches_quota = 2 WHERE id = ?', [payment_id]);
+                pack.fiches_quota = 2;
+            }
+        }
+
         if (pack.fiches_used >= pack.fiches_quota) {
             throw new Error("Ce pack est déjà entièrement utilisé. Veuillez en sélectionner un nouveau.");
         }
@@ -79,7 +101,8 @@ export const artisanService = {
         const price = parseFloat(pack.amount);
 
         const orderId = uuidv4();
-        const orderQuantity = pack.review_credits || quantity;
+        // En mode split, on utilise quantity_override ; sinon tous les crédits du pack.
+        const orderQuantity = quantityOverride || pack.review_credits || quantity;
 
         await query(
             `INSERT INTO reviews_orders (
@@ -750,13 +773,25 @@ export const artisanService = {
             (p.fiches_used < p.fiches_quota || p.id === includeId)
         );
 
+        // Calcule les crédits déjà consommés (fiches non supprimées) pour chaque payment
+        const usedCreditsRows: any = await query(
+            `SELECT payment_id, COALESCE(SUM(quantity), 0) as used
+             FROM reviews_orders
+             WHERE payment_id IN (${packs.map(() => '?').join(',') || "''"}) AND deleted_at IS NULL
+             GROUP BY payment_id`,
+            packs.map(p => p.id)
+        );
+        const usedByPayment: Record<string, number> = {};
+        for (const row of usedCreditsRows) {
+            usedByPayment[row.payment_id] = Number(row.used);
+        }
+
         // Fetch subscription definitions to map identities
         const definitions: any = await query('SELECT * FROM subscription_packs');
 
         return packs.map(p => {
             const desc = p.description ? p.description.toLowerCase() : '';
 
-            // 1. Try to find by direct ID match OR French keyword match
             let def = definitions.find((d: any) => {
                 if (desc.includes(d.id.toLowerCase())) return true;
                 if (d.id === 'growth' && desc.includes('croissance')) return true;
@@ -764,18 +799,17 @@ export const artisanService = {
                 return false;
             });
 
-            // If no definition match, use description as name
             let finalName = p.description || 'Pack Booster';
-            if (def) {
-                finalName = `Pack ${def.name}`;
-            }
+            if (def) finalName = `Pack ${def.name}`;
 
-            // The core fix: use review_credits from the payment record
             const finalQuantity = p.review_credits || (def ? def.quantity : 10);
+            const usedCredits = usedByPayment[p.id] || 0;
 
             return {
                 ...p,
                 review_quantity: finalQuantity,
+                used_credits: usedCredits,
+                remaining_credits: finalQuantity - usedCredits,
                 pack_name: finalName,
                 pack_features: def ? def.features : null
             };
