@@ -89,12 +89,13 @@ export const GuidesBalances: React.FC = () => {
             return;
         }
 
-        const remaining = Number(selectedGuide.balance) - amount;
+        const net = Number(selectedGuide.total_pending) + Number(selectedGuide.balance);
+        const remaining = net - amount;
         const isAdvance = remaining < -0.01;
 
         const confirmMessage = isAdvance
-            ? `Enregistrer une avance de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nLe solde du guide passera à ${remaining.toFixed(2)}€ (négatif). Les prochains avis validés rembourseront automatiquement cette avance.`
-            : `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNouveau solde du guide : ${remaining.toFixed(2)}€`;
+            ? `Enregistrer une avance de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nLe guide recevra ${(amount - net).toFixed(2)}€ de plus que son net dû (${net.toFixed(2)}€). Les prochains avis validés rembourseront automatiquement cette avance.`
+            : `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNet restant après paiement : ${remaining.toFixed(2)}€`;
 
         // Ferme le premier modal avant Swal — le backdrop-filter crée un plan de
         // composition GPU qui masque SweetAlert2 même avec un z-index plus élevé.
@@ -114,7 +115,7 @@ export const GuidesBalances: React.FC = () => {
             );
             showSuccess(
                 'Paiement enregistré',
-                `${amount.toFixed(2)}€ payé. Nouveau solde du guide : ${remaining.toFixed(2)}€. Le guide verra ce paiement dans son historique.`
+                `${amount.toFixed(2)}€ payé. Net restant : ${remaining.toFixed(2)}€. Le guide verra ce paiement dans son historique.`
             );
             setShowPayModal(false);
             setSelectedGuide(null);

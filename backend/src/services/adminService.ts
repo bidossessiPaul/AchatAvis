@@ -2431,12 +2431,13 @@ export const getGuidesWithBalance = async () => {
             sub.validated_reviews_count,
             sub.earned_from_reviews,
             COALESCE(bon.total_bonuses, 0) as total_bonuses,
-            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0)) as total_earned,
+            COALESCE(sig.sig_earned, 0) as sig_earned,
+            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0)) as total_earned,
             COALESCE(pay.total_paid, 0) as total_paid,
             COALESCE(pay.total_pending, 0) as total_pending,
             -- Solde peut être négatif : un sur-paiement (avance) sera absorbé
             -- automatiquement par les prochains avis validés du guide.
-            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0))
+            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0))
             - COALESCE(pay.total_paid, 0)
             - COALESCE(pay.total_pending, 0)
             as balance
@@ -2457,6 +2458,13 @@ export const getGuidesWithBalance = async () => {
         ) bon ON u.id = bon.guide_id
         LEFT JOIN (
             SELECT guide_id,
+                   COALESCE(SUM(earnings_cents) / 100, 0) as sig_earned
+            FROM signalement_proofs
+            WHERE status = 'validated' AND deleted_at IS NULL
+            GROUP BY guide_id
+        ) sig ON u.id = sig.guide_id
+        LEFT JOIN (
+            SELECT guide_id,
                    COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
                    COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending
             FROM payout_requests
@@ -2474,36 +2482,48 @@ export const forcePayGuide = async (guideId: string, amount: number, adminNote?:
     const crypto = require('crypto');
     const note = adminNote ? `Paiement admin - ${adminNote}` : 'Paiement admin';
 
-    // Récupérer les demandes en attente triées par date (plus ancienne en premier)
-    const pendingRequests = await query(`
-        SELECT id, amount FROM payout_requests
-        WHERE guide_id = ? AND status IN ('pending', 'in_revision')
-        ORDER BY requested_at ASC
-    `, [guideId]) as any[];
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
 
-    let remaining = amount;
+        // Récupérer les demandes en attente triées par date (plus ancienne en premier)
+        const [pendingRequests] = await connection.execute(`
+            SELECT id, amount FROM payout_requests
+            WHERE guide_id = ? AND status IN ('pending', 'in_revision')
+            ORDER BY requested_at ASC
+        `, [guideId]) as any;
 
-    // Marquer les demandes pending comme payées dans l'ordre, jusqu'à épuisement du montant.
-    // Si le montant versé ne couvre pas entièrement une demande, on s'arrête
-    // (on ne fractionne pas une demande individuelle).
-    for (const req of pendingRequests) {
-        if (remaining < Number(req.amount) - 0.005) break;
-        await query(`
-            UPDATE payout_requests
-            SET status = 'paid', processed_at = NOW(), admin_note = ?
-            WHERE id = ?
-        `, [note, req.id]);
-        remaining -= Number(req.amount);
-    }
+        let remaining = amount;
 
-    // S'il reste un montant positif (correspond au solde disponible non demandé),
-    // créer une nouvelle entrée payée pour ce reliquat.
-    if (remaining > 0.005) {
-        const payoutId = crypto.randomUUID();
-        await query(`
-            INSERT INTO payout_requests (id, guide_id, amount, status, requested_at, processed_at, admin_note)
-            VALUES (?, ?, ?, 'paid', NOW(), NOW(), ?)
-        `, [payoutId, guideId, remaining, note]);
+        // Marquer les demandes pending comme payées dans l'ordre, jusqu'à épuisement du montant.
+        // Si le montant versé ne couvre pas entièrement une demande, on s'arrête
+        // (on ne fractionne pas une demande individuelle).
+        for (const req of pendingRequests) {
+            if (remaining < Number(req.amount) - 0.005) break;
+            await connection.execute(`
+                UPDATE payout_requests
+                SET status = 'paid', processed_at = NOW(), admin_note = ?
+                WHERE id = ?
+            `, [note, req.id]);
+            remaining -= Number(req.amount);
+        }
+
+        // S'il reste un montant positif (correspond au solde disponible non demandé),
+        // créer une nouvelle entrée payée pour ce reliquat.
+        if (remaining > 0.005) {
+            const payoutId = crypto.randomUUID();
+            await connection.execute(`
+                INSERT INTO payout_requests (id, guide_id, amount, status, requested_at, processed_at, admin_note)
+                VALUES (?, ?, ?, 'paid', NOW(), NOW(), ?)
+            `, [payoutId, guideId, remaining, note]);
+        }
+
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
     }
 
     try {
