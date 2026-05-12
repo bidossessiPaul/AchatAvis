@@ -66,7 +66,14 @@ const COLORS = {
     }
 };
 
-type TrendPeriod = 'day' | 'week' | 'month';
+type TrendPeriod = 'day' | 'week' | 'month' | 'custom';
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const daysAgoStr = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+};
 
 export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -74,13 +81,15 @@ export const AdminDashboard: React.FC = () => {
     const [trendPeriod, setTrendPeriod] = useState<TrendPeriod>('day');
     const [trendData, setTrendData] = useState<{ label: string; validated: number; rejected: number }[]>([]);
     const [trendLoading, setTrendLoading] = useState(false);
+    const [customFrom, setCustomFrom] = useState(daysAgoStr(7));
+    const [customTo, setCustomTo] = useState(todayStr());
 
     useEffect(() => {
         loadStats();
     }, []);
 
     useEffect(() => {
-        loadTrend();
+        if (trendPeriod !== 'custom') loadTrend();
     }, [trendPeriod]);
 
     const loadStats = async () => {
@@ -97,10 +106,10 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
-    const loadTrend = async () => {
+    const loadTrend = async (from?: string, to?: string) => {
         setTrendLoading(true);
         try {
-            const data = await adminService.getSubmissionTrend(trendPeriod);
+            const data = await adminService.getSubmissionTrend(trendPeriod, from, to);
             setTrendData(data);
         } catch {
             // silencieux — graphe vide si erreur
@@ -416,8 +425,8 @@ export const AdminDashboard: React.FC = () => {
                             <h3 style={{ color: '#1e293b', fontWeight: 800 }}>Taux de succès des avis</h3>
                             <span className="chart-subtitle">Validés vs Rejetés par période</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            {(['day', 'week', 'month'] as TrendPeriod[]).map(p => (
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {(['day', 'week', 'month', 'custom'] as TrendPeriod[]).map(p => (
                                 <button
                                     key={p}
                                     onClick={() => setTrendPeriod(p)}
@@ -433,9 +442,44 @@ export const AdminDashboard: React.FC = () => {
                                         transition: 'all 0.15s',
                                     }}
                                 >
-                                    {p === 'day' ? 'Jour' : p === 'week' ? 'Semaine' : 'Mois'}
+                                    {p === 'day' ? 'Jour' : p === 'week' ? 'Semaine' : p === 'month' ? 'Mois' : 'Personnalisé'}
                                 </button>
                             ))}
+                            {trendPeriod === 'custom' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.25rem' }}>
+                                    <input
+                                        type="date"
+                                        value={customFrom}
+                                        max={customTo}
+                                        onChange={e => setCustomFrom(e.target.value)}
+                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
+                                    />
+                                    <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>→</span>
+                                    <input
+                                        type="date"
+                                        value={customTo}
+                                        min={customFrom}
+                                        max={todayStr()}
+                                        onChange={e => setCustomTo(e.target.value)}
+                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
+                                    />
+                                    <button
+                                        onClick={() => loadTrend(customFrom, customTo)}
+                                        style={{
+                                            padding: '0.3rem 0.75rem',
+                                            borderRadius: '0.5rem',
+                                            border: 'none',
+                                            background: '#059669',
+                                            color: 'white',
+                                            fontSize: '0.78rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        OK
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

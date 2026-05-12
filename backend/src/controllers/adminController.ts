@@ -178,10 +178,14 @@ export const getGlobalStats = async (_req: Request, res: Response) => {
  */
 export const getSubmissionTrend = async (req: Request, res: Response) => {
     try {
-        const period = (req.query.period as string) === 'week' ? 'week'
-            : (req.query.period as string) === 'month' ? 'month'
+        const periodRaw = req.query.period as string;
+        const period = periodRaw === 'week' ? 'week'
+            : periodRaw === 'month' ? 'month'
+            : periodRaw === 'custom' ? 'custom'
             : 'day';
-        const data = await adminService.getSubmissionTrend(period);
+        const dateFrom = req.query.dateFrom as string | undefined;
+        const dateTo = req.query.dateTo as string | undefined;
+        const data = await adminService.getSubmissionTrend(period, dateFrom, dateTo);
         res.json(data);
     } catch (error) {
         console.error('getSubmissionTrend error:', error);

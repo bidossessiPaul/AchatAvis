@@ -14,8 +14,11 @@ export const adminService = {
         return response.data;
     },
 
-    getSubmissionTrend: async (period: 'day' | 'week' | 'month') => {
-        const response = await api.get(`/admin/stats/submissions-trend?period=${period}`);
+    getSubmissionTrend: async (period: 'day' | 'week' | 'month' | 'custom', dateFrom?: string, dateTo?: string) => {
+        const params = new URLSearchParams({ period });
+        if (dateFrom) params.append('dateFrom', dateFrom);
+        if (dateTo) params.append('dateTo', dateTo);
+        const response = await api.get(`/admin/stats/submissions-trend?${params}`);
         return response.data as { label: string; validated: number; rejected: number }[];
     },
 

@@ -442,41 +442,60 @@ export const getGlobalStats = async () => {
  * Tendance validés/rejetés par période (jour, semaine, mois).
  * Retourne les N dernières périodes avec le nombre de validés et rejetés.
  */
-export const getSubmissionTrend = async (period: 'day' | 'week' | 'month') => {
+export const getSubmissionTrend = async (
+    period: 'day' | 'week' | 'month' | 'custom',
+    dateFrom?: string,
+    dateTo?: string
+) => {
+    // La date de référence de chaque soumission : validated_at si validé, rejected_at si rejeté.
+    // Sans ce COALESCE, les rejetés (validated_at NULL) disparaissent du graphe.
+    const dateExpr = `COALESCE(validated_at, rejected_at)`;
+
     let groupFormat: string;
     let labelFormat: string;
-    let intervals: number;
-    let intervalUnit: string;
+    let whereClause: string;
+    let params: any[];
 
-    if (period === 'day') {
+    if (period === 'custom' && dateFrom && dateTo) {
         groupFormat = '%Y-%m-%d';
         labelFormat = '%d/%m';
-        intervals = 30;
-        intervalUnit = 'DAY';
-    } else if (period === 'week') {
-        groupFormat = '%x-W%v';
-        labelFormat = 'Sem %v';
-        intervals = 12;
-        intervalUnit = 'WEEK';
+        whereClause = `${dateExpr} >= ? AND ${dateExpr} < DATE_ADD(?, INTERVAL 1 DAY)`;
+        params = [groupFormat, labelFormat, dateFrom, dateTo];
     } else {
-        groupFormat = '%Y-%m';
-        labelFormat = '%b %Y';
-        intervals = 12;
-        intervalUnit = 'MONTH';
+        let intervals: number;
+        let intervalUnit: string;
+        if (period === 'week') {
+            groupFormat = '%x-W%v';
+            labelFormat = 'Sem %v';
+            intervals = 12;
+            intervalUnit = 'WEEK';
+        } else if (period === 'month') {
+            groupFormat = '%Y-%m';
+            labelFormat = '%b %Y';
+            intervals = 12;
+            intervalUnit = 'MONTH';
+        } else {
+            groupFormat = '%Y-%m-%d';
+            labelFormat = '%d/%m';
+            intervals = 30;
+            intervalUnit = 'DAY';
+        }
+        whereClause = `${dateExpr} >= DATE_SUB(NOW(), INTERVAL ? ${intervalUnit})`;
+        params = [groupFormat, labelFormat, intervals];
     }
 
     const rows: any = await query(
         `SELECT
-            DATE_FORMAT(validated_at, ?) as period_key,
-            DATE_FORMAT(validated_at, ?) as label,
+            DATE_FORMAT(${dateExpr}, ?) as period_key,
+            DATE_FORMAT(${dateExpr}, ?) as label,
             SUM(CASE WHEN status = 'validated' THEN 1 ELSE 0 END) as validated,
             SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
          FROM reviews_submissions
-         WHERE validated_at >= DATE_SUB(NOW(), INTERVAL ? ${intervalUnit})
+         WHERE ${whereClause}
            AND status IN ('validated', 'rejected')
          GROUP BY period_key, label
          ORDER BY period_key ASC`,
-        [groupFormat, labelFormat, intervals]
+        params
     );
 
     return rows.map((r: any) => ({
