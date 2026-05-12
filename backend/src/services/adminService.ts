@@ -2472,29 +2472,52 @@ export const getGuidesWithBalance = async () => {
  */
 export const forcePayGuide = async (guideId: string, amount: number, adminNote?: string) => {
     const crypto = require('crypto');
-    const payoutId = crypto.randomUUID();
-    const note = adminNote
-        ? `Paiement encouragement - ${adminNote}`
-        : 'Paiement encouragement';
+    const note = adminNote ? `Paiement admin - ${adminNote}` : 'Paiement admin';
 
-    await query(`
-        INSERT INTO payout_requests (id, guide_id, amount, status, requested_at, processed_at, admin_note)
-        VALUES (?, ?, ?, 'paid', NOW(), NOW(), ?)
-    `, [payoutId, guideId, amount, note]);
+    // Récupérer les demandes en attente triées par date (plus ancienne en premier)
+    const pendingRequests = await query(`
+        SELECT id, amount FROM payout_requests
+        WHERE guide_id = ? AND status IN ('pending', 'in_revision')
+        ORDER BY requested_at ASC
+    `, [guideId]) as any[];
 
-    // Send notification to guide
+    let remaining = amount;
+
+    // Marquer les demandes pending comme payées dans l'ordre, jusqu'à épuisement du montant.
+    // Si le montant versé ne couvre pas entièrement une demande, on s'arrête
+    // (on ne fractionne pas une demande individuelle).
+    for (const req of pendingRequests) {
+        if (remaining < Number(req.amount) - 0.005) break;
+        await query(`
+            UPDATE payout_requests
+            SET status = 'paid', processed_at = NOW(), admin_note = ?
+            WHERE id = ?
+        `, [note, req.id]);
+        remaining -= Number(req.amount);
+    }
+
+    // S'il reste un montant positif (correspond au solde disponible non demandé),
+    // créer une nouvelle entrée payée pour ce reliquat.
+    if (remaining > 0.005) {
+        const payoutId = crypto.randomUUID();
+        await query(`
+            INSERT INTO payout_requests (id, guide_id, amount, status, requested_at, processed_at, admin_note)
+            VALUES (?, ?, ?, 'paid', NOW(), NOW(), ?)
+        `, [payoutId, guideId, remaining, note]);
+    }
+
     try {
         notificationService.sendToUser(guideId, {
             type: 'payout_processed',
             title: 'Paiement reçu !',
             message: `Un paiement de ${amount.toFixed(2)}€ a été effectué sur votre compte.`,
-            data: { payoutId, amount }
+            data: { amount }
         });
     } catch (notifError) {
         console.error('Notification error (non-blocking):', notifError);
     }
 
-    return { success: true, payoutId, amount };
+    return { success: true, amount };
 };
 
 /**
