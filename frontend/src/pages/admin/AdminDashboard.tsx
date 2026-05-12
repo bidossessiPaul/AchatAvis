@@ -516,7 +516,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="chart-header" style={{ marginBottom: '1.5rem' }}>
                         <div className="header-titles">
                             <h3 style={{ color: '#1e293b', fontWeight: 800 }}>Taux de succès des avis</h3>
-                            <span className="chart-subtitle">Validés vs Rejetés par période</span>
+                            <span className="chart-subtitle">Par date de soumission — validés vs rejetés</span>
                         </div>
                         <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
                             {(['day', 'week', 'month', 'custom'] as TrendPeriod[]).map(p => (

@@ -447,9 +447,9 @@ export const getSubmissionTrend = async (
     dateFrom?: string,
     dateTo?: string
 ) => {
-    // La date de référence de chaque soumission : validated_at si validé, rejected_at si rejeté.
-    // Sans ce COALESCE, les rejetés (validated_at NULL) disparaissent du graphe.
-    const dateExpr = `COALESCE(validated_at, rejected_at)`;
+    // Groupement par submitted_at : mesure si les soumissions d'un jour donné
+    // passent la validation. Utile pour évaluer l'efficacité anti-suppression.
+    const dateExpr = `submitted_at`;
 
     let groupFormat: string;
     let labelFormat: string;
