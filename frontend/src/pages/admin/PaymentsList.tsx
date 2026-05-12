@@ -53,7 +53,7 @@ export const PaymentsList: React.FC = () => {
             const data = await payoutApi.getAllRequests();
             setRequests(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des demandes');
+            showError('Chargement impossible', 'Erreur lors du chargement des demandes');
         } finally {
             setIsLoading(false);
         }
@@ -75,7 +75,7 @@ export const PaymentsList: React.FC = () => {
             setSelectedPayout(null);
             loadRequests();
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         } finally {
             setIsActionLoading(false);
         }

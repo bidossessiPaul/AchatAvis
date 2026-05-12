@@ -64,7 +64,7 @@ export const GuidesBalances: React.FC = () => {
             const data = await adminService.getGuidesBalances();
             setGuides(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des soldes');
+            showError('Chargement impossible', 'Erreur lors du chargement des soldes');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -96,8 +96,14 @@ export const GuidesBalances: React.FC = () => {
             ? `Enregistrer une avance de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nLe solde du guide passera à ${remaining.toFixed(2)}€ (négatif). Les prochains avis validés rembourseront automatiquement cette avance.`
             : `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?\n\nNouveau solde du guide : ${remaining.toFixed(2)}€`;
 
+        // Ferme le premier modal avant Swal — le backdrop-filter crée un plan de
+        // composition GPU qui masque SweetAlert2 même avec un z-index plus élevé.
+        setShowPayModal(false);
         const result = await showConfirm('Confirmer le paiement', confirmMessage);
-        if (!result.isConfirmed) return;
+        if (!result.isConfirmed) {
+            setShowPayModal(true);
+            return;
+        }
 
         setIsPaying(true);
         try {
@@ -114,17 +120,20 @@ export const GuidesBalances: React.FC = () => {
             setSelectedGuide(null);
             loadGuides(true);
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors du paiement');
+            showError('Paiement impossible', error.response?.data?.error || 'Erreur lors du paiement');
         } finally {
             setIsPaying(false);
         }
     };
 
     const filteredGuides = guides.filter(g =>
-        g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.phone?.includes(searchTerm)
+        (Number(g.total_pending) + Number(g.balance)) > 0 &&
+        (
+            g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            g.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            g.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            g.phone?.includes(searchTerm)
+        )
     );
 
     const sortedGuides = (() => {
@@ -149,7 +158,7 @@ export const GuidesBalances: React.FC = () => {
 
     const exportCSV = () => {
         const dataToExport = sortedGuides;
-        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'En attente retrait (€)', 'Solde disponible (€)'];
+        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'En attente retrait (€)', 'Solde disponible (€)', 'Net à payer (€)'];
 
         const escapeCSV = (value: string) => {
             if (value.includes(',') || value.includes('"') || value.includes('\n')) {
@@ -200,6 +209,7 @@ export const GuidesBalances: React.FC = () => {
             Number(guide.total_paid).toFixed(2),
             Number(guide.total_pending).toFixed(2),
             Number(guide.balance).toFixed(2),
+            (Number(guide.total_pending) + Number(guide.balance)).toFixed(2),
         ].join(','));
 
         const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
@@ -224,7 +234,7 @@ export const GuidesBalances: React.FC = () => {
             const result = await adminService.sendPaymentMethodReminders();
             showSuccess('Emails envoyés', `${result.sent} email${result.sent > 1 ? 's' : ''} envoyé${result.sent > 1 ? 's' : ''} avec succès.`);
         } catch {
-            showError('Erreur', 'Impossible d\'envoyer les rappels.');
+            showError('Envoi impossible', 'Impossible d\'envoyer les rappels.');
         } finally {
             setIsSendingReminders(false);
         }
@@ -400,13 +410,14 @@ export const GuidesBalances: React.FC = () => {
                                                 {balanceSort === 'asc' && <ArrowUp size={14} style={{ color: '#059669' }} />}
                                             </div>
                                         </th>
+                                        <th>Net à payer</th>
                                         <th className="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {paginatedGuides.length === 0 ? (
                                         <tr>
-                                            <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+                                            <td colSpan={10} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
                                                 Aucun guide avec des avis validés trouvé
                                             </td>
                                         </tr>
@@ -560,6 +571,26 @@ export const GuidesBalances: React.FC = () => {
                                                         {Number(guide.balance).toFixed(2)}€
                                                     </span>
                                                 </div>
+                                            </td>
+                                            <td>
+                                                {(() => {
+                                                    const net = Number(guide.total_pending) + Number(guide.balance);
+                                                    const color = net > 0 ? '#7c3aed' : net < 0 ? '#dc2626' : 'var(--gray-400)';
+                                                    const bg = net > 0 ? '#ede9fe' : net < 0 ? '#fef2f2' : 'var(--gray-50)';
+                                                    return (
+                                                        <div style={{
+                                                            padding: '0.4rem 0.8rem',
+                                                            backgroundColor: bg,
+                                                            borderRadius: '10px',
+                                                            width: 'fit-content',
+                                                            fontWeight: 800,
+                                                            fontSize: '1rem',
+                                                            color
+                                                        }}>
+                                                            {net.toFixed(2)}€
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="actions-cell">
                                                 {Number(guide.balance) !== 0 ? (

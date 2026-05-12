@@ -49,7 +49,7 @@ export const LevelVerificationModal: React.FC<LevelVerificationModalProps> = ({ 
             onSuccess();
             onClose();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la soumission');
+            showError('Soumission impossible', error.response?.data?.error || 'Erreur lors de la soumission');
         } finally {
             setIsSubmitting(false);
         }

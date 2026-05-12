@@ -126,7 +126,7 @@ export const GuideDetail: React.FC = () => {
                 password: ''
             });
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des données');
+            showError('Chargement impossible', 'Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
         }
@@ -141,7 +141,7 @@ export const GuideDetail: React.FC = () => {
             setIsEditing(false);
             loadData();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', error.response?.data?.error || 'Erreur lors de la mise à jour');
         } finally {
             setIsSaving(false);
         }
@@ -153,7 +153,7 @@ export const GuideDetail: React.FC = () => {
             const historyData = await adminService.getGmailAccountHistory(accountId);
             setGmailHistory(prev => ({ ...prev, [accountId]: historyData }));
         } catch (error) {
-            showError('Erreur', "Erreur lors du chargement de l'historique Gmail");
+            showError('Chargement impossible', "Erreur lors du chargement de l'historique Gmail");
             setGmailHistory(prev => ({ ...prev, [accountId]: [] }));
         }
     };
@@ -166,7 +166,7 @@ export const GuideDetail: React.FC = () => {
             const role = user.role || 'guide';
             window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
         } catch {
-            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+            showError('Connexion impossible', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 
@@ -182,7 +182,7 @@ export const GuideDetail: React.FC = () => {
             showSuccess('Guide débloqué', 'Le compte a été réactivé et tous les comptes Gmail débloqués.');
             loadData();
         } catch (error) {
-            showError('Erreur', 'Erreur lors du déblocage du guide');
+            showError('Déblocage impossible', 'Erreur lors du déblocage du guide');
         }
     };
 
@@ -217,7 +217,7 @@ export const GuideDetail: React.FC = () => {
             showSuccess('Succès', 'Statut mis à jour');
             loadData();
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         }
     };
 

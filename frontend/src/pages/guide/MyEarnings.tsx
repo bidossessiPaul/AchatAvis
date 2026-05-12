@@ -62,7 +62,7 @@ export const MyEarnings: React.FC = () => {
                 setMethodDetails(paymentData.details || {});
             }
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement de vos gains');
+            showError('Chargement impossible', 'Erreur lors du chargement de vos gains');
         } finally {
             setIsLoading(false);
         }
@@ -87,7 +87,7 @@ export const MyEarnings: React.FC = () => {
             showSuccess('Succès', 'Demande de retrait envoyée !');
             loadData(); // Refresh to see balance zero and new pending request
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la demande');
+            showError('Demande impossible', error.response?.data?.error || 'Erreur lors de la demande');
         } finally {
             setIsActionLoading(false);
         }
@@ -95,7 +95,7 @@ export const MyEarnings: React.FC = () => {
 
     const handleSavePaymentMethod = async () => {
         if (!selectedMethod) {
-            showError('Erreur', 'Veuillez choisir un moyen de paiement');
+            showError('Moyen de paiement requis', 'Veuillez choisir un moyen de paiement');
             return;
         }
 
@@ -106,7 +106,7 @@ export const MyEarnings: React.FC = () => {
             setShowPaymentModal(false);
             loadData();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', error.response?.data?.error || 'Erreur lors de la mise à jour');
         } finally {
             setIsActionLoading(false);
         }

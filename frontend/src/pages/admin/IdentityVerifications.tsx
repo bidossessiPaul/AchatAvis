@@ -53,7 +53,7 @@ export const IdentityVerifications: React.FC = () => {
             const data = await adminApi.getIdentityVerifications(filter);
             setItems(data);
         } catch (e) {
-            showError('Erreur', 'Chargement impossible');
+            showError('Chargement impossible', 'Erreur lors du chargement des vérifications');
         } finally {
             setIsLoading(false);
         }
@@ -72,7 +72,7 @@ export const IdentityVerifications: React.FC = () => {
             showSuccess('Validé', 'Le compte a été réactivé');
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Validation impossible');
+            showError('Validation impossible', e?.response?.data?.error || 'Validation impossible');
         }
     };
 
@@ -102,7 +102,7 @@ export const IdentityVerifications: React.FC = () => {
             showSuccess('Relancé', 'Pièce rejetée avec raison — le guide peut soumettre un nouveau document');
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Action impossible');
+            showError('Action impossible', e?.response?.data?.error || 'Action impossible');
         }
     };
 
@@ -130,7 +130,7 @@ export const IdentityVerifications: React.FC = () => {
             showSuccess('Relancé', 'Le guide peut maintenant soumettre un nouveau document');
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Action impossible');
+            showError('Relance impossible', e?.response?.data?.error || 'Action impossible');
         }
     };
 
@@ -154,7 +154,7 @@ export const IdentityVerifications: React.FC = () => {
             showSuccess('Bloqué', 'Le compte a été bloqué définitivement');
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Action impossible');
+            showError('Blocage impossible', e?.response?.data?.error || 'Action impossible');
         }
     };
 

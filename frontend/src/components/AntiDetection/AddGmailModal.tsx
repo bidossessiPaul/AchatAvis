@@ -46,7 +46,7 @@ export const AddGmailModal: React.FC<AddGmailModalProps> = ({ isOpen, onClose, o
             onSuccess();
             onClose();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de l’ajout du compte');
+            showError('Ajout impossible', error.response?.data?.error || "Erreur lors de l'ajout du compte");
         } finally {
             setIsSubmitting(false);
         }

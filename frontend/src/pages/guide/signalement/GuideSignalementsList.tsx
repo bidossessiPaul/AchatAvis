@@ -37,7 +37,7 @@ export const GuideSignalementsList = () => {
             setActiveSlots(slots);
             setStats(st);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -49,7 +49,7 @@ export const GuideSignalementsList = () => {
             showSuccess('Slot réservé — vous avez 30 minutes pour soumettre votre preuve');
             navigate(`/guide/signalement/slot/${slot.id}`);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Réservation impossible', e.response?.data?.error || e.message);
         }
     };
 

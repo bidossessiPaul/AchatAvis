@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SignalementValidations } from './signalement/SignalementValidations';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
@@ -71,7 +72,7 @@ export const AdminLevelVerifications: React.FC = () => {
             const data = await adminApi.getLevelVerifications();
             setVerifications(data as Verification[]);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des vérifications');
+            showError('Chargement impossible', 'Erreur lors du chargement des vérifications');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -85,7 +86,7 @@ export const AdminLevelVerifications: React.FC = () => {
             fetchData(true);
         } catch (error: any) {
             const msg = error.response?.data?.error || 'Erreur lors de l\'approbation';
-            showError('Erreur', msg);
+            showError('Approbation impossible', msg);
         } finally {
             setIsActionLoading(false);
         }
@@ -106,7 +107,7 @@ export const AdminLevelVerifications: React.FC = () => {
             fetchData(true);
         } catch (error: any) {
             const msg = error.response?.data?.error || 'Erreur lors du rejet';
-            showError('Erreur', msg);
+            showError('Rejet impossible', msg);
         } finally {
             setIsActionLoading(false);
         }
@@ -551,6 +552,11 @@ export const AdminLevelVerifications: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Section signalement validations */}
+            <div style={{ marginTop: '3rem', borderTop: '2px solid #e2e8f0', paddingTop: '2rem' }}>
+                <SignalementValidations />
+            </div>
 
             {/* Reject Modal */}
             {showRejectModal && (

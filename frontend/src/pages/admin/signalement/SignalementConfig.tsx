@@ -20,7 +20,7 @@ export const SignalementConfig: React.FC = () => {
             const c = await adminConfigApi.get();
             setCfg(c);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -38,7 +38,7 @@ export const SignalementConfig: React.FC = () => {
             });
             showSuccess('Configuration mise à jour');
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Enregistrement impossible', e.response?.data?.error || e.message);
         } finally {
             setSaving(false);
         }

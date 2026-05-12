@@ -68,7 +68,7 @@ export const CommuniquesAdmin: React.FC = () => {
             const data = await adminApi.listCommuniques();
             setItems(data);
         } catch {
-            showError('Erreur', 'Chargement impossible');
+            showError('Chargement impossible', 'Erreur lors du chargement des communiqués');
         } finally {
             setIsLoading(false);
         }
@@ -120,7 +120,7 @@ export const CommuniquesAdmin: React.FC = () => {
             setShowForm(false);
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Sauvegarde impossible');
+            showError('Enregistrement impossible', e?.response?.data?.error || 'Sauvegarde impossible');
         }
     };
 
@@ -135,7 +135,7 @@ export const CommuniquesAdmin: React.FC = () => {
             showSuccess('Supprimé', 'Communiqué retiré');
             load();
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Suppression impossible');
+            showError('Suppression impossible', e?.response?.data?.error || 'Suppression impossible');
         }
     };
 
@@ -144,7 +144,7 @@ export const CommuniquesAdmin: React.FC = () => {
             await adminApi.updateCommunique(item.id, { is_published: !item.is_published });
             load();
         } catch {
-            showError('Erreur', 'Action impossible');
+            showError('Action impossible', 'Impossible de modifier la publication');
         }
     };
 
@@ -158,7 +158,7 @@ export const CommuniquesAdmin: React.FC = () => {
             await adminApi.notifyCommunique(item.id);
             showSuccess('Envoi lancé', 'Les emails partent en arrière-plan');
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Action impossible');
+            showError('Envoi impossible', e?.response?.data?.error || 'Action impossible');
         }
     };
 

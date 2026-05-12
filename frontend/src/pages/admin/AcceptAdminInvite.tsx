@@ -17,7 +17,7 @@ export const AcceptAdminInvite = () => {
 
     useEffect(() => {
         if (!token) {
-            showError('Erreur', "Lien d'invitation invalide");
+            showError('Lien invalide', "Lien d'invitation invalide");
             navigate('/login');
         }
     }, [token, navigate]);
@@ -26,12 +26,12 @@ export const AcceptAdminInvite = () => {
         e.preventDefault();
 
         if (password !== confirmPassword) {
-            showError('Erreur', "Les mots de passe ne correspondent pas");
+            showError('Mots de passe différents', "Les mots de passe ne correspondent pas");
             return;
         }
 
         if (password.length < 8) {
-            showError('Erreur', "Le mot de passe doit faire au moins 8 caractères");
+            showError('Mot de passe trop court', "Le mot de passe doit faire au moins 8 caractères");
             return;
         }
 
@@ -47,7 +47,7 @@ export const AcceptAdminInvite = () => {
                 navigate('/login');
             }, 2000);
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || "Erreur lors de la création du compte");
+            showError('Création impossible', error.response?.data?.error || "Erreur lors de la création du compte");
         } finally {
             setLoading(false);
         }

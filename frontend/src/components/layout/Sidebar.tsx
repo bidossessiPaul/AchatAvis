@@ -102,9 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Soldes Guides', path: '/admin/guides-balances', icon: <Wallet size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Comptes Gmail', path: '/admin/gmail-accounts', icon: <Mail size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_trust_scores'] },
-                    { label: 'Packs Signalement', path: '/admin/signalement/packs', icon: <Flag size={20} />, permissions: ['can_manage_signalement_packs'] },
                     { label: 'Avis à signaler', path: '/admin/signalement/avis', icon: <Flag size={20} />, permissions: ['can_manage_signalements'] },
-                    { label: 'Validation Signalements', path: '/admin/signalement/validations', icon: <FileCheck size={20} />, permissions: ['can_validate_signalements'] },
                     { label: 'Config Signalement', path: '/admin/signalement/config', icon: <Settings size={20} />, permissions: ['can_manage_signalement_packs'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible

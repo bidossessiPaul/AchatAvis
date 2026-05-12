@@ -1,0 +1,32 @@
+- generic [ref=e6]:
+  - generic [ref=e7]:
+    - img "AchatAvis" [ref=e8]
+    - paragraph [ref=e9]: Boostez votre e-réputation Google
+  - generic [ref=e10]:
+    - button "Artisan" [ref=e11] [cursor=pointer]
+    - button "Guide Local" [ref=e12] [cursor=pointer]
+  - generic [ref=e13]:
+    - generic [ref=e14]:
+      - heading "Bon retour !" [level=2] [ref=e15]
+      - paragraph [ref=e16]: Connectez-vous pour gérer vos avis.
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Email*
+        - generic [ref=e20]:
+          - generic:
+            - img
+          - textbox "Email*" [ref=e21]:
+            - /placeholder: votre@email.com
+      - generic [ref=e22]:
+        - generic [ref=e23]: Mot de passe*
+        - generic [ref=e24]:
+          - generic:
+            - img
+          - textbox "Mot de passe*" [ref=e25]:
+            - /placeholder: ••••••••
+      - button "Se connecter" [ref=e26] [cursor=pointer]
+      - generic [ref=e27]:
+        - link "Mot de passe oublié ?" [ref=e28] [cursor=pointer]:
+          - /url: /forgot-password
+        - link "Créer un compte artisan" [ref=e29] [cursor=pointer]:
+          - /url: /register/artisan

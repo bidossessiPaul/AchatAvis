@@ -78,7 +78,7 @@ export const ReviewValidation: React.FC = () => {
             const subs = await adminApi.getAllSubmissions();
             setSubmissions(subs);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des données');
+            showError('Chargement impossible', 'Erreur lors du chargement des données');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -101,7 +101,7 @@ export const ReviewValidation: React.FC = () => {
             setSelectedSubmissionId(null);
             fetchData(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         } finally {
             setIsActionLoading(false);
         }

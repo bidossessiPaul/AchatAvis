@@ -45,6 +45,7 @@ router.get('/logs', (req, res, next): void => {
 
 // Dashboard Stats
 router.get('/stats', STATS, adminController.getGlobalStats);
+router.get('/stats/submissions-trend', STATS, adminController.getSubmissionTrend);
 router.get('/suspension-reasons', STATS, adminController.getSuspensionReasons);
 router.get('/reasons', STATS, adminController.getSuspensionReasons);
 

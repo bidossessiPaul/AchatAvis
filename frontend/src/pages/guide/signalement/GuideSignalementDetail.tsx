@@ -32,7 +32,7 @@ export const GuideSignalementDetail = () => {
             setSlot(found);
             if (found) startTimer(found.reservation_expires_at);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -54,14 +54,14 @@ export const GuideSignalementDetail = () => {
 
     const submit = async () => {
         if (!slotId) return;
-        if (!file) return showError('Erreur', 'Sélectionnez une capture d\'écran');
+        if (!file) return showError('Capture requise', 'Sélectionnez une capture d\'écran');
         setSubmitting(true);
         try {
             await guideSignalementApi.submitProof(slotId, file, reportLink || undefined, note || undefined);
             showSuccess('Preuve soumise — en attente de validation par l\'admin');
             navigate('/guide/signalement');
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Soumission impossible', e.response?.data?.error || e.message);
         } finally {
             setSubmitting(false);
         }

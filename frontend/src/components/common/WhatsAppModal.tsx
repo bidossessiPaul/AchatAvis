@@ -56,7 +56,7 @@ export const WhatsAppModal: React.FC = () => {
             setIsOpen(false);
             showSuccess('Profil mis à jour', 'Votre numéro WhatsApp a été enregistré avec succès.');
         } catch (err: any) {
-            showError('Erreur', 'Impossible de mettre à jour votre profil.');
+            showError('Mise à jour impossible', 'Impossible de mettre à jour votre profil.');
         } finally {
             setIsSaving(false);
         }

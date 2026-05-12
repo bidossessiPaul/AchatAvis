@@ -81,7 +81,7 @@ export const RejectedReviews: React.FC = () => {
             setRows(result.rows || []);
             setTotal(result.total || 0);
         } catch (error) {
-            showError('Erreur', 'Impossible de charger les avis rejetés');
+            showError('Chargement impossible', 'Impossible de charger les avis rejetés');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -111,7 +111,7 @@ export const RejectedReviews: React.FC = () => {
             setTotal(prev => Math.max(0, prev - 1));
             showSuccess('Avis régénéré et slot libéré', 'Un autre guide pourra reprendre cette fiche.');
         } catch (error) {
-            showError('Erreur', 'Impossible de régénérer et relancer cet avis');
+            showError('Régénération impossible', 'Impossible de régénérer et relancer cet avis');
         } finally {
             setActionLoadingId(null);
         }
@@ -204,7 +204,7 @@ export const RejectedReviews: React.FC = () => {
             clearSelection();
             fetchData(true);
         } catch (error: any) {
-            showError('Erreur', 'Une erreur est survenue pendant l\'opération.');
+            showError('Opération échouée', 'Une erreur est survenue pendant l\'opération.');
         } finally {
             setIsRegenerating(false);
             setRegenProgress({ current: 0, total: 0 });
@@ -225,7 +225,7 @@ export const RejectedReviews: React.FC = () => {
             setEditingRow(null);
             fetchData(true);
         } catch (error) {
-            showError('Erreur', 'Impossible de modifier le contenu de l\'avis');
+            showError('Modification impossible', 'Impossible de modifier le contenu de l\'avis');
         } finally {
             setIsSavingContent(false);
         }
@@ -240,7 +240,7 @@ export const RejectedReviews: React.FC = () => {
             setEditingRow({ ...editingRow, review_text: result.content });
             showSuccess('Avis régénéré', 'Le texte a été régénéré par l\'IA. Enregistrez pour confirmer ou modifiez-le.');
         } catch (error) {
-            showError('Erreur', 'Impossible de régénérer l\'avis');
+            showError('Régénération impossible', 'Impossible de régénérer l\'avis');
         } finally {
             setIsRegenerating(false);
         }
@@ -309,7 +309,7 @@ export const RejectedReviews: React.FC = () => {
             showSuccess('Fiche remise en ligne');
             fetchData(true);
         } catch (error) {
-            showError('Erreur', 'Impossible de remettre la fiche en ligne');
+            showError('Remise en ligne impossible', 'Impossible de remettre la fiche en ligne');
         }
     };
 

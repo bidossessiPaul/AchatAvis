@@ -197,7 +197,7 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
         } catch (err: any) {
             console.error('Update failed:', err);
             Swal.close();
-            showError('Erreur', err.response?.data?.message || 'Impossible de mettre à jour la soumission.');
+            showError('Mise à jour impossible', err.response?.data?.message || 'Impossible de mettre à jour la soumission.');
         } finally {
             setIsSaving(false);
         }

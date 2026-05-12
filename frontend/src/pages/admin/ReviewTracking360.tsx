@@ -71,7 +71,7 @@ export const ReviewTracking360: React.FC = () => {
             const data = await adminApi.getReview360();
             setItems(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des données');
+            showError('Chargement impossible', 'Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
         }

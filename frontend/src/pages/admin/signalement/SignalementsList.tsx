@@ -40,7 +40,7 @@ export const SignalementsList: React.FC = () => {
             setPagination(list.pagination);
             setStats(s);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -64,7 +64,7 @@ export const SignalementsList: React.FC = () => {
             showSuccess('Payout mis à jour');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Mise à jour impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -76,7 +76,7 @@ export const SignalementsList: React.FC = () => {
             showSuccess('Avis fermé en succès');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Action impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -98,7 +98,7 @@ export const SignalementsList: React.FC = () => {
             showSuccess('Avis annulé');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Annulation impossible', e.response?.data?.error || e.message);
         }
     };
 

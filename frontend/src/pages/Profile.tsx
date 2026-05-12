@@ -116,7 +116,7 @@ export const Profile: React.FC = () => {
                 showSuccess('Profil mis à jour avec succès');
             }
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour du profil');
+            showError('Mise à jour impossible', error.response?.data?.error || 'Erreur lors de la mise à jour du profil');
         } finally {
             setIsLoading(false);
         }
@@ -144,7 +144,7 @@ export const Profile: React.FC = () => {
             showSuccess('Succès', 'Avatar mis à jour !');
         } catch (error: any) {
             console.error('Frontend upload error:', error);
-            showError('Erreur', error.response?.data?.message || error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image');
+            showError('Upload impossible', error.response?.data?.message || error.response?.data?.error || 'Erreur lors de l\'envoi de l\'image');
         } finally {
             setIsAvatarLoading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -154,7 +154,7 @@ export const Profile: React.FC = () => {
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            return showError('Erreur', 'Les mots de passe ne correspondent pas');
+            return showError('Mots de passe différents', 'Les mots de passe ne correspondent pas');
         }
 
         setIsPasswordLoading(true);
@@ -170,7 +170,7 @@ export const Profile: React.FC = () => {
                 confirmPassword: '',
             });
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors du changement de mot de passe');
+            showError('Changement impossible', error.response?.data?.error || 'Erreur lors du changement de mot de passe');
         } finally {
             setIsPasswordLoading(false);
         }
@@ -184,7 +184,7 @@ export const Profile: React.FC = () => {
             setQrCodeUrl(qrCode);
             setShow2FASetup(true);
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la génération du 2FA');
+            showError('2FA impossible', error.response?.data?.error || 'Erreur lors de la génération du 2FA');
         } finally {
             setIs2FALoading(false);
         }
@@ -202,7 +202,7 @@ export const Profile: React.FC = () => {
             setTwoFactorToken('');
             showSuccess('Succès', 'Double authentification activée !');
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Code invalide');
+            showError('Code incorrect', error.response?.data?.error || 'Code invalide');
         } finally {
             setIs2FALoading(false);
         }
@@ -222,7 +222,7 @@ export const Profile: React.FC = () => {
             if (user) setUser({ ...user, two_factor_enabled: false });
             showSuccess('Succès', 'Double authentification désactivée');
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la désactivation');
+            showError('Désactivation impossible', error.response?.data?.error || 'Erreur lors de la désactivation');
         } finally {
             setIs2FALoading(false);
         }

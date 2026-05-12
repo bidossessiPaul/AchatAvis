@@ -70,9 +70,7 @@ const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs'
 const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
 
 // Signalement (admin)
-const SignalementPacks = lazyNamed(() => import('./pages/admin/signalement/SignalementPacks'), 'SignalementPacks');
 const SignalementsList = lazyNamed(() => import('./pages/admin/signalement/SignalementsList'), 'SignalementsList');
-const SignalementValidations = lazyNamed(() => import('./pages/admin/signalement/SignalementValidations'), 'SignalementValidations');
 const SignalementConfig = lazyNamed(() => import('./pages/admin/signalement/SignalementConfig'), 'SignalementConfig');
 
 // Signalement (artisan + guide)
@@ -629,31 +627,11 @@ function App() {
 
                         {/* Signalement — admin */}
                         <Route
-                            path="/admin/signalement/packs"
-                            element={
-                                <ProtectedRoute allowedRoles={['admin']}>
-                                    <PermissionGuard requiredPermission="can_manage_signalement_packs">
-                                        <SignalementPacks />
-                                    </PermissionGuard>
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
                             path="/admin/signalement/avis"
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <PermissionGuard requiredPermission="can_manage_signalements">
                                         <SignalementsList />
-                                    </PermissionGuard>
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/signalement/validations"
-                            element={
-                                <ProtectedRoute allowedRoles={['admin']}>
-                                    <PermissionGuard requiredPermission="can_validate_signalements">
-                                        <SignalementValidations />
                                     </PermissionGuard>
                                 </ProtectedRoute>
                             }

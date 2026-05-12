@@ -80,7 +80,7 @@ export const ArtisansList: React.FC = () => {
             const data = await adminService.getArtisans();
             setArtisans(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des artisans');
+            showError('Chargement impossible', 'Erreur lors du chargement des artisans');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -98,7 +98,7 @@ export const ArtisansList: React.FC = () => {
     const handleCreateArtisan = async () => {
         // Validate required fields
         if (!formData.email || !formData.fullName || !formData.companyName || !formData.trade || !formData.phone || !formData.city) {
-            showError('Erreur', 'Tous les champs obligatoires (*) doivent être remplis');
+            showError('Formulaire incomplet', 'Tous les champs obligatoires (*) doivent être remplis');
             return;
         }
 
@@ -126,7 +126,7 @@ export const ArtisansList: React.FC = () => {
             });
             loadArtisans(true);
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la création');
+            showError('Création impossible', error.response?.data?.error || 'Erreur lors de la création');
         } finally {
             setIsCreating(false);
         }
@@ -142,7 +142,7 @@ export const ArtisansList: React.FC = () => {
             showSuccess('Succès', 'Compte supprimé');
             loadArtisans(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 
@@ -152,7 +152,7 @@ export const ArtisansList: React.FC = () => {
             const role = user.role || 'artisan';
             window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
         } catch {
-            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+            showError('Connexion impossible', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 

@@ -63,7 +63,7 @@ export const SectorManagement: React.FC = () => {
             setSectors(data);
         } catch (error) {
             console.error('Error fetching sectors:', error);
-            showError('Erreur', 'Erreur lors du chargement des secteurs');
+            showError('Chargement impossible', 'Erreur lors du chargement des secteurs');
         } finally {
             if (!silent) setLoading(false);
         }
@@ -114,7 +114,7 @@ export const SectorManagement: React.FC = () => {
             fetchSectors(true);
         } catch (error: any) {
             console.error('Error saving sector:', error);
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de l\'enregistrement');
+            showError('Enregistrement impossible', error.response?.data?.error || 'Erreur lors de l\'enregistrement');
         } finally {
             setIsSubmitting(false);
         }
@@ -130,7 +130,7 @@ export const SectorManagement: React.FC = () => {
             fetchSectors(true);
         } catch (error) {
             console.error('Error deleting sector:', error);
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 

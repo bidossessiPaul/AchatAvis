@@ -42,14 +42,14 @@ export const ArtisanSignalementDashboard = () => {
             setAvis(a);
             setFiches(f.filter((o: ReviewOrder) => !['cancelled', 'draft'].includes(o.status)));
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
     };
 
     const submit = async () => {
-        if (!form.google_review_url.trim()) return showError('Erreur', 'URL Google requise');
+        if (!form.google_review_url.trim()) return showError('Champ requis', 'URL Google requise');
         setSubmitting(true);
         try {
             await artisanSignalementApi.submit({
@@ -63,7 +63,7 @@ export const ArtisanSignalementDashboard = () => {
             setForm({ google_review_url: '', raison: 'HORS_SUJET', raison_details: '', order_id: '' });
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Soumission impossible', e.response?.data?.error || e.message);
         } finally {
             setSubmitting(false);
         }
@@ -77,7 +77,7 @@ export const ArtisanSignalementDashboard = () => {
             showSuccess('Avis relancé');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Relance impossible', e.response?.data?.error || e.message);
         }
     };
 

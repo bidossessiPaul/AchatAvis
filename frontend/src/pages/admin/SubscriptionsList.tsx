@@ -93,7 +93,7 @@ export const SubscriptionsList: React.FC = () => {
             setStats(statsData);
         } catch (error) {
             console.error('Error loading subscriptions:', error);
-            showError('Erreur', 'Erreur lors du chargement des abonnements');
+            showError('Chargement impossible', 'Erreur lors du chargement des abonnements');
         } finally {
             setIsLoading(false);
         }

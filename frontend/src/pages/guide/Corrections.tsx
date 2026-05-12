@@ -96,7 +96,7 @@ export const Corrections: React.FC = () => {
         } catch (err: any) {
             console.error('Resubmit failed:', err);
             Swal.close();
-            showError('Erreur', err.response?.data?.message || 'Impossible de relancer la soumission.');
+            showError('Relance impossible', err.response?.data?.message || 'Impossible de relancer la soumission.');
         } finally {
             setIsSaving(false);
         }

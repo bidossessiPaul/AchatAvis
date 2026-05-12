@@ -19,7 +19,7 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
 
     const generateCities = async () => {
         if (!establishmentCity) {
-            showError('Erreur', "Veuillez d'abord renseigner la ville de l'établissement.");
+            showError('Champ requis', "Veuillez d'abord renseigner la ville de l'établissement.");
             return;
         }
 
@@ -39,7 +39,7 @@ export const LocalisationClients: React.FC<LocalisationProps> = ({
                 showSuccess('Succès', `${response.data.cities.length} zones trouvées via IA`);
             }
         } catch (error) {
-            showError('Erreur', "Erreur lors de la génération des villes.");
+            showError('Génération impossible', "Erreur lors de la génération des villes.");
             console.error(error);
         } finally {
             setLoading(false);

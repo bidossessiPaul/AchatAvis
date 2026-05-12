@@ -80,7 +80,7 @@ export const GuidesList: React.FC = () => {
             const data = await adminService.getGuides();
             setGuides(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des guides');
+            showError('Chargement impossible', 'Erreur lors du chargement des guides');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -88,7 +88,7 @@ export const GuidesList: React.FC = () => {
 
     const handleCreateGuide = async () => {
         if (!formData.email || !formData.fullName || !formData.googleEmail || !formData.phone || !formData.city) {
-            showError('Erreur', 'Tous les champs obligatoires (*) doivent être remplis');
+            showError('Formulaire incomplet', 'Tous les champs obligatoires (*) doivent être remplis');
             return;
         }
 
@@ -107,7 +107,7 @@ export const GuidesList: React.FC = () => {
             });
             loadGuides(true);
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la création');
+            showError('Création impossible', error.response?.data?.error || 'Erreur lors de la création');
         } finally {
             setIsCreating(false);
         }
@@ -121,7 +121,7 @@ export const GuidesList: React.FC = () => {
             showSuccess('Succès', 'Statut mis à jour');
             loadGuides(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         }
     };
 
@@ -133,7 +133,7 @@ export const GuidesList: React.FC = () => {
             showSuccess('Succès', 'Compte supprimé');
             loadGuides(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 
@@ -143,7 +143,7 @@ export const GuidesList: React.FC = () => {
             const role = user.role || 'guide';
             window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
         } catch {
-            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+            showError('Connexion impossible', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 

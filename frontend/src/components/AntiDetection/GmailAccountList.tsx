@@ -119,7 +119,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
             showSuccess('Compte supprimé');
             fetchGmailAccounts(user.id);
         } catch (error: any) {
-            showError('Erreur', 'Impossible de supprimer le compte');
+            showError('Suppression impossible', 'Impossible de supprimer le compte');
         }
     };
 
@@ -156,7 +156,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                 showSuccess('Succès', 'Profil mis à jour et compte débloqué !');
                 fetchGmailAccounts(user.id);
             } catch (error: any) {
-                showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+                showError('Mise à jour impossible', error.response?.data?.error || 'Erreur lors de la mise à jour');
             }
         }
     };
@@ -201,7 +201,7 @@ export const GmailAccountList: React.FC<GmailAccountListProps> = ({ onAddClick, 
                 );
                 return;
             }
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Vérification impossible', e.response?.data?.error || e.message);
         } finally {
             setVerifyLoading(false);
         }

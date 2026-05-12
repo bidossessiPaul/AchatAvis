@@ -44,7 +44,7 @@ export const TrustScoreManagement: React.FC = () => {
             });
             setAccounts(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des scores');
+            showError('Chargement impossible', 'Erreur lors du chargement des scores');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -177,7 +177,7 @@ export const TrustScoreManagement: React.FC = () => {
                 showSuccess('Mis à jour', 'Les modifications ont été enregistrées.');
                 loadAccounts(true);
             } catch (error) {
-                showError('Erreur', 'Erreur lors de la mise à jour');
+                showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
             }
         }
     };

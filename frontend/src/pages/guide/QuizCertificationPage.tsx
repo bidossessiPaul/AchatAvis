@@ -166,7 +166,7 @@ export const QuizCertificationPage: React.FC = () => {
                 setIsFinished(true);
             }
         } catch (error) {
-            showError('Erreur', "Erreur lors de la soufiche du protocole");
+            showError('Soumission impossible', "Erreur lors de la soumission du protocole");
         } finally {
             setIsSubmitting(false);
         }

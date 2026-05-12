@@ -439,6 +439,54 @@ export const getGlobalStats = async () => {
 };
 
 /**
+ * Tendance validés/rejetés par période (jour, semaine, mois).
+ * Retourne les N dernières périodes avec le nombre de validés et rejetés.
+ */
+export const getSubmissionTrend = async (period: 'day' | 'week' | 'month') => {
+    let groupFormat: string;
+    let labelFormat: string;
+    let intervals: number;
+    let intervalUnit: string;
+
+    if (period === 'day') {
+        groupFormat = '%Y-%m-%d';
+        labelFormat = '%d/%m';
+        intervals = 30;
+        intervalUnit = 'DAY';
+    } else if (period === 'week') {
+        groupFormat = '%x-W%v';
+        labelFormat = 'Sem %v';
+        intervals = 12;
+        intervalUnit = 'WEEK';
+    } else {
+        groupFormat = '%Y-%m';
+        labelFormat = '%b %Y';
+        intervals = 12;
+        intervalUnit = 'MONTH';
+    }
+
+    const rows: any = await query(
+        `SELECT
+            DATE_FORMAT(validated_at, ?) as period_key,
+            DATE_FORMAT(validated_at, ?) as label,
+            SUM(CASE WHEN status = 'validated' THEN 1 ELSE 0 END) as validated,
+            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
+         FROM reviews_submissions
+         WHERE validated_at >= DATE_SUB(NOW(), INTERVAL ? ${intervalUnit})
+           AND status IN ('validated', 'rejected')
+         GROUP BY period_key, label
+         ORDER BY period_key ASC`,
+        [groupFormat, labelFormat, intervals]
+    );
+
+    return rows.map((r: any) => ({
+        label: r.label,
+        validated: Number(r.validated),
+        rejected: Number(r.rejected),
+    }));
+};
+
+/**
  * Get all payout requests for admin management
  */
 export const getAllPayoutRequests = async () => {

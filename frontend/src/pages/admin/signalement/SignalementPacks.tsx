@@ -24,7 +24,7 @@ export const SignalementPacks: React.FC = () => {
             const data = await adminPacksApi.list(true);
             setPacks(data);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -48,7 +48,7 @@ export const SignalementPacks: React.FC = () => {
     };
 
     const save = async () => {
-        if (!form.name.trim()) return showError('Erreur', 'Nom requis');
+        if (!form.name.trim()) return showError('Champ requis', 'Nom requis');
         try {
             if (editing) {
                 await adminPacksApi.update(editing.id, form);
@@ -60,7 +60,7 @@ export const SignalementPacks: React.FC = () => {
             setModalOpen(false);
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Enregistrement impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -69,7 +69,7 @@ export const SignalementPacks: React.FC = () => {
             await adminPacksApi.update(p.id, { is_active: !p.is_active });
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Mise à jour impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -81,7 +81,7 @@ export const SignalementPacks: React.FC = () => {
             showSuccess('Pack supprimé');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Suppression impossible', e.response?.data?.error || e.message);
         }
     };
 

@@ -183,7 +183,7 @@ export const FicheDetail: React.FC = () => {
         } catch (error: any) {
             const serverMsg = error.response?.data?.error;
             console.error("❌ Compatibility check failed:", serverMsg || error.message);
-            showError('Erreur', serverMsg || "Erreur lors de la vérification de compatibilité");
+            showError('Vérification impossible', serverMsg || "Erreur lors de la vérification de compatibilité");
         }
     };
 
@@ -232,12 +232,12 @@ export const FicheDetail: React.FC = () => {
         }
 
         if (!url || !url.startsWith('http')) {
-            showError('Erreur', "Veuillez entrer un lien valide (commençant par http ou https).");
+            showError('Lien invalide', "Veuillez entrer un lien valide (commençant par http ou https).");
             return;
         }
 
         if (!email || !email.includes('@')) {
-            showError('Erreur', "Veuillez entrer un email Google valide.");
+            showError('Email invalide', "Veuillez entrer un email Google valide.");
             return;
         }
 
@@ -287,7 +287,7 @@ export const FicheDetail: React.FC = () => {
         } catch (err: any) {
             console.error("Failed to submit proof", err);
             const errorMessage = err.response?.data?.message || err.message || "Erreur lors de la soufiche de la preuve.";
-            showError('Erreur', errorMessage);
+            showError('Soumission impossible', errorMessage);
         } finally {
             setSubmittingId(null);
         }
@@ -345,7 +345,7 @@ export const FicheDetail: React.FC = () => {
             showSuccess('Slot réservé', 'Rendez-vous sur votre page Signalement pour uploader la preuve.');
             if (orderId) loadficheDetails(orderId);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Réservation impossible', e.response?.data?.error || e.message);
         } finally {
             setReservingSlotId(null);
         }

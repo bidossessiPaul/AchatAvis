@@ -54,7 +54,7 @@ export const AdminFiches: React.FC = () => {
             const data = await adminApi.getfiches();
             setfiches(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des fiches');
+            showError('Chargement impossible', 'Erreur lors du chargement des fiches');
         } finally {
             setIsLoading(false);
         }
@@ -73,7 +73,7 @@ export const AdminFiches: React.FC = () => {
             showSuccess('Succès', 'fiche supprimée');
             loadfiches();
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 

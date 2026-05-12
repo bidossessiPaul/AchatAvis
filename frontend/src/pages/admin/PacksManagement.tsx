@@ -64,7 +64,7 @@ export const PacksManagement: React.FC = () => {
             setPacks(formattedData);
         } catch (error) {
             console.error('Error loading packs:', error);
-            showError('Erreur', 'Erreur lors du chargement des packs');
+            showError('Chargement impossible', 'Erreur lors du chargement des packs');
         } finally {
             setIsLoading(false);
         }
@@ -127,7 +127,7 @@ export const PacksManagement: React.FC = () => {
             loadPacks();
         } catch (error) {
             console.error('Error saving pack:', error);
-            showError('Erreur', "Erreur lors de l'enregistrement");
+            showError('Enregistrement impossible', "Erreur lors de l'enregistrement");
         }
     };
 
@@ -140,7 +140,7 @@ export const PacksManagement: React.FC = () => {
             loadPacks();
         } catch (error) {
             console.error('Error deleting pack:', error);
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 

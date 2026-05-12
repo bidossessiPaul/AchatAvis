@@ -69,7 +69,7 @@ export const AdminGmailVerifications: React.FC<any> = () => {
                     'La route admin des vérifications Gmail n’est pas disponible sur le backend déployé.'
                 );
             } else {
-                showError('Erreur', 'Chargement impossible');
+                showError('Chargement impossible', 'Erreur lors du chargement des vérifications Gmail');
             }
         } finally {
             setLoading(false);
@@ -94,7 +94,7 @@ export const AdminGmailVerifications: React.FC<any> = () => {
             showSuccess('Compte Gmail validé');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Validation impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -115,7 +115,7 @@ export const AdminGmailVerifications: React.FC<any> = () => {
             showSuccess('Vérification rejetée');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Rejet impossible', e.response?.data?.error || e.message);
         }
     };
 

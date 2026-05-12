@@ -95,7 +95,7 @@ export const ReceivedReviews: React.FC = () => {
             setfiches(uniquefiches);
         } catch (error) {
             console.error('Error loading data:', error);
-            showError('Erreur', 'Erreur lors du chargement des données');
+            showError('Chargement impossible', 'Erreur lors du chargement des données');
         } finally {
             setIsLoading(false);
         }
@@ -118,7 +118,7 @@ export const ReceivedReviews: React.FC = () => {
             );
             setGeneratedResponse(response);
         } catch (error) {
-            showError('Erreur', 'Impossible de générer la réponse IA');
+            showError('Génération impossible', 'Impossible de générer la réponse IA');
         } finally {
             setIsGenerating(false);
         }
@@ -160,7 +160,7 @@ export const ReceivedReviews: React.FC = () => {
             showSuccess('Succès', 'Avis mis à jour avec succès');
             setEditingProposal(null);
         } catch (error) {
-            showError('Erreur', 'Impossible de mettre à jour l\'avis');
+            showError('Mise à jour impossible', 'Impossible de mettre à jour l\'avis');
         } finally {
             setIsSaving(false);
         }

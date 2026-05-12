@@ -14,6 +14,11 @@ export const adminService = {
         return response.data;
     },
 
+    getSubmissionTrend: async (period: 'day' | 'week' | 'month') => {
+        const response = await api.get(`/admin/stats/submissions-trend?period=${period}`);
+        return response.data as { label: string; validated: number; rejected: number }[];
+    },
+
     /**
      * Get all local guides
      */

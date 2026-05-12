@@ -69,7 +69,7 @@ export const AdminFicheDetail: React.FC = () => {
             setFiche(data);
             setFormData(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement de la fiche');
+            showError('Chargement impossible', 'Erreur lors du chargement de la fiche');
             navigate('/admin/fiches');
         } finally {
             setIsLoading(false);
@@ -93,7 +93,7 @@ export const AdminFicheDetail: React.FC = () => {
             showSuccess('Succès', 'fiche mise à jour');
             loadfiche(orderId);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         } finally {
             setIsSaving(false);
         }
@@ -108,7 +108,7 @@ export const AdminFicheDetail: React.FC = () => {
             showSuccess('Succès', 'fiche supprimée');
             navigate('/admin/fiches');
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la suppression');
+            showError('Suppression impossible', 'Erreur lors de la suppression');
         }
     };
 
@@ -119,7 +119,7 @@ export const AdminFicheDetail: React.FC = () => {
             showSuccess('Succès', 'fiche publiée !');
             loadfiche(orderId);
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la publication');
+            showError('Publication impossible', 'Erreur lors de la publication');
         }
     };
 
@@ -144,7 +144,7 @@ export const AdminFicheDetail: React.FC = () => {
         if (emailsInput) {
             const emails = emailsInput.split(',').map((e: string) => e.trim()).filter((e: string) => e !== '');
             if (emails.length === 0) {
-                showError('Erreur', 'Au moins un email valide est requis');
+                showError('Email requis', 'Au moins un email valide est requis');
                 return;
             }
 
@@ -153,7 +153,7 @@ export const AdminFicheDetail: React.FC = () => {
                 await adminApi.sendReviewValidationEmail(orderId, emails);
                 showSuccess('Succès', 'Email de validation envoyé !');
             } catch (error) {
-                showError('Erreur', "Échec de l'envoi de l'email");
+                showError('Envoi impossible', "Échec de l'envoi de l'email");
             } finally {
                 setIsSaving(false);
             }
@@ -172,7 +172,7 @@ export const AdminFicheDetail: React.FC = () => {
             setEditingProposalId(null);
             loadfiche(orderId!);
         } catch (error) {
-            showError('Erreur', "Erreur lors de la mise à jour de l'avis");
+            showError('Mise à jour impossible', "Erreur lors de la mise à jour de l'avis");
         }
     };
 

@@ -52,7 +52,7 @@ export const AdminTeam = () => {
             const data = await teamApi.getTeamMembers();
             setMembers(data);
         } catch {
-            showError('Erreur', "Impossible de charger l'équipe");
+            showError('Chargement impossible', "Impossible de charger l'équipe");
         } finally {
             setLoading(false);
         }
@@ -87,7 +87,7 @@ export const AdminTeam = () => {
             if (drawerMember?.id === id) setDrawerMember(null);
             fetchMembers();
         } catch {
-            showError('Erreur', "Erreur lors de la suppression");
+            showError('Suppression impossible', "Erreur lors de la suppression");
         }
     };
 
@@ -104,7 +104,7 @@ export const AdminTeam = () => {
                 m.id === member.id ? { ...m, permissions: newPerms } : m
             ));
         } catch {
-            showError('Erreur', "Mise à jour impossible");
+            showError('Mise à jour impossible', 'Impossible de mettre à jour les permissions');
         } finally {
             setToggling(null);
         }
@@ -302,7 +302,7 @@ export const AdminTeam = () => {
                                             await teamApi.updatePermissions(drawerMember.id, allPerms);
                                             setMembers(prev => prev.map(m => m.id === drawerMember.id ? { ...m, permissions: allPerms } : m));
                                             setDrawerMember((prev: any) => ({ ...prev, permissions: allPerms }));
-                                        } catch { showError('Erreur', 'Mise à jour impossible'); }
+                                        } catch { showError('Mise à jour impossible', 'Impossible de mettre à jour les permissions'); }
                                         finally { setToggling(null); }
                                     }}
                                     style={{ fontSize: '0.72rem', fontWeight: 700, padding: '4px 10px', background: '#059669', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
@@ -317,7 +317,7 @@ export const AdminTeam = () => {
                                             await teamApi.updatePermissions(drawerMember.id, noPerms);
                                             setMembers(prev => prev.map(m => m.id === drawerMember.id ? { ...m, permissions: noPerms } : m));
                                             setDrawerMember((prev: any) => ({ ...prev, permissions: noPerms }));
-                                        } catch { showError('Erreur', 'Mise à jour impossible'); }
+                                        } catch { showError('Mise à jour impossible', 'Impossible de mettre à jour les permissions'); }
                                         finally { setToggling(null); }
                                     }}
                                     style={{ fontSize: '0.72rem', fontWeight: 700, padding: '4px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}

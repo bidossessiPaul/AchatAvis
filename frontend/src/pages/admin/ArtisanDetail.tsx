@@ -154,7 +154,7 @@ export const ArtisanDetail: React.FC = () => {
                 password: ''
             });
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des détails');
+            showError('Chargement impossible', 'Erreur lors du chargement des détails');
         } finally {
             setIsLoading(false);
         }
@@ -181,7 +181,7 @@ export const ArtisanDetail: React.FC = () => {
             setIsEditing(false);
             loadDetail();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', error.response?.data?.error || 'Erreur lors de la mise à jour');
         } finally {
             setIsSaving(false);
         }
@@ -214,7 +214,7 @@ export const ArtisanDetail: React.FC = () => {
             loadDetail();
             setSelectedPackId('');
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || "Erreur lors de l'activation du pack");
+            showError('Activation impossible', error.response?.data?.error || "Erreur lors de l'activation du pack");
         } finally {
             setIsActivating(false);
         }
@@ -233,7 +233,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Paiement annulé');
             loadDetail();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de l\'annulation');
+            showError('Annulation impossible', error.response?.data?.error || 'Erreur lors de l\'annulation');
         }
     };
 
@@ -250,7 +250,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Paiement réactivé');
             loadDetail();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la réactivation');
+            showError('Réactivation impossible', error.response?.data?.error || 'Erreur lors de la réactivation');
         }
     };
 
@@ -267,7 +267,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Pack bloqué');
             loadDetail();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors du blocage');
+            showError('Blocage impossible', error.response?.data?.error || 'Erreur lors du blocage');
         }
     };
 
@@ -284,7 +284,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Paiement supprimé');
             loadDetail();
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la suppression');
+            showError('Suppression impossible', error.response?.data?.error || 'Erreur lors de la suppression');
         }
     };
 
@@ -296,7 +296,7 @@ export const ArtisanDetail: React.FC = () => {
             const role = user.role || 'artisan';
             window.open(`/auth/impersonate?token=${accessToken}&role=${role}`, '_blank');
         } catch {
-            showError('Erreur', "Impossible de se connecter en tant que cet utilisateur");
+            showError('Connexion impossible', "Impossible de se connecter en tant que cet utilisateur");
         }
     };
 
@@ -314,7 +314,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Artisan supprimé avec succès');
             navigate('/admin/artisans');
         } catch (error: any) {
-            showError('Erreur', error.response?.data?.error || 'Erreur lors de la suppression');
+            showError('Suppression impossible', error.response?.data?.error || 'Erreur lors de la suppression');
         }
     };
 
@@ -349,7 +349,7 @@ export const ArtisanDetail: React.FC = () => {
             showSuccess('Succès', 'Statut mis à jour');
             loadDetail();
         } catch (error) {
-            showError('Erreur', 'Erreur lors de la mise à jour');
+            showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
         }
     };
 

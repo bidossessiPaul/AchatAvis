@@ -59,7 +59,7 @@ export const IdentityVerification: React.FC = () => {
             setFile(null);
             setPreview(null);
         } catch (e: any) {
-            showError('Erreur', e?.response?.data?.error || 'Envoi impossible');
+            showError('Envoi impossible', e?.response?.data?.error || 'Envoi impossible');
         } finally {
             setIsUploading(false);
         }

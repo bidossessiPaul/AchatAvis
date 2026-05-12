@@ -24,7 +24,7 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
             setAttributions(data.attributions);
             setRemaining(data.avis_remaining);
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Chargement impossible', e.response?.data?.error || e.message);
         } finally {
             setLoading(false);
         }
@@ -66,7 +66,7 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
             showSuccess('Pack attribué');
             load();
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Attribution impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -86,7 +86,7 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
             setAttributions(prev => prev.map(x => x.id === a.id ? updated : x));
             showSuccess('Note mise à jour');
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Mise à jour impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -108,7 +108,7 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
             setAttributions(prev => prev.map(x => x.id === a.id ? updated : x));
             showSuccess(a.is_paused ? 'Attribution reprise' : 'Attribution mise en pause');
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Action impossible', e.response?.data?.error || e.message);
         }
     };
 
@@ -129,7 +129,7 @@ export const ArtisanSignalementSection = ({ artisanId }: Props) => {
             showSuccess('Attribution supprimée');
             load(); // recalcule remaining
         } catch (e: any) {
-            showError('Erreur', e.response?.data?.error || e.message);
+            showError('Suppression impossible', e.response?.data?.error || e.message);
         }
     };
 

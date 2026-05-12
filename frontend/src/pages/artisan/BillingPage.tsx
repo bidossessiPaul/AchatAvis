@@ -40,7 +40,7 @@ export const BillingPage: React.FC = () => {
                 setAvailablePacks(availablePacksData);
             } catch (error) {
                 console.error("Failed to load billing data", error);
-                showError('Erreur', "Erreur lors du chargement des données.");
+                showError('Chargement impossible', "Erreur lors du chargement des données.");
             } finally {
                 setIsFetching(false);
             }
@@ -63,7 +63,7 @@ export const BillingPage: React.FC = () => {
             window.location.href = url;
         } catch (error) {
             console.error("Payment error", error);
-            showError('Erreur', "Erreur lors de l'initialisation du paiement.");
+            showError('Paiement impossible', "Erreur lors de l'initialisation du paiement.");
             setIsProcessing(null);
         }
     };

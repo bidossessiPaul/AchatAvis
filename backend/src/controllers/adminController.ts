@@ -174,6 +174,22 @@ export const getGlobalStats = async (_req: Request, res: Response) => {
 };
 
 /**
+ * GET /api/admin/stats/submissions-trend?period=day|week|month
+ */
+export const getSubmissionTrend = async (req: Request, res: Response) => {
+    try {
+        const period = (req.query.period as string) === 'week' ? 'week'
+            : (req.query.period as string) === 'month' ? 'month'
+            : 'day';
+        const data = await adminService.getSubmissionTrend(period);
+        res.json(data);
+    } catch (error) {
+        console.error('getSubmissionTrend error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+/**
  * Get all review submissions
  * GET /api/admin/submissions
  */

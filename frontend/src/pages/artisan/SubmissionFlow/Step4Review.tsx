@@ -55,7 +55,7 @@ export const Step4Review: React.FC<Step4Props> = ({ order, proposals, onBack }) 
                 showSuccess('Email envoyé !', 'Les avis ont été envoyés avec succès pour validation.');
             } catch (error: any) {
                 console.error("Email sending failed", error);
-                showError('Erreur', "Échec de l'envoi de l'email.");
+                showError('Envoi impossible', "Échec de l'envoi de l'email.");
             } finally {
                 setIsSendingEmail(false);
             }

@@ -72,7 +72,7 @@ export const GmailAccountsList: React.FC = () => {
             const data = await adminService.getGmailAccounts();
             setAccounts(data);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du chargement des comptes Gmail');
+            showError('Chargement impossible', 'Erreur lors du chargement des comptes Gmail');
         } finally {
             if (!silent) setIsLoading(false);
         }
@@ -95,7 +95,7 @@ export const GmailAccountsList: React.FC = () => {
             setSelectedAccount(null);
             loadAccounts(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du blocage');
+            showError('Blocage impossible', 'Erreur lors du blocage');
         } finally {
             setIsBlocking(false);
         }
@@ -113,7 +113,7 @@ export const GmailAccountsList: React.FC = () => {
             showSuccess('Succès', 'Compte Gmail débloqué');
             loadAccounts(true);
         } catch (error) {
-            showError('Erreur', 'Erreur lors du déblocage');
+            showError('Déblocage impossible', 'Erreur lors du déblocage');
         }
     };
 
