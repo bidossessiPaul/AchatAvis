@@ -206,7 +206,7 @@ export const GuidesBalances: React.FC = () => {
             escapeCSV(getPayoutDetailsText(guide)),
             String(guide.validated_reviews_count),
             Number(guide.total_earned).toFixed(2),
-            Number(guide.total_paid).toFixed(2),
+            (Number(guide.total_paid) + Number(guide.total_pending)).toFixed(2),
             Number(guide.total_pending).toFixed(2),
             Number(guide.balance).toFixed(2),
             (Number(guide.total_pending) + Number(guide.balance)).toFixed(2),
@@ -243,7 +243,7 @@ export const GuidesBalances: React.FC = () => {
     // Stats
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
     const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
-    const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid), 0);
+    const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid) + Number(g.total_pending), 0);
     const totalPending = guides.reduce((sum, g) => sum + Number(g.total_pending), 0);
     const guidesWithPending = guides.filter(g => Number(g.total_pending) > 0).length;
     const guidesWithBalance = guides.filter(g => Number(g.balance) > 0).length;
@@ -502,7 +502,7 @@ export const GuidesBalances: React.FC = () => {
                                                 {Number(guide.total_earned).toFixed(2)}€
                                             </td>
                                             <td style={{ color: 'var(--gray-500)' }}>
-                                                {Number(guide.total_paid).toFixed(2)}€
+                                                {(Number(guide.total_paid) + Number(guide.total_pending)).toFixed(2)}€
                                             </td>
                                             <td>
                                                 {guide.preferred_payout_method ? (
