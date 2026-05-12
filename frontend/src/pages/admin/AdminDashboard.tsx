@@ -89,8 +89,12 @@ export const AdminDashboard: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (trendPeriod !== 'custom') loadTrend();
-    }, [trendPeriod]);
+        if (trendPeriod === 'custom') {
+            if (customFrom && customTo) loadTrend('custom', customFrom, customTo);
+        } else {
+            loadTrend(trendPeriod);
+        }
+    }, [trendPeriod, customFrom, customTo]);
 
     const loadStats = async () => {
         setIsLoading(true);
@@ -106,10 +110,10 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
-    const loadTrend = async (from?: string, to?: string) => {
+    const loadTrend = async (period: TrendPeriod, from?: string, to?: string) => {
         setTrendLoading(true);
         try {
-            const data = await adminService.getSubmissionTrend(trendPeriod, from, to);
+            const data = await adminService.getSubmissionTrend(period, from, to);
             setTrendData(data);
         } catch {
             // silencieux — graphe vide si erreur
@@ -418,143 +422,6 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Graphe tendance validés / rejetés */}
-                <div className="chart-card" style={{ marginBottom: '2rem' }}>
-                    <div className="chart-header" style={{ marginBottom: '1.5rem' }}>
-                        <div className="header-titles">
-                            <h3 style={{ color: '#1e293b', fontWeight: 800 }}>Taux de succès des avis</h3>
-                            <span className="chart-subtitle">Validés vs Rejetés par période</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                            {(['day', 'week', 'month', 'custom'] as TrendPeriod[]).map(p => (
-                                <button
-                                    key={p}
-                                    onClick={() => setTrendPeriod(p)}
-                                    style={{
-                                        padding: '0.35rem 0.85rem',
-                                        borderRadius: '0.5rem',
-                                        border: '1px solid ' + (trendPeriod === p ? '#059669' : '#e2e8f0'),
-                                        background: trendPeriod === p ? '#059669' : 'white',
-                                        color: trendPeriod === p ? 'white' : '#64748b',
-                                        fontSize: '0.78rem',
-                                        fontWeight: 700,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s',
-                                    }}
-                                >
-                                    {p === 'day' ? 'Jour' : p === 'week' ? 'Semaine' : p === 'month' ? 'Mois' : 'Personnalisé'}
-                                </button>
-                            ))}
-                            {trendPeriod === 'custom' && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.25rem' }}>
-                                    <input
-                                        type="date"
-                                        value={customFrom}
-                                        max={customTo}
-                                        onChange={e => setCustomFrom(e.target.value)}
-                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
-                                    />
-                                    <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>→</span>
-                                    <input
-                                        type="date"
-                                        value={customTo}
-                                        min={customFrom}
-                                        max={todayStr()}
-                                        onChange={e => setCustomTo(e.target.value)}
-                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
-                                    />
-                                    <button
-                                        onClick={() => loadTrend(customFrom, customTo)}
-                                        style={{
-                                            padding: '0.3rem 0.75rem',
-                                            borderRadius: '0.5rem',
-                                            border: 'none',
-                                            background: '#059669',
-                                            color: 'white',
-                                            fontSize: '0.78rem',
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        OK
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {trendLoading ? (
-                        <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
-                            Chargement...
-                        </div>
-                    ) : trendData.length === 0 ? (
-                        <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
-                            Aucune donnée sur cette période.
-                        </div>
-                    ) : (
-                        <>
-                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-                                    <div style={{ width: 12, height: 3, borderRadius: 2, background: '#059669' }} /> Validés
-                                </span>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
-                                    <div style={{ width: 12, height: 3, borderRadius: 2, background: '#ef4444' }} /> Rejetés
-                                </span>
-                            </div>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="gradValid" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#059669" stopOpacity={0.15} />
-                                            <stop offset="95%" stopColor="#059669" stopOpacity={0} />
-                                        </linearGradient>
-                                        <linearGradient id="gradReject" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15} />
-                                            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis
-                                        dataKey="label"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 500 }}
-                                        dy={8}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 11, fill: '#94a3b8' }}
-                                        allowDecimals={false}
-                                        width={35}
-                                    />
-                                    <Tooltip
-                                        contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', fontSize: '0.85rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.08)' }}
-                                        formatter={(value: number, name: string) => [value, name === 'validated' ? 'Validés' : 'Rejetés']}
-                                        labelStyle={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="validated"
-                                        stroke="#059669"
-                                        strokeWidth={2.5}
-                                        dot={false}
-                                        activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
-                                    />
-                                    <Line
-                                        type="monotone"
-                                        dataKey="rejected"
-                                        stroke="#ef4444"
-                                        strokeWidth={2.5}
-                                        dot={false}
-                                        activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
-                                    />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </>
-                    )}
-                </div>
-
                 {/* Secondary Charts Tier */}
                 <div className="secondary-charts-grid">
                     {/* Submission Status */}
@@ -642,6 +509,119 @@ export const AdminDashboard: React.FC = () => {
                             </ResponsiveContainer>
                         </div>
                     </div>
+                </div>
+
+                {/* Graphe tendance validés / rejetés */}
+                <div className="chart-card" style={{ marginTop: '2rem' }}>
+                    <div className="chart-header" style={{ marginBottom: '1.5rem' }}>
+                        <div className="header-titles">
+                            <h3 style={{ color: '#1e293b', fontWeight: 800 }}>Taux de succès des avis</h3>
+                            <span className="chart-subtitle">Validés vs Rejetés par période</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {(['day', 'week', 'month', 'custom'] as TrendPeriod[]).map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => setTrendPeriod(p)}
+                                    style={{
+                                        padding: '0.35rem 0.85rem',
+                                        borderRadius: '0.5rem',
+                                        border: '1px solid ' + (trendPeriod === p ? '#059669' : '#e2e8f0'),
+                                        background: trendPeriod === p ? '#059669' : 'white',
+                                        color: trendPeriod === p ? 'white' : '#64748b',
+                                        fontSize: '0.78rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    {p === 'day' ? '30 derniers jours' : p === 'week' ? '12 semaines' : p === 'month' ? '12 mois' : 'Personnalisé'}
+                                </button>
+                            ))}
+                            {trendPeriod === 'custom' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: '0.25rem' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Du</span>
+                                    <input
+                                        type="date"
+                                        value={customFrom}
+                                        max={customTo}
+                                        onChange={e => setCustomFrom(e.target.value)}
+                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
+                                    />
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>au</span>
+                                    <input
+                                        type="date"
+                                        value={customTo}
+                                        min={customFrom}
+                                        max={todayStr()}
+                                        onChange={e => setCustomTo(e.target.value)}
+                                        style={{ padding: '0.3rem 0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.78rem', fontWeight: 600, color: '#475569' }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {trendLoading ? (
+                        <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
+                            Chargement...
+                        </div>
+                    ) : trendData.length === 0 ? (
+                        <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.875rem' }}>
+                            Aucune donnée sur cette période.
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                    <div style={{ width: 12, height: 3, borderRadius: 2, background: '#059669' }} /> Validés
+                                </span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                    <div style={{ width: 12, height: 3, borderRadius: 2, background: '#ef4444' }} /> Rejetés
+                                </span>
+                            </div>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis
+                                        dataKey="label"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 500 }}
+                                        dy={8}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#94a3b8' }}
+                                        allowDecimals={false}
+                                        width={35}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', fontSize: '0.85rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.08)' }}
+                                        formatter={(value: number, name: string) => [value, name === 'validated' ? 'Validés' : 'Rejetés']}
+                                        labelStyle={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="validated"
+                                        stroke="#059669"
+                                        strokeWidth={2.5}
+                                        dot={false}
+                                        activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="rejected"
+                                        stroke="#ef4444"
+                                        strokeWidth={2.5}
+                                        dot={false}
+                                        activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </>
+                    )}
                 </div>
             </div>
         </DashboardLayout>
