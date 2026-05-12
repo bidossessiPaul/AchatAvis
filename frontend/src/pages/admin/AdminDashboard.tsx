@@ -620,6 +620,35 @@ export const AdminDashboard: React.FC = () => {
                                     />
                                 </LineChart>
                             </ResponsiveContainer>
+                            {(() => {
+                                const totalV = trendData.reduce((s, d) => s + d.validated, 0);
+                                const totalR = trendData.reduce((s, d) => s + d.rejected, 0);
+                                const total = totalV + totalR;
+                                const pctV = total > 0 ? Math.round((totalV / total) * 100) : 0;
+                                const pctR = total > 0 ? Math.round((totalR / total) * 100) : 0;
+                                return (
+                                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
+                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Validés</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#059669', marginLeft: 'auto' }}>{pctV}%</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>({totalV})</span>
+                                        </div>
+                                        <div style={{ width: 1, background: '#e2e8f0', flexShrink: 0 }} />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
+                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Rejetés</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#ef4444', marginLeft: 'auto' }}>{pctR}%</span>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>({totalR})</span>
+                                        </div>
+                                        <div style={{ width: 1, background: '#e2e8f0', flexShrink: 0 }} />
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Total traité</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#475569', marginLeft: 'auto' }}>{total}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </>
                     )}
                 </div>
