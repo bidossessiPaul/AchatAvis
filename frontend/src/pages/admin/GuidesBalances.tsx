@@ -76,7 +76,7 @@ export const GuidesBalances: React.FC = () => {
         // Pré-remplir avec le solde actuel ; l'admin peut modifier si le paiement
         // réel diffère (ex: entre l'export CSV et le virement, de nouveaux avis
         // ont pu être validés).
-        setAmountToPay(Number(guide.balance).toFixed(2));
+        setAmountToPay((Number(guide.total_pending) + Number(guide.balance)).toFixed(2));
         setShowPayModal(true);
     };
 
@@ -593,7 +593,7 @@ export const GuidesBalances: React.FC = () => {
                                                 })()}
                                             </td>
                                             <td className="actions-cell">
-                                                {Number(guide.balance) !== 0 ? (
+                                                {(Number(guide.total_pending) + Number(guide.balance)) > 0 ? (
                                                     <button
                                                         onClick={() => openPayModal(guide)}
                                                         style={{
