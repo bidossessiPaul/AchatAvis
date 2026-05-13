@@ -1430,6 +1430,7 @@ export const getAllfiches = async () => {
         JOIN users u ON o.artisan_id = u.id
         JOIN artisans_profiles ap ON u.id = ap.user_id
         LEFT JOIN payments pay ON o.payment_id = pay.id
+        WHERE o.deleted_at IS NULL
         ORDER BY o.created_at DESC
     `);
 };
