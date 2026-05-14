@@ -97,7 +97,7 @@ export const IdentityVerification: React.FC = () => {
         <div style={{
             minHeight: '100vh',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'center',
             background: 'linear-gradient(135deg, #f0f4f8 0%, #e6eef7 100%)',
             padding: '2rem 1rem'
