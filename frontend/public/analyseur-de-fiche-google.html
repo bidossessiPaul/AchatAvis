@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analyseur de fiche Google — AchatAvis</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
+  .swal2-popup, .swal-font { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; border-radius: 1.25rem !important; }
+  .swal2-title { font-weight: 700 !important; color: #0f172a !important; }
+  .swal2-html-container { color: #334155 !important; font-size: 0.95rem !important; line-height: 1.6 !important; }
+  .swal2-confirm { font-weight: 600 !important; border-radius: 0.625rem !important; padding: 0.6rem 1.5rem !important; font-size: 0.9rem !important; }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --blue: #2563eb; --blue-dark: #1d4ed8; --blue-soft: #dbeafe;
@@ -1194,7 +1201,10 @@
 
   async function runAnalysis() {
     const url = document.getElementById('urlInput').value.trim();
-    if (!url) { alert('Veuillez coller le lien de votre fiche Google Maps'); return; }
+    if (!url) {
+      Swal.fire({ icon: 'warning', title: 'Lien manquant', text: 'Collez le lien de votre fiche Google Maps dans le champ.', confirmButtonColor: '#2563eb', confirmButtonText: 'OK', fontFamily: 'Plus Jakarta Sans, sans-serif' });
+      return;
+    }
     const btn = document.getElementById('analyzeBtn');
     const svgArrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
     btn.disabled = true;
@@ -1224,7 +1234,14 @@
       setTimeout(function() { document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
     } catch (err) {
       document.getElementById('loadingState').style.display = 'none';
-      alert('Erreur : ' + err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Analyse impossible',
+        text: err.message,
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Compris',
+        customClass: { popup: 'swal-font' }
+      });
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Relancer le diagnostic ' + svgArrow;
