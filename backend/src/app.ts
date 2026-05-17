@@ -18,6 +18,7 @@ import notificationRoutes from './routes/notifications';
 import trustScoreRoutes from './routes/trustScore';
 import communiquesRoutes from './routes/communiques';
 import signalementRoutes from './routes/signalement';
+import analyzeRoutes from './routes/analyze';
 import { sanitizeInputs } from './middleware/sanitize';
 import { startCronJobs } from './services/cronJobs';
 // Refreshing routes...
@@ -110,6 +111,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/trust-score', trustScoreRoutes);
 app.use('/api/communiques', communiquesRoutes);
 app.use('/api/signalement', signalementRoutes);
+app.use('/api/analyze', analyzeRoutes);
 
 // SPA fallback disabled — frontend is deployed separately
 app.get('*', (req: Request, res: Response) => {
