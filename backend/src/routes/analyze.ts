@@ -841,7 +841,7 @@ router.post('/capture', async (req: Request, res: Response) => {
         // Notification interne admin (fire-and-forget — pas bloquante)
         transporter.sendMail({
             from: emailConfig.from,
-            to: process.env.ADMIN_EMAIL || 'contact@achatavis.com',
+            to: process.env.ADMIN_EMAIL || 'ekomedia.fr@gmail.com',
             subject: `[Lead Analyseur] ${name} — ${biz}`,
             html: `<p><b>Nom :</b> ${name}<br><b>Email :</b> ${email}<br><b>Téléphone :</b> ${phone}<br><b>Fiche :</b> ${biz}<br><b>Action :</b> ${action || '?'}<br><b>Rapport :</b> <a href="${shareUrl}">${shareUrl}</a></p>`,
         }).catch((e: any) => console.error('[capture admin notif]', e?.message));
