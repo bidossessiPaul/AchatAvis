@@ -162,7 +162,7 @@ router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
         // les named placeholders pour ces clauses dans mysql2
         const rows  = await dbQuery(
             `SELECT id, business_name, original_url, scores_validation, verdict,
-                    contact_name, contact_email, created_at
+                    contact_name, contact_email, contact_phone, created_at
              FROM analyze_leads WHERE ${where} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
             params
         );

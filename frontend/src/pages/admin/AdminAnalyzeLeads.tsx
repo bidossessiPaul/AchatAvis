@@ -11,6 +11,7 @@ interface AnalyzeLead {
     verdict: string;
     contact_name: string | null;
     contact_email: string | null;
+    contact_phone: string | null;
     created_at: string;
 }
 
@@ -117,6 +118,9 @@ export const AdminAnalyzeLeads: React.FC = () => {
                                                 <div>
                                                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}>{r.contact_name}</div>
                                                     <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{r.contact_email}</div>
+                                                    {r.contact_phone && (
+                                                        <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>{r.contact_phone}</div>
+                                                    )}
                                                 </div>
                                             ) : (
                                                 <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Non renseigné</span>
