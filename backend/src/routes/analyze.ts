@@ -7,6 +7,17 @@ import { transporter, emailConfig } from '../config/email';
 const router = Router();
 
 // Crée la table analyze_leads si elle n'existe pas encore
+async function addColumnIfMissing(table: string, column: string, definition: string): Promise<void> {
+    const rows = await dbQuery(
+        `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column`,
+        { table, column }
+    );
+    if (!rows[0].cnt) {
+        await dbQuery(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
+    }
+}
+
 async function ensureAnalyzeLeadsTable(): Promise<void> {
     await dbQuery(`
         CREATE TABLE IF NOT EXISTS analyze_leads (
@@ -30,12 +41,12 @@ async function ensureAnalyzeLeadsTable(): Promise<void> {
             INDEX idx_business_name (business_name(100))
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-    // Ajoute les colonnes manquantes si la table existait déjà
-    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS original_url   VARCHAR(1000) AFTER address`).catch(() => {});
-    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_name   VARCHAR(255)  AFTER ip_address`).catch(() => {});
-    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_email  VARCHAR(255)  AFTER contact_name`).catch(() => {});
-    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_phone  VARCHAR(50)   AFTER contact_email`).catch(() => {});
-    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_at     DATETIME      AFTER contact_phone`).catch(() => {});
+    // Ajoute les colonnes manquantes (compatible MySQL 5.7+)
+    await addColumnIfMissing('analyze_leads', 'original_url',  'VARCHAR(1000) AFTER address');
+    await addColumnIfMissing('analyze_leads', 'contact_name',  'VARCHAR(255) AFTER ip_address');
+    await addColumnIfMissing('analyze_leads', 'contact_email', 'VARCHAR(255) AFTER contact_name');
+    await addColumnIfMissing('analyze_leads', 'contact_phone', 'VARCHAR(50) AFTER contact_email');
+    await addColumnIfMissing('analyze_leads', 'contact_at',    'DATETIME AFTER contact_phone');
 }
 
 // Appelé une fois au démarrage — bloque jusqu'à ce que la table soit prête
