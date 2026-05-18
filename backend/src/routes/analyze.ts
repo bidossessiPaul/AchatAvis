@@ -9,9 +9,6 @@ const router = Router();
 // Crée la table analyze_leads si elle n'existe pas encore
 import { analyzeLeadsReady } from '../services/analyzeLeadsTable';
 
-// Alias pour les routes de ce fichier
-const tableReady = analyzeLeadsReady;
-
 // Mapping secteur → difficulté de base + keywords SEO
 const SECTOR_CONFIG: Record<string, { difficulty: number; label: string; services: string[] }> = {
     plumber: {
