@@ -1401,7 +1401,7 @@
       cancelButtonText: 'Annuler',
       focusConfirm: false,
       customClass: { popup: 'swal-font' },
-      preConfirm: function() {
+      preConfirm: async function() {
         var name  = document.getElementById('swal-name').value.trim();
         var email = document.getElementById('swal-email').value.trim();
         var phone = document.getElementById('swal-phone').value.trim();
@@ -1413,60 +1413,53 @@
           Swal.showValidationMessage('Email invalide');
           return false;
         }
-        return { name: name, email: email, phone: phone };
+
+        // Appel backend AVANT fermeture du modal — Swal attend que preConfirm resolve
+        var shareUrl = getShareUrl();
+        try {
+          var r = await fetch(API_BASE + '/api/analyze/capture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              lead_id:       currentLeadId,
+              name:          name,
+              email:         email,
+              phone:         phone,
+              action:        action,
+              business_name: bizName,
+              report_url:    shareUrl
+            })
+          });
+          if (r.status === 429) {
+            Swal.showValidationMessage('Limite atteinte pour cette adresse email');
+            return false;
+          }
+        } catch {
+          // Erreur réseau — on laisse passer, l'action principale se fait quand même
+        }
+
+        return { name: name, email: email, phone: phone, shareUrl: shareUrl };
       }
     }).then(function(result) {
       if (!result.isConfirmed) return;
-      var name  = result.value.name;
-      var email = result.value.email;
-      var phone = result.value.phone;
-      var shareUrl = getShareUrl();
+      var name     = result.value.name;
+      var email    = result.value.email;
+      var shareUrl = result.value.shareUrl;
 
-      // Pour PDF et WhatsApp : action immédiate, envoi email en parallèle
+      // Email déjà envoyé dans preConfirm — ici on gère uniquement l'action UI
       if (action === 'pdf') {
         doPDF();
+        Swal.fire({ icon: 'success', title: 'PDF téléchargé', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3500, timerProgressBar: true, customClass: { popup: 'swal-font' } });
       } else if (action === 'whatsapp') {
         var validation = document.getElementById('gauge1Val') ? document.getElementById('gauge1Val').textContent.trim() : '';
         var waText = 'Voici l\'analyse de ma fiche Google : *' + bizName + '*\n'
           + '• Taux de validation : ' + validation + '\n'
           + '• Rapport complet : ' + shareUrl;
         window.open('https://wa.me/?text=' + encodeURIComponent(waText), '_blank');
+        Swal.fire({ icon: 'success', title: 'WhatsApp ouvert', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-font' } });
+      } else {
+        Swal.fire({ icon: 'success', title: 'Lien envoyé par email', html: 'Votre lien personnalisé a été envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
       }
-
-      // Envoie les coordonnées au backend + email au client (attendu pour feedback)
-      fetch(API_BASE + '/api/analyze/capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_id:       currentLeadId,
-          name:          name,
-          email:         email,
-          phone:         phone,
-          action:        action,
-          business_name: bizName,
-          report_url:    shareUrl
-        })
-      })
-      .then(function(r) {
-        if (r.status === 429) return Promise.reject('limit');
-        return r.ok ? r.json() : Promise.reject(r.status);
-      })
-      .then(function() {
-        if (action === 'pdf') {
-          Swal.fire({ icon: 'success', title: 'PDF téléchargé', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3500, timerProgressBar: true, customClass: { popup: 'swal-font' } });
-        } else if (action === 'whatsapp') {
-          Swal.fire({ icon: 'success', title: 'WhatsApp ouvert', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-font' } });
-        } else {
-          Swal.fire({ icon: 'success', title: 'Lien envoyé par email', html: 'Votre lien personnalisé a été envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
-        }
-      })
-      .catch(function(err) {
-        if (err === 'limit') {
-          Swal.fire({ icon: 'warning', title: 'Limite atteinte', html: 'Cette adresse email a déjà reçu le maximum de rapports autorisés.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
-        } else {
-          Swal.fire({ icon: 'success', title: action === 'link' ? 'Lien copié' : 'Rapport prêt', html: 'Votre rapport est disponible. L\'envoi email a rencontré un problème — utilisez le lien direct.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
-        }
-      });
     });
   }
 
