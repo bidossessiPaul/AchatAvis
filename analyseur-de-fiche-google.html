@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analyseur de fiche Google — AchatAvis</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --blue: #2563eb; --blue-dark: #1d4ed8; --blue-soft: #dbeafe;
+    --orange: #f97316; --orange-soft: #fff7ed;
+    --yellow: #fbbf24; --yellow-soft: #fef3c7;
+    --green: #10b981; --green-soft: #d1fae5; --green-deep: #059669;
+    --red: #ef4444; --red-soft: #fee2e2; --red-deep: #b91c1c;
+    --purple: #8b5cf6; --purple-soft: #ede9fe;
+    --ink: #0f172a; --ink-soft: #334155;
+    --muted: #64748b;
+    --line: #e5e7eb; --line-soft: #f1f5f9;
+  }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: var(--ink); background: linear-gradient(to bottom, #ffffff 0%, #e0f2fe 30%, #dbeafe 100%); background-attachment: fixed; min-height: 100vh; line-height: 1.5; -webkit-font-smoothing: antialiased; position: relative; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: radial-gradient(ellipse 600px 200px at 10% 70%, rgba(255,255,255,0.9), transparent), radial-gradient(ellipse 500px 180px at 85% 80%, rgba(255,255,255,0.8), transparent), radial-gradient(ellipse 700px 250px at 50% 95%, rgba(255,255,255,0.9), transparent); pointer-events: none; z-index: 0; }
+
+  .promo { background: var(--yellow-soft); padding: 12px 24px; text-align: center; font-size: 14px; position: relative; z-index: 10; display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .promo strong { font-weight: 700; }
+  .promo a { background: white; color: var(--ink); padding: 8px 18px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 13px; border: 1px solid var(--line); }
+  .nav { background: white; border-bottom: 1px solid var(--line-soft); padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; }
+  .logo { font-weight: 800; font-size: 22px; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+  .logo-stars { color: var(--yellow); font-size: 14px; }
+  .nav-links { display: flex; gap: 20px; align-items: center; flex-shrink: 1; min-width: 0; }
+  .nav-links a { color: var(--ink); text-decoration: none; font-weight: 500; font-size: 14px; white-space: nowrap; }
+  .nav-links .active { color: var(--blue); font-weight: 600; }
+  .nav-cta-group { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+  .btn-orange { background: var(--orange); color: white; padding: 10px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .btn-outline { background: white; color: var(--ink); padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; border: 1px solid var(--line); }
+  .btn-blue { background: var(--blue); color: white; padding: 10px 18px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 48px 24px; position: relative; z-index: 1; }
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid var(--line); padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; margin-bottom: 24px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .hero-badge .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .hero h1 { font-size: clamp(2.25rem, 5.5vw, 3.75rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 20px; }
+  .hero h1 .blue { color: var(--blue); }
+  .hero p { font-size: 18px; color: var(--ink-soft); max-width: 640px; margin: 0 auto; line-height: 1.6; }
+  .hero p strong { color: var(--ink); font-weight: 700; }
+
+  .input-card { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 48px; }
+  .input-card-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .input-card-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+  .input-row { display: flex; gap: 12px; }
+  .input-field { flex: 1; position: relative; }
+  .input-field input { width: 100%; border: 2px solid var(--line); border-radius: 12px; padding: 16px 20px 16px 48px; font-size: 15px; font-family: inherit; background: white; outline: none; transition: border-color 0.2s; }
+  .input-field input:focus { border-color: var(--blue); }
+  .input-field-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+  .btn-analyze { background: var(--blue); color: white; border: none; border-radius: 12px; padding: 0 28px; font-weight: 700; font-size: 15px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 10px; white-space: nowrap; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); transition: all 0.2s; }
+  .btn-analyze:hover { background: var(--blue-dark); transform: translateY(-1px); }
+  .btn-analyze:disabled { opacity: 0.6; cursor: not-allowed; }
+  .input-trust { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line-soft); display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .input-trust span { display: flex; align-items: center; gap: 6px; }
+  .input-trust .check { color: var(--green); }
+
+  .loading { background: white; border-radius: 24px; padding: 64px 32px; text-align: center; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); }
+  .loading-spinner { width: 48px; height: 48px; margin: 0 auto 20px; border: 3px solid var(--line); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-weight: 700; margin-bottom: 8px; }
+  .loading-steps { color: var(--muted); font-size: 14px; line-height: 1.8; margin-top: 16px; }
+  .loading-steps .step { opacity: 0; animation: fadein 0.4s forwards; }
+  .loading-steps .step:nth-child(1) { animation-delay: 0.3s; }
+  .loading-steps .step:nth-child(2) { animation-delay: 0.9s; }
+  .loading-steps .step:nth-child(3) { animation-delay: 1.5s; }
+  .loading-steps .step:nth-child(4) { animation-delay: 2.1s; }
+  @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+
+  .results { display: none; }
+  .results.active { display: block; animation: slideup 0.5s ease-out; }
+  @keyframes slideup { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .sec-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; margin-top: 40px; }
+  .sec-title-badge { background: var(--blue-soft); color: var(--blue); width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+  .sec-title h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+
+  .identity { background: white; border-radius: 20px; padding: 24px 28px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .identity-left { flex: 1; min-width: 280px; }
+  .identity-cat { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--blue); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+  .identity-name { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .identity-addr { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .identity-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+  .stat-mini { display: flex; align-items: baseline; gap: 6px; }
+  .stat-mini-value { font-weight: 800; font-size: 18px; }
+  .stat-mini-stars { color: var(--yellow); font-size: 14px; }
+  .stat-mini-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  .verdict-badge { text-align: center; background: linear-gradient(135deg, #fff7ed, #ffedd5); border: 1px solid #fed7aa; padding: 16px 24px; border-radius: 16px; min-width: 140px; }
+  .verdict-badge-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+  .verdict-badge-value { font-size: 22px; font-weight: 800; color: var(--orange); }
+
+  .gauges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .gauge-card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); text-align: center; position: relative; transition: all 0.3s; }
+  .gauge-card.boosted { border-color: var(--green); box-shadow: 0 4px 24px rgba(16, 185, 129, 0.2); }
+  .gauge-card-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+  .gauge { position: relative; width: 160px; height: 160px; margin: 0 auto 12px; }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge-bg { fill: none; stroke: #f1f5f9; stroke-width: 12; }
+  .gauge-fg { fill: none; stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .gauge-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .gauge-value { font-size: 42px; font-weight: 800; line-height: 1; }
+  .gauge-suffix { font-size: 16px; color: var(--muted); font-weight: 600; }
+  .gauge-desc { font-size: 13px; color: var(--muted); line-height: 1.4; margin-top: 4px; }
+  .boost-badge { position: absolute; top: 12px; right: 12px; background: var(--green); color: white; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; display: none; }
+  .boost-badge.active { display: block; }
+
+  .critical-alert { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 2px solid var(--red); border-radius: 20px; padding: 28px; margin-bottom: 24px; display: grid; grid-template-columns: auto 1fr; gap: 24px; }
+  .critical-alert-icon { background: var(--red); color: white; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 28px; }
+  .critical-alert-label { display: inline-block; background: var(--red); color: white; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .critical-alert-title { font-size: 22px; font-weight: 800; color: var(--red-deep); letter-spacing: -0.01em; margin-bottom: 8px; }
+  .critical-alert-text { color: var(--ink-soft); font-size: 14px; line-height: 1.6; }
+  .critical-alert-text strong { color: var(--ink); font-weight: 700; }
+
+  .strategy { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 24px; }
+  .strategy-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .strategy-icon { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .strategy-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
+  .strategy-title { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .strategy-intro { color: var(--ink-soft); margin: 12px 0 28px; font-size: 15px; line-height: 1.6; }
+  .strategy-intro strong { color: var(--ink); font-weight: 700; }
+
+  .phases-triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .phase { border: 2px solid var(--line); border-radius: 16px; padding: 20px; }
+  .phase.p0 { border-color: var(--red); background: linear-gradient(135deg, #fef2f2, #fee2e2); }
+  .phase.p1 { border-color: var(--blue); background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+  .phase.p2 { border-color: #fed7aa; background: linear-gradient(135deg, #fff7ed, #ffedd5); }
+  .phase-tag { display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 6px; margin-bottom: 8px; }
+  .phase.p0 .phase-tag { background: var(--red); color: white; }
+  .phase.p1 .phase-tag { background: var(--blue); color: white; }
+  .phase.p2 .phase-tag { background: var(--orange); color: white; }
+  .phase-title { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .phase-row { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(15,23,42,0.08); font-size: 13px; line-height: 1.5; }
+  .phase-row:first-of-type { border-top: none; padding-top: 0; }
+  .phase-row .side { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; min-width: 60px; padding-top: 2px; }
+  .phase-row .detail { flex: 1; }
+  .phase-result { margin-top: 12px; padding: 10px 12px; background: white; border-radius: 8px; font-size: 12px; font-weight: 600; line-height: 1.5; }
+  .phase-result strong { color: var(--green-deep); }
+
+  .diag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .diag-card { background: white; border-radius: 20px; padding: 24px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); }
+  .diag-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-weight: 700; }
+  .diag-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .diag-warnings .diag-icon { background: var(--orange-soft); color: var(--orange); }
+  .diag-strengths .diag-icon { background: var(--green-soft); color: var(--green); }
+  .diag-head h3 { font-size: 16px; font-weight: 800; flex: 1; }
+  .diag-head .count { background: var(--line-soft); padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .diag-list { list-style: none; }
+  .diag-list li { padding: 10px 0; border-top: 1px solid var(--line-soft); font-size: 14px; color: var(--ink-soft); display: flex; gap: 10px; line-height: 1.5; }
+  .diag-list li:first-child { border-top: none; }
+  .diag-list li::before { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-top: 1px; }
+  .diag-warnings .diag-list li::before { content: '!'; background: var(--orange-soft); color: var(--orange); }
+  .diag-strengths .diag-list li::before { content: '✓'; background: var(--green-soft); color: var(--green); }
+
+  .auth-block { background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 1px solid #ddd6fe; border-radius: 20px; padding: 32px; margin-bottom: 24px; }
+  .auth-block-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .auth-block-icon { background: var(--purple); color: white; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .auth-block-title { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+  .auth-block-subtitle { font-size: 14px; color: var(--muted); margin-top: 2px; }
+  .auth-method { background: white; border-radius: 14px; padding: 22px; margin-bottom: 16px; }
+  .auth-method-title { font-size: 15px; font-weight: 800; margin-bottom: 12px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .auth-method-title .num { background: var(--purple-soft); color: var(--purple); width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .auth-method-text { font-size: 14px; line-height: 1.6; color: var(--ink-soft); margin-bottom: 12px; }
+  .auth-method-text strong { color: var(--ink); }
+  .auth-sources { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; padding: 12px 16px; background: var(--purple-soft); border-radius: 10px; }
+  .auth-sources div { font-size: 13px; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+  .auth-sources div::before { content: '🔍'; font-size: 12px; }
+
+  .kw-block { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 16px; padding: 22px; margin-top: 16px; }
+  .kw-block-title { font-size: 14px; font-weight: 800; color: var(--blue-dark); margin-bottom: 12px; }
+  .kw-section { margin-bottom: 14px; }
+  .kw-section:last-child { margin-bottom: 0; }
+  .kw-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 8px; }
+  .kw-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kw-chip { background: white; padding: 5px 12px; border-radius: 999px; font-size: 12px; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  .kw-chip.service { background: white; color: var(--blue-dark); border-color: var(--blue-soft); font-weight: 600; }
+  .kw-chip.sat { background: #fef3c7; color: #92400e; border-color: var(--yellow); font-weight: 600; }
+  .kw-chip.geo { background: #fff7ed; color: var(--orange); border-color: #fed7aa; font-weight: 600; }
+
+  .auth-rule { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid var(--yellow); border-radius: 16px; padding: 24px; margin-top: 20px; }
+  .auth-rule-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .auth-rule-badge { background: var(--ink); color: var(--yellow); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 6px; }
+  .auth-rule-title { font-size: 17px; font-weight: 800; }
+  .auth-rule-content { font-size: 14px; line-height: 1.6; color: var(--ink); }
+  .auth-rule-math { display: inline-block; background: white; padding: 4px 12px; border-radius: 8px; font-weight: 700; margin: 0 2px; }
+
+  .phrases-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 20px; }
+  .phrases-col { background: white; border-radius: 14px; padding: 20px; }
+  .phrases-col.ok { border: 2px solid var(--green); }
+  .phrases-col.ko { border: 2px solid var(--red); }
+  .phrases-col-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; }
+  .phrases-col.ok .phrases-col-title { color: var(--green-deep); }
+  .phrases-col.ko .phrases-col-title { color: var(--red-deep); }
+  .phrases-col ul { list-style: none; }
+  .phrases-col li { padding: 8px 0; font-size: 13px; line-height: 1.5; border-top: 1px solid var(--line-soft); font-style: italic; color: var(--ink-soft); }
+  .phrases-col li:first-child { border-top: none; }
+  .phrases-col.ok li::before { content: '✓ '; color: var(--green); font-style: normal; font-weight: 700; }
+  .phrases-col.ko li::before { content: '✗ '; color: var(--red); font-style: normal; font-weight: 700; }
+
+  .examples-block { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 24px; }
+  .examples-intro { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding: 14px 18px; background: var(--blue-soft); border-radius: 12px; border-left: 4px solid var(--blue); }
+  .examples-intro strong { color: var(--ink); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .tab { background: white; border: 1px solid var(--line); color: var(--ink-soft); padding: 10px 16px; border-radius: 999px; font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .tab:hover { border-color: var(--blue); color: var(--blue); }
+  .tab.active { background: var(--blue); color: white; border-color: var(--blue); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadein 0.3s; }
+  .example-card { background: #fafbfc; border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; transition: all 0.2s; }
+  .example-card:hover { border-color: var(--blue); background: white; transform: translateX(2px); }
+  .example-card.tested { background: linear-gradient(to right, #fef3c7, #fafbfc); border-color: var(--yellow); }
+  .example-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .example-stars { color: var(--yellow); font-size: 16px; }
+  .example-tag { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: var(--line-soft); color: var(--ink-soft); }
+  .example-tag.opinion { background: var(--blue-soft); color: var(--blue); }
+  .example-tag.tested { background: var(--yellow); color: var(--ink); }
+  .example-text { font-size: 14px; color: var(--ink); line-height: 1.6; }
+  .hl-service { background: #dbeafe; color: var(--blue-dark); padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+  .hl-sat { background: #fef3c7; color: #92400e; padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+  .hl-geo { background: #ffedd5; color: var(--orange); padding: 1px 4px; border-radius: 3px; font-weight: 600; }
+  .example-keywords { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); display: flex; flex-wrap: wrap; gap: 4px; }
+  .example-keywords .kw-chip { padding: 3px 8px; font-size: 11px; }
+  .examples-disclaimer { margin-top: 20px; padding: 16px 20px; background: var(--yellow-soft); border-radius: 12px; border-left: 4px solid var(--yellow); font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+  .examples-disclaimer strong { color: var(--ink); }
+
+  .important-banner { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1px solid #fde68a; border-radius: 16px; padding: 20px 24px; margin-bottom: 24px; display: flex; gap: 14px; align-items: flex-start; }
+  .important-banner-icon { background: var(--yellow); color: white; width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+  .important-banner-text { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  .important-banner-text strong { color: var(--ink); font-weight: 700; }
+
+  .reco-hero { background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border-radius: 24px; padding: 36px; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 20px 50px rgba(37, 99, 235, 0.25); }
+  .reco-hero::before { content: ''; position: absolute; right: -120px; top: -120px; width: 360px; height: 360px; background: radial-gradient(circle, rgba(255,255,255,0.12), transparent); border-radius: 50%; }
+  .reco-hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; position: relative; }
+  .reco-hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; position: relative; }
+  .reco-hero-price { font-size: 56px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; margin: 16px 0 8px; position: relative; }
+  .reco-hero-price .unit { font-size: 18px; font-weight: 600; opacity: 0.85; }
+  .reco-hero-volume { font-size: 16px; opacity: 0.9; margin-bottom: 24px; position: relative; }
+  .reco-hero-why { background: rgba(255,255,255,0.1); border-radius: 14px; padding: 20px; position: relative; }
+  .reco-hero-why-title { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; opacity: 0.85; }
+  .reco-hero-why ul { list-style: none; }
+  .reco-hero-why li { padding: 6px 0; font-size: 14px; display: flex; gap: 10px; line-height: 1.5; }
+  .reco-hero-why li::before { content: '✓'; color: white; font-weight: 800; }
+
+  .offer-selector-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+  .offer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  .offer-card { background: white; border: 2px solid var(--line); border-radius: 18px; padding: 24px 20px; cursor: pointer; transition: all 0.25s; position: relative; text-align: left; }
+  .offer-card:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .offer-card.selected { border-color: var(--blue); background: linear-gradient(135deg, #eff6ff, white); box-shadow: 0 8px 32px rgba(37, 99, 235, 0.18); }
+  .offer-card.recommended::after { content: 'RECOMMANDÉ'; position: absolute; top: -10px; right: 12px; background: var(--green); color: white; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
+  .offer-card-name { font-size: 12px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .offer-card-price { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+  .offer-card-price .month { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .offer-card-volume { margin-top: 10px; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .offer-card-cadence { margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .offer-card-tested { margin-top: 8px; padding: 4px 8px; background: var(--yellow-soft); border-radius: 6px; font-size: 11px; color: var(--ink); font-weight: 600; }
+  .offer-card-radio { position: absolute; top: 18px; right: 18px; width: 22px; height: 22px; border: 2px solid var(--line); border-radius: 50%; transition: all 0.2s; }
+  .offer-card.selected .offer-card-radio { border-color: var(--blue); background: var(--blue); }
+  .offer-card.selected .offer-card-radio::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; border-radius: 50%; background: white; }
+
+  .booster { background: white; border: 2px solid var(--green); border-radius: 24px; padding: 32px; margin-bottom: 24px; transition: all 0.3s; position: relative; }
+  .booster.active { background: linear-gradient(135deg, #f0fdf4, white); box-shadow: 0 8px 32px rgba(16, 185, 129, 0.18); }
+  .booster-urgent-badge { position: absolute; top: -10px; left: 24px; background: var(--red); color: white; padding: 4px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; }
+  .booster-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .booster-icon { background: linear-gradient(135deg, var(--green), var(--green-deep)); color: white; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .booster-title-block { flex: 1; min-width: 200px; }
+  .booster-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green-deep); margin-bottom: 4px; }
+  .booster-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  .booster-price { text-align: right; }
+  .booster-price-value { font-size: 32px; font-weight: 800; color: var(--green-deep); letter-spacing: -0.02em; }
+  .booster-price-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .booster-impact { background: var(--green-soft); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .booster-impact-stat { display: flex; align-items: center; gap: 12px; }
+  .booster-impact-num { font-size: 32px; font-weight: 800; color: var(--green-deep); }
+  .booster-impact-arrow { font-size: 24px; color: var(--green-deep); }
+  .booster-impact-label { font-size: 14px; color: var(--ink); font-weight: 700; }
+  .booster-impact-label small { display: block; font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+  .booster-why { background: #fef2f2; border-left: 4px solid var(--red); padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; color: var(--ink); line-height: 1.6; }
+  .booster-why strong { color: var(--red-deep); font-weight: 700; }
+  .booster-inclusions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 24px; }
+  .booster-inclusions div { padding: 6px 0; font-size: 13px; color: var(--ink-soft); display: flex; gap: 8px; line-height: 1.4; }
+  .booster-inclusions div::before { content: '✓'; color: var(--green); font-weight: 800; flex-shrink: 0; }
+  .booster-toggle { width: 100%; padding: 16px; border: 2px solid var(--green); background: white; color: var(--green-deep); border-radius: 12px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.2s; }
+  .booster-toggle:hover { background: var(--green-soft); }
+  .booster.active .booster-toggle { background: var(--green); color: white; }
+  .booster.active .booster-toggle .toggle-add { display: none; }
+  .booster:not(.active) .booster-toggle .toggle-remove { display: none; }
+
+  .recap { background: white; border: 2px solid var(--ink); border-radius: 24px; padding: 32px; margin-bottom: 24px; }
+  .recap-title { font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; color: var(--muted); }
+  .recap-row { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line-soft); font-size: 15px; }
+  .recap-row.removed { display: none; }
+  .recap-row .label { color: var(--ink); font-weight: 600; }
+  .recap-row .label small { color: var(--muted); font-weight: 500; font-size: 13px; margin-left: 8px; }
+  .recap-row .price { font-weight: 700; font-size: 18px; }
+  .recap-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 16px; margin-top: 8px; }
+  .recap-total .label { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+  .recap-total .price { font-size: 38px; font-weight: 800; letter-spacing: -0.02em; }
+  .recap-monthly { background: var(--blue-soft); border-radius: 10px; padding: 10px 14px; margin-top: 12px; font-size: 13px; color: var(--blue-dark); font-weight: 600; display: none; }
+  .recap-monthly.visible { display: block; }
+
+  .btn-final-cta { width: 100%; padding: 22px; background: linear-gradient(135deg, var(--blue), var(--blue-dark)); color: white; border: none; border-radius: 14px; font-family: inherit; font-weight: 800; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 24px; box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3); transition: all 0.2s; text-decoration: none; }
+  .btn-final-cta:hover { transform: translateY(-2px); }
+  .btn-final-cta-sub { text-align: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .btn-final-cta-sub strong { color: var(--orange); }
+
+  .footer-trust { margin-top: 48px; padding: 32px; background: white; border-radius: 20px; border: 1px solid var(--line-soft); display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  .footer-trust span { display: flex; align-items: center; gap: 8px; }
+  .footer-trust .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
+
+  /* Modal capture */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .modal-overlay.open { opacity: 1; pointer-events: auto; }
+  .modal-box { background: white; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; transform: translateY(16px); transition: transform 0.25s; }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-header { background: linear-gradient(135deg, #059669, #047857); padding: 24px 28px; }
+  .modal-header h2 { color: white; font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+  .modal-header p { color: #a7f3d0; font-size: 14px; margin: 0; }
+  .modal-body { padding: 28px; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .modal-field input { width: 100%; border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
+  .modal-field input:focus { border-color: #059669; }
+  .modal-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 10px; font-family: inherit; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
+  .modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .modal-success { text-align: center; padding: 32px 28px; }
+  .modal-success-icon { width: 56px; height: 56px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+  .modal-success h3 { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 8px; }
+  .modal-success p { font-size: 14px; color: #64748b; line-height: 1.6; margin: 0; }
+  .modal-skip { text-align: center; margin-top: 12px; }
+  .modal-skip button { background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px; }
+
+  /* Bouton CTA rapport dans les résultats */
+  .rapport-cta { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #059669; border-radius: 16px; padding: 24px 28px; margin-top: 32px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .rapport-cta-text h3 { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
+  .rapport-cta-text p { font-size: 14px; color: #475569; margin: 0; }
+  .rapport-cta-btn { background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 10px; padding: 12px 24px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(5,150,105,0.3); transition: all 0.2s; flex-shrink: 0; }
+  .rapport-cta-btn:hover { transform: translateY(-1px); }
+
+  @media (max-width: 900px) {
+    .nav { padding: 12px 16px; flex-wrap: nowrap; gap: 12px; }
+    .nav-links { display: none; }
+    .nav-cta-group .btn-orange,
+    .nav-cta-group .btn-outline { display: none; }
+    .container { padding: 32px 16px; }
+    .input-row { flex-direction: column; }
+    .btn-analyze { padding: 16px; justify-content: center; }
+    .gauges { grid-template-columns: 1fr; }
+    .phases-triple { grid-template-columns: 1fr; }
+    .diag-grid { grid-template-columns: 1fr; }
+    .identity { flex-direction: column; }
+    .verdict-badge { width: 100%; }
+    .critical-alert { grid-template-columns: 1fr; text-align: center; }
+    .offer-grid { grid-template-columns: 1fr; }
+    .booster-inclusions { grid-template-columns: 1fr; }
+    .booster-header { flex-direction: column; align-items: flex-start; }
+    .booster-price { text-align: left; }
+    .reco-hero-title { font-size: 24px; }
+    .reco-hero-price { font-size: 44px; }
+    .auth-sources, .phrases-grid { grid-template-columns: 1fr; }
+    .examples-block { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="promo">
+  <span>🎁 <strong>Offre de lancement :</strong> 5 Avis gratuits dès votre première commande</span>
+  <a href="#">Réclamer L'offre →</a>
+</div>
+
+<nav class="nav">
+  <div class="logo"><img src="logo.png" alt="Achat Avis" style="height:48px; width:auto; display:block;"></div>
+  <div class="nav-links">
+    <a href="#" class="active">Calculateur d'avis</a>
+    <a href="#">Acheter des avis google</a>
+    <a href="#">Suppression de fiche</a>
+    <a href="#">Création de fiche</a>
+  </div>
+  <div class="nav-cta-group">
+    <a href="#" class="btn-orange">🛡 Devenir Guide Local</a>
+    <a href="#" class="btn-outline">Connexion</a>
+    <button class="btn-blue">Commencer</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="hero-badge"><span class="dot"></span>Audit gratuit · résultat en 15 secondes</div>
+    <h1>Analysez votre fiche Google<br><span class="blue">avant d'investir.</span></h1>
+    <p><strong>Difficulté du secteur, taux de validation prévu, score SEO local et plan d'action sur mesure.</strong></p>
+  </div>
+
+  <div class="input-card">
+    <div class="input-card-title">🔍 Lancer le diagnostic de votre fiche</div>
+    <div class="input-card-subtitle">Collez le lien partagé depuis Google Maps</div>
+    <div class="input-row">
+      <div class="input-field">
+        <svg class="input-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <input type="text" id="urlInput" placeholder="Collez votre lien Google Maps ici…">
+      </div>
+      <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">Lancer le diagnostic
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="input-trust">
+      <span><span class="check">✓</span> 100% gratuit</span>
+      <span><span class="check">✓</span> Aucune CB requise</span>
+      <span><span class="check">✓</span> Résultat instantané</span>
+    </div>
+  </div>
+
+  <div class="loading" id="loadingState" style="display:none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Analyse de votre fiche en cours…</div>
+    <div class="loading-steps">
+      <div class="step">▸ Résolution du lien Google Maps</div>
+      <div class="step">▸ Extraction avis et métadonnées</div>
+      <div class="step">▸ Détection mots-clés services & SEO local</div>
+      <div class="step">▸ Sélection playbook stratégique</div>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+
+    <div class="sec-title"><div class="sec-title-badge">1</div><h2>Votre fiche analysée</h2></div>
+    <div class="identity">
+      <div class="identity-left">
+        <span class="identity-cat">🔧 Plomberie · Serrurerie</span>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+          <img id="bizPhoto" src="" alt="" style="width:72px;height:72px;border-radius:14px;object-fit:cover;border:2px solid var(--line-soft);display:none;flex-shrink:0;">
+          <div class="identity-name">ETS Tamarys</div>
+        </div>
+        <div class="identity-addr">📍 Fiche Google Business · Plombier multi-services</div>
+        <div class="identity-stats">
+          <div class="stat-mini"><span class="stat-mini-value">4,9</span><span class="stat-mini-stars">★★★★★</span><span class="stat-mini-label">Note</span></div>
+          <div class="stat-mini"><span class="stat-mini-value">123</span><span class="stat-mini-label">Avis Google</span></div>
+          <div class="stat-mini" id="statSite" style="display:none;"><span class="stat-mini-value" id="statSiteVal">—</span><span class="stat-mini-label">Site web</span></div>
+          <div class="stat-mini"><span class="stat-mini-value">24+ mois</span><span class="stat-mini-label">Ancienneté</span></div>
+        </div>
+      </div>
+      <div class="verdict-badge">
+        <div class="verdict-badge-label">Verdict</div>
+        <div class="verdict-badge-value">Difficile</div>
+      </div>
+    </div>
+
+    <div class="sec-title"><div class="sec-title-badge">2</div><h2>Vos scores clés</h2></div>
+    <div class="gauges">
+      <div class="gauge-card" id="gaugeCard1">
+        <div class="boost-badge" id="boostBadge">+15 % OPTIM</div>
+        <div class="gauge-card-title">Garantie validation</div>
+        <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge1" cx="80" cy="80" r="68" stroke="#10b981" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge1Val" style="color:#10b981;">0<span class="gauge-suffix">%</span></div></div></div>
+        <div id="gauge1Label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-top:2px;">Sans optimisation</div>
+        <div id="gauge1Upsell" style="margin-top:10px;padding:8px 12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:10px;font-size:12px;color:var(--green-deep);font-weight:700;cursor:pointer;" onclick="toggleBooster()">
+          Avec Optimisation fiche → <strong>65%</strong> ↑
+        </div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-card-title">Score SEO Local</div>
+        <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge2" cx="80" cy="80" r="68" stroke="#2563eb" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge2Val" style="color:#2563eb;">0<span class="gauge-suffix">/100</span></div></div></div>
+        <div class="gauge-desc">Bon volume mais à consolider</div>
+      </div>
+      <div class="gauge-card">
+        <div class="gauge-card-title">Niveau de difficulté</div>
+        <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge3" cx="80" cy="80" r="68" stroke="#f97316" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge3Val" style="color:#f97316;">0<span class="gauge-suffix">/100</span></div></div></div>
+        <div class="gauge-desc">Niveau : <strong style="color:var(--orange)">Difficile</strong></div>
+      </div>
+    </div>
+
+    <div class="critical-alert">
+      <div class="critical-alert-icon">!</div>
+      <div>
+        <span class="critical-alert-label">Alerte critique</span>
+        <div class="critical-alert-title">Pic d'avis anormal détecté en janvier 2026</div>
+        <div class="critical-alert-text">~17 avis postés en janvier 2026 (vélocité x5). Pattern détectable par Google. Exposés à une suppression rétroactive.</div>
+      </div>
+    </div>
+
+    <div class="sec-title"><div class="sec-title-badge">3</div><h2>Votre plan d'action sur mesure</h2></div>
+    <div class="strategy">
+      <div class="strategy-header">
+        <div class="strategy-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+        <div><div class="strategy-label">Playbook recommandé</div><div class="strategy-title">Refroidissement & accélération sécurisée</div></div>
+      </div>
+      <div class="strategy-intro">Fiche <strong>mature (123 avis)</strong> avec <strong>pic suspect à diluer</strong>. 3 phases : refroidir, accélérer à 2/jour, croisière.</div>
+      <div class="phases-triple">
+        <div class="phase p0"><span class="phase-tag">Phase 0 · 2 semaines</span><div class="phase-title">Refroidissement</div>
+          <div class="phase-row"><div class="side">Nous</div><div class="detail">Aucun avis posté.</div></div>
+          <div class="phase-row"><div class="side">Vous</div><div class="detail">2 avis spontanés idéal.</div></div>
+          <div class="phase-row"><div class="side">Optim</div><div class="detail">Optimisation lancée parallèle.</div></div>
+          <div class="phase-result">🛡 <strong>Protection</strong> socle</div>
+        </div>
+        <div class="phase p1"><span class="phase-tag">Mois 1 · Accélération</span><div class="phase-title">Cadence 2/jour</div>
+          <div class="phase-row"><div class="side">Nous</div><div class="detail"><strong id="pace1">2 avis / jour</strong> = <strong id="vol1">~60 avis</strong>, max <strong id="maxTested">6</strong> "testé".</div></div>
+          <div class="phase-row"><div class="side">SEO</div><div class="detail">Mots-clés services + géo Rambouillet intégrés.</div></div>
+          <div class="phase-row"><div class="side">Cible</div><div class="detail">~180 avis stables, note ≥ 4,8.</div></div>
+          <div class="phase-result">📊 <strong id="stableResult">~50 stables</strong> ajoutés</div>
+        </div>
+        <div class="phase p2"><span class="phase-tag">Mois 2+ · Croisière</span><div class="phase-title">Maintien</div>
+          <div class="phase-row"><div class="side">Forfait</div><div class="detail">Garantie 70% rétention.</div></div>
+          <div class="phase-row"><div class="side">SEO</div><div class="detail">Articles + backlinks top 3.</div></div>
+          <div class="phase-row"><div class="side">Stratégie</div><div class="detail">Réseau sur fiche suivante.</div></div>
+          <div class="phase-result">🎯 <strong>Top 3</strong> stabilisé</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title"><div class="sec-title-badge">4</div><h2>Diagnostic détaillé</h2></div>
+    <div class="diag-grid">
+      <div class="diag-card diag-warnings">
+        <div class="diag-head"><div class="diag-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div><h3>Vigilance</h3><span class="count">5</span></div>
+        <ul class="diag-list">
+          <li>Pic ~17 avis en janvier 2026</li>
+          <li>Phrasing répétitif</li>
+          <li>3 avis négatifs visibles</li>
+          <li>Secteur Plombier sous surveillance</li>
+          <li>Mots-clés services sous-exploités</li>
+        </ul>
+      </div>
+      <div class="diag-card diag-strengths">
+        <div class="diag-head"><div class="diag-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><h3>Atouts</h3><span class="count">6</span></div>
+        <ul class="diag-list">
+          <li>Volume mature (123 avis)</li>
+          <li>Note 4,9 ★ excellente</li>
+          <li>Ancienneté 24+ mois</li>
+          <li>Cross-platform Pages Jaunes</li>
+          <li>Profil étalé sur 2 ans</li>
+          <li>Nom "Tamarys" cité = SEO entité</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. AUTHENTICITÉ -->
+    <div class="sec-title"><div class="sec-title-badge">5</div><h2>La méthode d'opinion : comment fonctionnent nos avis</h2></div>
+
+    <div class="auth-block">
+      <div class="auth-block-header">
+        <div class="auth-block-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+        <div><div class="auth-block-title">Des vrais comptes, de vraies opinions, du vrai SEO</div><div class="auth-block-subtitle">3 ingrédients combinés dans chaque avis</div></div>
+      </div>
+
+      <div class="auth-method">
+        <div class="auth-method-title"><span class="num">1</span> Nos Local Guides sont de vrais comptes Google</div>
+        <div class="auth-method-text">Comptes <strong>réels avec historique</strong>, photos, déplacements. Niveau 5 minimum, souvent 7+. Aucun bot.</div>
+      </div>
+
+      <div class="auth-method">
+        <div class="auth-method-title"><span class="num">2</span> Ils donnent leur opinion authentique</div>
+        <div class="auth-method-text">Pas de mensonge sur une expérience. Ils observent et donnent leur <strong>vraie opinion</strong> :</div>
+        <div class="auth-sources">
+          <div>Votre site internet</div>
+          <div>Votre Instagram et présence en ligne</div>
+          <div>Vos photos et qualité de communication</div>
+          <div>Échange téléphonique avec un commercial</div>
+          <div>Votre référencement local</div>
+          <div>Vos réponses à d'autres avis</div>
+        </div>
+      </div>
+
+      <div class="auth-method">
+        <div class="auth-method-title"><span class="num">3</span> Chaque avis intègre 3 dimensions SEO</div>
+        <div class="auth-method-text">Un bon avis ne se contente pas d'être positif — il <strong>fait travailler votre fiche</strong> dans Google :</div>
+
+        <div class="kw-block">
+          <div class="kw-block-title">🎯 Vocabulaire détecté pour ETS Tamarys</div>
+
+          <div class="kw-section">
+            <div class="kw-section-label">🔧 Mots-clés services (boost SEO local)</div>
+            <div class="kw-list">
+              <span class="kw-chip service">plomberie</span><span class="kw-chip service">plombier</span><span class="kw-chip service">dépannage plomberie</span><span class="kw-chip service">fuite</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">ballon eau chaude</span><span class="kw-chip service">chauffe-eau</span><span class="kw-chip service">débouchage canalisation</span><span class="kw-chip service">salle de bain</span><span class="kw-chip service">rénovation</span><span class="kw-chip service">installation sanitaire</span><span class="kw-chip service">entretien chaudière</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">remplacement serrure</span><span class="kw-chip service">artisan plombier</span>
+            </div>
+          </div>
+
+          <div class="kw-section">
+            <div class="kw-section-label">📍 Mots-clés géolocalisation</div>
+            <div class="kw-list">
+              <span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">78120</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip geo">proche Rambouillet</span><span class="kw-chip geo">région Île-de-France</span><span class="kw-chip geo">dans le coin</span><span class="kw-chip geo">localement</span><span class="kw-chip geo">à proximité</span>
+            </div>
+          </div>
+
+          <div class="kw-section">
+            <div class="kw-section-label">⭐ Mots de satisfaction (signal positif)</div>
+            <div class="kw-list">
+              <span class="kw-chip sat">très satisfait</span><span class="kw-chip sat">ravi</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">au top</span><span class="kw-chip sat">je recommande</span><span class="kw-chip sat">à recommander</span><span class="kw-chip sat">parfait</span><span class="kw-chip sat">bluffant</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">professionnel</span><span class="kw-chip sat">fiable</span><span class="kw-chip sat">de confiance</span><span class="kw-chip sat">qualité</span><span class="kw-chip sat">soigné</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-method">
+        <div class="auth-method-title"><span class="num">4</span> Formulations OK vs interdites</div>
+        <div class="phrases-grid">
+          <div class="phrases-col ok">
+            <div class="phrases-col-title">✓ Autorisé (opinion)</div>
+            <ul>
+              <li>"Envie de tester leurs services de plomberie à Rambouillet"</li>
+              <li>"Bonne impression au téléphone, je recommande"</li>
+              <li>"Site clair sur leurs services de chaudière, très satisfait du contact"</li>
+              <li>"Artisan plombier sérieux dans le 78120, à retenir"</li>
+              <li>"Communication impeccable, je note pour mes futurs travaux SDB"</li>
+              <li>"Belle présentation de leurs prestations de débouchage"</li>
+              <li>"Acteur fiable de la plomberie secteur Rambouillet"</li>
+            </ul>
+          </div>
+          <div class="phrases-col ko">
+            <div class="phrases-col-title">✗ Interdit (expérience inventée)</div>
+            <ul>
+              <li>"J'ai testé leur service de plomberie"</li>
+              <li>"Le plombier est intervenu chez moi"</li>
+              <li>"Ils ont remplacé mon ballon d'eau chaude"</li>
+              <li>"Réparation effectuée le 12 mars"</li>
+              <li>"Tarif facturé : 180€"</li>
+              <li>"Diagnostic posé en 10 minutes"</li>
+              <li>"Intervention au 12 rue de la Paix"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-rule">
+        <div class="auth-rule-header">
+          <span class="auth-rule-badge">RÈGLE D'OR</span>
+          <div class="auth-rule-title">⚖️ La limite des 10% sur les avis "j'ai testé"</div>
+        </div>
+        <div class="auth-rule-content">
+          <strong>Maximum 10%</strong> du volume peut contenir une mention "j'ai testé". Ces 10% sont réservés à <strong>vos avis physiques à vous</strong> (vous, famille, vrais clients). Les 90% restants sont en mode <strong>opinion authentique</strong>.<br><br>
+          <span class="auth-rule-math">60 avis/mois</span> → <span class="auth-rule-math">max 6 "testé"</span> + <span class="auth-rule-math">54 opinions SEO</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════
+         6. EXEMPLES — RÉÉCRITS EN PUR MODE OPINION
+    ═══════════════════════════════════════════════════ -->
+    <div class="sec-title"><div class="sec-title-badge">6</div><h2>Exemples d'avis — méthode d'opinion stricte</h2></div>
+
+    <div class="examples-block">
+      <div class="examples-intro">
+        <strong>📚 Bibliothèque conforme à la règle.</strong> Tous ces exemples sont rédigés sur le <strong>principe d'opinion authentique</strong> : le Guide donne son ressenti basé sur ce qu'il <strong>observe réellement</strong> (site, Instagram, photos, téléphone, fiche Google) — <strong>jamais une expérience inventée</strong>. Mots-clés <span class="hl-service">services</span>, <span class="hl-geo">géolocalisation</span> et <span class="hl-sat">satisfaction</span> intégrés naturellement.
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-cat="opinion-pro" onclick="switchTab('opinion-pro')">💬 Pro & Image</button>
+        <button class="tab" data-cat="opinion-online" onclick="switchTab('opinion-online')">🌐 En ligne</button>
+        <button class="tab" data-cat="opinion-tel" onclick="switchTab('opinion-tel')">📞 Téléphone</button>
+        <button class="tab" data-cat="opinion-reco" onclick="switchTab('opinion-reco')">👍 Recommandation</button>
+        <button class="tab" data-cat="opinion-intention" onclick="switchTab('opinion-intention')">✨ Intention</button>
+        <button class="tab" data-cat="teste" onclick="switchTab('teste')">⚠️ Testé (max 10%)</button>
+      </div>
+
+      <!-- OPINION PRO -->
+      <div class="tab-content active" data-cat="opinion-pro">
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">En cherchant un <span class="hl-service">artisan plombier</span> dans le secteur de <span class="hl-geo">Rambouillet</span>, je suis tombé sur ETS Tamarys. L'image qui se dégage transpire le <span class="hl-sat">sérieux</span> : présence soignée, communication <span class="hl-sat">professionnelle</span>, transparence sur les <span class="hl-service">services de plomberie</span> proposés. <span class="hl-sat">Très satisfait</span> de l'impression globale, je note 5 étoiles. <span class="hl-sat">À recommander</span> selon moi.</div>
+          <div class="example-keywords"><span class="kw-chip service">artisan plombier</span><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">très satisfait</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Ce qui me plaît avec ETS Tamarys c'est la sensation d'<span class="hl-sat">équipe fiable</span> qui se dégage. La présentation de leurs prestations en <span class="hl-service">plomberie, chaudière, débouchage</span> est <span class="hl-sat">impeccable</span>. Pour un acteur local des <span class="hl-geo">Yvelines</span>, c'est <span class="hl-sat">au top</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">débouchage</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">fiable</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">au top</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Pour qui cherche un <span class="hl-service">plombier de confiance</span> dans le <span class="hl-geo">78120</span>, leur présentation rassure d'emblée. Multi-services (<span class="hl-service">plomberie, serrurerie, dépannage</span>), tout semble organisé. <span class="hl-sat">Excellent</span> positionnement local. Je note 5 étoiles pour la <span class="hl-sat">qualité</span> de l'image renvoyée par leur fiche.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier de confiance</span><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">qualité</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
+          <div class="example-text">Belle entreprise de <span class="hl-service">plomberie à Rambouillet</span>. Communication <span class="hl-sat">soignée</span>, image <span class="hl-sat">professionnelle</span>. <span class="hl-sat">À recommander</span> sans hésiter selon moi.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">soignée</span><span class="kw-chip sat">professionnelle</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
+          <div class="example-text"><span class="hl-sat">Très bonne impression</span> globale sur cette société de <span class="hl-service">plomberie et serrurerie</span> basée à <span class="hl-geo">Rambouillet</span>. La diversité des <span class="hl-service">services proposés</span> sur la fiche (<span class="hl-service">dépannage plomberie, installation chaudière, remplacement ballon eau chaude, débouchage canalisation, serrurerie urgence</span>) témoigne d'une vraie expertise affichée. Présentation <span class="hl-sat">impeccable</span>, équipe qui semble <span class="hl-sat">sérieuse</span>. Pour un acteur local du <span class="hl-geo">78120</span>, je suis <span class="hl-sat">ravi</span> d'avoir découvert cette entreprise.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip service">ballon eau chaude</span><span class="kw-chip service">débouchage canalisation</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">bonne impression</span><span class="kw-chip sat">ravi</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Acteur incontournable de la <span class="hl-service">plomberie</span> dans le secteur <span class="hl-geo">Rambouillet</span> d'après ce que je vois. Belle <span class="hl-sat">image de qualité</span> qui se dégage de leur fiche. <span class="hl-sat">Parfait</span> pour ceux qui cherchent du <span class="hl-sat">sérieux et de la fiabilité</span> à proximité.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">à proximité</span><span class="kw-chip sat">qualité</span><span class="kw-chip sat">parfait</span><span class="kw-chip sat">sérieux</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">L'éventail de <span class="hl-service">services (plombier, chauffagiste, serrurier, dépannage)</span> proposés à <span class="hl-geo">Rambouillet</span> est <span class="hl-sat">excellent</span>. Cela donne l'impression d'une entreprise complète, <span class="hl-sat">de confiance</span>, qui ne sous-traite pas. Image <span class="hl-sat">au top</span> à mon sens.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">chauffagiste</span><span class="kw-chip service">serrurier</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">de confiance</span><span class="kw-chip sat">au top</span></div>
+        </div>
+      </div>
+
+      <!-- OPINION ONLINE -->
+      <div class="tab-content" data-cat="opinion-online">
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Site internet vraiment bien fait pour un <span class="hl-service">plombier à Rambouillet</span>. Les <span class="hl-service">services (dépannage plomberie, installation chaudière, rénovation salle de bain)</span> sont clairement présentés. Transparence <span class="hl-sat">impeccable</span>, rare dans le secteur du dépannage. <span class="hl-sat">Excellent</span> travail de communication, bravo.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">dépannage plomberie</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">J'ai jeté un œil à leur Instagram et je suis <span class="hl-sat">positivement surpris</span>. Les photos publiées de chantiers <span class="hl-service">plomberie et salle de bain</span>, les avant/après de <span class="hl-service">installation chaudière</span> donnent une idée concrète de ce qu'ils proposent. Quand une entreprise ose montrer son travail comme ça, c'est <span class="hl-sat">très bon signe</span>. Belle image pour un acteur des <span class="hl-geo">Yvelines</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">salle de bain</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">positivement surpris</span><span class="kw-chip sat">très bon signe</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Les photos publiées sur leur fiche montrent un vrai <span class="hl-sat">souci du détail</span> dans leurs <span class="hl-service">interventions de plomberie</span>. <span class="hl-service">Travaux finis</span> proprement visibles à l'image, équipements posés droits, joints visibles propres. Ces petites choses transparaissent et font la différence pour un <span class="hl-service">artisan plombier</span> de <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Soigné</span>, je note.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan plombier</span><span class="kw-chip service">travaux</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">souci du détail</span><span class="kw-chip sat">soigné</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
+          <div class="example-text">Site clair et soigné. <span class="hl-service">Plomberie, serrurerie</span>, tout est listé. Présentation donne envie. <span class="hl-sat">Très bonne image pro</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip sat">très bonne image pro</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Ce qui m'a marqué en parcourant la fiche, c'est la façon dont ils répondent aux avis. Même aux mécontents, réponses <span class="hl-sat">polies</span>, propositions de solutions. Marque d'une <span class="hl-sat">entreprise sérieuse</span> de <span class="hl-service">plomberie</span> à <span class="hl-geo">Rambouillet</span> qui assume et veut s'améliorer. <span class="hl-sat">Très satisfait</span> de l'attitude affichée, je note.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">polies</span><span class="kw-chip sat">entreprise sérieuse</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Très bonne visibilité en ligne — je suis tombé sur eux en cherchant <span class="hl-service">plombier 78120</span>. Fiche <span class="hl-sat">impeccable</span> : horaires, photos, <span class="hl-service">services (chauffe-eau, fuite, débouchage)</span> détaillés. <span class="hl-sat">Parfait</span> pour savoir à qui on a affaire localement. Belle entreprise visiblement.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">chauffe-eau</span><span class="kw-chip service">fuite</span><span class="kw-chip service">débouchage</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">parfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
+          <div class="example-text">J'ai consulté plusieurs sites de <span class="hl-service">plombiers</span> dans le secteur <span class="hl-geo">Rambouillet</span> avant de me faire un avis général. Tamarys ressort vraiment du lot : présentation claire des <span class="hl-service">services (dépannage, chaudière, rénovation salle de bain, serrurerie)</span>, zone d'intervention précisée, photos de <span class="hl-service">travaux</span> visibles, témoignages détaillés. Tout est là pour rassurer. <span class="hl-sat">Excellent</span> positionnement local, je suis <span class="hl-sat">très satisfait</span> de cette découverte.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">dépannage</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">serrurerie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+      </div>
+
+      <!-- OPINION TEL -->
+      <div class="tab-content" data-cat="opinion-tel">
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Je les ai eus au téléphone pour me renseigner sur leurs prestations de <span class="hl-service">remplacement de chaudière</span>. Accueil <span class="hl-sat">chaleureux</span>, prise de temps pour expliquer le fonctionnement de leur société, sans pression commerciale. Ça change vraiment du discours habituel d'autres <span class="hl-service">plombiers</span> du <span class="hl-geo">secteur Rambouillet</span>. <span class="hl-sat">Bonne impression</span>, je n'hésiterai pas le moment venu. <span class="hl-sat">À recommander</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip service">plombiers</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">chaleureux</span><span class="kw-chip sat">bonne impression</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Appel pris dès la première sonnerie pour une question générale sur leurs prestations en <span class="hl-service">plomberie</span>. Personne très posée au bout du fil, prend le temps de répondre. Ce niveau de disponibilité affiché en dit long sur l'entreprise pour un <span class="hl-service">artisan</span> à <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Très satisfait</span> du contact.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">J'ai appelé pour avoir un premier avis sur leurs services de <span class="hl-service">dépannage fuite</span>. On m'a donné des explications claires sur leur démarche, gratuitement, avant même de parler de tarif. C'est rare et ça met <span class="hl-sat">en confiance</span> immédiatement. <span class="hl-sat">Excellent</span> service client pour ce <span class="hl-service">plombier de Rambouillet</span>, je note.</div>
+          <div class="example-keywords"><span class="kw-chip service">dépannage fuite</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">en confiance</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Échange téléphonique de <span class="hl-sat">qualité</span> en me renseignant sur un futur projet de <span class="hl-service">rénovation salle de bain</span>. La personne sait expliquer simplement, sans jargon technique. Très appréciable. <span class="hl-sat">Au top</span> niveau accueil chez ce <span class="hl-service">plombier-chauffagiste</span> des <span class="hl-geo">Yvelines</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">plombier-chauffagiste</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">qualité</span><span class="kw-chip sat">au top</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
+          <div class="example-text">Accueil téléphonique <span class="hl-sat">impeccable</span> en demandant des infos sur leur <span class="hl-service">service de dépannage plomberie</span>. <span class="hl-sat">Très satisfait</span> du contact.</div>
+          <div class="example-keywords"><span class="kw-chip service">dépannage plomberie</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Premier contact téléphonique <span class="hl-sat">très satisfaisant</span>. Un ordre de grandeur de tarif annoncé honnêtement dès le départ pour une éventuelle <span class="hl-service">installation de ballon d'eau chaude</span>. Pas de surprise prévisible, c'est exactement ce que je recherche chez un <span class="hl-service">plombier à Rambouillet</span>. <span class="hl-sat">Très professionnel</span> au bout du fil.</div>
+          <div class="example-keywords"><span class="kw-chip service">installation ballon eau chaude</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfaisant</span><span class="kw-chip sat">très professionnel</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Joints du premier coup, ce qui devient rare avec les <span class="hl-service">artisans plombiers</span> aujourd'hui. La personne au téléphone connaissait son sujet sur l'<span class="hl-service">entretien chaudière</span> et a su me renseigner. Très <span class="hl-sat">bonne</span> première approche pour un acteur du <span class="hl-geo">78120</span>. <span class="hl-sat">À recommander</span> sur la base de ce premier contact.</div>
+          <div class="example-keywords"><span class="kw-chip service">artisans plombiers</span><span class="kw-chip service">entretien chaudière</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">bonne</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+      </div>
+
+      <!-- OPINION RECO -->
+      <div class="tab-content" data-cat="opinion-reco">
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Recommandé par plusieurs personnes de mon entourage à <span class="hl-geo">Rambouillet</span> qui en parlent en très bons termes pour leurs prestations de <span class="hl-service">plomberie</span> et <span class="hl-service">remplacement de chaudière</span>. Avant de faire appel je voulais donner un retour positif sur la réputation qui les précède. Apparemment <span class="hl-sat">très fiable</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très fiable</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Quand on demande un bon <span class="hl-service">plombier</span> dans le <span class="hl-geo">secteur Rambouillet</span>, le nom Tamarys revient souvent dans les conversations. Pas par hasard sans doute. <span class="hl-sat">À recommander</span> sur la base de cette réputation <span class="hl-sat">excellente</span> que j'entends.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">à recommander</span><span class="kw-chip sat">excellente</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Bonne réputation locale d'après ce que j'entends sur cette entreprise de <span class="hl-service">plomberie et serrurerie</span> à <span class="hl-geo">Rambouillet</span>. La fiche Google confirme le ressenti : plus de 100 avis positifs, c'est <span class="hl-sat">rassurant</span>. <span class="hl-sat">Très satisfaisant</span> de voir un acteur des <span class="hl-geo">Yvelines</span> aussi bien noté.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">rassurant</span><span class="kw-chip sat">très satisfaisant</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Plusieurs personnes m'ont parlé de cette entreprise de <span class="hl-service">plomberie</span> en termes très positifs pour leurs prestations en <span class="hl-service">chaudière et débouchage</span>. Sans même avoir fait appel, je leur fais <span class="hl-sat">confiance</span> sur cette base. C'est de l'avis crédible que je donne ici, prêt à les contacter le jour où j'aurai besoin d'un <span class="hl-service">plombier sur Rambouillet</span>. <span class="hl-sat">À recommander</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">débouchage</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">confiance</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
+          <div class="example-text">Recommandé chaudement par un ami <span class="hl-service">artisan</span> lui-même. Avis posé sur cette base. <span class="hl-service">Plombier</span> apparemment reconnu par ses pairs dans la région <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> signe.</div>
+          <div class="example-keywords"><span class="kw-chip service">artisan</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Acteur local connu et reconnu de la <span class="hl-service">plomberie et serrurerie</span> dans le <span class="hl-geo">78120</span>. Quand on demande un <span class="hl-service">artisan sérieux dans le coin</span>, c'est leur nom qui revient en premier dans le bouche-à-oreille. Voilà, c'est dit. <span class="hl-sat">À recommander</span> selon ce que j'entends autour de moi.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">artisan</span><span class="kw-chip geo">78120</span><span class="kw-chip geo">dans le coin</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
+          <div class="example-text">Entendu parler de cette entreprise par plusieurs voisins avant même de regarder leur fiche Google. J'ai voulu vérifier par curiosité : très bonnes notes, communication <span class="hl-sat">professionnelle</span>, présence soignée. Tout converge vers une image positive de <span class="hl-service">plombier de confiance à Rambouillet</span> capable d'intervenir sur des sujets variés (<span class="hl-service">fuites, chaudières, débouchages, salles de bain</span>). Acteur <span class="hl-sat">fiable</span> du secteur visiblement, <span class="hl-sat">je recommande</span> les yeux fermés sur la base de tout ce que je vois.</div>
+          <div class="example-keywords"><span class="kw-chip service">plombier de confiance</span><span class="kw-chip service">fuites</span><span class="kw-chip service">chaudières</span><span class="kw-chip service">débouchages</span><span class="kw-chip service">salles de bain</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">professionnelle</span><span class="kw-chip sat">fiable</span><span class="kw-chip sat">je recommande</span></div>
+        </div>
+      </div>
+
+      <!-- OPINION INTENTION -->
+      <div class="tab-content" data-cat="opinion-intention">
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">J'ai vraiment envie de tester leurs services de <span class="hl-service">plomberie</span> prochainement. La présentation de leur fiche est tellement engageante que j'ai déjà sauvegardé leur contact pour le jour où j'aurai besoin d'un <span class="hl-service">dépannage</span> à <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> positionnement local.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Je vais m'y rendre prochainement pour un projet de <span class="hl-service">rénovation salle de bain</span> qui s'annonce dans les semaines à venir. Sur la base de tout ce que j'ai vu sur leur fiche, c'est vers ce <span class="hl-service">plombier de Rambouillet</span> que je vais me tourner sans hésiter. <span class="hl-sat">Très bonne impression</span>, <span class="hl-sat">à recommander</span> de mon point de vue.</div>
+          <div class="example-keywords"><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très bonne impression</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">À garder absolument dans les contacts utiles pour la <span class="hl-service">plomberie</span> à <span class="hl-geo">Rambouillet</span>. Ce genre d'<span class="hl-service">artisan plombier sérieux</span> et bien présenté, on se félicite de l'avoir repéré avant d'en avoir besoin en urgence. <span class="hl-sat">Au top</span> visuellement.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">au top</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
+          <div class="example-text">Hâte de tester pour mes futurs travaux de <span class="hl-service">plomberie</span>. <span class="hl-sat">Sérieux</span> qui transpire de la fiche, je note <span class="hl-sat">parfait</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">parfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">J'ai un projet de <span class="hl-service">remplacement de chaudière</span> qui démarre dans quelques mois. Après comparaison de plusieurs <span class="hl-service">plombiers chauffagistes</span> dans les <span class="hl-geo">Yvelines</span>, c'est vers ETS Tamarys que je me tournerai en priorité. Tout me plaît dans leur image <span class="hl-sat">professionnelle</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip service">plombiers chauffagistes</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">professionnelle</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Je vais leur demander un devis dans les prochaines semaines pour le <span class="hl-service">remplacement de mon ballon d'eau chaude</span>. La transparence affichée et le sérieux apparent me donnent envie de leur confier ce projet à ce <span class="hl-service">plombier de Rambouillet</span>. <span class="hl-sat">Très satisfait</span> du premier contact visuel avec leur communication.</div>
+          <div class="example-keywords"><span class="kw-chip service">remplacement ballon eau chaude</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
+          <div class="example-text">Mon avis avant même d'avoir testé leurs <span class="hl-service">services de plomberie et serrurerie</span> : je <span class="hl-sat">recommande</span> déjà sur la base de tout ce qui est visible. Et je n'hésiterai pas le moment venu à les solliciter pour un <span class="hl-service">dépannage urgent</span> sur <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> profil d'artisan d'après moi.</div>
+          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">dépannage urgent</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">recommande</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+      </div>
+
+      <!-- TESTÉ (10% MAX) -->
+      <div class="tab-content" data-cat="teste">
+        <div class="examples-intro" style="background:#fef3c7; border-color:var(--yellow);">
+          ⚠️ <strong>Catégorie limitée à 10% du volume total.</strong> Réservée à VOS avis physiques : vous-même, votre famille, votre équipe, vos vrais clients qui ont réellement été sur place. Mots-clés services et satisfaction intégrés naturellement. Les Local Guides n'écrivent JAMAIS ce type d'avis.
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text">Très <span class="hl-sat">satisfait</span> de leur intervention pour une <span class="hl-service">fuite sous l'évier</span>. Service propre, respect du devis annoncé. Je recommande pour ceux qui cherchent un <span class="hl-service">plombier sérieux à Rambouillet</span>. <span class="hl-sat">Excellent</span> service.</div>
+          <div class="example-keywords"><span class="kw-chip service">fuite</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">satisfait</span><span class="kw-chip sat">excellent</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text">Intervenus chez moi pour un <span class="hl-service">remplacement de chauffe-eau Atlantic 200L</span>. Travail soigné, ancien évacué proprement. Tarif conforme au devis annoncé. <span class="hl-sat">Très bonne expérience</span> avec ce <span class="hl-service">plombier-chauffagiste de Rambouillet</span>. <span class="hl-sat">À recommander</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">remplacement chauffe-eau</span><span class="kw-chip service">plombier-chauffagiste</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très bonne expérience</span><span class="kw-chip sat">à recommander</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text"><span class="hl-service">Fuite</span> réparée rapidement et proprement. <span class="hl-sat">Très satisfait</span>, je recommande.</div>
+          <div class="example-keywords"><span class="kw-chip service">fuite</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text">Intervention d'urgence un samedi soir pour une <span class="hl-service">fuite importante dans la salle de bain</span>. Réponse immédiate, sur place rapidement. Réparation propre, retour le lendemain pour reboucher. Tarif annoncé en amont, montant respecté. <span class="hl-sat">Excellent</span> service pour ce <span class="hl-service">plombier d'urgence à Rambouillet</span>. <span class="hl-sat">Au top</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">fuite salle de bain</span><span class="kw-chip service">plombier d'urgence</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">au top</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text"><span class="hl-service">Installation complète de salle de bain</span> pour un appartement en location à <span class="hl-geo">Rambouillet</span>. Délais respectés, finitions impeccables. Résultat conforme au devis présenté. Je recommande pour les chantiers d'envergure de <span class="hl-service">rénovation plomberie</span>. <span class="hl-sat">Très satisfait</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">installation salle de bain</span><span class="kw-chip service">rénovation plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text">Appelé pour des <span class="hl-service">WC bouchés</span> à répétition. Solution trouvée et appliquée. Plus aucun problème depuis. <span class="hl-sat">Excellent</span> service et travail <span class="hl-sat">professionnel</span> pour ce <span class="hl-service">plombier débouchage</span> du <span class="hl-geo">secteur Rambouillet</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">WC bouchés</span><span class="kw-chip service">plombier débouchage</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">professionnel</span></div>
+        </div>
+
+        <div class="example-card tested">
+          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
+          <div class="example-text"><span class="hl-service">Remplacement d'une pièce sur ma chaudière</span> qui ne fonctionnait plus. Diagnostic posé rapidement après plusieurs autres techniciens qui n'avaient rien trouvé. Pièce changée le jour même. Niveau d'expertise vraiment au-dessus pour ce <span class="hl-service">chauffagiste à Rambouillet</span>. <span class="hl-sat">Très satisfait</span>, <span class="hl-sat">bluffant</span>.</div>
+          <div class="example-keywords"><span class="kw-chip service">chaudière</span><span class="kw-chip service">chauffagiste</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span><span class="kw-chip sat">bluffant</span></div>
+        </div>
+      </div>
+
+      <div class="examples-disclaimer">
+        <strong>⚠️ Note importante :</strong> Tous les exemples des 5 premiers onglets respectent <strong>strictement la règle d'opinion</strong> — aucune expérience inventée, aucun "j'ai testé", aucune intervention décrite. Le Guide donne son ressenti sur ce qu'il observe (site, Instagram, photos, téléphone, fiche). Seul l'onglet "Testé" (max 10%) contient des descriptions d'expérience, réservé à vos vrais clients physiques.
+      </div>
+    </div>
+
+    <!-- 7. RECO -->
+    <div class="sec-title"><div class="sec-title-badge">7</div><h2>Notre recommandation pour vous</h2></div>
+
+    <div class="important-banner">
+      <div class="important-banner-icon">!</div>
+      <div class="important-banner-text">
+        <strong>Important :</strong> Les avis affichés sont des <strong>exemples</strong> que nos Guides Locaux utilisent comme référence. Ils illustrent les bonnes pratiques de la <strong>Charte de Qualité — Guides Locaux</strong>. Ce ne sont pas les avis publiés tels quels.
+      </div>
+    </div>
+
+    <div class="reco-hero">
+      <div class="reco-hero-badge">✓ Optimal pour fiche mature (123 avis)</div>
+      <div class="reco-hero-title" id="recoTitle">Forfait PROFESSIONNEL</div>
+      <div class="reco-hero-price"><span id="recoPrice">299</span>€ <span class="unit">/mois</span></div>
+      <div class="reco-hero-volume"><strong id="recoVolume">60 avis 100% authentiques</strong> · cadence <strong id="recoCadence">2 par jour</strong> · max <strong id="recoTested">6</strong> "testé"</div>
+      <div class="reco-hero-why">
+        <div class="reco-hero-why-title">Pourquoi ce forfait pour votre fiche</div>
+        <ul>
+          <li>Fiche <strong>mature (123 avis)</strong> = peut absorber 2/jour</li>
+          <li><strong>54 avis d'opinion SEO</strong> + max 6 avis "testé"</li>
+          <li>Intégration auto mots-clés services + géo + satisfaction</li>
+          <li>Profils Local Guides niveau 7+, garantie 50% rétention</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="offer-selector-title">⚙️ Ajustez la cadence</div>
+    <div class="offer-grid">
+      <div class="offer-card" data-offer="starter" onclick="selectOffer('starter')">
+        <div class="offer-card-radio"></div>
+        <div class="offer-card-name">Starter</div>
+        <div class="offer-card-price">235€<span class="month">/mois</span></div>
+        <div class="offer-card-volume">30 avis / mois</div>
+        <div class="offer-card-cadence">≈ 1 avis par jour</div>
+        <div class="offer-card-tested">⚠️ max 3 "testé"</div>
+      </div>
+      <div class="offer-card selected recommended" data-offer="pro" onclick="selectOffer('pro')">
+        <div class="offer-card-radio"></div>
+        <div class="offer-card-name">Professionnel</div>
+        <div class="offer-card-price">299€<span class="month">/mois</span></div>
+        <div class="offer-card-volume">60 avis / mois</div>
+        <div class="offer-card-cadence">≈ 2 avis par jour</div>
+        <div class="offer-card-tested">⚠️ max 6 "testé"</div>
+      </div>
+      <div class="offer-card" data-offer="enterprise" onclick="selectOffer('enterprise')">
+        <div class="offer-card-radio"></div>
+        <div class="offer-card-name">Entreprise</div>
+        <div class="offer-card-price">499€<span class="month">/mois</span></div>
+        <div class="offer-card-volume">90 avis / mois</div>
+        <div class="offer-card-cadence">≈ 3 avis par jour</div>
+        <div class="offer-card-tested">⚠️ max 9 "testé"</div>
+      </div>
+    </div>
+
+    <div class="booster active" id="booster">
+      <div class="booster-urgent-badge">CRITIQUE POUR VOUS</div>
+      <div class="booster-header">
+        <div class="booster-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div class="booster-title-block"><div class="booster-label">⚡ Boostez votre taux de validation</div><div class="booster-title">Optimisation complète de fiche</div></div>
+        <div class="booster-price"><div class="booster-price-value">+350€</div><div class="booster-price-label">Paiement unique</div></div>
+      </div>
+      <div class="booster-why"><strong>⚠️ Crucial pour VOUS :</strong> dilue le pic suspect de janvier avec photos géotaggées, posts, Q&A, articles SEO. Google interprète votre fiche comme légitime.</div>
+      <div class="booster-impact">
+        <div class="booster-impact-stat"><div class="booster-impact-num">65%</div><div class="booster-impact-label">Sans optim<small>Validation</small></div></div>
+        <div class="booster-impact-arrow">→</div>
+        <div class="booster-impact-stat"><div class="booster-impact-num">80%</div><div class="booster-impact-label">Avec optim<small>+15%</small></div></div>
+      </div>
+      <div class="booster-inclusions">
+        <div>Audit SEO complet</div>
+        <div>Étude 5 concurrents locaux</div>
+        <div>Réécriture description SEO</div>
+        <div>Catégories optimisées</div>
+        <div>10 photos + géotagging GPS</div>
+        <div>Logo + couverture pro</div>
+        <div>4 posts Google publiés</div>
+        <div>3 articles SEO site</div>
+        <div>10 Q&A stratégiques</div>
+        <div>Score SEO +30 points garanti</div>
+        <div>Métadonnées EXIF nettoyées</div>
+        <div>Livraison 7 jours</div>
+      </div>
+      <button class="booster-toggle" onclick="toggleBooster()">
+        <span class="toggle-add">+ Ajouter l'optimisation</span>
+        <span class="toggle-remove">✓ Optimisation ajoutée — Retirer</span>
+      </button>
+    </div>
+
+    <div class="recap">
+      <div class="recap-title">📋 Récapitulatif</div>
+      <div class="recap-row">
+        <div class="label"><span id="recapOfferName">Forfait PROFESSIONNEL</span><small id="recapOfferDetail">60 avis / mois · max 6 "testé"</small></div>
+        <div class="price"><span id="recapOfferPrice">299</span>€<small style="font-weight:500; color:var(--muted);">/mois</small></div>
+      </div>
+      <div class="recap-row" id="recapOptim">
+        <div class="label">Optimisation de fiche <small>Paiement unique</small></div>
+        <div class="price">350€</div>
+      </div>
+      <div class="recap-total">
+        <div class="label">Total à payer</div>
+        <div class="price"><span id="recapTotal">649</span>€</div>
+      </div>
+      <div class="recap-monthly visible" id="recapMonthly">
+        <strong>Mois suivants :</strong> <span id="recapMonthlyValue">299</span>€ / mois
+      </div>
+      <a id="ctaBtn" href="https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13" class="btn-final-cta">
+        🎁 Commander maintenant
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <div class="btn-final-cta-sub" id="ctaSub"><strong>-15% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement</div>
+    </div>
+
+    <div class="rapport-cta">
+      <div class="rapport-cta-text">
+        <h3>Recevoir votre rapport complet par email</h3>
+        <p>Un lien permanent vers cette analyse, partageable à tout moment.</p>
+      </div>
+      <button class="rapport-cta-btn" onclick="openCaptureModal()">Envoyer le rapport →</button>
+    </div>
+
+    <div class="footer-trust">
+      <span><span class="dot"></span> Local Guides vérifiés</span>
+      <span><span class="dot"></span> Méthode d'opinion stricte</span>
+      <span><span class="dot"></span> Règle des 10%</span>
+      <span><span class="dot"></span> RGPD compliant</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal capture contact -->
+<div class="modal-overlay" id="captureModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Recevoir votre rapport par email</h2>
+      <p>Accédez à votre analyse complète avec les recommandations personnalisées.</p>
+    </div>
+    <div id="captureFormWrap">
+      <div class="modal-body">
+        <div class="modal-field">
+          <label for="captureName">Prénom et nom</label>
+          <input type="text" id="captureName" placeholder="Jean Dupont" autocomplete="name">
+        </div>
+        <div class="modal-field">
+          <label for="captureEmail">Adresse email</label>
+          <input type="email" id="captureEmail" placeholder="jean@example.com" autocomplete="email">
+        </div>
+        <div class="modal-field">
+          <label for="capturePhone">Téléphone</label>
+          <input type="tel" id="capturePhone" placeholder="06 00 00 00 00" autocomplete="tel">
+        </div>
+        <button class="modal-submit" id="captureSubmitBtn" onclick="runCapture()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+          Recevoir mon rapport
+        </button>
+        <div class="modal-skip">
+          <button onclick="closeCaptureModal()">Fermer sans recevoir le rapport</button>
+        </div>
+      </div>
+    </div>
+    <div id="captureSuccessWrap" style="display:none;">
+      <div class="modal-success">
+        <div class="modal-success-icon">✓</div>
+        <h3>Email envoyé !</h3>
+        <p>Votre rapport a été envoyé à <strong id="captureSuccessEmail"></strong>.<br>Vérifiez votre boîte mail (et les spams).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // URL de l'API — en prod remplacer par https://api.manager-achatavis.com
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5001'
+    : 'https://api.manager-achatavis.com';
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
+
+  function makeChips(list, cls) {
+    return list.map(k => `<span class="kw-chip ${cls}">${esc(k)}</span>`).join('');
+  }
+
+  function makeListItems(items) {
+    return items.map(function(t) {
+      var li = document.createElement('li');
+      li.textContent = t;
+      return li.outerHTML;
+    }).join('');
+  }
+
+  function prependAICard(tabCat, name, text) {
+    var tab = document.querySelector('.tab-content[data-cat="' + tabCat + '"]');
+    if (!tab) return;
+    var card = document.createElement('div');
+    card.className = 'example-card ai-generated';
+    card.style.cssText = 'border-color:var(--purple);background:linear-gradient(to right,#f5f3ff,#fafbfc);';
+    var header = document.createElement('div');
+    header.className = 'example-header';
+    var stars = document.createElement('span');
+    stars.className = 'example-stars';
+    stars.textContent = '★★★★★';
+    var tagOp = document.createElement('span');
+    tagOp.className = 'example-tag opinion';
+    tagOp.textContent = 'Opinion';
+    var tagAI = document.createElement('span');
+    tagAI.className = 'example-tag';
+    tagAI.style.cssText = 'background:var(--purple-soft);color:var(--purple);font-weight:800;';
+    tagAI.textContent = 'IA · Adapté à ' + name;
+    header.appendChild(stars);
+    header.appendChild(tagOp);
+    header.appendChild(tagAI);
+    var body = document.createElement('div');
+    body.className = 'example-text';
+    body.textContent = text;
+    card.appendChild(header);
+    card.appendChild(body);
+    tab.insertBefore(card, tab.firstChild);
+  }
+
+  const OFFERS = {
+    starter:    { name: 'STARTER',        price: 235, avis: 30, maxTested: 3, cadenceText: '1 par jour', paceText: '1 avis / jour', volText: '~30 avis', stableText: '~25 avis stables', discount: 10, stripe: 'https://buy.stripe.com/aFabJ270L4Zw3kq4vW7Re12' },
+    pro:        { name: 'PROFESSIONNEL',  price: 299, avis: 60, maxTested: 6, cadenceText: '2 par jour', paceText: '2 avis / jour', volText: '~60 avis', stableText: '~50 avis stables', discount: 15, stripe: 'https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13' },
+    enterprise: { name: 'ENTREPRISE',     price: 499, avis: 90, maxTested: 9, cadenceText: '3 par jour', paceText: '3 avis / jour', volText: '~90 avis', stableText: '~70 avis stables', discount: 20, stripe: 'https://buy.stripe.com/REPLACE_ENTERPRISE' }
+  };
+  const OPTIM = { price: 350, validationBoost: 15 };
+
+  function recommendOffer(reviewCount, difficulty, hasSuppressions) {
+    if (hasSuppressions) return 'starter';
+    if (reviewCount < 10) return 'starter';
+    if (reviewCount < 30) return difficulty > 65 ? 'starter' : 'pro';
+    if (reviewCount >= 30) return 'pro';
+    return 'pro';
+  }
+
+  const DIAGNOSTIC = { baseValidation: 65, baseSeo: 76, baseDifficulty: 78, reviewCount: 123, hasSuspectPic: true, optimisationPreSelected: true };
+  DIAGNOSTIC.recommendedOffer = recommendOffer(DIAGNOSTIC.reviewCount, DIAGNOSTIC.baseDifficulty, false);
+
+  let state = { offer: DIAGNOSTIC.recommendedOffer, optimisation: DIAGNOSTIC.optimisationPreSelected };
+
+  function populatePage(data) {
+    document.querySelector('.identity-cat').textContent = '🔧 ' + data.categoryLabel;
+    document.querySelector('.identity-name').textContent = data.name;
+    document.querySelector('.identity-addr').textContent = '📍 ' + (data.address || 'Fiche Google Business');
+    document.querySelector('.verdict-badge-value').textContent = data.verdict;
+
+    // Photo de profil Google
+    var bizPhoto = document.getElementById('bizPhoto');
+    if (bizPhoto) {
+      if (data.photoUrl) {
+        bizPhoto.src = data.photoUrl;
+        bizPhoto.alt = data.name;
+        bizPhoto.style.display = 'block';
+      } else {
+        bizPhoto.style.display = 'none';
+      }
+    }
+
+    var stats = document.querySelectorAll('.stat-mini-value');
+    if (stats[0]) stats[0].textContent = data.rating.toFixed(1).replace('.', ',');
+    if (stats[1]) stats[1].textContent = data.reviewCount;
+    // Stat site web — affiché uniquement si l'info est disponible
+    var statSite = document.getElementById('statSite');
+    var statSiteVal = document.getElementById('statSiteVal');
+    if (statSite && statSiteVal) {
+      if (data.hasWebsite !== undefined) {
+        statSiteVal.textContent = data.hasWebsite ? 'Oui' : 'Non';
+        statSite.style.display = '';
+      } else {
+        statSite.style.display = 'none';
+      }
+    }
+    if (stats[3]) stats[3].textContent = data.ancienneteLabel;
+
+    var criticalAlert = document.querySelector('.critical-alert');
+    if (criticalAlert) {
+      criticalAlert.style.display = data.hasSpike ? 'grid' : 'none';
+      if (data.hasSpike && data.spikeDescription) {
+        var alertTitle = criticalAlert.querySelector('.critical-alert-title');
+        var alertText  = criticalAlert.querySelector('.critical-alert-text');
+        if (alertTitle) alertTitle.textContent = 'Pic d\'avis anormal détecté';
+        if (alertText)  alertText.textContent  = data.spikeDescription + '. Pattern détectable par Google. Exposés à une suppression rétroactive.';
+      }
+    }
+
+    DIAGNOSTIC.baseValidation  = data.scores.validation;
+    DIAGNOSTIC.baseSeo         = data.scores.seo;
+    DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
+    DIAGNOSTIC.reviewCount     = data.reviewCount;
+
+    DIAGNOSTIC.recommendedOffer = recommendOffer(data.reviewCount, data.scores.difficulty, data.hasSpike);
+    state.offer = DIAGNOSTIC.recommendedOffer;
+    document.querySelectorAll('.offer-card').forEach(function(card) {
+      card.classList.toggle('selected', card.dataset.offer === state.offer);
+    });
+
+    var kwTitle = document.querySelector('.kw-block-title');
+    if (kwTitle) kwTitle.textContent = '🎯 Vocabulaire détecté pour ' + data.name;
+
+    var kwSections = document.querySelectorAll('.kw-section .kw-list');
+    if (kwSections[0] && data.keywords.services)     kwSections[0].innerHTML = makeChips(data.keywords.services, 'service');
+    if (kwSections[1] && data.keywords.geo)          kwSections[1].innerHTML = makeChips(data.keywords.geo, 'geo');
+    if (kwSections[2] && data.keywords.satisfaction) kwSections[2].innerHTML = makeChips(data.keywords.satisfaction, 'sat');
+
+    // Diagnostic : Vigilance / Atouts
+    if (data.diagnostic) {
+      var warnList  = document.querySelector('.diag-warnings .diag-list');
+      var warnCount = document.querySelector('.diag-warnings .count');
+      if (warnList)  warnList.innerHTML  = makeListItems(data.diagnostic.warnings);
+      if (warnCount) warnCount.textContent = data.diagnostic.warnings.length;
+
+      var strList  = document.querySelector('.diag-strengths .diag-list');
+      var strCount = document.querySelector('.diag-strengths .count');
+      if (strList)  strList.innerHTML  = makeListItems(data.diagnostic.strengths);
+      if (strCount) strCount.textContent = data.diagnostic.strengths.length;
+    }
+
+    // Formulations OK vs interdites
+    if (data.formulations) {
+      var okList = document.querySelector('.phrases-col.ok ul');
+      var koList = document.querySelector('.phrases-col.ko ul');
+      if (okList) okList.innerHTML = makeListItems(data.formulations.ok);
+      if (koList) koList.innerHTML = makeListItems(data.formulations.ko);
+    }
+
+    // Exemples IA — injectés en tête de chaque onglet
+    if (data.aiExamples && data.aiExamples.length > 0) {
+      document.querySelectorAll('.example-card.ai-generated').forEach(function(el) { el.remove(); });
+      var tabMap = { pro: 'opinion-pro', tel: 'opinion-tel', online: 'opinion-online', reco: 'opinion-reco' };
+      data.aiExamples.forEach(function(ex) {
+        var cat = tabMap[ex.type];
+        if (cat) prependAICard(cat, data.name, ex.text);
+      });
+    }
+  }
+
+  let currentLeadId = null;
+  let currentBusinessName = null;
+
+  function openCaptureModal() {
+    if (!currentLeadId) return;
+    document.getElementById('captureFormWrap').style.display = 'block';
+    document.getElementById('captureSuccessWrap').style.display = 'none';
+    document.getElementById('captureSubmitBtn').disabled = false;
+    document.getElementById('captureSubmitBtn').textContent = 'Recevoir mon rapport';
+    document.getElementById('captureModal').classList.add('open');
+    setTimeout(function() { document.getElementById('captureName').focus(); }, 300);
+  }
+
+  function closeCaptureModal() {
+    document.getElementById('captureModal').classList.remove('open');
+  }
+
+  async function runCapture() {
+    const name  = document.getElementById('captureName').value.trim();
+    const email = document.getElementById('captureEmail').value.trim();
+    const phone = document.getElementById('capturePhone').value.trim();
+
+    if (!name || !email || !phone) {
+      alert('Veuillez renseigner prénom/nom, email et téléphone.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert('Adresse email invalide.');
+      return;
+    }
+
+    const btn = document.getElementById('captureSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours…';
+
+    const reportUrl = window.location.origin + '/analyseur-de-fiche-google.html?report_id=' + currentLeadId;
+
+    try {
+      const res = await fetch(API_BASE + '/api/analyze/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lead_id:       currentLeadId,
+          name:          name,
+          email:         email,
+          phone:         phone,
+          action:        'email_rapport',
+          business_name: currentBusinessName,
+          report_url:    reportUrl,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        btn.disabled = false;
+        btn.textContent = 'Recevoir mon rapport';
+        alert(data.error || 'Erreur lors de l\'envoi. Réessayez.');
+        return;
+      }
+
+      // Email bien envoyé côté serveur — on affiche la confirmation AVANT de fermer
+      document.getElementById('captureFormWrap').style.display = 'none';
+      document.getElementById('captureSuccessWrap').style.display = 'block';
+      document.getElementById('captureSuccessEmail').textContent = email;
+
+      // Fermeture automatique 3s après confirmation
+      setTimeout(closeCaptureModal, 3000);
+
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'Recevoir mon rapport';
+      alert('Erreur réseau. Réessayez.');
+    }
+  }
+
+  async function runAnalysis() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) { alert('Veuillez coller le lien de votre fiche Google Maps'); return; }
+    const btn = document.getElementById('analyzeBtn');
+    const svgArrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    btn.disabled = true;
+    btn.textContent = 'Analyse en cours…';
+    document.getElementById('results').classList.remove('active');
+    document.getElementById('loadingState').style.display = 'block';
+    setTimeout(function() { document.getElementById('loadingState').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+
+    try {
+      const res = await fetch(API_BASE + '/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'analyse');
+
+      // Stocker le lead pour la capture contact
+      currentLeadId       = data._lead_id || null;
+      currentBusinessName = data.name || '';
+
+      populatePage(data);
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('results').classList.add('active');
+      animateGauges();
+      updateAll();
+      if (state.optimisation) {
+        document.getElementById('boostBadge').classList.add('active');
+        document.getElementById('gaugeCard1').classList.add('boosted');
+      }
+      setTimeout(function() { document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
+    } catch (err) {
+      document.getElementById('loadingState').style.display = 'none';
+      alert('Erreur : ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Relancer le diagnostic ' + svgArrow;
+    }
+  }
+
+  function animateGauges() {
+    const validation = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', validation, 427, '%');
+    animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, '/100');
+    animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.baseDifficulty, 427, '/100');
+  }
+
+  function animateGauge(circleId, valId, target, circumference, suffix) {
+    const offset = circumference - (target / 100) * circumference;
+    const circle = document.getElementById(circleId);
+    const valEl = document.getElementById(valId);
+    circle.style.strokeDashoffset = circumference;
+    valEl.innerHTML = '0<span class="gauge-suffix">' + suffix + '</span>';
+    requestAnimationFrame(() => { circle.style.strokeDashoffset = offset; });
+    let current = 0;
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - start) / 1200);
+      const eased = 1 - Math.pow(1 - p, 3);
+      current = Math.round(target * eased);
+      valEl.innerHTML = current + '<span class="gauge-suffix">' + suffix + '</span>';
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function selectOffer(key) {
+    state.offer = key;
+    document.querySelectorAll('.offer-card').forEach(card => card.classList.toggle('selected', card.dataset.offer === key));
+    updateAll();
+  }
+
+  function toggleBooster() {
+    state.optimisation = !state.optimisation;
+    document.getElementById('booster').classList.toggle('active', state.optimisation);
+    document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
+    document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
+    const newValue = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', newValue, 427, '%');
+    document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
+    document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';
+    document.getElementById('gauge1Upsell').style.display = state.optimisation ? 'none' : 'block';
+    updateAll();
+  }
+
+  function updateAll() {
+    const o = OFFERS[state.offer];
+    document.getElementById('recoTitle').textContent = 'Forfait ' + o.name;
+    document.getElementById('recoPrice').textContent = o.price;
+    document.getElementById('recoVolume').textContent = o.avis + ' avis 100% authentiques';
+    document.getElementById('recoCadence').textContent = o.cadenceText;
+    document.getElementById('recoTested').textContent = o.maxTested;
+    document.getElementById('pace1').textContent = o.paceText;
+    document.getElementById('vol1').textContent = o.volText;
+    document.getElementById('maxTested').textContent = o.maxTested;
+    document.getElementById('stableResult').textContent = o.stableText;
+    document.getElementById('recapOfferName').textContent = 'Forfait ' + o.name;
+    document.getElementById('recapOfferDetail').textContent = o.avis + ' avis / mois · max ' + o.maxTested + ' "testé"';
+    document.getElementById('recapOfferPrice').textContent = o.price;
+    document.getElementById('recapOptim').classList.toggle('removed', !state.optimisation);
+    const total = o.price + (state.optimisation ? OPTIM.price : 0);
+    document.getElementById('recapTotal').textContent = total;
+    document.getElementById('recapMonthly').classList.toggle('visible', state.optimisation);
+    document.getElementById('recapMonthlyValue').textContent = o.price;
+    document.getElementById('ctaBtn').href = o.stripe;
+    document.getElementById('ctaSub').innerHTML = '<strong>-' + o.discount + '% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement';
+  }
+
+  function switchTab(cat) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
+  }
+
+  updateAll();
+</script>
+
+</body>
+</html>
