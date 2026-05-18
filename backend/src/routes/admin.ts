@@ -4,6 +4,7 @@ import * as identityVerif from '../controllers/identityVerificationController';
 import * as communique from '../controllers/communiqueController';
 import * as adminGmailVerif from '../controllers/gmailVerificationController';
 import { authenticate, authorize, checkPermission } from '../middleware/auth';
+import { query as dbQuery } from '../config/database';
 
 import { LogService } from '../services/logService';
 
@@ -139,5 +140,35 @@ router.post('/communiques/:id/notify', SECTORS, communique.adminResendNotificati
 
 // Impersonation — owner + admins ayant la permission can_impersonate
 router.post('/impersonate/:userId', checkPermission('can_impersonate'), adminController.impersonateUser);
+
+// Analyses fiches — historique des leads (liste paginée + recherche)
+router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
+    try {
+        const page   = Math.max(1, parseInt(String(req.query.page  || '1')));
+        const limit  = Math.min(100, parseInt(String(req.query.limit || '20')));
+        const search = (req.query.search as string || '').trim();
+        const offset = (page - 1) * limit;
+
+        let where = '1=1';
+        const params: any = {};
+        if (search) {
+            where += ' AND (business_name LIKE :search OR address LIKE :search)';
+            params.search = `%${search}%`;
+        }
+
+        const rows  = await dbQuery(
+            `SELECT id, business_name, address, rating, review_count, category_label,
+                    scores_validation, scores_seo, scores_difficulty, verdict,
+                    has_website, has_spike, ip_address, created_at
+             FROM analyze_leads WHERE ${where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset`,
+            { ...params, limit, offset }
+        );
+        const [{ cnt }] = await dbQuery(`SELECT COUNT(*) AS cnt FROM analyze_leads WHERE ${where}`, params);
+
+        res.json({ rows, total: cnt || 0, page, limit });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 export default router;

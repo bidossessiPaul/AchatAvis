@@ -25,7 +25,8 @@ import {
     Activity,
     Megaphone,
     Flag,
-    Settings
+    Settings,
+    BarChart2
 } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
@@ -108,9 +109,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 
-                // Owner-only: Logs
+                // Owner-only: Logs + Analyses fiches
                 if (user.email === 'dossoumaxime888@gmail.com') {
                     allAdminItems.splice(-1, 0, { label: 'Logs Activité', path: '/admin/logs', icon: <Activity size={20} /> });
+                    allAdminItems.splice(-1, 0, { label: 'Analyses fiches', path: '/admin/analyze-leads', icon: <BarChart2 size={20} /> });
                 }
 
                 // Filter: show only items the admin has permission for

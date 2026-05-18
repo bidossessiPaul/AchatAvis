@@ -67,6 +67,7 @@ const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), '
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
 const AdminGmailVerifications = lazyNamed(() => import('./pages/admin/AdminGmailVerifications'), 'AdminGmailVerifications');
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
+const AdminAnalyzeLeads = lazyNamed(() => import('./pages/admin/AdminAnalyzeLeads'), 'AdminAnalyzeLeads');
 const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
 
 // Signalement (admin)
@@ -550,6 +551,14 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <AdminLogs />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/analyze-leads"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminAnalyzeLeads />
                                 </ProtectedRoute>
                             }
                         />

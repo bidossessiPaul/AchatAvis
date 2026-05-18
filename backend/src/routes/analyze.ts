@@ -1,7 +1,35 @@
 import { Router, Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import { v4 as uuidv4 } from 'uuid';
+import { query as dbQuery } from '../config/database';
 
 const router = Router();
+
+// Crée la table analyze_leads si elle n'existe pas encore
+async function ensureAnalyzeLeadsTable() {
+    await dbQuery(`
+        CREATE TABLE IF NOT EXISTS analyze_leads (
+            id              VARCHAR(36)  PRIMARY KEY,
+            business_name   VARCHAR(255) NOT NULL,
+            address         TEXT,
+            rating          DECIMAL(2,1) DEFAULT 0,
+            review_count    INT          DEFAULT 0,
+            category_label  VARCHAR(100),
+            verdict         VARCHAR(50),
+            scores_validation INT,
+            scores_seo        INT,
+            scores_difficulty INT,
+            has_website     TINYINT(1)   DEFAULT 0,
+            has_spike       TINYINT(1)   DEFAULT 0,
+            ip_address      VARCHAR(45),
+            report_data     JSON,
+            created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_created_at (created_at),
+            INDEX idx_business_name (business_name(100))
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+}
+ensureAnalyzeLeadsTable().catch(() => {/* table création ignorée si déjà existante */});
 
 // Mapping secteur → difficulté de base + keywords SEO
 const SECTOR_CONFIG: Record<string, { difficulty: number; label: string; services: string[] }> = {
@@ -693,7 +721,7 @@ router.post('/', async (req: Request, res: Response) => {
         const diagnostic = buildDiagnostic(diagParams);
         const aiContent  = anthropic_key ? await generateAIContent(aiParams, anthropic_key) : null;
 
-        return res.json({
+        const responsePayload = {
             name:           place.displayName?.text || 'Établissement',
             categoryLabel:  cfg.label,
             types,
@@ -723,11 +751,57 @@ router.post('/', async (req: Request, res: Response) => {
             formulations:   aiContent ? { ok: aiContent.ok, ko: aiContent.ko } : null,
             aiExamples:     aiContent?.examples || null,
             photoUrl,
-        });
+        };
+
+        // Sauvegarde du lead en base (fire-and-forget, n'impacte pas la réponse)
+        const leadId = uuidv4();
+        dbQuery(
+            `INSERT INTO analyze_leads
+             (id, business_name, address, rating, review_count, category_label, verdict,
+              scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
+             VALUES (:id, :bn, :addr, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
+            {
+                id:      leadId,
+                bn:      responsePayload.name,
+                addr:    responsePayload.address || '',
+                rating:  responsePayload.rating,
+                rc:      responsePayload.reviewCount,
+                cat:     responsePayload.categoryLabel,
+                verdict: responsePayload.verdict,
+                sv:      responsePayload.scores.validation,
+                ss:      responsePayload.scores.seo,
+                sd:      responsePayload.scores.difficulty,
+                hw:      responsePayload.hasWebsite ? 1 : 0,
+                hs:      responsePayload.hasSpike ? 1 : 0,
+                ip:      (req as any).ip || '',
+                rd:      JSON.stringify(responsePayload),
+            }
+        ).catch(() => {/* log silencieux si la table n'existe pas encore */});
+
+        return res.json({ ...responsePayload, _lead_id: leadId });
 
     } catch (err: any) {
         console.error('[POST /api/analyze]', err.message);
         return res.status(500).json({ error: 'Erreur interne lors de l\'analyse' });
+    }
+});
+
+// Récupère un rapport sauvegardé par ID (public, pas d'auth — lien partageable)
+router.get('/report/:id', async (req: Request, res: Response) => {
+    try {
+        const rows = await dbQuery(
+            'SELECT report_data FROM analyze_leads WHERE id = :id LIMIT 1',
+            { id: req.params.id }
+        );
+        if (!rows || rows.length === 0) {
+            return res.status(404).json({ error: 'Rapport introuvable' });
+        }
+        const data = typeof rows[0].report_data === 'string'
+            ? JSON.parse(rows[0].report_data)
+            : rows[0].report_data;
+        return res.json(data);
+    } catch (err: any) {
+        return res.status(500).json({ error: err.message });
     }
 });
 
