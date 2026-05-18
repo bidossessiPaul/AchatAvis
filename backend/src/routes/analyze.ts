@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { query as dbQuery } from '../config/database';
+import { transporter, emailConfig } from '../config/email';
 
 const router = Router();
 
@@ -29,10 +30,12 @@ async function ensureAnalyzeLeadsTable(): Promise<void> {
             INDEX idx_business_name (business_name(100))
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
-    // Ajoute original_url si la table existait déjà sans cette colonne
-    await dbQuery(`
-        ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS original_url VARCHAR(1000) AFTER address
-    `).catch(() => {/* colonne déjà présente */});
+    // Ajoute les colonnes manquantes si la table existait déjà
+    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS original_url   VARCHAR(1000) AFTER address`).catch(() => {});
+    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_name   VARCHAR(255)  AFTER ip_address`).catch(() => {});
+    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_email  VARCHAR(255)  AFTER contact_name`).catch(() => {});
+    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_phone  VARCHAR(50)   AFTER contact_email`).catch(() => {});
+    await dbQuery(`ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS contact_at     DATETIME      AFTER contact_phone`).catch(() => {});
 }
 
 // Appelé une fois au démarrage — bloque jusqu'à ce que la table soit prête
@@ -801,6 +804,78 @@ router.post('/', async (req: Request, res: Response) => {
     } catch (err: any) {
         console.error('[POST /api/analyze]', err.message);
         return res.status(500).json({ error: 'Erreur interne lors de l\'analyse' });
+    }
+});
+
+// Capture les coordonnées du lead + envoie le rapport par email
+router.post('/capture', async (req: Request, res: Response) => {
+    const { lead_id, name, email, phone, action, business_name, report_url } = req.body as {
+        lead_id?: string; name?: string; email?: string; phone?: string;
+        action?: string; business_name?: string; report_url?: string;
+    };
+
+    if (!name || !email || !phone) {
+        return res.status(400).json({ error: 'Nom, email et téléphone requis' });
+    }
+    if (!lead_id) {
+        return res.status(400).json({ error: 'lead_id manquant' });
+    }
+
+    try {
+        // Sauvegarde des coordonnées en DB
+        await dbQuery(
+            `UPDATE analyze_leads SET contact_name=:n, contact_email=:e, contact_phone=:p, contact_at=NOW()
+             WHERE id=:id`,
+            { n: name, e: email, p: phone, id: lead_id }
+        );
+
+        // Email au client
+        const shareUrl = report_url || '';
+        const biz = business_name || 'votre fiche Google';
+        await transporter.sendMail({
+            from: emailConfig.from,
+            to: email,
+            subject: `Votre analyse Google Business — ${biz}`,
+            html: `
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+              <div style="background:linear-gradient(135deg,#059669,#047857);padding:32px 28px;text-align:center;">
+                <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.02em;">AchatAvis</div>
+                <div style="color:#a7f3d0;font-size:14px;margin-top:4px;">Votre rapport d'analyse Google Business</div>
+              </div>
+              <div style="padding:32px 28px;">
+                <p style="font-size:16px;font-weight:700;color:#0f172a;margin:0 0 8px;">Bonjour ${name},</p>
+                <p style="color:#475569;font-size:15px;line-height:1.6;margin:0 0 24px;">
+                  Votre analyse de la fiche <strong style="color:#0f172a;">${biz}</strong> est prête.
+                  Cliquez ci-dessous pour consulter votre rapport complet avec les recommandations avancées
+                  pour <strong>optimiser votre fiche</strong> et <strong>dépasser vos concurrents</strong>.
+                </p>
+                <div style="text-align:center;margin:28px 0;">
+                  <a href="${shareUrl}" style="display:inline-block;background:linear-gradient(135deg,#059669,#047857);color:#fff;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;">
+                    Voir mon rapport complet →
+                  </a>
+                </div>
+                <div style="background:#f8fafc;border-radius:10px;padding:16px 20px;border:1px solid #e2e8f0;margin-top:20px;">
+                  <p style="color:#64748b;font-size:13px;margin:0;">Le lien ci-dessus vous est réservé. Vous pouvez le partager à qui vous souhaitez pour qu'ils voient votre analyse.</p>
+                </div>
+              </div>
+              <div style="padding:20px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
+                <p style="color:#94a3b8;font-size:12px;margin:0;">© AchatAvis · <a href="https://achatavis.com" style="color:#059669;">achatavis.com</a></p>
+              </div>
+            </div>`,
+        });
+
+        // Notification interne admin
+        transporter.sendMail({
+            from: emailConfig.from,
+            to: process.env.ADMIN_EMAIL || 'contact@achatavis.com',
+            subject: `[Lead Analyseur] ${name} — ${biz}`,
+            html: `<p><b>Nom :</b> ${name}<br><b>Email :</b> ${email}<br><b>Téléphone :</b> ${phone}<br><b>Fiche :</b> ${biz}<br><b>Action :</b> ${action || '?'}<br><b>Rapport :</b> <a href="${shareUrl}">${shareUrl}</a></p>`,
+        }).catch(() => {});
+
+        return res.json({ ok: true });
+    } catch (err: any) {
+        console.error('[capture]', err.message);
+        return res.status(500).json({ error: 'Erreur lors de l\'envoi' });
     }
 });
 

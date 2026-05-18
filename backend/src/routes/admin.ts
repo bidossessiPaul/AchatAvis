@@ -157,9 +157,8 @@ router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
         }
 
         const rows  = await dbQuery(
-            `SELECT id, business_name, address, rating, review_count, category_label,
-                    scores_validation, scores_seo, scores_difficulty, verdict,
-                    has_website, has_spike, ip_address, created_at
+            `SELECT id, business_name, original_url, scores_validation, verdict,
+                    contact_name, contact_email, created_at
              FROM analyze_leads WHERE ${where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset`,
             { ...params, limit, offset }
         );

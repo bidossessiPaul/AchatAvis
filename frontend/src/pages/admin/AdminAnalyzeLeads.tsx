@@ -1,42 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Search, ExternalLink, Globe, AlertTriangle, TrendingUp, Calendar, Star } from 'lucide-react';
+import { Search, ExternalLink, Calendar } from 'lucide-react';
 import api from '../../services/api';
 
 interface AnalyzeLead {
     id: string;
     business_name: string;
-    address: string;
-    rating: number;
-    review_count: number;
-    category_label: string;
-    verdict: string;
+    original_url: string;
     scores_validation: number;
-    scores_seo: number;
-    scores_difficulty: number;
-    has_website: number;
-    has_spike: number;
-    ip_address: string;
+    verdict: string;
+    contact_name: string | null;
+    contact_email: string | null;
     created_at: string;
 }
 
-// Même domaine que le dashboard admin — le HTML est dans /public du même déploiement
 const FRONTEND_URL = window.location.origin;
 
 const verdictColor: Record<string, { bg: string; color: string }> = {
-    Facile:   { bg: '#dcfce7', color: '#166534' },
-    Modéré:   { bg: '#fef3c7', color: '#92400e' },
-    Difficile:{ bg: '#fee2e2', color: '#991b1b' },
-    Expert:   { bg: '#ede9fe', color: '#6d28d9' },
+    Facile:    { bg: '#dcfce7', color: '#166534' },
+    Modéré:    { bg: '#fef3c7', color: '#92400e' },
+    Difficile: { bg: '#fee2e2', color: '#991b1b' },
+    Expert:    { bg: '#ede9fe', color: '#6d28d9' },
 };
 
 export const AdminAnalyzeLeads: React.FC = () => {
-    const [rows, setRows]     = useState<AnalyzeLead[]>([]);
-    const [total, setTotal]   = useState(0);
-    const [page, setPage]     = useState(1);
-    const [search, setSearch] = useState('');
+    const [rows, setRows]       = useState<AnalyzeLead[]>([]);
+    const [total, setTotal]     = useState(0);
+    const [page, setPage]       = useState(1);
+    const [search, setSearch]   = useState('');
     const [loading, setLoading] = useState(false);
-    const limit = 20;
+    const limit = 25;
 
     const load = useCallback(async (p: number, q: string) => {
         setLoading(true);
@@ -60,47 +53,28 @@ export const AdminAnalyzeLeads: React.FC = () => {
         setPage(1);
     };
 
-    const openReport = (id: string) => {
+    const openReport = (id: string) =>
         window.open(`${FRONTEND_URL}/analyseur-de-fiche-google.html?report_id=${id}`, '_blank');
-    };
 
-    const formatDate = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const formatDate = (d: string) =>
+        new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
     const totalPages = Math.ceil(total / limit);
 
     return (
         <DashboardLayout>
             <div style={{ padding: '2rem' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Analyses de fiches Google</h1>
-                        <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '0.9rem' }}>{total} analyse{total !== 1 ? 's' : ''} enregistrée{total !== 1 ? 's' : ''}</p>
-                    </div>
-                </div>
-
-                {/* KPI cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-                    {[
-                        { label: 'Total analyses', value: total, icon: <TrendingUp size={20} />, color: '#059669' },
-                        { label: 'Avec pic suspect', value: rows.filter(r => r.has_spike).length, icon: <AlertTriangle size={20} />, color: '#d97706' },
-                        { label: 'Sans site web', value: rows.filter(r => !r.has_website).length, icon: <Globe size={20} />, color: '#2563eb' },
-                    ].map(k => (
-                        <div key={k.label} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ background: k.color + '18', borderRadius: '0.625rem', padding: '0.5rem', color: k.color }}>{k.icon}</div>
-                            <div>
-                                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{k.value}</div>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{k.label}</div>
-                            </div>
-                        </div>
-                    ))}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>Analyses de fiches Google</h1>
+                    <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '0.9rem' }}>{total} analyse{total !== 1 ? 's' : ''} enregistrée{total !== 1 ? 's' : ''}</p>
                 </div>
 
                 {/* Recherche */}
-                <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '0.85rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <Search size={16} color="#94a3b8" />
                     <input
                         type="text"
-                        placeholder="Rechercher par nom ou adresse…"
+                        placeholder="Rechercher par nom de fiche…"
                         value={search}
                         onChange={handleSearch}
                         style={{ border: 'none', outline: 'none', flex: 1, fontSize: '0.9rem', color: '#0f172a', background: 'transparent' }}
@@ -112,7 +86,7 @@ export const AdminAnalyzeLeads: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: '#f8fafc' }}>
-                                {['Fiche', 'Note / Avis', 'Scores', 'Verdict', 'IP', 'Date', ''].map(h => (
+                                {['Fiche', 'Lien analysé', 'Contact', 'Score', 'Verdict', 'Date', ''].map(h => (
                                     <th key={h} style={{ padding: '0.875rem 1.25rem', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>{h}</th>
                                 ))}
                             </tr>
@@ -126,31 +100,34 @@ export const AdminAnalyzeLeads: React.FC = () => {
                                 const vc = verdictColor[r.verdict] || { bg: '#f1f5f9', color: '#475569' };
                                 return (
                                     <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }} onMouseEnter={e => (e.currentTarget.style.background = '#fafbfc')} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                                        <td style={{ padding: '0.875rem 1.25rem', maxWidth: '220px' }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.business_name}</div>
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.category_label}</div>
-                                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
-                                                {!!r.has_website && <span style={{ color: '#059669', marginRight: '6px' }}>Site web</span>}
-                                                {!!r.has_spike && <span style={{ color: '#d97706' }}>Pic suspect</span>}
-                                            </div>
+                                        <td style={{ padding: '0.875rem 1.25rem', maxWidth: '200px' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.business_name}</div>
+                                        </td>
+                                        <td style={{ padding: '0.875rem 1.25rem', maxWidth: '200px' }}>
+                                            {r.original_url ? (
+                                                <a href={r.original_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', color: '#2563eb', textDecoration: 'none', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {r.original_url.replace(/^https?:\/\//i, '').replace(/\/$/, '')}
+                                                </a>
+                                            ) : (
+                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>—</span>
+                                            )}
                                         </td>
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700, color: '#0f172a', fontSize: '0.9rem' }}>
-                                                <Star size={13} color="#f59e0b" fill="#f59e0b" />{Number(r.rating).toFixed(1)}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{r.review_count} avis</div>
+                                            {r.contact_name ? (
+                                                <div>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}>{r.contact_name}</div>
+                                                    <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{r.contact_email}</div>
+                                                </div>
+                                            ) : (
+                                                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Non renseigné</span>
+                                            )}
                                         </td>
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Validation <strong style={{ color: '#059669' }}>{r.scores_validation}%</strong></div>
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SEO <strong style={{ color: '#2563eb' }}>{r.scores_seo}/100</strong></div>
-                                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Difficulté <strong style={{ color: '#f97316' }}>{r.scores_difficulty}/100</strong></div>
-                                            </div>
+                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#059669' }}>{r.scores_validation}%</span>
                                         </td>
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
                                             <span style={{ background: vc.bg, color: vc.color, padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>{r.verdict}</span>
                                         </td>
-                                        <td style={{ padding: '0.875rem 1.25rem', fontSize: '0.75rem', color: '#94a3b8', fontFamily: 'monospace' }}>{r.ip_address || '—'}</td>
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: '#64748b' }}>
                                                 <Calendar size={12} />{formatDate(r.created_at)}
