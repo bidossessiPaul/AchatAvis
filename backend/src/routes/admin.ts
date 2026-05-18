@@ -7,7 +7,7 @@ import { authenticate, authorize, checkPermission } from '../middleware/auth';
 import { query as dbQuery } from '../config/database';
 
 import { LogService } from '../services/logService';
-import { tableReady } from './analyze';
+import { analyzeLeadsReady } from '../services/analyzeLeadsTable';
 
 const router = express.Router();
 
@@ -145,7 +145,7 @@ router.post('/impersonate/:userId', checkPermission('can_impersonate'), adminCon
 // Analyses fiches — historique des leads (liste paginée + recherche)
 router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
     try {
-        await tableReady; // garantit que la table existe avant le SELECT
+        await analyzeLeadsReady; // garantit que la table et les colonnes existent
         const page   = Math.max(1, parseInt(String(req.query.page  || '1')));
         const limit  = Math.min(100, parseInt(String(req.query.limit || '20')));
         const search = (req.query.search as string || '').trim();
