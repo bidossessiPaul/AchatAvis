@@ -734,39 +734,37 @@ router.post('/', async (req: Request, res: Response) => {
             photoUrl,
         };
 
-        // Sauvegarde du lead en base (fire-and-forget — n'impacte pas la réponse)
+        // Sauvegarde du lead en base — await obligatoire sur Vercel (pas de background tasks)
         const leadId = uuidv4();
         const originalUrl = (url as string) || '';
-        ;(async () => {
-            try {
-                await tableReady; // attend que la table existe avant d'insérer
-                await dbQuery(
-                    `INSERT INTO analyze_leads
-                     (id, business_name, address, original_url, rating, review_count, category_label, verdict,
-                      scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
-                     VALUES (:id, :bn, :addr, :ou, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
-                    {
-                        id:      leadId,
-                        bn:      responsePayload.name,
-                        addr:    responsePayload.address || '',
-                        ou:      originalUrl,
-                        rating:  responsePayload.rating,
-                        rc:      responsePayload.reviewCount,
-                        cat:     responsePayload.categoryLabel,
-                        verdict: responsePayload.verdict,
-                        sv:      responsePayload.scores.validation,
-                        ss:      responsePayload.scores.seo,
-                        sd:      responsePayload.scores.difficulty,
-                        hw:      responsePayload.hasWebsite ? 1 : 0,
-                        hs:      responsePayload.hasSpike ? 1 : 0,
-                        ip:      (req as any).ip || '',
-                        rd:      JSON.stringify(responsePayload),
-                    }
-                );
-            } catch (e: any) {
-                console.error('[analyze_leads INSERT]', e?.message);
-            }
-        })();
+        try {
+            await analyzeLeadsReady;
+            await dbQuery(
+                `INSERT INTO analyze_leads
+                 (id, business_name, address, original_url, rating, review_count, category_label, verdict,
+                  scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
+                 VALUES (:id, :bn, :addr, :ou, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
+                {
+                    id:      leadId,
+                    bn:      responsePayload.name,
+                    addr:    responsePayload.address || '',
+                    ou:      originalUrl,
+                    rating:  responsePayload.rating,
+                    rc:      responsePayload.reviewCount,
+                    cat:     responsePayload.categoryLabel,
+                    verdict: responsePayload.verdict,
+                    sv:      responsePayload.scores.validation,
+                    ss:      responsePayload.scores.seo,
+                    sd:      responsePayload.scores.difficulty,
+                    hw:      responsePayload.hasWebsite ? 1 : 0,
+                    hs:      responsePayload.hasSpike ? 1 : 0,
+                    ip:      (req as any).ip || '',
+                    rd:      JSON.stringify(responsePayload),
+                }
+            );
+        } catch (e: any) {
+            console.error('[analyze_leads INSERT]', e?.message);
+        }
 
         return res.json({ ...responsePayload, _lead_id: leadId, _original_url: originalUrl });
 
