@@ -542,8 +542,9 @@ router.post('/', async (req: Request, res: Response) => {
             const { resolvedUrl, extractedName, isKnowledgeGraph } = await resolveShareGoogle(longUrl);
             shareGoogleName = extractedName;
 
-            // Si share.google redirige vers une URL Maps directe → extraire Place ID ou coords depuis cette URL
+            // Si share.google redirige vers une URL Maps directe → utiliser cette URL comme longUrl
             if (resolvedUrl && (resolvedUrl.includes('google.com/maps') || resolvedUrl.includes('maps.google'))) {
+                longUrl = resolvedUrl; // Outscraper fallback bénéficiera de l'URL Maps
                 placeId = extractPlaceId(resolvedUrl);
                 if (!placeId) {
                     const resolvedCoords = extractPreciseCoords(resolvedUrl) || extractViewCoords(resolvedUrl);
@@ -556,12 +557,12 @@ router.post('/', async (req: Request, res: Response) => {
             // Sinon (Google Search / kgmid) → Text Search avec le nom extrait
             if (!placeId && extractedName) {
                 placeId = await searchPlaceByText(extractedName, apiKey);
+                // Mettre à jour longUrl avec le nom pour qu'Outscraper puisse chercher par nom
+                if (!placeId) longUrl = extractedName;
             }
 
-            // Seulement si kgmid ET aucun résultat Places → profil perso confirmé
-            if (!placeId && isKnowledgeGraph) {
-                return res.status(422).json({ error: `Ce lien pointe vers un profil Google personnel${extractedName ? ` (${extractedName})` : ''}, pas une fiche Google Business. Demandez le lien depuis Google Maps → Partager → Copier le lien.` });
-            }
+            // Seulement si kgmid ET aucun résultat Places → on laisse Outscraper tenter avant d'abandonner
+            // (ne pas retourner 422 ici — Outscraper peut récupérer la fiche via le nom)
         }
 
         const outscraper_key = process.env.OUTSCRAPER_API_KEY;
