@@ -6,30 +6,39 @@ import { query as dbQuery } from '../config/database';
 const router = Router();
 
 // Crée la table analyze_leads si elle n'existe pas encore
-async function ensureAnalyzeLeadsTable() {
+async function ensureAnalyzeLeadsTable(): Promise<void> {
     await dbQuery(`
         CREATE TABLE IF NOT EXISTS analyze_leads (
-            id              VARCHAR(36)  PRIMARY KEY,
-            business_name   VARCHAR(255) NOT NULL,
+            id              VARCHAR(36)   PRIMARY KEY,
+            business_name   VARCHAR(255)  NOT NULL,
             address         TEXT,
-            rating          DECIMAL(2,1) DEFAULT 0,
-            review_count    INT          DEFAULT 0,
+            original_url    VARCHAR(1000),
+            rating          DECIMAL(2,1)  DEFAULT 0,
+            review_count    INT           DEFAULT 0,
             category_label  VARCHAR(100),
             verdict         VARCHAR(50),
             scores_validation INT,
             scores_seo        INT,
             scores_difficulty INT,
-            has_website     TINYINT(1)   DEFAULT 0,
-            has_spike       TINYINT(1)   DEFAULT 0,
+            has_website     TINYINT(1)    DEFAULT 0,
+            has_spike       TINYINT(1)    DEFAULT 0,
             ip_address      VARCHAR(45),
             report_data     JSON,
-            created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
+            created_at      DATETIME      DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_created_at (created_at),
             INDEX idx_business_name (business_name(100))
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+    // Ajoute original_url si la table existait déjà sans cette colonne
+    await dbQuery(`
+        ALTER TABLE analyze_leads ADD COLUMN IF NOT EXISTS original_url VARCHAR(1000) AFTER address
+    `).catch(() => {/* colonne déjà présente */});
 }
-ensureAnalyzeLeadsTable().catch(() => {/* table création ignorée si déjà existante */});
+
+// Appelé une fois au démarrage — bloque jusqu'à ce que la table soit prête
+let tableReady: Promise<void> = ensureAnalyzeLeadsTable().catch((err) => {
+    console.error('[analyze_leads] Erreur création table:', err?.message);
+});
 
 // Mapping secteur → difficulté de base + keywords SEO
 const SECTOR_CONFIG: Record<string, { difficulty: number; label: string; services: string[] }> = {
@@ -753,32 +762,41 @@ router.post('/', async (req: Request, res: Response) => {
             photoUrl,
         };
 
-        // Sauvegarde du lead en base (fire-and-forget, n'impacte pas la réponse)
+        // Sauvegarde du lead en base (fire-and-forget — n'impacte pas la réponse)
         const leadId = uuidv4();
-        dbQuery(
-            `INSERT INTO analyze_leads
-             (id, business_name, address, rating, review_count, category_label, verdict,
-              scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
-             VALUES (:id, :bn, :addr, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
-            {
-                id:      leadId,
-                bn:      responsePayload.name,
-                addr:    responsePayload.address || '',
-                rating:  responsePayload.rating,
-                rc:      responsePayload.reviewCount,
-                cat:     responsePayload.categoryLabel,
-                verdict: responsePayload.verdict,
-                sv:      responsePayload.scores.validation,
-                ss:      responsePayload.scores.seo,
-                sd:      responsePayload.scores.difficulty,
-                hw:      responsePayload.hasWebsite ? 1 : 0,
-                hs:      responsePayload.hasSpike ? 1 : 0,
-                ip:      (req as any).ip || '',
-                rd:      JSON.stringify(responsePayload),
+        const originalUrl = (url as string) || '';
+        ;(async () => {
+            try {
+                await tableReady; // attend que la table existe avant d'insérer
+                await dbQuery(
+                    `INSERT INTO analyze_leads
+                     (id, business_name, address, original_url, rating, review_count, category_label, verdict,
+                      scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
+                     VALUES (:id, :bn, :addr, :ou, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
+                    {
+                        id:      leadId,
+                        bn:      responsePayload.name,
+                        addr:    responsePayload.address || '',
+                        ou:      originalUrl,
+                        rating:  responsePayload.rating,
+                        rc:      responsePayload.reviewCount,
+                        cat:     responsePayload.categoryLabel,
+                        verdict: responsePayload.verdict,
+                        sv:      responsePayload.scores.validation,
+                        ss:      responsePayload.scores.seo,
+                        sd:      responsePayload.scores.difficulty,
+                        hw:      responsePayload.hasWebsite ? 1 : 0,
+                        hs:      responsePayload.hasSpike ? 1 : 0,
+                        ip:      (req as any).ip || '',
+                        rd:      JSON.stringify(responsePayload),
+                    }
+                );
+            } catch (e: any) {
+                console.error('[analyze_leads INSERT]', e?.message);
             }
-        ).catch(() => {/* log silencieux si la table n'existe pas encore */});
+        })();
 
-        return res.json({ ...responsePayload, _lead_id: leadId });
+        return res.json({ ...responsePayload, _lead_id: leadId, _original_url: originalUrl });
 
     } catch (err: any) {
         console.error('[POST /api/analyze]', err.message);
@@ -790,7 +808,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.get('/report/:id', async (req: Request, res: Response) => {
     try {
         const rows = await dbQuery(
-            'SELECT report_data FROM analyze_leads WHERE id = :id LIMIT 1',
+            'SELECT report_data, original_url FROM analyze_leads WHERE id = :id LIMIT 1',
             { id: req.params.id }
         );
         if (!rows || rows.length === 0) {
@@ -799,6 +817,8 @@ router.get('/report/:id', async (req: Request, res: Response) => {
         const data = typeof rows[0].report_data === 'string'
             ? JSON.parse(rows[0].report_data)
             : rows[0].report_data;
+        // Inclure l'URL originale pour pré-remplir le champ dans le viewer
+        data._original_url = rows[0].original_url || '';
         return res.json(data);
     } catch (err: any) {
         return res.status(500).json({ error: err.message });
