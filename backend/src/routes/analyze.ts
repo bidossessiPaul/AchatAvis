@@ -654,7 +654,8 @@ router.post('/', async (req: Request, res: Response) => {
         const sector     = detectSector(types);
         const cfg        = SECTOR_CONFIG[sector] || SECTOR_CONFIG['default'];
         // Ancienneté : réelle si Outscraper a répondu, estimée sinon
-        const anciennete = spikeData.anciennete > 0 ? spikeData.anciennete : estimerAnciennete(reviewCount);
+        const ancienneteReelle = spikeData.anciennete > 0;
+        const anciennete = ancienneteReelle ? spikeData.anciennete : estimerAnciennete(reviewCount);
         const hasSpike   = spikeData.hasSpike;
 
         const validation = scoreValidation(reviewCount, rating, anciennete, cfg.difficulty);
@@ -699,7 +700,9 @@ router.post('/', async (req: Request, res: Response) => {
             hasPhone,
             hasPhotos,
             anciennete,
-            ancienneteLabel: anciennete < 12 ? `${anciennete} mois (estimé)` : `${Math.round(anciennete / 12)} an(s) (estimé)`,
+            ancienneteLabel: anciennete < 12
+                ? `${anciennete} mois${ancienneteReelle ? '' : ' (estimé)'}`
+                : `${Math.round(anciennete / 12)} an(s)${ancienneteReelle ? '' : ' (estimé)'}`,
             hasSpike,
             spikeDescription: spikeData.spikeDescription,
             scores:         { validation, seo, difficulty },

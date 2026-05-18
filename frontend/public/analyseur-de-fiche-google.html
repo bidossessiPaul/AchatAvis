@@ -1086,7 +1086,7 @@
   const OFFERS = {
     starter:    { name: 'STARTER',        price: 235, avis: 30, maxTested: 3, cadenceText: '1 par jour', paceText: '1 avis / jour', volText: '~30 avis', stableText: '~25 avis stables', discount: 10, stripe: 'https://buy.stripe.com/aFabJ270L4Zw3kq4vW7Re12' },
     pro:        { name: 'PROFESSIONNEL',  price: 299, avis: 60, maxTested: 6, cadenceText: '2 par jour', paceText: '2 avis / jour', volText: '~60 avis', stableText: '~50 avis stables', discount: 15, stripe: 'https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13' },
-    enterprise: { name: 'ENTREPRISE',     price: 499, avis: 90, maxTested: 9, cadenceText: '3 par jour', paceText: '3 avis / jour', volText: '~90 avis', stableText: '~70 avis stables', discount: 20, stripe: 'https://buy.stripe.com/REPLACE_ENTERPRISE' }
+    enterprise: { name: 'ENTREPRISE',     price: 499, avis: 90, maxTested: 9, cadenceText: '3 par jour', paceText: '3 avis / jour', volText: '~90 avis', stableText: '~70 avis stables', discount: 20, stripe: null }
   };
   const OPTIM = { price: 350, validationBoost: 15 };
 
@@ -1104,7 +1104,21 @@
   let state = { offer: DIAGNOSTIC.recommendedOffer, optimisation: DIAGNOSTIC.optimisationPreSelected };
 
   function populatePage(data) {
-    document.querySelector('.identity-cat').textContent = '🔧 ' + data.categoryLabel;
+    var sectorIcons = { plumber:'🔧', locksmith:'🔑', restaurant:'🍽️', electrician:'⚡', garage:'🚗', beauty_salon:'💇', driving_school:'🚦', hotel:'🏨', health:'🩺', default:'🏢' };
+    var sectorKey = (data.types || []).reduce(function(found, t) {
+      if (found) return found;
+      if (t === 'plumber') return 'plumber';
+      if (t === 'locksmith') return 'locksmith';
+      if (['restaurant','food','cafe','bakery','bar'].includes(t)) return 'restaurant';
+      if (t === 'electrician') return 'electrician';
+      if (['car_repair','car_dealer'].includes(t)) return 'garage';
+      if (['beauty_salon','hair_care','spa'].includes(t)) return 'beauty_salon';
+      if (t === 'driving_school') return 'driving_school';
+      if (['lodging','hotel'].includes(t)) return 'hotel';
+      if (['doctor','dentist','physiotherapist','hospital','health'].includes(t)) return 'health';
+      return null;
+    }, null) || 'default';
+    document.querySelector('.identity-cat').textContent = (sectorIcons[sectorKey] || '🏢') + ' ' + data.categoryLabel;
     document.querySelector('.identity-name').textContent = data.name;
     document.querySelector('.identity-addr').textContent = '📍 ' + (data.address || 'Fiche Google Business');
     document.querySelector('.verdict-badge-value').textContent = data.verdict;
@@ -1312,7 +1326,9 @@
     document.getElementById('recapTotal').textContent = total;
     document.getElementById('recapMonthly').classList.toggle('visible', state.optimisation);
     document.getElementById('recapMonthlyValue').textContent = o.price;
-    document.getElementById('ctaBtn').href = o.stripe;
+    var ctaBtn = document.getElementById('ctaBtn');
+    if (o.stripe) { ctaBtn.href = o.stripe; ctaBtn.style.opacity = ''; ctaBtn.style.pointerEvents = ''; }
+    else { ctaBtn.href = '#'; ctaBtn.style.opacity = '0.5'; ctaBtn.style.pointerEvents = 'none'; }
     document.getElementById('ctaSub').innerHTML = '<strong>-' + o.discount + '% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement';
   }
 
