@@ -39,7 +39,7 @@ async function ensureAnalyzeLeadsTable(): Promise<void> {
 }
 
 // Appelé une fois au démarrage — bloque jusqu'à ce que la table soit prête
-let tableReady: Promise<void> = ensureAnalyzeLeadsTable().catch((err) => {
+export let tableReady: Promise<void> = ensureAnalyzeLeadsTable().catch((err) => {
     console.error('[analyze_leads] Erreur création table:', err?.message);
 });
 

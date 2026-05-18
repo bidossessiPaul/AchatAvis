@@ -1422,7 +1422,18 @@
       var phone = result.value.phone;
       var shareUrl = getShareUrl();
 
-      // Envoie les coordonnées au backend + email au client
+      // Pour PDF et WhatsApp : action immédiate, envoi email en parallèle
+      if (action === 'pdf') {
+        doPDF();
+      } else if (action === 'whatsapp') {
+        var validation = document.getElementById('gauge1Val') ? document.getElementById('gauge1Val').textContent.trim() : '';
+        var waText = 'Voici l\'analyse de ma fiche Google : *' + bizName + '*\n'
+          + '• Taux de validation : ' + validation + '\n'
+          + '• Rapport complet : ' + shareUrl;
+        window.open('https://wa.me/?text=' + encodeURIComponent(waText), '_blank');
+      }
+
+      // Envoie les coordonnées au backend + email au client (attendu pour feedback)
       fetch(API_BASE + '/api/analyze/capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1435,44 +1446,20 @@
           business_name: bizName,
           report_url:    shareUrl
         })
-      }).catch(function() {}); // fire-and-forget côté client
-
-      // Exécute l'action demandée
-      if (action === 'pdf') {
-        doPDF();
-        Swal.fire({
-          icon: 'success',
-          title: 'PDF en cours de génération',
-          html: 'Votre rapport est également envoyé à <strong>' + email + '</strong>',
-          confirmButtonColor: '#059669',
-          timer: 3500,
-          timerProgressBar: true,
-          customClass: { popup: 'swal-font' }
-        });
-      } else if (action === 'whatsapp') {
-        var validation = document.getElementById('gauge1Val') ? document.getElementById('gauge1Val').textContent.trim() : '';
-        var text = 'Voici l\'analyse de ma fiche Google : *' + bizName + '*\n'
-          + '• Taux de validation : ' + validation + '\n'
-          + '• Rapport complet : ' + shareUrl;
-        window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
-        Swal.fire({
-          icon: 'success',
-          title: 'WhatsApp ouvert',
-          html: 'Le rapport est aussi envoyé à <strong>' + email + '</strong>',
-          confirmButtonColor: '#059669',
-          timer: 3000,
-          timerProgressBar: true,
-          customClass: { popup: 'swal-font' }
-        });
-      } else {
-        Swal.fire({
-          icon: 'success',
-          title: 'Lien envoyé par email',
-          html: 'Votre lien personnalisé a été envoyé à <strong>' + email + '</strong>',
-          confirmButtonColor: '#059669',
-          customClass: { popup: 'swal-font' }
-        });
-      }
+      })
+      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function() {
+        if (action === 'pdf') {
+          Swal.fire({ icon: 'success', title: 'PDF téléchargé', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3500, timerProgressBar: true, customClass: { popup: 'swal-font' } });
+        } else if (action === 'whatsapp') {
+          Swal.fire({ icon: 'success', title: 'WhatsApp ouvert', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3000, timerProgressBar: true, customClass: { popup: 'swal-font' } });
+        } else {
+          Swal.fire({ icon: 'success', title: 'Lien envoyé par email', html: 'Votre lien personnalisé a été envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
+        }
+      })
+      .catch(function() {
+        Swal.fire({ icon: 'error', title: 'Erreur d\'envoi', html: 'Impossible d\'envoyer l\'email à <strong>' + email + '</strong>.<br>Vérifiez l\'adresse ou réessayez.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
+      });
     });
   }
 
