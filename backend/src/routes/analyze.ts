@@ -144,12 +144,14 @@ interface OutscraperReview {
 
 interface OutscraperResult {
     reviews_data?: OutscraperReview[];
+    site?: string;
 }
 
 interface SpikeAnalysis {
     hasSpike: boolean;
     anciennete: number;  // mois depuis le 1er avis
     spikeDescription: string;
+    site?: string;       // site web extrait par Outscraper (fallback si Places API ne retourne pas websiteUri)
 }
 
 // Outscraper fallback : récupère les infos d'une fiche Maps via scraping (URL directe)
@@ -181,9 +183,11 @@ async function fetchReviewHistory(placeId: string, apiKey: string): Promise<Spik
         if (!res.ok) return { hasSpike: false, anciennete: 0, spikeDescription: '' };
 
         const data = await res.json() as { data?: OutscraperResult[] };
-        const reviews: OutscraperReview[] = data?.data?.[0]?.reviews_data || [];
+        const result = data?.data?.[0];
+        const reviews: OutscraperReview[] = result?.reviews_data || [];
+        const site = result?.site || undefined;
 
-        if (reviews.length === 0) return { hasSpike: false, anciennete: 0, spikeDescription: '' };
+        if (reviews.length === 0) return { hasSpike: false, anciennete: 0, spikeDescription: '', site };
 
         // Ancienneté réelle : date du premier avis (le plus ancien)
         const dates = reviews
@@ -213,6 +217,7 @@ async function fetchReviewHistory(placeId: string, apiKey: string): Promise<Spik
             hasSpike,
             anciennete,
             spikeDescription: hasSpike ? `~${maxWeek} avis postés en une semaine (semaine ${spikeWeek})` : '',
+            site,
         };
     } catch {
         return { hasSpike: false, anciennete: 0, spikeDescription: '' };
@@ -635,7 +640,7 @@ router.post('/', async (req: Request, res: Response) => {
         // 5. Appels en parallèle : Places API (New) v1 + Outscraper
         const [place, spikeData] = await Promise.all([
             fetchPlaceDetails(placeId, apiKey),
-            outscraper_key ? fetchReviewHistory(placeId, outscraper_key) : Promise.resolve({ hasSpike: false, anciennete: 0, spikeDescription: '' }),
+            outscraper_key ? fetchReviewHistory(placeId, outscraper_key) : Promise.resolve<SpikeAnalysis>({ hasSpike: false, anciennete: 0, spikeDescription: '' }),
         ]);
 
         if (!place) {
@@ -646,7 +651,7 @@ router.post('/', async (req: Request, res: Response) => {
         const reviewCount: number = place.userRatingCount || 0;
         const rating: number      = place.rating || 0;
         const types: string[]     = place.types || [];
-        const hasWebsite          = !!place.websiteUri;
+        const hasWebsite          = !!place.websiteUri || !!spikeData.site;
         const hasPhone            = !!place.nationalPhoneNumber;
         const hasPhotos           = (place.photos || []).length > 0;
 

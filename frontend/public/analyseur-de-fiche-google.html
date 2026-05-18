@@ -435,7 +435,7 @@
         <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge1" cx="80" cy="80" r="68" stroke="#10b981" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge1Val" style="color:#10b981;">0<span class="gauge-suffix">%</span></div></div></div>
         <div id="gauge1Label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-top:2px;">Sans optimisation</div>
         <div id="gauge1Upsell" style="margin-top:10px;padding:8px 12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:10px;font-size:12px;color:var(--green-deep);font-weight:700;cursor:pointer;" onclick="toggleBooster()">
-          Avec Optimisation fiche → <strong>65%</strong> ↑
+          Avec Optimisation fiche → <strong id="gauge1UpsellVal">65%</strong> ↑
         </div>
       </div>
       <div class="gauge-card">
@@ -973,9 +973,9 @@
       </div>
       <div class="booster-why"><strong>⚠️ Crucial pour VOUS :</strong> dilue le pic suspect de janvier avec photos géotaggées, posts, Q&A, articles SEO. Google interprète votre fiche comme légitime.</div>
       <div class="booster-impact">
-        <div class="booster-impact-stat"><div class="booster-impact-num">65%</div><div class="booster-impact-label">Sans optim<small>Validation</small></div></div>
+        <div class="booster-impact-stat"><div class="booster-impact-num" id="boosterSansOptimNum">65%</div><div class="booster-impact-label">Sans optim<small>Validation</small></div></div>
         <div class="booster-impact-arrow">→</div>
-        <div class="booster-impact-stat"><div class="booster-impact-num">80%</div><div class="booster-impact-label">Avec optim<small>+15%</small></div></div>
+        <div class="booster-impact-stat"><div class="booster-impact-num" id="boosterAvecOptimNum">80%</div><div class="booster-impact-label">Avec optim<small id="boosterOptimDelta">+15%</small></div></div>
       </div>
       <div class="booster-inclusions">
         <div>Audit SEO complet</div>
@@ -1167,6 +1167,17 @@
     DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
     DIAGNOSTIC.reviewCount     = data.reviewCount;
 
+    // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
+    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95);
+    var bSans = document.getElementById('boosterSansOptimNum');
+    var bAvec = document.getElementById('boosterAvecOptimNum');
+    var bDelta = document.getElementById('boosterOptimDelta');
+    var upsellVal = document.getElementById('gauge1UpsellVal');
+    if (bSans) bSans.textContent = DIAGNOSTIC.baseValidation + '%';
+    if (bAvec) bAvec.textContent = avecOptimVal + '%';
+    if (bDelta) bDelta.textContent = '+' + (avecOptimVal - DIAGNOSTIC.baseValidation) + '%';
+    if (upsellVal) upsellVal.textContent = avecOptimVal + '%';
+
     DIAGNOSTIC.recommendedOffer = recommendOffer(data.reviewCount, data.scores.difficulty, data.hasSpike);
     state.offer = DIAGNOSTIC.recommendedOffer;
     document.querySelectorAll('.offer-card').forEach(function(card) {
@@ -1263,7 +1274,7 @@
   }
 
   function animateGauges() {
-    const validation = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
+    const validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95) : DIAGNOSTIC.baseValidation;
     animateGauge('gauge1', 'gauge1Val', validation, 427, '%');
     animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, '/100');
     animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.baseDifficulty, 427, '/100');
@@ -1299,7 +1310,7 @@
     document.getElementById('booster').classList.toggle('active', state.optimisation);
     document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
     document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
-    const newValue = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
+    const newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95) : DIAGNOSTIC.baseValidation;
     animateGauge('gauge1', 'gauge1Val', newValue, 427, '%');
     document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
     document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';
