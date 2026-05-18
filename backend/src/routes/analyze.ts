@@ -803,10 +803,10 @@ router.post('/capture', async (req: Request, res: Response) => {
             { n: name, e: email, p: phone, id: lead_id }
         );
 
-        // Email au client (best-effort — ne bloque pas si l'envoi échoue)
+        // await obligatoire — Vercel tue la fonction dès res.json(), l'email ne partirait pas
         const shareUrl = report_url || '';
         const biz = business_name || 'votre fiche Google';
-        transporter.sendMail({
+        await transporter.sendMail({
             from: emailConfig.from,
             to: email,
             subject: `Votre analyse Google Business — ${biz}`,
@@ -838,7 +838,7 @@ router.post('/capture', async (req: Request, res: Response) => {
             </div>`,
         });
 
-        // Notification interne admin (fire-and-forget)
+        // Notification interne admin (fire-and-forget — pas bloquante)
         transporter.sendMail({
             from: emailConfig.from,
             to: process.env.ADMIN_EMAIL || 'contact@achatavis.com',
