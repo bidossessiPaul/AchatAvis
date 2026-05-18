@@ -1447,7 +1447,10 @@
           report_url:    shareUrl
         })
       })
-      .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(r) {
+        if (r.status === 429) return Promise.reject('limit');
+        return r.ok ? r.json() : Promise.reject(r.status);
+      })
       .then(function() {
         if (action === 'pdf') {
           Swal.fire({ icon: 'success', title: 'PDF téléchargé', html: 'Rapport aussi envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', timer: 3500, timerProgressBar: true, customClass: { popup: 'swal-font' } });
@@ -1457,8 +1460,12 @@
           Swal.fire({ icon: 'success', title: 'Lien envoyé par email', html: 'Votre lien personnalisé a été envoyé à <strong>' + email + '</strong>', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
         }
       })
-      .catch(function() {
-        Swal.fire({ icon: 'error', title: 'Erreur d\'envoi', html: 'Impossible d\'envoyer l\'email à <strong>' + email + '</strong>.<br>Vérifiez l\'adresse ou réessayez.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
+      .catch(function(err) {
+        if (err === 'limit') {
+          Swal.fire({ icon: 'warning', title: 'Limite atteinte', html: 'Cette adresse email a déjà reçu le maximum de rapports autorisés.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
+        } else {
+          Swal.fire({ icon: 'success', title: action === 'link' ? 'Lien copié' : 'Rapport prêt', html: 'Votre rapport est disponible. L\'envoi email a rencontré un problème — utilisez le lien direct.', confirmButtonColor: '#059669', customClass: { popup: 'swal-font' } });
+        }
       });
     });
   }

@@ -791,6 +791,16 @@ router.post('/capture', async (req: Request, res: Response) => {
     }
 
     try {
+        // Rate limit : max 5 captures par adresse email
+        await analyzeLeadsReady;
+        const [{ cnt }] = await dbQuery(
+            `SELECT COUNT(*) AS cnt FROM analyze_leads WHERE contact_email = :email`,
+            { email }
+        );
+        if (cnt >= 5) {
+            return res.status(429).json({ error: 'Limite atteinte pour cette adresse email' });
+        }
+
         // Sauvegarde des coordonnées en DB
         await dbQuery(
             `UPDATE analyze_leads SET contact_name=:n, contact_email=:e, contact_phone=:p, contact_at=NOW()
@@ -798,10 +808,10 @@ router.post('/capture', async (req: Request, res: Response) => {
             { n: name, e: email, p: phone, id: lead_id }
         );
 
-        // Email au client
+        // Email au client (best-effort — ne bloque pas si l'envoi échoue)
         const shareUrl = report_url || '';
         const biz = business_name || 'votre fiche Google';
-        await transporter.sendMail({
+        transporter.sendMail({
             from: emailConfig.from,
             to: email,
             subject: `Votre analyse Google Business — ${biz}`,
@@ -833,13 +843,13 @@ router.post('/capture', async (req: Request, res: Response) => {
             </div>`,
         });
 
-        // Notification interne admin
+        // Notification interne admin (fire-and-forget)
         transporter.sendMail({
             from: emailConfig.from,
             to: process.env.ADMIN_EMAIL || 'contact@achatavis.com',
             subject: `[Lead Analyseur] ${name} — ${biz}`,
             html: `<p><b>Nom :</b> ${name}<br><b>Email :</b> ${email}<br><b>Téléphone :</b> ${phone}<br><b>Fiche :</b> ${biz}<br><b>Action :</b> ${action || '?'}<br><b>Rapport :</b> <a href="${shareUrl}">${shareUrl}</a></p>`,
-        }).catch(() => {});
+        }).catch((e: any) => console.error('[capture admin notif]', e?.message));
 
         return res.json({ ok: true });
     } catch (err: any) {
