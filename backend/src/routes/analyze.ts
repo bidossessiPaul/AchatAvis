@@ -524,27 +524,30 @@ router.post('/', async (req: Request, res: Response) => {
         if (!placeId && longUrl.includes('google.com/search')) {
             try {
                 const parsed = new URL(longUrl);
-                // kgmid = profil Knowledge Graph (personne/entité), pas une fiche Business
-                if (parsed.searchParams.get('kgmid')) {
-                    return res.status(422).json({ error: 'Ce lien est un profil Google personnel ou une entité Knowledge Graph, pas une fiche Google Business. Demandez à votre client le lien depuis Google Maps → Partager.' });
-                }
+                const kgmid = parsed.searchParams.get('kgmid');
                 const q = parsed.searchParams.get('q');
                 if (q) {
                     shareGoogleName = q;
                     placeId = await searchPlaceByText(q, apiKey);
                 }
+                // Seulement si kgmid ET aucun résultat Places → c'est un profil perso
+                if (!placeId && kgmid) {
+                    return res.status(422).json({ error: 'Ce lien pointe vers une entité sans fiche Google Business associée. Demandez à votre client le lien depuis Google Maps → Partager.' });
+                }
             } catch { /* ignore */ }
         }
 
         // 3c. share.google → extraire nom depuis la redirection puis Text Search
+        // kgmid peut être une entreprise (Knowledge Panel) ou un profil perso — on tente la recherche d'abord
         if (!placeId && longUrl.includes('share.google')) {
             const { extractedName, isKnowledgeGraph } = await resolveShareGoogle(longUrl);
             shareGoogleName = extractedName;
-            if (isKnowledgeGraph) {
-                return res.status(422).json({ error: `Ce lien pointe vers un profil Google personnel${extractedName ? ` (${extractedName})` : ''}, pas une fiche Google Business. Demandez le lien depuis Google Maps → Partager → Copier le lien.` });
-            }
             if (extractedName) {
                 placeId = await searchPlaceByText(extractedName, apiKey);
+            }
+            // Seulement si kgmid ET aucun résultat Places → profil perso confirmé
+            if (!placeId && isKnowledgeGraph) {
+                return res.status(422).json({ error: `Ce lien pointe vers un profil Google personnel${extractedName ? ` (${extractedName})` : ''}, pas une fiche Google Business. Demandez le lien depuis Google Maps → Partager → Copier le lien.` });
             }
         }
 
