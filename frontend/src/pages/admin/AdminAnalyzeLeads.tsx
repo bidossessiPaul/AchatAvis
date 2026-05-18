@@ -20,7 +20,8 @@ interface AnalyzeLead {
     created_at: string;
 }
 
-const FRONTEND_URL = import.meta.env.VITE_FRONTEND_URL || 'https://achat-avis-fondend.vercel.app';
+// Même domaine que le dashboard admin — le HTML est dans /public du même déploiement
+const FRONTEND_URL = window.location.origin;
 
 const verdictColor: Record<string, { bg: string; color: string }> = {
     Facile:   { bg: '#dcfce7', color: '#166534' },

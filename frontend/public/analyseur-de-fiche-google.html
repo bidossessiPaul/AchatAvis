@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   .swal2-popup, .swal-font { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; border-radius: 1.25rem !important; }
   .swal2-title { font-weight: 700 !important; color: #0f172a !important; }
@@ -87,7 +88,19 @@
   .sec-title-badge { background: var(--blue-soft); color: var(--blue); width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
   .sec-title h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
 
-  .identity { background: white; border-radius: 20px; padding: 24px 28px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .identity { background: white; border-radius: 20px; padding: 24px 28px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .share-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .share-btn { display: flex; align-items: center; gap: 7px; padding: 0.5rem 1rem; border-radius: 0.625rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1.5px solid transparent; transition: opacity .15s; white-space: nowrap; }
+  .share-btn:hover { opacity: .82; }
+  .share-btn-pdf { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .share-btn-wa  { background: #25d366; color: #fff; border-color: #25d366; }
+  .share-btn-copy{ background: #fff; color: #0f172a; border-color: #e2e8f0; }
+  .share-btn-copy.copied { border-color: #059669; color: #059669; }
+  @media print {
+    .share-bar, .hero, #urlInput, #analyzeBtn, .loading, .action-section, .cta-section, .reco-hero, .booster { display: none !important; }
+    .results { display: block !important; }
+    body { background: white !important; }
+  }
   .identity-left { flex: 1; min-width: 280px; }
   .identity-cat { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--blue); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
   .identity-name { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
@@ -425,6 +438,21 @@
         <div class="verdict-badge-label">Verdict</div>
         <div class="verdict-badge-value">Difficile</div>
       </div>
+    </div>
+
+    <div class="share-bar" id="shareBar">
+      <button class="share-btn share-btn-pdf" onclick="downloadPDF()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Télécharger PDF
+      </button>
+      <button class="share-btn share-btn-wa" onclick="shareWhatsApp()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Partager WhatsApp
+      </button>
+      <button class="share-btn share-btn-copy" id="copyBtn" onclick="copyLink()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        <span id="copyBtnText">Copier le lien</span>
+      </button>
     </div>
 
     <div class="sec-title"><div class="sec-title-badge">2</div><h2>Vos scores clés</h2></div>
@@ -1102,6 +1130,7 @@
   DIAGNOSTIC.recommendedOffer = recommendOffer(DIAGNOSTIC.reviewCount, DIAGNOSTIC.baseDifficulty, false);
 
   let state = { offer: DIAGNOSTIC.recommendedOffer, optimisation: DIAGNOSTIC.optimisationPreSelected };
+  let currentLeadId = null; // ID du rapport sauvegardé (reçu depuis l'API)
 
   function populatePage(data) {
     var sectorIcons = { plumber:'🔧', locksmith:'🔑', restaurant:'🍽️', electrician:'⚡', garage:'🚗', beauty_salon:'💇', driving_school:'🚦', hotel:'🏨', health:'🩺', default:'🏢' };
@@ -1247,6 +1276,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'analyse');
 
+      currentLeadId = data._lead_id || null;
       populatePage(data);
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('results').classList.add('active');
@@ -1343,6 +1373,51 @@
     document.getElementById('ctaSub').innerHTML = '<strong>-' + o.discount + '% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement';
   }
 
+  function getShareUrl() {
+    if (currentLeadId) return window.location.origin + window.location.pathname + '?report_id=' + currentLeadId;
+    return window.location.href;
+  }
+
+  function downloadPDF() {
+    var name = document.querySelector('.identity-name') ? document.querySelector('.identity-name').textContent.trim() : 'rapport';
+    var el = document.getElementById('results');
+    var opt = {
+      margin: [8, 8, 8, 8],
+      filename: 'rapport-' + name.replace(/\s+/g, '-').toLowerCase() + '.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    // Masquer la share-bar pendant la génération
+    var bar = document.getElementById('shareBar');
+    bar.style.display = 'none';
+    html2pdf().set(opt).from(el).save().then(function() {
+      bar.style.display = '';
+    });
+  }
+
+  function shareWhatsApp() {
+    var name = document.querySelector('.identity-name') ? document.querySelector('.identity-name').textContent.trim() : '';
+    var validation = document.getElementById('gauge1Val') ? document.getElementById('gauge1Val').textContent.trim() : '';
+    var url = getShareUrl();
+    var text = 'Voici l\'analyse de ma fiche Google : *' + name + '*\n'
+      + '• Taux de validation : ' + validation + '\n'
+      + '• Rapport complet : ' + url;
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+  }
+
+  function copyLink() {
+    var url = getShareUrl();
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copyBtn');
+      var txt = document.getElementById('copyBtnText');
+      btn.classList.add('copied');
+      txt.textContent = 'Lien copié !';
+      setTimeout(function() { btn.classList.remove('copied'); txt.textContent = 'Copier le lien'; }, 2500);
+    });
+  }
+
   function switchTab(cat) {
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.cat === cat));
@@ -1355,6 +1430,7 @@
     var params = new URLSearchParams(window.location.search);
     var reportId = params.get('report_id');
     if (!reportId) return;
+    currentLeadId = reportId;
 
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('results').classList.remove('active');
