@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Search, ExternalLink, Calendar } from 'lucide-react';
+import { Search, ExternalLink, Calendar, Phone } from 'lucide-react';
 import api from '../../services/api';
 
 interface AnalyzeLead {
@@ -116,10 +116,13 @@ export const AdminAnalyzeLeads: React.FC = () => {
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
                                             {r.contact_name ? (
                                                 <div>
-                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0f172a' }}>{r.contact_name}</div>
-                                                    <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{r.contact_email}</div>
+                                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>{r.contact_name}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>{r.contact_email}</div>
                                                     {r.contact_phone && (
-                                                        <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600, marginTop: '2px' }}>{r.contact_phone}</div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                                                            <Phone size={11} color="#059669" />
+                                                            <span style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 700 }}>{r.contact_phone}</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (
