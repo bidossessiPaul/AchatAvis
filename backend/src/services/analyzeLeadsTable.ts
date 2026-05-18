@@ -1,13 +1,13 @@
 import { query as dbQuery } from '../config/database';
 
+// Tente l'ALTER TABLE — ignore "Duplicate column name" (colonne déjà présente)
 async function addColumnIfMissing(table: string, column: string, definition: string): Promise<void> {
-    const rows = await dbQuery(
-        `SELECT COUNT(*) AS cnt FROM INFORMATION_SCHEMA.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column`,
-        { table, column }
-    );
-    if (!rows[0].cnt) {
+    try {
         await dbQuery(`ALTER TABLE \`${table}\` ADD COLUMN \`${column}\` ${definition}`);
+    } catch (e: any) {
+        if (!e.message?.includes('Duplicate column name')) {
+            throw e; // erreur inattendue — on remonte
+        }
     }
 }
 
@@ -41,7 +41,7 @@ export async function ensureAnalyzeLeadsTable(): Promise<void> {
     await addColumnIfMissing('analyze_leads', 'contact_at',    'DATETIME AFTER contact_phone');
 }
 
-// Promise partagée — chaque module qui l'importe attend la même migration
+// Promise partagée — un seul appel au démarrage, partagé entre tous les modules
 export const analyzeLeadsReady: Promise<void> = ensureAnalyzeLeadsTable().catch((err) => {
     console.error('[analyze_leads] Erreur migration table:', err?.message);
 });
