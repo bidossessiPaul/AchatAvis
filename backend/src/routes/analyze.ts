@@ -537,14 +537,27 @@ router.post('/', async (req: Request, res: Response) => {
             } catch { /* ignore */ }
         }
 
-        // 3c. share.google → extraire nom depuis la redirection puis Text Search
-        // kgmid peut être une entreprise (Knowledge Panel) ou un profil perso — on tente la recherche d'abord
+        // 3c. share.google → résoudre la redirection et traiter l'URL finale
         if (!placeId && longUrl.includes('share.google')) {
-            const { extractedName, isKnowledgeGraph } = await resolveShareGoogle(longUrl);
+            const { resolvedUrl, extractedName, isKnowledgeGraph } = await resolveShareGoogle(longUrl);
             shareGoogleName = extractedName;
-            if (extractedName) {
+
+            // Si share.google redirige vers une URL Maps directe → extraire Place ID ou coords depuis cette URL
+            if (resolvedUrl && (resolvedUrl.includes('google.com/maps') || resolvedUrl.includes('maps.google'))) {
+                placeId = extractPlaceId(resolvedUrl);
+                if (!placeId) {
+                    const resolvedCoords = extractPreciseCoords(resolvedUrl) || extractViewCoords(resolvedUrl);
+                    const resolvedName   = extractNameFromUrl(resolvedUrl) || extractedName;
+                    if (resolvedName && resolvedCoords) placeId = await searchPlaceByText(resolvedName, apiKey, resolvedCoords);
+                    if (!placeId && resolvedName)       placeId = await searchPlaceByText(resolvedName, apiKey);
+                }
+            }
+
+            // Sinon (Google Search / kgmid) → Text Search avec le nom extrait
+            if (!placeId && extractedName) {
                 placeId = await searchPlaceByText(extractedName, apiKey);
             }
+
             // Seulement si kgmid ET aucun résultat Places → profil perso confirmé
             if (!placeId && isKnowledgeGraph) {
                 return res.status(422).json({ error: `Ce lien pointe vers un profil Google personnel${extractedName ? ` (${extractedName})` : ''}, pas une fiche Google Business. Demandez le lien depuis Google Maps → Partager → Copier le lien.` });
