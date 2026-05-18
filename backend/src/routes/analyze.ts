@@ -539,7 +539,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         // 3c. share.google → résoudre la redirection et traiter l'URL finale
         if (!placeId && longUrl.includes('share.google')) {
-            const { resolvedUrl, extractedName, isKnowledgeGraph } = await resolveShareGoogle(longUrl);
+            const { resolvedUrl, extractedName } = await resolveShareGoogle(longUrl);
             shareGoogleName = extractedName;
 
             // Si share.google redirige vers une URL Maps directe → utiliser cette URL comme longUrl
