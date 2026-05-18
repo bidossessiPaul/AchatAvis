@@ -158,11 +158,13 @@ router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
             params.search = `%${search}%`;
         }
 
+        // LIMIT/OFFSET inlinés — pool.execute() (prepared statements) ne supporte pas
+        // les named placeholders pour ces clauses dans mysql2
         const rows  = await dbQuery(
             `SELECT id, business_name, original_url, scores_validation, verdict,
                     contact_name, contact_email, created_at
-             FROM analyze_leads WHERE ${where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset`,
-            { ...params, limit, offset }
+             FROM analyze_leads WHERE ${where} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`,
+            params
         );
         const [{ cnt }] = await dbQuery(`SELECT COUNT(*) AS cnt FROM analyze_leads WHERE ${where}`, params);
 
