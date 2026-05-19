@@ -764,7 +764,6 @@ router.post('/', async (req: Request, res: Response) => {
 
         // Sauvegarde du lead en base — await obligatoire sur Vercel (pas de background tasks)
         const leadId = uuidv4();
-        const originalUrl = (url as string) || '';
         try {
             await analyzeLeadsReady;
             await dbQuery(
