@@ -127,8 +127,10 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
         // Generate email verification token
         const verificationToken = generateEmailVerificationToken(user.id, user.email);
 
-        // Send verification email
-        await sendVerificationEmail(user.email, user.full_name, verificationToken, baseUrl);
+        // Non-bloquant — une erreur email ne doit pas faire échouer l'inscription
+        sendVerificationEmail(user.email, user.full_name, verificationToken, baseUrl).catch((e: any) => {
+            console.error('sendVerificationEmail failed (non-fatal):', e?.message);
+        });
 
         // Email de bienvenue invitant l'artisan à choisir un pack — non bloquant
         sendArtisanWelcomePackEmail(data.email, data.fullName, data.companyName, baseUrl).catch(() => {});

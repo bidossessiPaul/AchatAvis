@@ -25,6 +25,12 @@ import * as identityVerif from '../controllers/identityVerificationController';
 
 const router = express.Router();
 
+// Détection pays/IP — utilisé pour pré-remplir le formulaire d'inscription
+router.get('/detect-region', (req: any, res: any) => {
+    const ip = (req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || '').split(',')[0].trim();
+    res.json({ country: 'FR', ip });
+});
+
 // Public routes
 router.post('/register/artisan', registerArtisan);
 router.post('/register/guide', registerGuide);
