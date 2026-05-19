@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
-import { Search, ExternalLink, Calendar, Phone } from 'lucide-react';
+import { Search, ExternalLink, Calendar, Phone, Trash2 } from 'lucide-react';
+import Swal from 'sweetalert2';
 import api from '../../services/api';
 
 interface AnalyzeLead {
@@ -56,6 +57,27 @@ export const AdminAnalyzeLeads: React.FC = () => {
 
     const openReport = (id: string) =>
         window.open(`${FRONTEND_URL}/analyseur-de-fiche-google.html?report_id=${id}`, '_blank');
+
+    const deleteLead = async (id: string, name: string) => {
+        const result = await Swal.fire({
+            title: 'Supprimer cette analyse ?',
+            text: name,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Supprimer',
+            cancelButtonText: 'Annuler',
+        });
+        if (!result.isConfirmed) return;
+        try {
+            await api.delete(`/admin/analyze-leads/${id}`);
+            setRows(prev => prev.filter(r => r.id !== id));
+            setTotal(prev => prev - 1);
+        } catch {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: 'Suppression impossible.' });
+        }
+    };
 
     const formatDate = (d: string) =>
         new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -141,12 +163,20 @@ export const AdminAnalyzeLeads: React.FC = () => {
                                             </div>
                                         </td>
                                         <td style={{ padding: '0.875rem 1.25rem' }}>
-                                            <button
-                                                onClick={() => openReport(r.id)}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.45rem 0.85rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
-                                            >
-                                                <ExternalLink size={13} />Voir rapport
-                                            </button>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button
+                                                    onClick={() => openReport(r.id)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0f172a', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.45rem 0.85rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                                >
+                                                    <ExternalLink size={13} />Voir rapport
+                                                </button>
+                                                <button
+                                                    onClick={() => deleteLead(r.id, r.business_name)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fee2e2', color: '#991b1b', border: 'none', borderRadius: '0.5rem', padding: '0.45rem 0.65rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

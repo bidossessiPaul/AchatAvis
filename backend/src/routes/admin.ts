@@ -174,4 +174,14 @@ router.get('/analyze-leads', authenticate, async (req: any, res: any) => {
     }
 });
 
+router.delete('/analyze-leads/:id', authenticate, async (req: any, res: any) => {
+    try {
+        await analyzeLeadsReady;
+        await dbQuery(`DELETE FROM analyze_leads WHERE id = :id`, { id: req.params.id });
+        res.json({ success: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 export default router;
