@@ -121,7 +121,7 @@ function scoreSEO(reviewCount: number, rating: number, hasWebsite: boolean, hasP
     if (hasPhone)   score += 5;
     if (hasPhotos)  score += 5;
 
-    return Math.min(100, Math.max(0, Math.round(score)));
+    return Math.min(70, Math.max(0, Math.round(score)));
 }
 
 function scoreDifficulty(reviewCount: number, sectorDiff: number, anciennete: number): number {

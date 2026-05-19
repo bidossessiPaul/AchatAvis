@@ -1193,8 +1193,8 @@
       }
     }
 
-    DIAGNOSTIC.baseValidation  = data.scores.validation;
-    DIAGNOSTIC.baseSeo         = data.scores.seo;
+    DIAGNOSTIC.baseValidation  = Math.min(65, data.scores.validation);
+    DIAGNOSTIC.baseSeo         = Math.min(70, data.scores.seo);
     DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
     DIAGNOSTIC.reviewCount     = data.reviewCount;
 
