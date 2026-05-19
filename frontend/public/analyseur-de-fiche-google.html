@@ -1199,7 +1199,7 @@
     DIAGNOSTIC.reviewCount     = data.reviewCount;
 
     // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
-    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95);
+    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65);
     var bSans = document.getElementById('boosterSansOptimNum');
     var bAvec = document.getElementById('boosterAvecOptimNum');
     var bDelta = document.getElementById('boosterOptimDelta');
@@ -1357,7 +1357,7 @@
   }
 
   function animateGauges() {
-    const validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95) : DIAGNOSTIC.baseValidation;
+    const validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
     animateGauge('gauge1', 'gauge1Val', validation, 427, '%');
     animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, '/100');
     animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.baseDifficulty, 427, '/100');
@@ -1393,7 +1393,7 @@
     document.getElementById('booster').classList.toggle('active', state.optimisation);
     document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
     document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
-    const newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 95) : DIAGNOSTIC.baseValidation;
+    const newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
     animateGauge('gauge1', 'gauge1Val', newValue, 427, '%');
     document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
     document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';
