@@ -104,7 +104,7 @@ function scoreValidation(reviewCount: number, rating: number, anciennete: number
 
     score -= Math.floor(sectorDiff / 7);
 
-    return Math.min(65, Math.max(45, Math.round(score)));
+    return Math.min(65, Math.max(10, Math.round(score)));
 }
 
 function scoreSEO(reviewCount: number, rating: number, hasWebsite: boolean, hasPhone: boolean, hasPhotos: boolean): number {
