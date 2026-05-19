@@ -495,6 +495,7 @@ router.post('/', async (req: Request, res: Response) => {
     try {
         // 1. Normaliser et résoudre l'URL
         let longUrl = url.trim();
+        const originalUrl = url.trim(); // conservé pour sauvegarde en DB
         let shareGoogleName: string | null = null;
 
         // Résoudre les short links (maps.app.goo.gl, goo.gl)
@@ -609,9 +610,8 @@ router.post('/', async (req: Request, res: Response) => {
                 const aiParams   = { name: raw.name, categoryLabel: raw.type || cfg.label, ville, services: cfg.services, satisfaction: SATISFACTION_KEYWORDS, reviewCount, rating };
                 const diagnostic = buildDiagnostic(diagParams);
                 const aiContent  = anthropic_key ? await generateAIContent(aiParams, anthropic_key) : null;
-                // Outscraper renvoie main_image comme photo principale de la fiche
                 const photoUrl: string | null = raw.main_image || raw.logo || null;
-                return res.json({
+                const outscraperPayload = {
                     name:            raw.name,
                     categoryLabel:   raw.type || cfg.label,
                     types,
@@ -635,7 +635,38 @@ router.post('/', async (req: Request, res: Response) => {
                     formulations:    aiContent ? { ok: aiContent.ok, ko: aiContent.ko } : null,
                     aiExamples:      aiContent?.examples || null,
                     photoUrl,
-                });
+                };
+                // Sauvegarder le lead (même chemin Outscraper) pour que le contact soit capturé
+                const outLeadId = uuidv4();
+                try {
+                    await analyzeLeadsReady;
+                    await dbQuery(
+                        `INSERT INTO analyze_leads
+                         (id, business_name, address, original_url, rating, review_count, category_label, verdict,
+                          scores_validation, scores_seo, scores_difficulty, has_website, has_spike, ip_address, report_data)
+                         VALUES (:id, :bn, :addr, :ou, :rating, :rc, :cat, :verdict, :sv, :ss, :sd, :hw, :hs, :ip, :rd)`,
+                        {
+                            id:      outLeadId,
+                            bn:      raw.name,
+                            addr:    raw.full_address || '',
+                            ou:      originalUrl,
+                            rating,
+                            rc:      reviewCount,
+                            cat:     raw.type || cfg.label,
+                            verdict,
+                            sv:      validation,
+                            ss:      seo,
+                            sd:      difficulty,
+                            hw:      hasWebsite ? 1 : 0,
+                            hs:      0,
+                            ip:      (req as any).ip || '',
+                            rd:      JSON.stringify(outscraperPayload),
+                        }
+                    );
+                } catch (e: any) {
+                    console.error('[analyze_leads INSERT outscraper]', e?.message);
+                }
+                return res.json({ ...outscraperPayload, _lead_id: outLeadId, _original_url: originalUrl });
             }
         }
 
