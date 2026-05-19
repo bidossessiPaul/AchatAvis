@@ -568,12 +568,12 @@ router.post('/', async (req: Request, res: Response) => {
             // Sinon (Google Search / kgmid) → Text Search avec le nom extrait
             if (!placeId && extractedName) {
                 placeId = await searchPlaceByText(extractedName, apiKey);
-                // Ne pas écraser longUrl — Outscraper résout mieux l'URL share.google originale
-                // que le nom seul (qui peut être un profil personnel sans fiche business)
+                // Passer le nom à Outscraper en fallback (meilleur résultat que l'URL share.google brute)
+                if (!placeId) longUrl = extractedName;
             }
 
             // Seulement si kgmid ET aucun résultat Places → on laisse Outscraper tenter avant d'abandonner
-            // (ne pas retourner 422 ici — Outscraper peut récupérer la fiche via l'URL originale)
+            // (ne pas retourner 422 ici — Outscraper peut récupérer la fiche via le nom)
         }
 
         const outscraper_key = process.env.OUTSCRAPER_API_KEY;
