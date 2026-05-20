@@ -72,6 +72,9 @@ export const OrderDetail: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [isPausing, setIsPausing] = useState(false);
 
+    // Disclaimer avant modification artisan
+    const [pendingEditProposal, setPendingEditProposal] = useState<ReviewProposal | null>(null);
+
     // États gestion images attachées aux propositions
     const [uploadingProposalId, setUploadingProposalId] = useState<string | null>(null);
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -121,6 +124,11 @@ export const OrderDetail: React.FC = () => {
         }
     };
 
+    // Ouvre le disclaimer avant la modification — l'artisan doit accepter
+    const handleEditProposalIntent = (proposal: ReviewProposal) => {
+        setPendingEditProposal(proposal);
+    };
+
     const handleEditProposal = (proposal: ReviewProposal) => {
         setEditingProposal(proposal);
         setEditForm({
@@ -137,14 +145,26 @@ export const OrderDetail: React.FC = () => {
         setIsSaving(true);
         try {
             await artisanService.updateProposal(editingProposal.id, editForm);
-            // Update local state
+            const isContentEdit = editForm.content !== editingProposal.content || editForm.author_name !== editingProposal.author_name;
             if (order) {
+                const nowIso = new Date().toISOString();
                 const updatedProposals = order.proposals.map(p =>
                     p.id === editingProposal.id
-                        ? { ...p, ...editForm }
+                        ? {
+                            ...p,
+                            ...editForm,
+                            modified_by_artisan_at: isContentEdit ? nowIso : p.modified_by_artisan_at,
+                          }
                         : p
                 );
-                setOrder({ ...order, proposals: updatedProposals });
+                // Si modification de contenu → incrémente reviews_validated côté artisan d'office
+                const wasAlreadyModified = !!editingProposal.modified_by_artisan_at;
+                const extraValidated = isContentEdit && !wasAlreadyModified ? 1 : 0;
+                setOrder({
+                    ...order,
+                    proposals: updatedProposals,
+                    reviews_validated: ((order as any).reviews_validated || 0) + extraValidated,
+                });
             }
             setEditingProposal(null);
         } catch (err: any) {
@@ -630,8 +650,39 @@ export const OrderDetail: React.FC = () => {
                                 </div>
                                 <div>
                                     <h4 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Objectif</h4>
-                                    <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>{order.quantity} avis attendus</p>
-                                    <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{order.reviews_validated ?? 0} avis validés</p>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>{order.quantity} avis attendus</p>
+                                    {/* Barre orange — avis validés d'office (admin + modifiés artisan) */}
+                                    <div style={{ marginBottom: '0.35rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginBottom: '0.2rem' }}>
+                                            <span>Validés</span>
+                                            <span>{(order as any).reviews_validated ?? 0} / {order.quantity}</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                                            <div style={{
+                                                width: `${Math.min(100, (((order as any).reviews_validated ?? 0) / (order.quantity || 1)) * 100)}%`,
+                                                height: '100%',
+                                                background: '#d97706',
+                                                borderRadius: 4,
+                                                transition: 'width 0.3s ease'
+                                            }} />
+                                        </div>
+                                    </div>
+                                    {/* Barre grise — avis en attente de validation admin */}
+                                    <div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>
+                                            <span>En attente</span>
+                                            <span>{(order as any).reviews_pending ?? 0}</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: 5, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                                            <div style={{
+                                                width: `${Math.min(100, (((order as any).reviews_pending ?? 0) / (order.quantity || 1)) * 100)}%`,
+                                                height: '100%',
+                                                background: '#94a3b8',
+                                                borderRadius: 4,
+                                                transition: 'width 0.3s ease'
+                                            }} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -724,8 +775,37 @@ export const OrderDetail: React.FC = () => {
                                 scrollbarColor: `${tradeInfo.color} #f3f4f6`
                             }}>
                                 {order.proposals && order.proposals.filter(p => !p.submission_id).length > 0 ? (
-                                    order.proposals.filter(p => !p.submission_id).map((proposal) => (
-                                        <div key={proposal.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #f3f4f6', position: 'relative' }}>
+                                    order.proposals.filter(p => !p.submission_id).map((proposal) => {
+                                        const isModified = !!proposal.modified_by_artisan_at;
+                                        const modifiedDate = isModified
+                                            ? new Date(proposal.modified_by_artisan_at!).toLocaleDateString('fr-FR')
+                                            : null;
+                                        return (
+                                        <div key={proposal.id} style={{
+                                            background: isModified ? '#fffbeb' : 'white',
+                                            padding: '1.5rem',
+                                            borderRadius: '1rem',
+                                            border: isModified ? '1px solid #fde68a' : '1px solid #f3f4f6',
+                                            position: 'relative'
+                                        }}>
+                                            {isModified && (
+                                                <div style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.3rem',
+                                                    background: '#fef3c7',
+                                                    border: '1px solid #fde68a',
+                                                    borderRadius: '1rem',
+                                                    padding: '0.15rem 0.6rem',
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 700,
+                                                    color: '#92400e',
+                                                    marginBottom: '0.75rem',
+                                                    textTransform: 'uppercase' as const
+                                                }}>
+                                                    <AlertTriangle size={11} /> Avis modifié par l'artisan le {modifiedDate}
+                                                </div>
+                                            )}
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                                 <div style={{ flex: 1 }}>
                                                     <span style={{ fontWeight: 700, fontSize: '0.925rem' }}>{proposal.author_name}</span>
@@ -737,7 +817,7 @@ export const OrderDetail: React.FC = () => {
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                     <button
-                                                        onClick={() => handleEditProposal(proposal)}
+                                                        onClick={() => handleEditProposalIntent(proposal)}
                                                         style={{
                                                             padding: '0.5rem',
                                                             borderRadius: '0.5rem',
@@ -775,7 +855,8 @@ export const OrderDetail: React.FC = () => {
                                             {/* Images attachées + bouton ajout */}
                                             {renderImagesBlock(proposal)}
                                         </div>
-                                    ))
+                                    );
+                                    })
                                 ) : (
                                     <div style={{ padding: '2rem', textAlign: 'center', background: '#f9fafb', borderRadius: '1rem', border: '1px dashed #d1d5db' }}>
                                         <p style={{ color: '#6b7280', margin: 0 }}>Toutes les propositions ont été publiées.</p>
@@ -957,6 +1038,64 @@ export const OrderDetail: React.FC = () => {
             </PremiumBlurOverlay>
 
             {/* Edit Proposal Modal */}
+            {/* Modal disclaimer — affiché avant l'édition pour informer l'artisan */}
+            {pendingEditProposal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(15,23,42,0.6)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: 2000, backdropFilter: 'blur(8px)', padding: '1rem'
+                }} onClick={() => setPendingEditProposal(null)}>
+                    <div style={{
+                        background: 'white', padding: '2rem', borderRadius: '1.25rem',
+                        width: '100%', maxWidth: '480px',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <div style={{ background: '#fef3c7', borderRadius: '50%', padding: '0.6rem', display: 'flex' }}>
+                                <AlertTriangle size={22} color="#d97706" />
+                            </div>
+                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
+                                Modification d'avis
+                            </h3>
+                        </div>
+                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
+                            En modifiant cet avis, <strong>AchatAvis ne sera plus responsable</strong> de sa
+                            suppression sur Google. Le slot sera considéré comme <strong>validé d'office</strong> côté
+                            artisan, même si l'avis est rejeté par notre équipe.
+                        </p>
+                        <p style={{ margin: '0 0 1.5rem', fontSize: '0.85rem', color: '#92400e', background: '#fef3c7', padding: '0.75rem 1rem', borderRadius: '0.5rem', borderLeft: '3px solid #f59e0b' }}>
+                            Cette action est irréversible. Vous assumez l'entière responsabilité du contenu modifié.
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <button
+                                onClick={() => setPendingEditProposal(null)}
+                                style={{
+                                    flex: 1, padding: '0.75rem', borderRadius: '0.75rem',
+                                    border: '1px solid #e2e8f0', background: 'white',
+                                    color: '#475569', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem'
+                                }}
+                            >
+                                Non
+                            </button>
+                            <button
+                                onClick={() => {
+                                    handleEditProposal(pendingEditProposal);
+                                    setPendingEditProposal(null);
+                                }}
+                                style={{
+                                    flex: 2, padding: '0.75rem', borderRadius: '0.75rem',
+                                    border: 'none', background: '#d97706',
+                                    color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
+                                }}
+                            >
+                                Oui, j'accepte — modifier l'avis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {editingProposal && (
                 <div style={{
                     position: 'fixed',

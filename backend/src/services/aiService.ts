@@ -22,14 +22,13 @@ const getAnthropicClient = (): Anthropic => {
 
 type ExperienceType = 'tested' | 'visited' | 'online' | 'hearsay';
 
-// Distribution : "Sans tester" (visited/online/hearsay) = 33% chacun, "Testé" = 1%.
-// Tous les secteurs partagent la même distribution.
+// Distribution : 25% chacun pour les 4 types d'expérience.
 const SECTOR_DISTRIBUTIONS: Record<string, Record<ExperienceType, number>> = {
-    depannage:        { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
-    commerce:         { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
-    artisan_chantier: { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
-    service_pro:      { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
-    default:          { tested: 0.01, online: 0.33, hearsay: 0.33, visited: 0.33 },
+    depannage:        { tested: 0.25, online: 0.25, hearsay: 0.25, visited: 0.25 },
+    commerce:         { tested: 0.25, online: 0.25, hearsay: 0.25, visited: 0.25 },
+    artisan_chantier: { tested: 0.25, online: 0.25, hearsay: 0.25, visited: 0.25 },
+    service_pro:      { tested: 0.25, online: 0.25, hearsay: 0.25, visited: 0.25 },
+    default:          { tested: 0.25, online: 0.25, hearsay: 0.25, visited: 0.25 },
 };
 
 const SECTOR_SLUG_MAP: Record<string, string> = {

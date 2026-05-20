@@ -408,7 +408,7 @@ export const guideService = {
     // Le slot reste réservé au guide après la régénération.
     async refreshCurrentSlot(orderId: string, guideId: string) {
         const slots: any[] = await query(`
-            SELECT p.id FROM review_proposals p
+            SELECT p.id, p.is_pregenerated FROM review_proposals p
             WHERE p.order_id = ? AND p.reserved_by = ? AND p.reserved_until > NOW()
               AND p.deleted_at IS NULL
               AND p.id NOT IN (
@@ -421,8 +421,24 @@ export const guideService = {
         if (!slots || slots.length === 0) throw new Error('NO_ACTIVE_SLOT');
 
         const proposalId = slots[0].id;
+        const isPregenerated = slots[0].is_pregenerated === 1;
 
-        // Récupère les infos de la commande pour la génération IA
+        // Proposals pré-générés par l'artisan : on ne remplace jamais le contenu.
+        // On renouvelle juste la réservation 5 min et on retourne le même texte.
+        if (isPregenerated) {
+            await query(
+                `UPDATE review_proposals SET reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE) WHERE id = ? AND reserved_by = ?`,
+                [proposalId, guideId]
+            );
+            const same: any[] = await query(
+                `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,
+                [proposalId]
+            );
+            if (!same || same.length === 0) throw new Error('PROPOSAL_NOT_FOUND');
+            return same[0];
+        }
+
+        // Proposals non pré-générés (cas legacy) : génération d'un nouveau contenu IA
         const orderResult: any = await query(`
             SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
                    o.specific_instructions, o.zones,
@@ -453,14 +469,12 @@ export const guideService = {
         if (!reviews || reviews.length === 0) throw new Error('GENERATION_FAILED');
 
         const r = reviews[0];
-        // Met à jour le contenu sans toucher à reserved_by / reserved_until (slot reste au guide)
         await query(`
             UPDATE review_proposals
             SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW()
             WHERE id = ? AND reserved_by = ?
         `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId, guideId]);
 
-        // Retourne le contenu frais
         const updated: any[] = await query(
             `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,
             [proposalId]

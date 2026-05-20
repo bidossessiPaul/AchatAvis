@@ -216,8 +216,13 @@ export const artisanService = {
     async getOrderById(orderId: string) {
         const orders: any = await query(`
         SELECT ro.*, p.description as payment_description, p.amount as payment_amount,
+               (SELECT COUNT(*) FROM (
+                   SELECT proposal_id AS pid FROM reviews_submissions WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL
+                   UNION
+                   SELECT id AS pid FROM review_proposals WHERE order_id = ro.id AND modified_by_artisan_at IS NOT NULL AND deleted_at IS NULL
+               ) t_val) as reviews_validated,
                (SELECT COUNT(*) FROM reviews_submissions s
-                WHERE s.order_id = ro.id AND s.status = 'validated') as reviews_validated
+                WHERE s.order_id = ro.id AND s.status = 'pending') as reviews_pending
         FROM reviews_orders ro
         LEFT JOIN payments p ON ro.payment_id = p.id
         WHERE ro.id = ?
@@ -287,8 +292,13 @@ export const artisanService = {
     async getArtisanOrders(artisanId: string) {
         const orders: any[] = await query(`
             SELECT ro.*, p.description as payment_description, p.amount as payment_amount, p.review_credits,
+                   (SELECT COUNT(*) FROM (
+                       SELECT proposal_id AS pid FROM reviews_submissions WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL
+                       UNION
+                       SELECT id AS pid FROM review_proposals WHERE order_id = ro.id AND modified_by_artisan_at IS NOT NULL AND deleted_at IS NULL
+                   ) t_val) as reviews_validated,
                    (SELECT COUNT(*) FROM reviews_submissions s
-                    WHERE s.order_id = ro.id AND s.status = 'validated') as reviews_validated
+                    WHERE s.order_id = ro.id AND s.status = 'pending') as reviews_pending
             FROM reviews_orders ro
             LEFT JOIN payments p ON ro.payment_id = p.id
             WHERE ro.artisan_id = ? AND ro.deleted_at IS NULL
@@ -442,12 +452,19 @@ export const artisanService = {
             return { success: true, message: 'Aucune modification' };
         }
 
+        // Marque la modification artisan si le contenu ou le nom d'auteur change
+        // → déclenche validation d'office côté artisan (barre orange)
+        const isContentEdit = data.content !== undefined || data.author_name !== undefined;
+        if (isContentEdit) {
+            updates.push('modified_by_artisan_at = NOW()');
+        }
+
         params.push(proposalId);
 
         // 3. Perform update
         await query(`
-            UPDATE review_proposals 
-            SET ${updates.join(', ')} 
+            UPDATE review_proposals
+            SET ${updates.join(', ')}
             WHERE id = ?
         `, params);
 

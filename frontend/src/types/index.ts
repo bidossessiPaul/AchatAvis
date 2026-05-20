@@ -179,6 +179,8 @@ export interface ReviewProposal {
     images?: ProposalImage[];
     created_at: string;
     updated_at: string;
+    modified_by_artisan_at?: string | null;
+    is_pregenerated?: number;
     // Joined from submissions
     submission_id?: string;
     review_url?: string;
