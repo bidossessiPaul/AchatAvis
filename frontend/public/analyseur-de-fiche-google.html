@@ -354,6 +354,58 @@
     .auth-sources, .phrases-grid { grid-template-columns: 1fr; }
     .examples-block { padding: 20px; }
   }
+
+  /* Section tous les avis */
+  .all-reviews-scroll { max-height: 480px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 14px; padding: 4px 0; background: #fff; }
+  .all-reviews-scroll::-webkit-scrollbar { width: 6px; }
+  .all-reviews-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+  .all-reviews-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .review-row { display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; }
+  .review-row:last-child { border-bottom: none; }
+  .review-row-stars { font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+  .review-row-stars.s5 { color: #10b981; }
+  .review-row-stars.s4 { color: #10b981; }
+  .review-row-stars.s3 { color: #f59e0b; }
+  .review-row-stars.s2 { color: #ef4444; }
+  .review-row-stars.s1 { color: #ef4444; }
+  .review-row-body { flex: 1; min-width: 0; }
+  .review-row-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+  .review-row-date { font-size: 12px; color: #94a3b8; }
+  .review-row-noreply { background: #fee2e2; color: #991b1b; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px; text-transform: uppercase; }
+  .review-row-text { font-size: 13px; color: #475569; line-height: 1.5; }
+  .review-row-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
+  .all-reviews-counter { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+
+  /* Bannière volume critique */
+  .volume-alert { border-radius: 12px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 20px; }
+  .volume-alert.critical { background: #fee2e2; border: 2px solid #fca5a5; border-left: 6px solid #dc2626; }
+  .volume-alert.warning  { background: #fff7ed; border: 2px solid #fed7aa; border-left: 6px solid #f97316; }
+  .volume-alert-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; flex-shrink: 0; color: white; }
+  .volume-alert.critical .volume-alert-icon { background: #dc2626; }
+  .volume-alert.warning  .volume-alert-icon { background: #f97316; }
+  .volume-alert-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+  .volume-alert.critical .volume-alert-title { color: #991b1b; }
+  .volume-alert.warning  .volume-alert-title { color: #9a3412; }
+  .volume-alert-text { font-size: 14px; line-height: 1.6; }
+  .volume-alert.critical .volume-alert-text { color: #b91c1c; }
+  .volume-alert.warning  .volume-alert-text  { color: #c2410c; }
+
+  /* Section avis négatifs */
+  .neg-summary { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .neg-summary-stat { text-align: center; min-width: 60px; }
+  .neg-summary-stat .val { font-size: 26px; font-weight: 800; color: #dc2626; display: block; }
+  .neg-summary-stat .lbl { font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.06em; }
+  .neg-summary-divider { width: 1px; height: 40px; background: #fca5a5; }
+  .neg-summary-text { color: #7f1d1d; font-size: 14px; line-height: 1.6; flex: 1; min-width: 180px; }
+  .neg-review-card { background: #fff; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+  .neg-review-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .neg-review-stars { color: #dc2626; font-size: 13px; font-weight: 700; }
+  .neg-review-date { color: #94a3b8; font-size: 12px; }
+  .neg-noreply { background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .neg-review-text { color: #475569; font-size: 14px; line-height: 1.6; font-style: italic; }
+  .neg-review-text:before { content: '\201C'; }
+  .neg-review-text:after  { content: '\201D'; }
+  .neg-empty-text { color: #94a3b8; font-size: 13px; font-style: italic; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -436,8 +488,8 @@
         </div>
       </div>
       <div class="verdict-badge">
-        <div class="verdict-badge-label">Verdict</div>
-        <div class="verdict-badge-value">Difficile</div>
+        <div class="verdict-badge-label">État de la fiche</div>
+        <div class="verdict-badge-value">—</div>
       </div>
     </div>
 
@@ -473,11 +525,14 @@
         <div class="gauge-desc">Bon volume mais à consolider</div>
       </div>
       <div class="gauge-card">
-        <div class="gauge-card-title">Niveau de difficulté</div>
+        <div class="gauge-card-title">Pression concurrentielle</div>
         <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge3" cx="80" cy="80" r="68" stroke="#f97316" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge3Val" style="color:#f97316;">0<span class="gauge-suffix">/100</span></div></div></div>
-        <div class="gauge-desc">Niveau : <strong style="color:var(--orange)">Difficile</strong></div>
+        <div class="gauge-desc" id="gauge3Desc">Concurrence dans votre secteur</div>
       </div>
     </div>
+
+    <!-- Alerte volume si < 30 avis — populée dynamiquement -->
+    <div id="volumeAlert" style="display:none;"></div>
 
     <div class="critical-alert">
       <div class="critical-alert-icon">!</div>
@@ -540,6 +595,26 @@
           <li>Nom "Tamarys" cité = SEO entité</li>
         </ul>
       </div>
+    </div>
+
+    <!-- Section avis négatifs — populée dynamiquement, cachée si aucun -->
+    <div id="negReviewsSection" style="display:none;">
+      <div class="sec-title">
+        <div class="sec-title-badge" style="background:#fee2e2;color:#dc2626;">!</div>
+        <h2 style="color:#dc2626;">Avis négatifs détectés sur votre fiche</h2>
+      </div>
+      <div id="negSummary" class="neg-summary"></div>
+      <div id="negReviewsList"></div>
+    </div>
+
+    <!-- Section tous les avis — populée dynamiquement -->
+    <div id="allReviewsSection" style="display:none;">
+      <div class="sec-title">
+        <div class="sec-title-badge" style="background:#dbeafe;color:#2563eb;">★</div>
+        <h2>Vos avis actuellement</h2>
+      </div>
+      <div id="allReviewsCounter" class="all-reviews-counter"></div>
+      <div class="all-reviews-scroll" id="allReviewsList"></div>
     </div>
 
     <!-- 5. AUTHENTICITÉ -->
@@ -1152,7 +1227,6 @@
     document.querySelector('.identity-cat').textContent = (sectorIcons[sectorKey] || '🏢') + ' ' + data.categoryLabel;
     document.querySelector('.identity-name').textContent = data.name;
     document.querySelector('.identity-addr').textContent = '📍 ' + (data.address || 'Fiche Google Business');
-    document.querySelector('.verdict-badge-value').textContent = data.verdict;
 
     // Photo de profil Google
     var bizPhoto = document.getElementById('bizPhoto');
@@ -1196,7 +1270,231 @@
     DIAGNOSTIC.baseValidation  = Math.min(65, data.scores.validation);
     DIAGNOSTIC.baseSeo         = Math.min(70, data.scores.seo);
     DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
+    DIAGNOSTIC.basePression    = data.scores.pression || data.scores.difficulty || 55;
     DIAGNOSTIC.reviewCount     = data.reviewCount;
+
+    // Verdict badge — état de la fiche (nouveau champ ficheStatus)
+    var verdictEl = document.querySelector('.verdict-badge-value');
+    if (verdictEl && data.ficheStatus) {
+      verdictEl.textContent = data.ficheStatus;
+      var statusColors = {
+        'Fiche critique':         '#dc2626',
+        'Fiche à risque':         '#dc2626',
+        'À consolider':           '#f97316',
+        'Établie — à renforcer':  '#f97316',
+        'Établie — à défendre':   '#059669',
+      };
+      var sCol = statusColors[data.ficheStatus] || '#64748b';
+      verdictEl.style.color = sCol;
+      var verdictCard = verdictEl.closest('.verdict-badge');
+      if (verdictCard) {
+        var bgMap = {
+          'Fiche critique':         '#fee2e2',
+          'Fiche à risque':         '#fee2e2',
+          'À consolider':           '#fff7ed',
+          'Établie — à renforcer':  '#fff7ed',
+          'Établie — à défendre':   '#f0fdf4',
+        };
+        verdictCard.style.background = bgMap[data.ficheStatus] || '#f8fafc';
+        verdictCard.style.borderColor = sCol;
+      }
+    }
+
+    // Bannière volume critique
+    var volumeAlert = document.getElementById('volumeAlert');
+    if (volumeAlert) {
+      var rc = data.reviewCount;
+      if (rc < 15) {
+        var isCritical = rc < 5;
+        var alertClass = isCritical ? 'critical' : 'warning';
+        var alertTitle = isCritical
+          ? 'Fiche quasi-invisible — ' + rc + ' avis seulement'
+          : 'Zone de danger — seulement ' + rc + ' avis';
+        var alertText = isCritical
+          ? 'En dessous de 5 avis, Google ignore votre fiche dans les résultats locaux. Un concurrent avec 20 avis vous écrase systématiquement. Chaque jour sans avis = perte de clients.'
+          : 'Google pénalise les fiches sous 15 avis dans son classement local. Vos concurrents avec 30+ avis vous devancent sur toutes les requêtes sectorielles de votre zone.';
+        var iconEl = document.createElement('div');
+        iconEl.className = 'volume-alert-icon';
+        iconEl.textContent = '!';
+        var textDiv = document.createElement('div');
+        var titleEl = document.createElement('div');
+        titleEl.className = 'volume-alert-title';
+        titleEl.textContent = alertTitle;
+        var textEl = document.createElement('div');
+        textEl.className = 'volume-alert-text';
+        textEl.textContent = alertText;
+        textDiv.appendChild(titleEl);
+        textDiv.appendChild(textEl);
+        volumeAlert.className = 'volume-alert ' + alertClass;
+        volumeAlert.textContent = '';
+        volumeAlert.appendChild(iconEl);
+        volumeAlert.appendChild(textDiv);
+        volumeAlert.style.display = 'flex';
+      } else if (rc < 30) {
+        var iconEl2 = document.createElement('div');
+        iconEl2.className = 'volume-alert-icon';
+        iconEl2.textContent = '!';
+        var textDiv2 = document.createElement('div');
+        var titleEl2 = document.createElement('div');
+        titleEl2.className = 'volume-alert-title';
+        titleEl2.textContent = 'Volume faible — ' + rc + ' avis';
+        var textEl2 = document.createElement('div');
+        textEl2.className = 'volume-alert-text';
+        textEl2.textContent = 'Avec seulement ' + rc + ' avis, vous êtes vulnérable face aux concurrents de votre secteur. Les fiches avec 50+ avis occupent les 3 premières positions.';
+        textDiv2.appendChild(titleEl2);
+        textDiv2.appendChild(textEl2);
+        volumeAlert.className = 'volume-alert warning';
+        volumeAlert.textContent = '';
+        volumeAlert.appendChild(iconEl2);
+        volumeAlert.appendChild(textDiv2);
+        volumeAlert.style.display = 'flex';
+      } else {
+        volumeAlert.style.display = 'none';
+      }
+    }
+
+    // Section avis négatifs
+    var negSection = document.getElementById('negReviewsSection');
+    var negSummary = document.getElementById('negSummary');
+    var negList    = document.getElementById('negReviewsList');
+    var negCount   = data.negativeCount || 0;
+    var negUnans   = data.unansweredNegative || 0;
+    var negRevs    = data.negativeReviews || [];
+    if (negSection && negSummary && negList) {
+      negList.textContent = '';
+      negSummary.textContent = '';
+      if (negCount > 0) {
+        // Résumé stats
+        var s1 = document.createElement('div');
+        s1.className = 'neg-summary-stat';
+        var v1 = document.createElement('span');
+        v1.className = 'val';
+        v1.textContent = String(negCount);
+        var l1 = document.createElement('span');
+        l1.className = 'lbl';
+        l1.textContent = 'Avis négatifs';
+        s1.appendChild(v1);
+        s1.appendChild(l1);
+        negSummary.appendChild(s1);
+        if (negUnans > 0) {
+          var div1 = document.createElement('div');
+          div1.className = 'neg-summary-divider';
+          negSummary.appendChild(div1);
+          var s2 = document.createElement('div');
+          s2.className = 'neg-summary-stat';
+          var v2 = document.createElement('span');
+          v2.className = 'val';
+          v2.textContent = String(negUnans);
+          var l2 = document.createElement('span');
+          l2.className = 'lbl';
+          l2.textContent = 'Sans réponse';
+          s2.appendChild(v2);
+          s2.appendChild(l2);
+          negSummary.appendChild(s2);
+        }
+        var div2 = document.createElement('div');
+        div2.className = 'neg-summary-divider';
+        negSummary.appendChild(div2);
+        var summText = document.createElement('div');
+        summText.className = 'neg-summary-text';
+        var impactMsg = negUnans > 0
+          ? negUnans + ' avis négatif' + (negUnans > 1 ? 's restent' : ' reste') + ' sans réponse — Google pénalise les propriétaires qui ignorent leurs clients mécontents. Chaque avis sans réponse fait baisser votre classement local.'
+          : 'Vous avez répondu à vos avis négatifs, c\'est bien. Mais leur présence continue à impacter votre note et vos conversions. Diluer ces avis avec des avis positifs ciblés est la solution.';
+        summText.textContent = impactMsg;
+        negSummary.appendChild(summText);
+        // Cartes avis négatifs
+        if (negRevs.length > 0) {
+          negRevs.forEach(function(rev) {
+            var card = document.createElement('div');
+            card.className = 'neg-review-card';
+            var header = document.createElement('div');
+            header.className = 'neg-review-header';
+            var stars = document.createElement('span');
+            stars.className = 'neg-review-stars';
+            stars.textContent = Array(rev.rating + 1).join('★') + Array(6 - rev.rating).join('☆');
+            var dateEl = document.createElement('span');
+            dateEl.className = 'neg-review-date';
+            dateEl.textContent = rev.date || '';
+            header.appendChild(stars);
+            header.appendChild(dateEl);
+            if (!rev.hasResponse) {
+              var badge = document.createElement('span');
+              badge.className = 'neg-noreply';
+              badge.textContent = 'Sans réponse';
+              header.appendChild(badge);
+            }
+            var textEl = document.createElement('div');
+            textEl.className = 'neg-review-text';
+            textEl.textContent = rev.text || '(Avis sans commentaire)';
+            card.appendChild(header);
+            card.appendChild(textEl);
+            negList.appendChild(card);
+          });
+        } else {
+          var emptyEl = document.createElement('p');
+          emptyEl.className = 'neg-empty-text';
+          emptyEl.textContent = 'Les avis négatifs ont été détectés mais leur texte n\'est pas disponible.';
+          negList.appendChild(emptyEl);
+        }
+        negSection.style.display = 'block';
+      } else {
+        negSection.style.display = 'none';
+      }
+    }
+
+    // Section tous les avis
+    var allRevSection  = document.getElementById('allReviewsSection');
+    var allRevList     = document.getElementById('allReviewsList');
+    var allRevCounter  = document.getElementById('allReviewsCounter');
+    var allRevs        = data.allReviews || [];
+    if (allRevSection && allRevList && allRevCounter) {
+      allRevList.textContent = '';
+      if (allRevs.length > 0) {
+        allRevCounter.textContent = allRevs.length + ' avis affichés (sur ' + data.reviewCount + ' au total) — du plus récent au plus ancien';
+        allRevs.forEach(function(rev) {
+          var row = document.createElement('div');
+          row.className = 'review-row';
+
+          var starsEl = document.createElement('div');
+          starsEl.className = 'review-row-stars s' + rev.rating;
+          starsEl.textContent = Array(rev.rating + 1).join('★') + Array(6 - rev.rating).join('☆');
+
+          var body = document.createElement('div');
+          body.className = 'review-row-body';
+
+          var meta = document.createElement('div');
+          meta.className = 'review-row-meta';
+          var dateEl = document.createElement('span');
+          dateEl.className = 'review-row-date';
+          dateEl.textContent = rev.date || '';
+          meta.appendChild(dateEl);
+          if (rev.rating <= 2 && !rev.hasResponse) {
+            var badge = document.createElement('span');
+            badge.className = 'review-row-noreply';
+            badge.textContent = 'Sans réponse';
+            meta.appendChild(badge);
+          }
+
+          var textEl = document.createElement('div');
+          if (rev.text) {
+            textEl.className = 'review-row-text';
+            textEl.textContent = rev.text;
+          } else {
+            textEl.className = 'review-row-empty';
+            textEl.textContent = 'Avis sans commentaire';
+          }
+
+          body.appendChild(meta);
+          body.appendChild(textEl);
+          row.appendChild(starsEl);
+          row.appendChild(body);
+          allRevList.appendChild(row);
+        });
+        allRevSection.style.display = 'block';
+      } else {
+        allRevSection.style.display = 'none';
+      }
+    }
 
     // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
     var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65);
@@ -1356,27 +1654,56 @@
     }
   }
 
-  function animateGauges() {
-    const validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
-    animateGauge('gauge1', 'gauge1Val', validation, 427, '%');
-    animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, '/100');
-    animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.baseDifficulty, 427, '/100');
+  function gaugeColor(val, type) {
+    if (type === 'validation') {
+      if (val < 30) return '#ef4444';
+      if (val < 50) return '#f97316';
+      return '#10b981';
+    }
+    if (type === 'seo') {
+      if (val < 35) return '#ef4444';
+      if (val < 55) return '#f97316';
+      return '#2563eb';
+    }
+    // Pression concurrentielle : haute = rouge (mauvais pour le prospect)
+    if (val > 70) return '#ef4444';
+    if (val > 50) return '#f97316';
+    return '#10b981';
   }
 
-  function animateGauge(circleId, valId, target, circumference, suffix) {
-    const offset = circumference - (target / 100) * circumference;
-    const circle = document.getElementById(circleId);
-    const valEl = document.getElementById(valId);
+  function animateGauges() {
+    var validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', validation, 427, gaugeColor(validation, 'validation'));
+    animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, gaugeColor(DIAGNOSTIC.baseSeo, 'seo'));
+    animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.basePression, 427, gaugeColor(DIAGNOSTIC.basePression, 'pression'));
+    // Label pression
+    var g3desc = document.getElementById('gauge3Desc');
+    if (g3desc) {
+      var p = DIAGNOSTIC.basePression;
+      var label = p > 70 ? 'Concurrence très active — urgence de renforcement' : p > 50 ? 'Concurrence modérée — risque de déclassement' : 'Secteur accessible — position à consolider';
+      var col   = gaugeColor(p, 'pression');
+      g3desc.textContent = label;
+      g3desc.style.color = col;
+    }
+  }
+
+  function animateGauge(circleId, valId, target, circumference, color) {
+    var offset = circumference - (target / 100) * circumference;
+    var circle = document.getElementById(circleId);
+    var valEl  = document.getElementById(valId);
+    if (color) { circle.style.stroke = color; valEl.style.color = color; }
     circle.style.strokeDashoffset = circumference;
-    valEl.innerHTML = '0<span class="gauge-suffix">' + suffix + '</span>';
-    requestAnimationFrame(() => { circle.style.strokeDashoffset = offset; });
-    let current = 0;
-    const start = performance.now();
+    // Met à jour uniquement le noeud texte (le span .gauge-suffix reste en place dans le DOM)
+    var textNode = valEl.firstChild;
+    if (textNode && textNode.nodeType === 3) textNode.nodeValue = '0';
+    requestAnimationFrame(function() { circle.style.strokeDashoffset = offset; });
+    var current = 0;
+    var start = performance.now();
     function tick(now) {
-      const p = Math.min(1, (now - start) / 1200);
-      const eased = 1 - Math.pow(1 - p, 3);
+      var p = Math.min(1, (now - start) / 1200);
+      var eased = 1 - Math.pow(1 - p, 3);
       current = Math.round(target * eased);
-      valEl.innerHTML = current + '<span class="gauge-suffix">' + suffix + '</span>';
+      if (textNode && textNode.nodeType === 3) textNode.nodeValue = String(current);
       if (p < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
@@ -1393,8 +1720,8 @@
     document.getElementById('booster').classList.toggle('active', state.optimisation);
     document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
     document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
-    const newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
-    animateGauge('gauge1', 'gauge1Val', newValue, 427, '%');
+    var newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', newValue, 427, gaugeColor(newValue, 'validation'));
     document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
     document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';
     document.getElementById('gauge1Upsell').style.display = state.optimisation ? 'none' : 'block';

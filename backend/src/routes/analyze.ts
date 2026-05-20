@@ -136,6 +136,34 @@ function scoreDifficulty(reviewCount: number, sectorDiff: number, anciennete: nu
     return Math.min(100, Math.max(0, Math.round(score)));
 }
 
+// Pression concurrentielle : représente la compétition active dans le secteur/zone.
+// Toujours ≥ 40 — même une bonne fiche doit défendre sa position.
+const SECTOR_PRESSION: Record<string, number> = {
+    restaurant: 88, hotel: 85, beauty_salon: 80, plumber: 78,
+    locksmith: 72, electrician: 68, garage: 62, driving_school: 58,
+    health: 48, default: 65,
+};
+function scorePression(sector: string, reviewCount: number, negativeCount: number): number {
+    const base = SECTOR_PRESSION[sector] ?? 65;
+    let p = base;
+    if (reviewCount > 200) p -= 22;
+    else if (reviewCount > 100) p -= 14;
+    else if (reviewCount > 50)  p -= 7;
+    else if (reviewCount < 20)  p += 12;
+    else if (reviewCount < 5)   p += 20;
+    p += Math.min(negativeCount * 3, 15); // chaque avis négatif aggrave la pression
+    return Math.min(98, Math.max(40, Math.round(p)));
+}
+
+// État de la fiche — libellé orienté prospect (pas secteur interne)
+function computeFicheStatus(reviewCount: number, seo: number, negativeCount: number): string {
+    if (reviewCount < 5)  return 'Fiche critique';
+    if (reviewCount < 15 || (negativeCount > 3 && seo < 45)) return 'Fiche à risque';
+    if (reviewCount < 50 || seo < 50 || negativeCount > 1)   return 'À consolider';
+    if (reviewCount < 100 || seo < 60) return 'Établie — à renforcer';
+    return 'Établie — à défendre';
+}
+
 function selectPlaybook(reviewCount: number, difficulty: number, anciennete: number): string {
     if (anciennete < 12 && reviewCount < 10 && difficulty > 35) return 'amorçage_hybride';
     if (anciennete < 12 && difficulty <= 35) return 'démarrage_doux';
@@ -146,6 +174,8 @@ function selectPlaybook(reviewCount: number, difficulty: number, anciennete: num
 interface OutscraperReview {
     review_datetime_utc?: string;
     review_rating?: number;
+    review_text?: string;
+    owner_answer?: string;
 }
 
 interface OutscraperResult {
@@ -155,9 +185,13 @@ interface OutscraperResult {
 
 interface SpikeAnalysis {
     hasSpike: boolean;
-    anciennete: number;  // mois depuis le 1er avis
+    anciennete: number;
     spikeDescription: string;
-    site?: string;       // site web extrait par Outscraper (fallback si Places API ne retourne pas websiteUri)
+    site?: string;
+    negativeReviews: { text: string; rating: number; date: string; hasResponse: boolean }[];
+    negativeCount: number;
+    unansweredNegative: number;
+    allReviews: { text: string; rating: number; date: string; hasResponse: boolean }[];
 }
 
 // Outscraper fallback : récupère les infos d'une fiche Maps via scraping (URL directe)
@@ -186,14 +220,15 @@ async function fetchReviewHistory(placeId: string, apiKey: string): Promise<Spik
             signal: AbortSignal.timeout(15000),
         });
 
-        if (!res.ok) return { hasSpike: false, anciennete: 0, spikeDescription: '' };
+        const emptyResult: SpikeAnalysis = { hasSpike: false, anciennete: 0, spikeDescription: '', negativeReviews: [], negativeCount: 0, unansweredNegative: 0, allReviews: [] };
+        if (!res.ok) return emptyResult;
 
         const data = await res.json() as { data?: OutscraperResult[] };
         const result = data?.data?.[0];
         const reviews: OutscraperReview[] = result?.reviews_data || [];
         const site = result?.site || undefined;
 
-        if (reviews.length === 0) return { hasSpike: false, anciennete: 0, spikeDescription: '', site };
+        if (reviews.length === 0) return { ...emptyResult, site };
 
         // Ancienneté réelle : date du premier avis (le plus ancien)
         const dates = reviews
@@ -219,14 +254,47 @@ async function fetchReviewHistory(placeId: string, apiKey: string): Promise<Spik
         const hasSpike = maxWeek >= 10;
         const spikeWeek = hasSpike ? Object.entries(byWeek).find(([, v]) => v === maxWeek)?.[0] : '';
 
+        // Avis négatifs : 1-2 étoiles — extraire texte + statut réponse
+        const negReviews = reviews.filter(r => (r.review_rating || 5) <= 2);
+        const negativeCount = negReviews.length;
+        const unansweredNegative = negReviews.filter(r => !r.owner_answer).length;
+        const negativeReviews = negReviews
+            .sort((a, b) => new Date(b.review_datetime_utc || 0).getTime() - new Date(a.review_datetime_utc || 0).getTime())
+            .slice(0, 5)
+            .map(r => ({
+                text: (r.review_text || '').slice(0, 250),
+                rating: r.review_rating || 1,
+                date: r.review_datetime_utc
+                    ? new Date(r.review_datetime_utc).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
+                    : '',
+                hasResponse: !!r.owner_answer,
+            }));
+
+        // Tous les avis (50 max) triés du plus récent au plus ancien
+        const allReviews = reviews
+            .sort((a, b) => new Date(b.review_datetime_utc || 0).getTime() - new Date(a.review_datetime_utc || 0).getTime())
+            .slice(0, 50)
+            .map(r => ({
+                text: (r.review_text || '').slice(0, 300),
+                rating: r.review_rating || 5,
+                date: r.review_datetime_utc
+                    ? new Date(r.review_datetime_utc).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : '',
+                hasResponse: !!r.owner_answer,
+            }));
+
         return {
             hasSpike,
             anciennete,
             spikeDescription: hasSpike ? `~${maxWeek} avis postés en une semaine (semaine ${spikeWeek})` : '',
             site,
+            negativeReviews,
+            negativeCount,
+            unansweredNegative,
+            allReviews,
         };
     } catch {
-        return { hasSpike: false, anciennete: 0, spikeDescription: '' };
+        return { hasSpike: false, anciennete: 0, spikeDescription: '', negativeReviews: [], negativeCount: 0, unansweredNegative: 0, allReviews: [] };
     }
 }
 
@@ -399,10 +467,20 @@ function buildDiagnostic(params: {
     hasWebsite: boolean; hasPhone: boolean; hasPhotos: boolean;
     hasSpike: boolean; spikeDescription: string; flags: string[];
     scores: { validation: number; seo: number; difficulty: number };
+    negativeCount: number; unansweredNegative: number;
 }) {
     const warnings: string[] = [];
     const strengths: string[] = [];
-    const { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike, spikeDescription, flags, scores } = params;
+    const { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike, spikeDescription, flags, scores, negativeCount, unansweredNegative } = params;
+
+    // Volume critique — alertes prioritaires
+    if (reviewCount < 5) warnings.push(`CRITIQUE : seulement ${reviewCount} avis — fiche quasi-invisible sur Google Maps`);
+    else if (reviewCount < 15) warnings.push(`Volume insuffisant : ${reviewCount} avis — en dessous du seuil minimal de visibilité locale`);
+    else if (reviewCount < 30) warnings.push(`Volume faible : ${reviewCount} avis — vos concurrents avec 50+ avis vous dépassent`);
+
+    // Avis négatifs
+    if (negativeCount > 0) warnings.push(`${negativeCount} avis négatifs (1-2 étoiles) visibles sur votre fiche`);
+    if (unansweredNegative > 0) warnings.push(`${unansweredNegative} avis négatif${unansweredNegative > 1 ? 's' : ''} sans réponse du propriétaire — pénalise votre classement`);
 
     if (hasSpike && spikeDescription) warnings.push(spikeDescription);
     if (flags.includes('note_suspecte')) warnings.push('Note ≥ 4,8 avec peu d\'avis — profil atypique');
@@ -412,7 +490,6 @@ function buildDiagnostic(params: {
     if (!hasPhone) warnings.push('Numéro de téléphone manquant');
     if (!hasPhotos) warnings.push('Aucune photo — profil incomplet');
     if (scores.seo < 55) warnings.push('Score SEO local faible — mots-clés sous-exploités');
-    if (reviewCount < 10) warnings.push('Volume d\'avis insuffisant pour le SEO local');
     if (warnings.length === 0) warnings.push('Aucun signal négatif détecté');
 
     if (reviewCount > 100) strengths.push(`Volume mature : ${reviewCount} avis Google`);
@@ -598,15 +675,16 @@ router.post('/', async (req: Request, res: Response) => {
                 const validation = scoreValidation(reviewCount, rating, anciennete, cfg.difficulty);
                 const seo        = scoreSEO(reviewCount, rating, hasWebsite, hasPhone, hasPhotos);
                 const difficulty = scoreDifficulty(reviewCount, cfg.difficulty, anciennete);
-                const verdict    = difficulty < 30 ? 'Facile' : difficulty < 55 ? 'Modéré' : difficulty < 75 ? 'Difficile' : 'Expert';
+                const pression   = scorePression(sector, reviewCount, 0);
+                const ficheStatus = computeFicheStatus(reviewCount, seo, 0);
                 const flags: string[] = [];
                 if (rating >= 4.8 && reviewCount < 20) flags.push('note_suspecte');
                 if (anciennete < 12) flags.push('fiche_jeune');
                 const addrParts  = (raw.full_address || '').split(',');
                 const ville      = addrParts.length > 1 ? addrParts[addrParts.length - 2]?.trim() : '';
                 const geoKeywords = [ville, `secteur ${ville}`, `proche ${ville}`, 'à proximité', 'localement'].filter(Boolean);
-                const scores     = { validation, seo, difficulty };
-                const diagParams = { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike: false, spikeDescription: '', flags, scores };
+                const scores     = { validation, seo, difficulty, pression };
+                const diagParams = { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike: false, spikeDescription: '', flags, scores, negativeCount: 0, unansweredNegative: 0 };
                 const aiParams   = { name: raw.name, categoryLabel: raw.type || cfg.label, ville, services: cfg.services, satisfaction: SATISFACTION_KEYWORDS, reviewCount, rating };
                 const diagnostic = buildDiagnostic(diagParams);
                 const aiContent  = anthropic_key ? await generateAIContent(aiParams, anthropic_key) : null;
@@ -627,8 +705,12 @@ router.post('/', async (req: Request, res: Response) => {
                     hasSpike:        false,
                     spikeDescription: '',
                     scores,
-                    verdict,
+                    ficheStatus,
                     flags,
+                    negativeReviews: [] as { text: string; rating: number; date: string; hasResponse: boolean }[],
+                    negativeCount: 0,
+                    unansweredNegative: 0,
+                    allReviews: [] as { text: string; rating: number; date: string; hasResponse: boolean }[],
                     playbook:        selectPlaybook(reviewCount, difficulty, anciennete),
                     keywords: { services: cfg.services, geo: geoKeywords, satisfaction: SATISFACTION_KEYWORDS },
                     diagnostic,
@@ -653,7 +735,7 @@ router.post('/', async (req: Request, res: Response) => {
                             rating,
                             rc:      reviewCount,
                             cat:     raw.type || cfg.label,
-                            verdict,
+                            verdict: ficheStatus,
                             sv:      validation,
                             ss:      seo,
                             sd:      difficulty,
@@ -677,7 +759,7 @@ router.post('/', async (req: Request, res: Response) => {
         // 5. Appels en parallèle : Places API (New) v1 + Outscraper
         const [place, spikeData] = await Promise.all([
             fetchPlaceDetails(placeId, apiKey),
-            outscraper_key ? fetchReviewHistory(placeId, outscraper_key) : Promise.resolve<SpikeAnalysis>({ hasSpike: false, anciennete: 0, spikeDescription: '' }),
+            outscraper_key ? fetchReviewHistory(placeId, outscraper_key) : Promise.resolve<SpikeAnalysis>({ hasSpike: false, anciennete: 0, spikeDescription: '', negativeReviews: [], negativeCount: 0, unansweredNegative: 0, allReviews: [] }),
         ]);
 
         if (!place) {
@@ -700,12 +782,13 @@ router.post('/', async (req: Request, res: Response) => {
         const anciennete = ancienneteReelle ? spikeData.anciennete : estimerAnciennete(reviewCount);
         const hasSpike   = spikeData.hasSpike;
 
-        const validation = scoreValidation(reviewCount, rating, anciennete, cfg.difficulty);
-        const seo        = scoreSEO(reviewCount, rating, hasWebsite, hasPhone, hasPhotos);
-        const difficulty = scoreDifficulty(reviewCount, cfg.difficulty, anciennete);
+        const validation  = scoreValidation(reviewCount, rating, anciennete, cfg.difficulty);
+        const seo         = scoreSEO(reviewCount, rating, hasWebsite, hasPhone, hasPhotos);
+        const difficulty  = scoreDifficulty(reviewCount, cfg.difficulty, anciennete);
+        const pression    = scorePression(sector, reviewCount, spikeData.negativeCount);
+        const ficheStatus = computeFicheStatus(reviewCount, seo, spikeData.negativeCount);
 
-        // 6. Verdict + flags
-        const verdict = difficulty < 30 ? 'Facile' : difficulty < 55 ? 'Modéré' : difficulty < 75 ? 'Difficile' : 'Expert';
+        // 6. Flags
         const flags: string[] = [];
         if (rating >= 4.8 && reviewCount < 20) flags.push('note_suspecte');
         if (anciennete < 12)  flags.push('fiche_jeune');
@@ -724,7 +807,7 @@ router.post('/', async (req: Request, res: Response) => {
             : null;
 
         // 9. Diagnostic + contenu IA
-        const diagParams = { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike, spikeDescription: spikeData.spikeDescription, flags, scores: { validation, seo, difficulty } };
+        const diagParams = { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike, spikeDescription: spikeData.spikeDescription, flags, scores: { validation, seo, difficulty, pression }, negativeCount: spikeData.negativeCount, unansweredNegative: spikeData.unansweredNegative };
         const aiParams   = { name: place.displayName?.text || 'Établissement', categoryLabel: cfg.label, ville, services: cfg.services, satisfaction: SATISFACTION_KEYWORDS, reviewCount, rating };
 
         const diagnostic = buildDiagnostic(diagParams);
@@ -747,9 +830,13 @@ router.post('/', async (req: Request, res: Response) => {
                 : `${Math.round(anciennete / 12)} an(s)${ancienneteReelle ? '' : ' (estimé)'}`,
             hasSpike,
             spikeDescription: spikeData.spikeDescription,
-            scores:         { validation, seo, difficulty },
-            verdict,
+            scores:         { validation, seo, difficulty, pression },
+            ficheStatus,
             flags,
+            negativeReviews: spikeData.negativeReviews,
+            negativeCount:   spikeData.negativeCount,
+            unansweredNegative: spikeData.unansweredNegative,
+            allReviews:      spikeData.allReviews,
             playbook:       selectPlaybook(reviewCount, difficulty, anciennete),
             keywords: {
                 services:     cfg.services,
@@ -779,7 +866,7 @@ router.post('/', async (req: Request, res: Response) => {
                     rating:  responsePayload.rating,
                     rc:      responsePayload.reviewCount,
                     cat:     responsePayload.categoryLabel,
-                    verdict: responsePayload.verdict,
+                    verdict: responsePayload.ficheStatus,
                     sv:      responsePayload.scores.validation,
                     ss:      responsePayload.scores.seo,
                     sd:      responsePayload.scores.difficulty,
