@@ -186,6 +186,7 @@ export const GuidesBalances: React.FC = () => {
             if (method === 'paypal') return details.email || details.paypal_email || '';
             if (method === 'mobile_money' || method === 'wave') {
                 const parts = [];
+                if (details.network) parts.push(details.network);
                 const name = details.fullName || details.full_name;
                 if (name) parts.push(name);
                 const phone = details.phone || details.phone_number;
@@ -480,6 +481,7 @@ export const GuidesBalances: React.FC = () => {
                                                         const phone = details.phone || details.phone_number;
                                                         return (
                                                             <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
+                                                                {details.network && <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.1rem' }}>{details.network}</div>}
                                                                 {name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{name}</div>}
                                                                 {phone && <div style={{ color: 'var(--gray-600)', fontFamily: 'monospace' }}>{phone}</div>}
                                                             </div>

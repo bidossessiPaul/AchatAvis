@@ -314,6 +314,10 @@ export const MyEarnings: React.FC = () => {
                                 {(selectedMethod === 'mobile_money' || selectedMethod === 'wave') && (
                                     <div className="method-details-form">
                                         <div className="form-group">
+                                            <label>Réseau / Opérateur</label>
+                                            <input type="text" value={methodDetails.network || ''} onChange={e => setMethodDetails({ ...methodDetails, network: e.target.value })} placeholder="Ex : MTN, Orange, Moov, Togocel, Wave..." />
+                                        </div>
+                                        <div className="form-group">
                                             <label>Numéro de téléphone</label>
                                             <input type="tel" value={methodDetails.phone || ''} onChange={e => setMethodDetails({ ...methodDetails, phone: e.target.value })} placeholder="+225 ..." />
                                         </div>
