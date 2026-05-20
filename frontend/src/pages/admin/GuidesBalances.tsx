@@ -176,7 +176,9 @@ export const GuidesBalances: React.FC = () => {
             const method = guide.preferred_payout_method;
             if (method === 'bank_transfer') {
                 const parts = [];
-                if (details.account_name) parts.push(details.account_name);
+                // Accepte camelCase (accountName) et snake_case (account_name) selon l'âge du record
+                const name = details.accountName || details.account_name;
+                if (name) parts.push(name);
                 if (details.iban) parts.push(`IBAN: ${details.iban}`);
                 if (details.bic) parts.push(`BIC: ${details.bic}`);
                 return parts.join(' | ');
@@ -184,10 +186,13 @@ export const GuidesBalances: React.FC = () => {
             if (method === 'paypal') return details.email || details.paypal_email || '';
             if (method === 'mobile_money' || method === 'wave') {
                 const parts = [];
-                if (details.full_name) parts.push(details.full_name);
-                if (details.phone || details.phone_number) parts.push(details.phone || details.phone_number);
+                const name = details.fullName || details.full_name;
+                if (name) parts.push(name);
+                const phone = details.phone || details.phone_number;
+                if (phone) parts.push(phone);
                 return parts.join(' | ');
             }
+            if (method === 'other') return details.info || '';
             return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(' | ');
         };
 
@@ -454,9 +459,10 @@ export const GuidesBalances: React.FC = () => {
                                                     }
                                                     const method = guide.preferred_payout_method;
                                                     if (method === 'bank_transfer') {
+                                                        const name = details.accountName || details.account_name;
                                                         return (
                                                             <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                                                {details.account_name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{details.account_name}</div>}
+                                                                {name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{name}</div>}
                                                                 {details.iban && <div style={{ color: 'var(--gray-600)' }}>IBAN: <span style={{ fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.5px' }}>{details.iban}</span></div>}
                                                                 {details.bic && <div style={{ color: 'var(--gray-500)' }}>BIC: <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{details.bic}</span></div>}
                                                             </div>
@@ -470,10 +476,12 @@ export const GuidesBalances: React.FC = () => {
                                                         );
                                                     }
                                                     if (method === 'mobile_money' || method === 'wave') {
+                                                        const name = details.fullName || details.full_name;
+                                                        const phone = details.phone || details.phone_number;
                                                         return (
                                                             <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                                                {details.full_name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{details.full_name}</div>}
-                                                                {(details.phone || details.phone_number) && <div style={{ color: 'var(--gray-600)', fontFamily: 'monospace' }}>{details.phone || details.phone_number}</div>}
+                                                                {name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{name}</div>}
+                                                                {phone && <div style={{ color: 'var(--gray-600)', fontFamily: 'monospace' }}>{phone}</div>}
                                                             </div>
                                                         );
                                                     }
