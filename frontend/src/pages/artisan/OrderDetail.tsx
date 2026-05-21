@@ -73,7 +73,6 @@ export const OrderDetail: React.FC = () => {
     const [isPausing, setIsPausing] = useState(false);
 
     // Disclaimer avant modification artisan
-    const [pendingEditProposal, setPendingEditProposal] = useState<ReviewProposal | null>(null);
 
     // États gestion images attachées aux propositions
     const [uploadingProposalId, setUploadingProposalId] = useState<string | null>(null);
@@ -124,9 +123,9 @@ export const OrderDetail: React.FC = () => {
         }
     };
 
-    // Ouvre le disclaimer avant la modification — l'artisan doit accepter
+    // Ouvre directement l'éditeur — la garantie est toujours maintenue
     const handleEditProposalIntent = (proposal: ReviewProposal) => {
-        setPendingEditProposal(proposal);
+        handleEditProposal(proposal);
     };
 
     const handleEditProposal = (proposal: ReviewProposal) => {
@@ -732,9 +731,30 @@ export const OrderDetail: React.FC = () => {
                                                 borderTop: '1px solid #f3f4f6',
                                                 marginTop: '0.75rem'
                                             }}>
-                                                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-                                                    Publié le {new Date(proposal.submitted_at!).toLocaleDateString()}
-                                                </span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                                                        Publié le {new Date(proposal.submitted_at!).toLocaleDateString()}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => handleEditProposalIntent(proposal)}
+                                                        style={{
+                                                            padding: '0.35rem 0.6rem',
+                                                            borderRadius: '0.5rem',
+                                                            border: '1px solid #e2e8f0',
+                                                            background: 'white',
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            color: '#64748b',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600
+                                                        }}
+                                                        title="Modifier"
+                                                    >
+                                                        <Edit3 size={13} /> Modifier
+                                                    </button>
+                                                </div>
                                                 <a
                                                     href={proposal.review_url}
                                                     target="_blank"
@@ -1038,63 +1058,6 @@ export const OrderDetail: React.FC = () => {
             </PremiumBlurOverlay>
 
             {/* Edit Proposal Modal */}
-            {/* Modal disclaimer — affiché avant l'édition pour informer l'artisan */}
-            {pendingEditProposal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(15,23,42,0.6)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 2000, backdropFilter: 'blur(8px)', padding: '1rem'
-                }} onClick={() => setPendingEditProposal(null)}>
-                    <div style={{
-                        background: 'white', padding: '2rem', borderRadius: '1.25rem',
-                        width: '100%', maxWidth: '480px',
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
-                    }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                            <div style={{ background: '#fef3c7', borderRadius: '50%', padding: '0.6rem', display: 'flex' }}>
-                                <AlertTriangle size={22} color="#d97706" />
-                            </div>
-                            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b' }}>
-                                Modification d'avis
-                            </h3>
-                        </div>
-                        <p style={{ margin: '0 0 1.25rem', fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                            En modifiant cet avis, <strong>AchatAvis ne sera plus responsable</strong> de sa
-                            suppression sur Google. Le slot sera considéré comme <strong>validé d'office</strong> côté
-                            artisan, même si l'avis est rejeté par notre équipe.
-                        </p>
-                        <p style={{ margin: '0 0 1.5rem', fontSize: '0.85rem', color: '#92400e', background: '#fef3c7', padding: '0.75rem 1rem', borderRadius: '0.5rem', borderLeft: '3px solid #f59e0b' }}>
-                            Cette action est irréversible. Vous assumez l'entière responsabilité du contenu modifié.
-                        </p>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button
-                                onClick={() => setPendingEditProposal(null)}
-                                style={{
-                                    flex: 1, padding: '0.75rem', borderRadius: '0.75rem',
-                                    border: '1px solid #e2e8f0', background: 'white',
-                                    color: '#475569', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem'
-                                }}
-                            >
-                                Non
-                            </button>
-                            <button
-                                onClick={() => {
-                                    handleEditProposal(pendingEditProposal);
-                                    setPendingEditProposal(null);
-                                }}
-                                style={{
-                                    flex: 2, padding: '0.75rem', borderRadius: '0.75rem',
-                                    border: 'none', background: '#d97706',
-                                    color: 'white', fontWeight: 700, cursor: 'pointer', fontSize: '0.9rem'
-                                }}
-                            >
-                                Oui, j'accepte — modifier l'avis
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {editingProposal && (
                 <div style={{
