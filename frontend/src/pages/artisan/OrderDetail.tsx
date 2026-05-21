@@ -796,36 +796,14 @@ export const OrderDetail: React.FC = () => {
                             }}>
                                 {order.proposals && order.proposals.filter(p => !p.submission_id).length > 0 ? (
                                     order.proposals.filter(p => !p.submission_id).map((proposal) => {
-                                        const isModified = !!proposal.modified_by_artisan_at;
-                                        const modifiedDate = isModified
-                                            ? new Date(proposal.modified_by_artisan_at!).toLocaleDateString('fr-FR')
-                                            : null;
                                         return (
                                         <div key={proposal.id} style={{
-                                            background: isModified ? '#fffbeb' : 'white',
+                                            background: 'white',
                                             padding: '1.5rem',
                                             borderRadius: '1rem',
-                                            border: isModified ? '1px solid #fde68a' : '1px solid #f3f4f6',
+                                            border: '1px solid #f3f4f6',
                                             position: 'relative'
                                         }}>
-                                            {isModified && (
-                                                <div style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '0.3rem',
-                                                    background: '#fef3c7',
-                                                    border: '1px solid #fde68a',
-                                                    borderRadius: '1rem',
-                                                    padding: '0.15rem 0.6rem',
-                                                    fontSize: '0.7rem',
-                                                    fontWeight: 700,
-                                                    color: '#92400e',
-                                                    marginBottom: '0.75rem',
-                                                    textTransform: 'uppercase' as const
-                                                }}>
-                                                    <AlertTriangle size={11} /> Avis modifié par l'artisan le {modifiedDate}
-                                                </div>
-                                            )}
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                                                 <div style={{ flex: 1 }}>
                                                     <span style={{ fontWeight: 700, fontSize: '0.925rem' }}>{proposal.author_name}</span>
