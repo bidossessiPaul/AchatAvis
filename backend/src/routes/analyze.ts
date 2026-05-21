@@ -475,36 +475,53 @@ function buildDiagnostic(params: {
     const { reviewCount, rating, anciennete, hasWebsite, hasPhone, hasPhotos, hasSpike, spikeDescription, flags, scores, negativeCount, unansweredNegative } = params;
 
     // Volume critique — alertes prioritaires
-    if (reviewCount < 5) warnings.push(`CRITIQUE : seulement ${reviewCount} avis — fiche quasi-invisible sur Google Maps`);
-    else if (reviewCount < 15) warnings.push(`Volume insuffisant : ${reviewCount} avis — en dessous du seuil minimal de visibilité locale`);
-    else if (reviewCount < 30) warnings.push(`Volume faible : ${reviewCount} avis — vos concurrents avec 50+ avis vous dépassent`);
+    if (reviewCount < 5)        warnings.push(`CRITIQUE : seulement ${reviewCount} avis — fiche quasi-invisible sur Google Maps`);
+    else if (reviewCount < 15)  warnings.push(`Volume insuffisant : ${reviewCount} avis — en dessous du seuil minimal de visibilité locale (15 avis)`);
+    else if (reviewCount < 30)  warnings.push(`Volume faible : ${reviewCount} avis — vos concurrents avec 50+ avis vous devancent sur toutes les requêtes`);
+    else if (reviewCount < 60)  warnings.push(`${reviewCount} avis — insuffisant face aux leaders de votre secteur qui dépassent 100 avis`);
 
     // Avis négatifs
-    if (negativeCount > 0) warnings.push(`${negativeCount} avis négatifs (1-2 étoiles) visibles sur votre fiche`);
-    if (unansweredNegative > 0) warnings.push(`${unansweredNegative} avis négatif${unansweredNegative > 1 ? 's' : ''} sans réponse du propriétaire — pénalise votre classement`);
+    if (negativeCount > 0) warnings.push(`${negativeCount} avis négatifs (1-2 étoiles) visibles — dégradent votre taux de conversion`);
+    if (unansweredNegative > 0) warnings.push(`${unansweredNegative} avis négatif${unansweredNegative > 1 ? 's' : ''} sans réponse — signal d'abandon perçu par Google et les clients`);
 
-    if (hasSpike && spikeDescription) warnings.push(spikeDescription);
-    if (flags.includes('note_suspecte')) warnings.push('Note ≥ 4,8 avec peu d\'avis — profil atypique');
-    if (flags.includes('fiche_jeune')) warnings.push(`Fiche récente (${anciennete} mois) — encore en rodage`);
-    if (flags.includes('secteur_surveille')) warnings.push('Secteur sous surveillance Google Maps');
-    if (!hasWebsite) warnings.push('Aucun site web référencé sur la fiche');
-    if (!hasPhone) warnings.push('Numéro de téléphone manquant');
-    if (!hasPhotos) warnings.push('Aucune photo — profil incomplet');
-    if (scores.seo < 55) warnings.push('Score SEO local faible — mots-clés sous-exploités');
-    if (warnings.length === 0) warnings.push('Aucun signal négatif détecté');
+    // Spike et flags
+    if (hasSpike && spikeDescription) warnings.push(`⚠ Pic suspect : ${spikeDescription} — risque de suppression rétroactive par Google`);
+    if (flags.includes('note_suspecte')) warnings.push(`Note ${rating.toFixed(1).replace('.', ',')}★ avec seulement ${reviewCount} avis — profil atypique détectable par l'algorithme`);
+    if (flags.includes('fiche_jeune')) warnings.push(`Fiche récente (${anciennete} mois) — autorité de domaine faible, vulnérable à la concurrence`);
+    if (flags.includes('secteur_surveille')) warnings.push('Secteur sous surveillance active de Google Maps — tolérance zéro aux anomalies');
 
-    if (reviewCount > 100) strengths.push(`Volume mature : ${reviewCount} avis Google`);
-    else if (reviewCount > 30) strengths.push(`${reviewCount} avis — base solide`);
-    else if (reviewCount > 0) strengths.push(`${reviewCount} avis présents`);
-    if (rating >= 4.5) strengths.push(`Note ${rating.toFixed(1).replace('.', ',')}★ — excellente réputation`);
-    else if (rating >= 4.0) strengths.push(`Note ${rating.toFixed(1).replace('.', ',')}★ — bonne réputation`);
-    if (anciennete > 36) strengths.push(`Fiche établie depuis ${Math.round(anciennete / 12)} an(s) — historique solide`);
-    else if (anciennete > 12) strengths.push(`Présence Google depuis ${Math.round(anciennete / 12)} an(s)`);
-    if (hasWebsite) strengths.push('Site web référencé sur la fiche');
-    if (hasPhone) strengths.push('Téléphone visible — accès direct clients');
-    if (hasPhotos) strengths.push('Photos présentes — profil visuel complet');
-    if (scores.seo >= 80) strengths.push('Score SEO local élevé');
-    if (strengths.length === 0) strengths.push('Fiche créée — potentiel à développer');
+    // Manques structurels
+    if (!hasWebsite) warnings.push('Aucun site web référencé — vous perdez 30% de clics potentiels');
+    if (!hasPhone) warnings.push('Numéro de téléphone manquant — clients bloqués à l\'étape du contact');
+    if (!hasPhotos) warnings.push('Aucune photo — taux de clic 40% inférieur aux fiches avec photos');
+
+    // SEO
+    if (scores.seo < 40) warnings.push(`Score SEO local critique (${scores.seo}/100) — mots-clés sectoriels absents, invisibilité sur les requêtes locales`);
+    else if (scores.seo < 55) warnings.push(`Score SEO local faible (${scores.seo}/100) — mots-clés sous-exploités face à vos concurrents`);
+
+    // Validation
+    if (scores.validation < 35) warnings.push(`Garantie validation très basse (${scores.validation}%) — risque élevé de rejet d'avis par Google`);
+    else if (scores.validation < 50) warnings.push(`Garantie validation insuffisante (${scores.validation}%) — certains avis seront filtrés avant publication`);
+
+    if (warnings.length === 0) warnings.push('Profil solide — à maintenir sous surveillance concurrentielle');
+
+    // Atouts (toujours relativisés pour ne pas rassurer)
+    if (reviewCount > 100) strengths.push(`${reviewCount} avis — bon volume, mais les leaders de votre secteur en ont 2× plus`);
+    else if (reviewCount > 30) strengths.push(`${reviewCount} avis — base présente, insuffisante pour dominer le top 3`);
+    else if (reviewCount > 0) strengths.push(`${reviewCount} avis présents — point de départ à accélérer d'urgence`);
+
+    if (rating >= 4.5) strengths.push(`Note ${rating.toFixed(1).replace('.', ',')}★ — atout à protéger absolument (une vague d'avis négatifs peut tout effacer)`);
+    else if (rating >= 4.0) strengths.push(`Note ${rating.toFixed(1).replace('.', ',')}★ — correcte mais insuffisante face aux fiches à 4,9★`);
+
+    if (anciennete > 36) strengths.push(`Fiche établie depuis ${Math.round(anciennete / 12)} an(s) — historique Google existant à valoriser`);
+    else if (anciennete > 12) strengths.push(`Présence Google depuis ${Math.round(anciennete / 12)} an(s) — encore en phase de consolidation`);
+
+    if (hasWebsite) strengths.push('Site web présent — levier SEO disponible mais non encore optimisé');
+    if (hasPhone) strengths.push('Téléphone visible — accès direct possible mais à coupler avec un volume d\'avis suffisant');
+    if (hasPhotos) strengths.push('Photos présentes — profil visuel actif, à enrichir pour maximiser le taux de clic');
+
+    if (scores.seo >= 45) strengths.push(`Score SEO à ${scores.seo}/100 — potentiel identifié, optimisation possible avec les bons mots-clés`);
+    if (strengths.length === 0) strengths.push('Fiche créée — potentiel brut à exploiter avec un plan d\'action structuré');
 
     return { warnings, strengths };
 }
