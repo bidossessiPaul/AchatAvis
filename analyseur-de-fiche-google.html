@@ -5,7 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analyseur de fiche Google — AchatAvis</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
+  .swal2-popup, .swal-font { font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important; border-radius: 1.25rem !important; }
+  .swal2-title { font-weight: 700 !important; color: #0f172a !important; }
+  .swal2-html-container { color: #334155 !important; font-size: 0.95rem !important; line-height: 1.6 !important; }
+  .swal2-confirm { font-weight: 600 !important; border-radius: 0.625rem !important; padding: 0.6rem 1.5rem !important; font-size: 0.9rem !important; }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
     --blue: #2563eb; --blue-dark: #1d4ed8; --blue-soft: #dbeafe;
@@ -80,7 +88,19 @@
   .sec-title-badge { background: var(--blue-soft); color: var(--blue); width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
   .sec-title h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
 
-  .identity { background: white; border-radius: 20px; padding: 24px 28px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .identity { background: white; border-radius: 20px; padding: 24px 28px; box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06); border: 1px solid var(--line-soft); margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .share-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .share-btn { display: flex; align-items: center; gap: 7px; padding: 0.5rem 1rem; border-radius: 0.625rem; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1.5px solid transparent; transition: opacity .15s; white-space: nowrap; }
+  .share-btn:hover { opacity: .82; }
+  .share-btn-pdf { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .share-btn-wa  { background: #25d366; color: #fff; border-color: #25d366; }
+  .share-btn-copy{ background: #fff; color: #0f172a; border-color: #e2e8f0; }
+  .share-btn-copy.copied { border-color: #059669; color: #059669; }
+  @media print {
+    .share-bar, .hero, #urlInput, #analyzeBtn, .loading, .action-section, .cta-section, .reco-hero, .booster { display: none !important; }
+    .results { display: block !important; }
+    body { background: white !important; }
+  }
   .identity-left { flex: 1; min-width: 280px; }
   .identity-cat { display: inline-flex; align-items: center; gap: 6px; background: var(--blue-soft); color: var(--blue); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
   .identity-name { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
@@ -311,35 +331,6 @@
   .footer-trust span { display: flex; align-items: center; gap: 8px; }
   .footer-trust .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
 
-  /* Modal capture */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(8px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
-  .modal-overlay.open { opacity: 1; pointer-events: auto; }
-  .modal-box { background: white; border-radius: 20px; width: 100%; max-width: 480px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; transform: translateY(16px); transition: transform 0.25s; }
-  .modal-overlay.open .modal-box { transform: translateY(0); }
-  .modal-header { background: linear-gradient(135deg, #059669, #047857); padding: 24px 28px; }
-  .modal-header h2 { color: white; font-size: 20px; font-weight: 800; margin: 0 0 4px; }
-  .modal-header p { color: #a7f3d0; font-size: 14px; margin: 0; }
-  .modal-body { padding: 28px; }
-  .modal-field { margin-bottom: 16px; }
-  .modal-field label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
-  .modal-field input { width: 100%; border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.65rem 0.85rem; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
-  .modal-field input:focus { border-color: #059669; }
-  .modal-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 10px; font-family: inherit; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.2s; }
-  .modal-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-  .modal-success { text-align: center; padding: 32px 28px; }
-  .modal-success-icon { width: 56px; height: 56px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
-  .modal-success h3 { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 8px; }
-  .modal-success p { font-size: 14px; color: #64748b; line-height: 1.6; margin: 0; }
-  .modal-skip { text-align: center; margin-top: 12px; }
-  .modal-skip button { background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 4px; }
-
-  /* Bouton CTA rapport dans les résultats */
-  .rapport-cta { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #059669; border-radius: 16px; padding: 24px 28px; margin-top: 32px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-  .rapport-cta-text h3 { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
-  .rapport-cta-text p { font-size: 14px; color: #475569; margin: 0; }
-  .rapport-cta-btn { background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 10px; padding: 12px 24px; font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(5,150,105,0.3); transition: all 0.2s; flex-shrink: 0; }
-  .rapport-cta-btn:hover { transform: translateY(-1px); }
-
   @media (max-width: 900px) {
     .nav { padding: 12px 16px; flex-wrap: nowrap; gap: 12px; }
     .nav-links { display: none; }
@@ -363,6 +354,58 @@
     .auth-sources, .phrases-grid { grid-template-columns: 1fr; }
     .examples-block { padding: 20px; }
   }
+
+  /* Section tous les avis */
+  .all-reviews-scroll { max-height: 480px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 14px; padding: 4px 0; background: #fff; }
+  .all-reviews-scroll::-webkit-scrollbar { width: 6px; }
+  .all-reviews-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+  .all-reviews-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  .review-row { display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid #f1f5f9; }
+  .review-row:last-child { border-bottom: none; }
+  .review-row-stars { font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+  .review-row-stars.s5 { color: #10b981; }
+  .review-row-stars.s4 { color: #10b981; }
+  .review-row-stars.s3 { color: #f59e0b; }
+  .review-row-stars.s2 { color: #ef4444; }
+  .review-row-stars.s1 { color: #ef4444; }
+  .review-row-body { flex: 1; min-width: 0; }
+  .review-row-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+  .review-row-date { font-size: 12px; color: #94a3b8; }
+  .review-row-noreply { background: #fee2e2; color: #991b1b; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 999px; text-transform: uppercase; }
+  .review-row-text { font-size: 13px; color: #475569; line-height: 1.5; }
+  .review-row-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
+  .all-reviews-counter { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+
+  /* Bannière volume critique */
+  .volume-alert { border-radius: 12px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 20px; }
+  .volume-alert.critical { background: #fee2e2; border: 2px solid #fca5a5; border-left: 6px solid #dc2626; }
+  .volume-alert.warning  { background: #fff7ed; border: 2px solid #fed7aa; border-left: 6px solid #f97316; }
+  .volume-alert-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 18px; flex-shrink: 0; color: white; }
+  .volume-alert.critical .volume-alert-icon { background: #dc2626; }
+  .volume-alert.warning  .volume-alert-icon { background: #f97316; }
+  .volume-alert-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; }
+  .volume-alert.critical .volume-alert-title { color: #991b1b; }
+  .volume-alert.warning  .volume-alert-title { color: #9a3412; }
+  .volume-alert-text { font-size: 14px; line-height: 1.6; }
+  .volume-alert.critical .volume-alert-text { color: #b91c1c; }
+  .volume-alert.warning  .volume-alert-text  { color: #c2410c; }
+
+  /* Section avis négatifs */
+  .neg-summary { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .neg-summary-stat { text-align: center; min-width: 60px; }
+  .neg-summary-stat .val { font-size: 26px; font-weight: 800; color: #dc2626; display: block; }
+  .neg-summary-stat .lbl { font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.06em; }
+  .neg-summary-divider { width: 1px; height: 40px; background: #fca5a5; }
+  .neg-summary-text { color: #7f1d1d; font-size: 14px; line-height: 1.6; flex: 1; min-width: 180px; }
+  .neg-review-card { background: #fff; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+  .neg-review-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .neg-review-stars { color: #dc2626; font-size: 13px; font-weight: 700; }
+  .neg-review-date { color: #94a3b8; font-size: 12px; }
+  .neg-noreply { background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .neg-review-text { color: #475569; font-size: 14px; line-height: 1.6; font-style: italic; }
+  .neg-review-text:before { content: '\201C'; }
+  .neg-review-text:after  { content: '\201D'; }
+  .neg-empty-text { color: #94a3b8; font-size: 13px; font-style: italic; padding: 8px 0; }
 </style>
 </head>
 <body>
@@ -379,10 +422,10 @@
     <a href="https://achatavis.com/analyseur-de-fiche-google/" class="active">Analyseur de fiche Google</a>
     <a href="https://achatavis.com/#tarifs">Tarifs</a>
     <a href="https://achatavis.com/remove-fiche-google/">Suppression de fiche</a>
-    <a href="https://achatavis.com/creation-de-fiche-gmb/">Création de fiche GMB</a>
+    <a href="https://achatavis.com/creation-de-fiche-gmb/">Creation de fiche GMB</a>
   </div>
   <div class="nav-cta-group">
-    <a href="https://manager.achatavis.com/" class="btn-orange">Devenir Guide Local</a>
+    <a href="https://manager.achatavis.com/" class="btn-orange">🛡 Devenir Guide Local</a>
     <a href="https://manager.achatavis.com/" class="btn-outline">Connexion</a>
     <a href="https://achatavis.com/#tarifs" class="btn-blue" style="text-decoration:none;">Commencer</a>
   </div>
@@ -404,7 +447,7 @@
         <svg class="input-field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         <input type="text" id="urlInput" placeholder="Collez votre lien Google Maps ici…">
       </div>
-      <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">Lancer le diagnostic
+      <button class="btn-analyze" id="analyzeBtn" onclick="showCaptureForm()">Lancer le diagnostic
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
@@ -445,9 +488,24 @@
         </div>
       </div>
       <div class="verdict-badge">
-        <div class="verdict-badge-label">Verdict</div>
-        <div class="verdict-badge-value">Difficile</div>
+        <div class="verdict-badge-label">État de la fiche</div>
+        <div class="verdict-badge-value">—</div>
       </div>
+    </div>
+
+    <div class="share-bar" id="shareBar">
+      <button class="share-btn share-btn-pdf" onclick="doPDF()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        Télécharger PDF
+      </button>
+      <button class="share-btn share-btn-wa" onclick="shareWhatsApp()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Partager WhatsApp
+      </button>
+      <button class="share-btn share-btn-copy" id="copyLinkBtn" onclick="copyLink(this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Copier le lien
+      </button>
     </div>
 
     <div class="sec-title"><div class="sec-title-badge">2</div><h2>Vos scores clés</h2></div>
@@ -458,7 +516,7 @@
         <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge1" cx="80" cy="80" r="68" stroke="#10b981" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge1Val" style="color:#10b981;">0<span class="gauge-suffix">%</span></div></div></div>
         <div id="gauge1Label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-top:2px;">Sans optimisation</div>
         <div id="gauge1Upsell" style="margin-top:10px;padding:8px 12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:10px;font-size:12px;color:var(--green-deep);font-weight:700;cursor:pointer;" onclick="toggleBooster()">
-          Avec Optimisation fiche → <strong>65%</strong> ↑
+          Avec Optimisation fiche → <strong id="gauge1UpsellVal">65%</strong> ↑
         </div>
       </div>
       <div class="gauge-card">
@@ -467,11 +525,14 @@
         <div class="gauge-desc">Bon volume mais à consolider</div>
       </div>
       <div class="gauge-card">
-        <div class="gauge-card-title">Niveau de difficulté</div>
+        <div class="gauge-card-title">Pression concurrentielle</div>
         <div class="gauge"><svg width="160" height="160"><circle class="gauge-bg" cx="80" cy="80" r="68"/><circle class="gauge-fg" id="gauge3" cx="80" cy="80" r="68" stroke="#f97316" stroke-dasharray="427" stroke-dashoffset="427"/></svg><div class="gauge-text"><div class="gauge-value" id="gauge3Val" style="color:#f97316;">0<span class="gauge-suffix">/100</span></div></div></div>
-        <div class="gauge-desc">Niveau : <strong style="color:var(--orange)">Difficile</strong></div>
+        <div class="gauge-desc" id="gauge3Desc">Concurrence dans votre secteur</div>
       </div>
     </div>
+
+    <!-- Alerte volume si < 30 avis — populée dynamiquement -->
+    <div id="volumeAlert" style="display:none;"></div>
 
     <div class="critical-alert">
       <div class="critical-alert-icon">!</div>
@@ -534,6 +595,26 @@
           <li>Nom "Tamarys" cité = SEO entité</li>
         </ul>
       </div>
+    </div>
+
+    <!-- Section avis négatifs — populée dynamiquement, cachée si aucun -->
+    <div id="negReviewsSection" style="display:none;">
+      <div class="sec-title">
+        <div class="sec-title-badge" style="background:#fee2e2;color:#dc2626;">!</div>
+        <h2 style="color:#dc2626;">Avis négatifs détectés sur votre fiche</h2>
+      </div>
+      <div id="negSummary" class="neg-summary"></div>
+      <div id="negReviewsList"></div>
+    </div>
+
+    <!-- Section tous les avis — populée dynamiquement -->
+    <div id="allReviewsSection" style="display:none;">
+      <div class="sec-title">
+        <div class="sec-title-badge" style="background:#dbeafe;color:#2563eb;">★</div>
+        <h2>Vos avis actuellement</h2>
+      </div>
+      <div id="allReviewsCounter" class="all-reviews-counter"></div>
+      <div class="all-reviews-scroll" id="allReviewsList"></div>
     </div>
 
     <!-- 5. AUTHENTICITÉ -->
@@ -996,9 +1077,9 @@
       </div>
       <div class="booster-why"><strong>⚠️ Crucial pour VOUS :</strong> dilue le pic suspect de janvier avec photos géotaggées, posts, Q&A, articles SEO. Google interprète votre fiche comme légitime.</div>
       <div class="booster-impact">
-        <div class="booster-impact-stat"><div class="booster-impact-num">65%</div><div class="booster-impact-label">Sans optim<small>Validation</small></div></div>
+        <div class="booster-impact-stat"><div class="booster-impact-num" id="boosterSansOptimNum">65%</div><div class="booster-impact-label">Sans optim<small>Validation</small></div></div>
         <div class="booster-impact-arrow">→</div>
-        <div class="booster-impact-stat"><div class="booster-impact-num">80%</div><div class="booster-impact-label">Avec optim<small>+15%</small></div></div>
+        <div class="booster-impact-stat"><div class="booster-impact-num" id="boosterAvecOptimNum">80%</div><div class="booster-impact-label">Avec optim<small id="boosterOptimDelta">+15%</small></div></div>
       </div>
       <div class="booster-inclusions">
         <div>Audit SEO complet</div>
@@ -1044,14 +1125,6 @@
       <div class="btn-final-cta-sub" id="ctaSub"><strong>-15% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement</div>
     </div>
 
-    <div class="rapport-cta">
-      <div class="rapport-cta-text">
-        <h3>Recevoir votre rapport complet par email</h3>
-        <p>Un lien permanent vers cette analyse, partageable à tout moment.</p>
-      </div>
-      <button class="rapport-cta-btn" onclick="openCaptureModal()">Envoyer le rapport →</button>
-    </div>
-
     <div class="footer-trust">
       <span><span class="dot"></span> Local Guides vérifiés</span>
       <span><span class="dot"></span> Méthode d'opinion stricte</span>
@@ -1062,51 +1135,10 @@
 
 </div>
 
-<!-- Modal capture contact -->
-<div class="modal-overlay" id="captureModal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2>Recevoir votre rapport par email</h2>
-      <p>Accédez à votre analyse complète avec les recommandations personnalisées.</p>
-    </div>
-    <div id="captureFormWrap">
-      <div class="modal-body">
-        <div class="modal-field">
-          <label for="captureName">Prénom et nom</label>
-          <input type="text" id="captureName" placeholder="Jean Dupont" autocomplete="name">
-        </div>
-        <div class="modal-field">
-          <label for="captureEmail">Adresse email</label>
-          <input type="email" id="captureEmail" placeholder="jean@example.com" autocomplete="email">
-        </div>
-        <div class="modal-field">
-          <label for="capturePhone">Téléphone</label>
-          <input type="tel" id="capturePhone" placeholder="06 00 00 00 00" autocomplete="tel">
-        </div>
-        <button class="modal-submit" id="captureSubmitBtn" onclick="runCapture()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-          Recevoir mon rapport
-        </button>
-        <div class="modal-skip">
-          <button onclick="closeCaptureModal()">Fermer sans recevoir le rapport</button>
-        </div>
-      </div>
-    </div>
-    <div id="captureSuccessWrap" style="display:none;">
-      <div class="modal-success">
-        <div class="modal-success-icon">✓</div>
-        <h3>Email envoyé !</h3>
-        <p>Votre rapport a été envoyé à <strong id="captureSuccessEmail"></strong>.<br>Vérifiez votre boîte mail (et les spams).</p>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-  // URL de l'API — en prod remplacer par https://api.manager-achatavis.com
   const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5001'
-    : 'https://api.manager-achatavis.com';
+    : 'https://achat-avis-backend-hhk5.vercel.app';
 
   function esc(str) {
     const d = document.createElement('div');
@@ -1158,7 +1190,7 @@
   const OFFERS = {
     starter:    { name: 'STARTER',        price: 235, avis: 30, maxTested: 3, cadenceText: '1 par jour', paceText: '1 avis / jour', volText: '~30 avis', stableText: '~25 avis stables', discount: 10, stripe: 'https://buy.stripe.com/aFabJ270L4Zw3kq4vW7Re12' },
     pro:        { name: 'PROFESSIONNEL',  price: 299, avis: 60, maxTested: 6, cadenceText: '2 par jour', paceText: '2 avis / jour', volText: '~60 avis', stableText: '~50 avis stables', discount: 15, stripe: 'https://buy.stripe.com/4gM14o3OzgIe9IOd2s7Re13' },
-    enterprise: { name: 'ENTREPRISE',     price: 499, avis: 90, maxTested: 9, cadenceText: '3 par jour', paceText: '3 avis / jour', volText: '~90 avis', stableText: '~70 avis stables', discount: 20, stripe: 'https://buy.stripe.com/REPLACE_ENTERPRISE' }
+    enterprise: { name: 'ENTREPRISE',     price: 499, avis: 90, maxTested: 9, cadenceText: '3 par jour', paceText: '3 avis / jour', volText: '~90 avis', stableText: '~70 avis stables', discount: 20, stripe: null }
   };
   const OPTIM = { price: 350, validationBoost: 15 };
 
@@ -1174,12 +1206,27 @@
   DIAGNOSTIC.recommendedOffer = recommendOffer(DIAGNOSTIC.reviewCount, DIAGNOSTIC.baseDifficulty, false);
 
   let state = { offer: DIAGNOSTIC.recommendedOffer, optimisation: DIAGNOSTIC.optimisationPreSelected };
+  let currentLeadId = null;    // ID du rapport sauvegardé (reçu depuis l'API)
+  let capturedContact = null;  // { name, email, phone } saisi avant le lancement
 
   function populatePage(data) {
-    document.querySelector('.identity-cat').textContent = '🔧 ' + data.categoryLabel;
+    var sectorIcons = { plumber:'🔧', locksmith:'🔑', restaurant:'🍽️', electrician:'⚡', garage:'🚗', beauty_salon:'💇', driving_school:'🚦', hotel:'🏨', health:'🩺', default:'🏢' };
+    var sectorKey = (data.types || []).reduce(function(found, t) {
+      if (found) return found;
+      if (t === 'plumber') return 'plumber';
+      if (t === 'locksmith') return 'locksmith';
+      if (['restaurant','food','cafe','bakery','bar'].includes(t)) return 'restaurant';
+      if (t === 'electrician') return 'electrician';
+      if (['car_repair','car_dealer'].includes(t)) return 'garage';
+      if (['beauty_salon','hair_care','spa'].includes(t)) return 'beauty_salon';
+      if (t === 'driving_school') return 'driving_school';
+      if (['lodging','hotel'].includes(t)) return 'hotel';
+      if (['doctor','dentist','physiotherapist','hospital','health'].includes(t)) return 'health';
+      return null;
+    }, null) || 'default';
+    document.querySelector('.identity-cat').textContent = (sectorIcons[sectorKey] || '🏢') + ' ' + data.categoryLabel;
     document.querySelector('.identity-name').textContent = data.name;
     document.querySelector('.identity-addr').textContent = '📍 ' + (data.address || 'Fiche Google Business');
-    document.querySelector('.verdict-badge-value').textContent = data.verdict;
 
     // Photo de profil Google
     var bizPhoto = document.getElementById('bizPhoto');
@@ -1220,10 +1267,245 @@
       }
     }
 
-    DIAGNOSTIC.baseValidation  = data.scores.validation;
-    DIAGNOSTIC.baseSeo         = data.scores.seo;
+    DIAGNOSTIC.baseValidation  = Math.min(65, data.scores.validation);
+    DIAGNOSTIC.baseSeo         = Math.min(70, data.scores.seo);
     DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
+    DIAGNOSTIC.basePression    = data.scores.pression || data.scores.difficulty || 55;
     DIAGNOSTIC.reviewCount     = data.reviewCount;
+
+    // Verdict badge — état de la fiche (nouveau champ ficheStatus)
+    var verdictEl = document.querySelector('.verdict-badge-value');
+    if (verdictEl && data.ficheStatus) {
+      verdictEl.textContent = data.ficheStatus;
+      var statusColors = {
+        'Fiche critique':         '#dc2626',
+        'Fiche à risque':         '#dc2626',
+        'À consolider':           '#f97316',
+        'Établie — à renforcer':  '#f97316',
+        'Établie — à défendre':   '#059669',
+      };
+      var sCol = statusColors[data.ficheStatus] || '#64748b';
+      verdictEl.style.color = sCol;
+      var verdictCard = verdictEl.closest('.verdict-badge');
+      if (verdictCard) {
+        var bgMap = {
+          'Fiche critique':         '#fee2e2',
+          'Fiche à risque':         '#fee2e2',
+          'À consolider':           '#fff7ed',
+          'Établie — à renforcer':  '#fff7ed',
+          'Établie — à défendre':   '#f0fdf4',
+        };
+        verdictCard.style.background = bgMap[data.ficheStatus] || '#f8fafc';
+        verdictCard.style.borderColor = sCol;
+      }
+    }
+
+    // Bannière volume critique
+    var volumeAlert = document.getElementById('volumeAlert');
+    if (volumeAlert) {
+      var rc = data.reviewCount;
+      if (rc < 15) {
+        var isCritical = rc < 5;
+        var alertClass = isCritical ? 'critical' : 'warning';
+        var alertTitle = isCritical
+          ? 'Fiche quasi-invisible — ' + rc + ' avis seulement'
+          : 'Zone de danger — seulement ' + rc + ' avis';
+        var alertText = isCritical
+          ? 'En dessous de 5 avis, Google ignore votre fiche dans les résultats locaux. Un concurrent avec 20 avis vous écrase systématiquement. Chaque jour sans avis = perte de clients.'
+          : 'Google pénalise les fiches sous 15 avis dans son classement local. Vos concurrents avec 30+ avis vous devancent sur toutes les requêtes sectorielles de votre zone.';
+        var iconEl = document.createElement('div');
+        iconEl.className = 'volume-alert-icon';
+        iconEl.textContent = '!';
+        var textDiv = document.createElement('div');
+        var titleEl = document.createElement('div');
+        titleEl.className = 'volume-alert-title';
+        titleEl.textContent = alertTitle;
+        var textEl = document.createElement('div');
+        textEl.className = 'volume-alert-text';
+        textEl.textContent = alertText;
+        textDiv.appendChild(titleEl);
+        textDiv.appendChild(textEl);
+        volumeAlert.className = 'volume-alert ' + alertClass;
+        volumeAlert.textContent = '';
+        volumeAlert.appendChild(iconEl);
+        volumeAlert.appendChild(textDiv);
+        volumeAlert.style.display = 'flex';
+      } else if (rc < 30) {
+        var iconEl2 = document.createElement('div');
+        iconEl2.className = 'volume-alert-icon';
+        iconEl2.textContent = '!';
+        var textDiv2 = document.createElement('div');
+        var titleEl2 = document.createElement('div');
+        titleEl2.className = 'volume-alert-title';
+        titleEl2.textContent = 'Volume faible — ' + rc + ' avis';
+        var textEl2 = document.createElement('div');
+        textEl2.className = 'volume-alert-text';
+        textEl2.textContent = 'Avec seulement ' + rc + ' avis, vous êtes vulnérable face aux concurrents de votre secteur. Les fiches avec 50+ avis occupent les 3 premières positions.';
+        textDiv2.appendChild(titleEl2);
+        textDiv2.appendChild(textEl2);
+        volumeAlert.className = 'volume-alert warning';
+        volumeAlert.textContent = '';
+        volumeAlert.appendChild(iconEl2);
+        volumeAlert.appendChild(textDiv2);
+        volumeAlert.style.display = 'flex';
+      } else {
+        volumeAlert.style.display = 'none';
+      }
+    }
+
+    // Section avis négatifs
+    var negSection = document.getElementById('negReviewsSection');
+    var negSummary = document.getElementById('negSummary');
+    var negList    = document.getElementById('negReviewsList');
+    var negCount   = data.negativeCount || 0;
+    var negUnans   = data.unansweredNegative || 0;
+    var negRevs    = data.negativeReviews || [];
+    if (negSection && negSummary && negList) {
+      negList.textContent = '';
+      negSummary.textContent = '';
+      if (negCount > 0) {
+        // Résumé stats
+        var s1 = document.createElement('div');
+        s1.className = 'neg-summary-stat';
+        var v1 = document.createElement('span');
+        v1.className = 'val';
+        v1.textContent = String(negCount);
+        var l1 = document.createElement('span');
+        l1.className = 'lbl';
+        l1.textContent = 'Avis négatifs';
+        s1.appendChild(v1);
+        s1.appendChild(l1);
+        negSummary.appendChild(s1);
+        if (negUnans > 0) {
+          var div1 = document.createElement('div');
+          div1.className = 'neg-summary-divider';
+          negSummary.appendChild(div1);
+          var s2 = document.createElement('div');
+          s2.className = 'neg-summary-stat';
+          var v2 = document.createElement('span');
+          v2.className = 'val';
+          v2.textContent = String(negUnans);
+          var l2 = document.createElement('span');
+          l2.className = 'lbl';
+          l2.textContent = 'Sans réponse';
+          s2.appendChild(v2);
+          s2.appendChild(l2);
+          negSummary.appendChild(s2);
+        }
+        var div2 = document.createElement('div');
+        div2.className = 'neg-summary-divider';
+        negSummary.appendChild(div2);
+        var summText = document.createElement('div');
+        summText.className = 'neg-summary-text';
+        var impactMsg = negUnans > 0
+          ? negUnans + ' avis négatif' + (negUnans > 1 ? 's restent' : ' reste') + ' sans réponse — Google pénalise les propriétaires qui ignorent leurs clients mécontents. Chaque avis sans réponse fait baisser votre classement local.'
+          : 'Vous avez répondu à vos avis négatifs, c\'est bien. Mais leur présence continue à impacter votre note et vos conversions. Diluer ces avis avec des avis positifs ciblés est la solution.';
+        summText.textContent = impactMsg;
+        negSummary.appendChild(summText);
+        // Cartes avis négatifs
+        if (negRevs.length > 0) {
+          negRevs.forEach(function(rev) {
+            var card = document.createElement('div');
+            card.className = 'neg-review-card';
+            var header = document.createElement('div');
+            header.className = 'neg-review-header';
+            var stars = document.createElement('span');
+            stars.className = 'neg-review-stars';
+            stars.textContent = Array(rev.rating + 1).join('★') + Array(6 - rev.rating).join('☆');
+            var dateEl = document.createElement('span');
+            dateEl.className = 'neg-review-date';
+            dateEl.textContent = rev.date || '';
+            header.appendChild(stars);
+            header.appendChild(dateEl);
+            if (!rev.hasResponse) {
+              var badge = document.createElement('span');
+              badge.className = 'neg-noreply';
+              badge.textContent = 'Sans réponse';
+              header.appendChild(badge);
+            }
+            var textEl = document.createElement('div');
+            textEl.className = 'neg-review-text';
+            textEl.textContent = rev.text || '(Avis sans commentaire)';
+            card.appendChild(header);
+            card.appendChild(textEl);
+            negList.appendChild(card);
+          });
+        } else {
+          var emptyEl = document.createElement('p');
+          emptyEl.className = 'neg-empty-text';
+          emptyEl.textContent = 'Les avis négatifs ont été détectés mais leur texte n\'est pas disponible.';
+          negList.appendChild(emptyEl);
+        }
+        negSection.style.display = 'block';
+      } else {
+        negSection.style.display = 'none';
+      }
+    }
+
+    // Section tous les avis
+    var allRevSection  = document.getElementById('allReviewsSection');
+    var allRevList     = document.getElementById('allReviewsList');
+    var allRevCounter  = document.getElementById('allReviewsCounter');
+    var allRevs        = data.allReviews || [];
+    if (allRevSection && allRevList && allRevCounter) {
+      allRevList.textContent = '';
+      if (allRevs.length > 0) {
+        allRevCounter.textContent = allRevs.length + ' avis affichés (sur ' + data.reviewCount + ' au total) — du plus récent au plus ancien';
+        allRevs.forEach(function(rev) {
+          var row = document.createElement('div');
+          row.className = 'review-row';
+
+          var starsEl = document.createElement('div');
+          starsEl.className = 'review-row-stars s' + rev.rating;
+          starsEl.textContent = Array(rev.rating + 1).join('★') + Array(6 - rev.rating).join('☆');
+
+          var body = document.createElement('div');
+          body.className = 'review-row-body';
+
+          var meta = document.createElement('div');
+          meta.className = 'review-row-meta';
+          var dateEl = document.createElement('span');
+          dateEl.className = 'review-row-date';
+          dateEl.textContent = rev.date || '';
+          meta.appendChild(dateEl);
+          if (rev.rating <= 2 && !rev.hasResponse) {
+            var badge = document.createElement('span');
+            badge.className = 'review-row-noreply';
+            badge.textContent = 'Sans réponse';
+            meta.appendChild(badge);
+          }
+
+          var textEl = document.createElement('div');
+          if (rev.text) {
+            textEl.className = 'review-row-text';
+            textEl.textContent = rev.text;
+          } else {
+            textEl.className = 'review-row-empty';
+            textEl.textContent = 'Avis sans commentaire';
+          }
+
+          body.appendChild(meta);
+          body.appendChild(textEl);
+          row.appendChild(starsEl);
+          row.appendChild(body);
+          allRevList.appendChild(row);
+        });
+        allRevSection.style.display = 'block';
+      } else {
+        allRevSection.style.display = 'none';
+      }
+    }
+
+    // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
+    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65);
+    var bSans = document.getElementById('boosterSansOptimNum');
+    var bAvec = document.getElementById('boosterAvecOptimNum');
+    var bDelta = document.getElementById('boosterOptimDelta');
+    var upsellVal = document.getElementById('gauge1UpsellVal');
+    if (bSans) bSans.textContent = DIAGNOSTIC.baseValidation + '%';
+    if (bAvec) bAvec.textContent = avecOptimVal + '%';
+    if (bDelta) bDelta.textContent = '+' + (avecOptimVal - DIAGNOSTIC.baseValidation) + '%';
+    if (upsellVal) upsellVal.textContent = avecOptimVal + '%';
 
     DIAGNOSTIC.recommendedOffer = recommendOffer(data.reviewCount, data.scores.difficulty, data.hasSpike);
     state.offer = DIAGNOSTIC.recommendedOffer;
@@ -1271,84 +1553,44 @@
     }
   }
 
-  let currentLeadId = null;
-  let currentBusinessName = null;
-
-  function openCaptureModal() {
-    if (!currentLeadId) return;
-    document.getElementById('captureFormWrap').style.display = 'block';
-    document.getElementById('captureSuccessWrap').style.display = 'none';
-    document.getElementById('captureSubmitBtn').disabled = false;
-    document.getElementById('captureSubmitBtn').textContent = 'Recevoir mon rapport';
-    document.getElementById('captureModal').classList.add('open');
-    setTimeout(function() { document.getElementById('captureName').focus(); }, 300);
-  }
-
-  function closeCaptureModal() {
-    document.getElementById('captureModal').classList.remove('open');
-  }
-
-  async function runCapture() {
-    const name  = document.getElementById('captureName').value.trim();
-    const email = document.getElementById('captureEmail').value.trim();
-    const phone = document.getElementById('capturePhone').value.trim();
-
-    if (!name || !email || !phone) {
-      alert('Veuillez renseigner prénom/nom, email et téléphone.');
+  // Formulaire de capture AVANT l'analyse — les infos sont ensuite envoyées en arrière-plan
+  function showCaptureForm() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) {
+      Swal.fire({ icon: 'warning', title: 'Lien manquant', text: 'Collez le lien de votre fiche Google Maps dans le champ.', confirmButtonColor: '#2563eb', confirmButtonText: 'OK', customClass: { popup: 'swal-font' } });
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      alert('Adresse email invalide.');
-      return;
-    }
-
-    const btn = document.getElementById('captureSubmitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Envoi en cours…';
-
-    const reportUrl = window.location.origin + '/analyseur-de-fiche-google.html?report_id=' + currentLeadId;
-
-    try {
-      const res = await fetch(API_BASE + '/api/analyze/capture', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_id:       currentLeadId,
-          name:          name,
-          email:         email,
-          phone:         phone,
-          action:        'email_rapport',
-          business_name: currentBusinessName,
-          report_url:    reportUrl,
-        }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        btn.disabled = false;
-        btn.textContent = 'Recevoir mon rapport';
-        alert(data.error || 'Erreur lors de l\'envoi. Réessayez.');
-        return;
+    Swal.fire({
+      title: 'Obtenez votre rapport gratuit',
+      html:
+        '<p style="color:#475569;font-size:0.9rem;margin:0 0 20px;line-height:1.5;">Entrez vos coordonnées pour recevoir votre analyse personnalisée et un plan d\'action pour <strong>optimiser votre fiche Google</strong>.</p>' +
+        '<input id="swal-name"  class="swal2-input" placeholder="Votre nom *" style="margin:4px 0;">' +
+        '<input id="swal-email" class="swal2-input" type="email" placeholder="Votre email *" style="margin:4px 0;">' +
+        '<input id="swal-phone" class="swal2-input" type="tel" placeholder="Votre téléphone *" style="margin:4px 0;">',
+      confirmButtonText: 'Lancer l\'analyse →',
+      confirmButtonColor: '#059669',
+      showCancelButton: true,
+      cancelButtonText: 'Annuler',
+      focusConfirm: false,
+      customClass: { popup: 'swal-font' },
+      preConfirm: function() {
+        var name  = document.getElementById('swal-name').value.trim();
+        var email = document.getElementById('swal-email').value.trim();
+        var phone = document.getElementById('swal-phone').value.trim();
+        if (!name || !email || !phone) { Swal.showValidationMessage('Tous les champs sont requis'); return false; }
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { Swal.showValidationMessage('Email invalide'); return false; }
+        return { name: name, email: email, phone: phone };
       }
-
-      // Email bien envoyé côté serveur — on affiche la confirmation AVANT de fermer
-      document.getElementById('captureFormWrap').style.display = 'none';
-      document.getElementById('captureSuccessWrap').style.display = 'block';
-      document.getElementById('captureSuccessEmail').textContent = email;
-
-      // Fermeture automatique 3s après confirmation
-      setTimeout(closeCaptureModal, 3000);
-
-    } catch {
-      btn.disabled = false;
-      btn.textContent = 'Recevoir mon rapport';
-      alert('Erreur réseau. Réessayez.');
-    }
+    }).then(function(result) {
+      if (!result.isConfirmed) return;
+      capturedContact = result.value;
+      runAnalysis();
+    });
   }
 
   async function runAnalysis() {
     const url = document.getElementById('urlInput').value.trim();
-    if (!url) { alert('Veuillez coller le lien de votre fiche Google Maps'); return; }
+    if (!url) return;
     const btn = document.getElementById('analyzeBtn');
     const svgArrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
     btn.disabled = true;
@@ -1366,10 +1608,26 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'analyse');
 
-      // Stocker le lead pour la capture contact
-      currentLeadId       = data._lead_id || null;
-      currentBusinessName = data.name || '';
-
+      currentLeadId = data._lead_id || null;
+      // Envoi silencieux du contact capturé avant l'analyse
+      if (currentLeadId && capturedContact) {
+        var _shareUrl = window.location.origin + window.location.pathname + '?report_id=' + currentLeadId;
+        fetch(API_BASE + '/api/analyze/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lead_id:       currentLeadId,
+            name:          capturedContact.name,
+            email:         capturedContact.email,
+            phone:         capturedContact.phone,
+            action:        'pre-analysis',
+            business_name: data.name || '',
+            report_url:    _shareUrl
+          })
+        }).catch(function() {});
+      }
+      // Pré-remplir le champ URL avec la fiche analysée (pour relancer ou partager)
+      if (data._original_url) document.getElementById('urlInput').value = data._original_url;
       populatePage(data);
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('results').classList.add('active');
@@ -1382,34 +1640,70 @@
       setTimeout(function() { document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
     } catch (err) {
       document.getElementById('loadingState').style.display = 'none';
-      alert('Erreur : ' + err.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Analyse impossible',
+        text: err.message,
+        confirmButtonColor: '#2563eb',
+        confirmButtonText: 'Compris',
+        customClass: { popup: 'swal-font' }
+      });
     } finally {
       btn.disabled = false;
       btn.innerHTML = 'Relancer le diagnostic ' + svgArrow;
     }
   }
 
-  function animateGauges() {
-    const validation = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
-    animateGauge('gauge1', 'gauge1Val', validation, 427, '%');
-    animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, '/100');
-    animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.baseDifficulty, 427, '/100');
+  function gaugeColor(val, type) {
+    if (type === 'validation') {
+      if (val < 30) return '#ef4444';
+      if (val < 50) return '#f97316';
+      return '#10b981';
+    }
+    if (type === 'seo') {
+      if (val < 35) return '#ef4444';
+      if (val < 55) return '#f97316';
+      return '#2563eb';
+    }
+    // Pression concurrentielle : haute = rouge (mauvais pour le prospect)
+    if (val > 70) return '#ef4444';
+    if (val > 50) return '#f97316';
+    return '#10b981';
   }
 
-  function animateGauge(circleId, valId, target, circumference, suffix) {
-    const offset = circumference - (target / 100) * circumference;
-    const circle = document.getElementById(circleId);
-    const valEl = document.getElementById(valId);
+  function animateGauges() {
+    var validation = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', validation, 427, gaugeColor(validation, 'validation'));
+    animateGauge('gauge2', 'gauge2Val', DIAGNOSTIC.baseSeo, 427, gaugeColor(DIAGNOSTIC.baseSeo, 'seo'));
+    animateGauge('gauge3', 'gauge3Val', DIAGNOSTIC.basePression, 427, gaugeColor(DIAGNOSTIC.basePression, 'pression'));
+    // Label pression
+    var g3desc = document.getElementById('gauge3Desc');
+    if (g3desc) {
+      var p = DIAGNOSTIC.basePression;
+      var label = p > 70 ? 'Concurrence très active — urgence de renforcement' : p > 50 ? 'Concurrence modérée — risque de déclassement' : 'Secteur accessible — position à consolider';
+      var col   = gaugeColor(p, 'pression');
+      g3desc.textContent = label;
+      g3desc.style.color = col;
+    }
+  }
+
+  function animateGauge(circleId, valId, target, circumference, color) {
+    var offset = circumference - (target / 100) * circumference;
+    var circle = document.getElementById(circleId);
+    var valEl  = document.getElementById(valId);
+    if (color) { circle.style.stroke = color; valEl.style.color = color; }
     circle.style.strokeDashoffset = circumference;
-    valEl.innerHTML = '0<span class="gauge-suffix">' + suffix + '</span>';
-    requestAnimationFrame(() => { circle.style.strokeDashoffset = offset; });
-    let current = 0;
-    const start = performance.now();
+    // Met à jour uniquement le noeud texte (le span .gauge-suffix reste en place dans le DOM)
+    var textNode = valEl.firstChild;
+    if (textNode && textNode.nodeType === 3) textNode.nodeValue = '0';
+    requestAnimationFrame(function() { circle.style.strokeDashoffset = offset; });
+    var current = 0;
+    var start = performance.now();
     function tick(now) {
-      const p = Math.min(1, (now - start) / 1200);
-      const eased = 1 - Math.pow(1 - p, 3);
+      var p = Math.min(1, (now - start) / 1200);
+      var eased = 1 - Math.pow(1 - p, 3);
       current = Math.round(target * eased);
-      valEl.innerHTML = current + '<span class="gauge-suffix">' + suffix + '</span>';
+      if (textNode && textNode.nodeType === 3) textNode.nodeValue = String(current);
       if (p < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
@@ -1426,8 +1720,8 @@
     document.getElementById('booster').classList.toggle('active', state.optimisation);
     document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
     document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
-    const newValue = state.optimisation ? Math.min(65, DIAGNOSTIC.baseValidation + OPTIM.validationBoost) : DIAGNOSTIC.baseValidation;
-    animateGauge('gauge1', 'gauge1Val', newValue, 427, '%');
+    var newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
+    animateGauge('gauge1', 'gauge1Val', newValue, 427, gaugeColor(newValue, 'validation'));
     document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
     document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';
     document.getElementById('gauge1Upsell').style.display = state.optimisation ? 'none' : 'block';
@@ -1453,8 +1747,70 @@
     document.getElementById('recapTotal').textContent = total;
     document.getElementById('recapMonthly').classList.toggle('visible', state.optimisation);
     document.getElementById('recapMonthlyValue').textContent = o.price;
-    document.getElementById('ctaBtn').href = o.stripe;
+    var ctaBtn = document.getElementById('ctaBtn');
+    if (o.stripe) { ctaBtn.href = o.stripe; ctaBtn.style.opacity = ''; ctaBtn.style.pointerEvents = ''; }
+    else { ctaBtn.href = '#'; ctaBtn.style.opacity = '0.5'; ctaBtn.style.pointerEvents = 'none'; }
     document.getElementById('ctaSub').innerHTML = '<strong>-' + o.discount + '% sur votre prochaine commande</strong> · Paiement Stripe · Garantie remplacement';
+  }
+
+  function getShareUrl() {
+    if (currentLeadId) return window.location.origin + window.location.pathname + '?report_id=' + currentLeadId;
+    return window.location.href;
+  }
+
+  function getBusinessName() {
+    var el = document.querySelector('.identity-name');
+    return el ? el.textContent.trim() : 'votre fiche Google';
+  }
+
+  function shareWhatsApp() {
+    var bizName   = getBusinessName();
+    var shareUrl  = getShareUrl();
+    var validation = document.getElementById('gauge1Val') ? document.getElementById('gauge1Val').textContent.trim() : '';
+    var waText = 'Voici l\'analyse de ma fiche Google : *' + bizName + '*\n'
+      + '• Taux de validation : ' + validation + '\n'
+      + '• Rapport complet : ' + shareUrl;
+    window.open('https://wa.me/?text=' + encodeURIComponent(waText), '_blank');
+  }
+
+  function copyLink(btn) {
+    var shareUrl = getShareUrl();
+    // Sauvegarder les enfants (SVG + texte) pour restaurer après feedback
+    var savedNodes = Array.from(btn.childNodes).map(function(n) { return n.cloneNode(true); });
+    function restore() {
+      btn.textContent = '';
+      savedNodes.forEach(function(n) { btn.appendChild(n.cloneNode(true)); });
+    }
+    btn.textContent = 'Lien copié !';
+    navigator.clipboard.writeText(shareUrl).then(function() {
+      setTimeout(restore, 2000);
+    }).catch(function() {
+      // Fallback pour navigateurs sans clipboard API
+      var ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setTimeout(restore, 2000);
+    });
+  }
+
+  function doPDF() {
+    var name = getBusinessName();
+    var el = document.getElementById('results');
+    var bar = document.getElementById('shareBar');
+    bar.style.display = 'none';
+    html2pdf().set({
+      margin: [8, 8, 8, 8],
+      filename: 'rapport-' + name.replace(/\s+/g, '-').toLowerCase() + '.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }).from(el).save().then(function() { bar.style.display = ''; });
   }
 
   function switchTab(cat) {
@@ -1463,6 +1819,38 @@
   }
 
   updateAll();
+
+  // Auto-charge un rapport sauvegardé si ?report_id=xxx est présent dans l'URL
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var reportId = params.get('report_id');
+    if (!reportId) return;
+    currentLeadId = reportId;
+
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('results').classList.remove('active');
+
+    fetch(API_BASE + '/api/analyze/report/' + encodeURIComponent(reportId))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) throw new Error(data.error);
+        // Pré-remplir le champ URL avec la fiche originale → la personne peut relancer ou changer
+        if (data._original_url) document.getElementById('urlInput').value = data._original_url;
+        populatePage(data);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('results').classList.add('active');
+        animateGauges();
+        updateAll();
+        if (state.optimisation) {
+          document.getElementById('boostBadge').classList.add('active');
+          document.getElementById('gaugeCard1').classList.add('boosted');
+        }
+      })
+      .catch(function(err) {
+        document.getElementById('loadingState').style.display = 'none';
+        Swal.fire({ icon: 'error', title: 'Rapport introuvable', text: err.message, confirmButtonColor: '#2563eb' });
+      });
+  })();
 </script>
 
 </body>
