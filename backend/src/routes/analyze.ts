@@ -605,7 +605,14 @@ router.post('/', async (req: Request, res: Response) => {
         if (!placeId && longUrl.includes('google.com/maps')) {
             const preciseCoords = extractPreciseCoords(longUrl);
             const viewCoords    = extractViewCoords(longUrl);
-            const name          = extractNameFromUrl(longUrl);
+            // extractNameFromUrl cherche /place/Name — fallback sur ?q= si absent (liens résolus depuis maps.app.goo.gl)
+            let name = extractNameFromUrl(longUrl);
+            if (!name) {
+                try {
+                    const qParam = new URL(longUrl).searchParams.get('q');
+                    if (qParam) name = qParam;
+                } catch { /* URL malformée — ignore */ }
+            }
 
             // Si on a extrait un nom depuis l'URL, l'utiliser pour les messages d'erreur
             if (name && !shareGoogleName) shareGoogleName = name;
