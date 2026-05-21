@@ -735,25 +735,6 @@ export const OrderDetail: React.FC = () => {
                                                     <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
                                                         Publié le {new Date(proposal.submitted_at!).toLocaleDateString()}
                                                     </span>
-                                                    <button
-                                                        onClick={() => handleEditProposalIntent(proposal)}
-                                                        style={{
-                                                            padding: '0.35rem 0.6rem',
-                                                            borderRadius: '0.5rem',
-                                                            border: '1px solid #e2e8f0',
-                                                            background: 'white',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            color: '#64748b',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 600
-                                                        }}
-                                                        title="Modifier"
-                                                    >
-                                                        <Edit3 size={13} /> Modifier
-                                                    </button>
                                                 </div>
                                                 <a
                                                     href={proposal.review_url}
