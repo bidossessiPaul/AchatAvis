@@ -893,8 +893,8 @@
     </div>
   </div>
 
-  <!-- Barre de partage bas de page -->
-  <div class="share-bar" id="shareBarBottom" style="justify-content:center;margin-top:32px;margin-bottom:16px;padding:24px 0;border-top:1px solid #f1f5f9;">
+  <!-- Barre de partage bas de page — affichée uniquement après capture + analyse -->
+  <div class="share-bar" id="shareBarBottom" style="display:none;justify-content:center;margin-top:32px;margin-bottom:16px;padding:24px 0;border-top:1px solid #f1f5f9;">
     <button class="share-btn share-btn-pdf" onclick="doPDF()">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
       Télécharger PDF
@@ -1675,6 +1675,8 @@
       populatePage(data);
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('results').classList.add('active');
+      // Afficher la barre de partage bas uniquement si on a un rapport sauvegardé
+      if (currentLeadId) { var sbb = document.getElementById('shareBarBottom'); if (sbb) sbb.style.display = 'flex'; }
       animateGauges();
       updateAll();
       if (state.optimisation) {
@@ -1845,16 +1847,32 @@
   function doPDF() {
     var name = getBusinessName();
     var el = document.getElementById('results');
-    var bar = document.getElementById('shareBar');
-    bar.style.display = 'none';
+
+    // Masquer les éléments interactifs/commerciaux pour un PDF propre
+    var toHide = [
+      document.getElementById('shareBar'),
+      document.getElementById('shareBarBottom'),
+      document.querySelector('.reco-hero'),
+      document.querySelector('.offer-selector-title'),
+      document.querySelector('.offer-grid'),
+      document.getElementById('booster'),
+      document.querySelector('.recap'),
+      document.querySelector('.footer-trust'),
+      document.querySelector('.important-banner')
+    ].filter(Boolean);
+    var prevDisplay = toHide.map(function(e) { return e.style.display; });
+    toHide.forEach(function(e) { e.style.display = 'none'; });
+
     html2pdf().set({
-      margin: [8, 8, 8, 8],
+      margin: [10, 10, 10, 10],
       filename: 'rapport-' + name.replace(/\s+/g, '-').toLowerCase() + '.pdf',
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+      html2canvas: { scale: 2, useCORS: true, scrollY: 0, windowWidth: 900 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    }).from(el).save().then(function() { bar.style.display = ''; });
+    }).from(el).save().then(function() {
+      toHide.forEach(function(e, i) { e.style.display = prevDisplay[i]; });
+    });
   }
 
   function switchTab(cat) {
@@ -1883,6 +1901,8 @@
         populatePage(data);
         document.getElementById('loadingState').style.display = 'none';
         document.getElementById('results').classList.add('active');
+        // Rapport chargé via ?report_id — barre de partage bas visible immédiatement
+        var sbb2 = document.getElementById('shareBarBottom'); if (sbb2) sbb2.style.display = 'flex';
         animateGauges();
         updateAll();
         if (state.optimisation) {
