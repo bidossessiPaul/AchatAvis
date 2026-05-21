@@ -1283,8 +1283,8 @@
       }
     }
 
-    DIAGNOSTIC.baseValidation  = Math.min(65, data.scores.validation);
-    DIAGNOSTIC.baseSeo         = Math.min(70, data.scores.seo);
+    DIAGNOSTIC.baseValidation  = Math.min(55, data.scores.validation);
+    DIAGNOSTIC.baseSeo         = Math.min(58, data.scores.seo);
     DIAGNOSTIC.baseDifficulty  = data.scores.difficulty;
     DIAGNOSTIC.basePression    = data.scores.pression || data.scores.difficulty || 55;
     DIAGNOSTIC.reviewCount     = data.reviewCount;
@@ -1513,7 +1513,7 @@
     }
 
     // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
-    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65);
+    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 55);
     var bSans = document.getElementById('boosterSansOptimNum');
     var bAvec = document.getElementById('boosterAvecOptimNum');
     var bDelta = document.getElementById('boosterOptimDelta');
@@ -1522,6 +1522,65 @@
     if (bAvec) bAvec.textContent = avecOptimVal + '%';
     if (bDelta) bDelta.textContent = '+' + (avecOptimVal - DIAGNOSTIC.baseValidation) + '%';
     if (upsellVal) upsellVal.textContent = avecOptimVal + '%';
+
+    // CTA upsell dynamique — montre le gain réel avec chiffres
+    var upsellEl = document.getElementById('gauge1Upsell');
+    if (upsellEl) {
+      var gain = avecOptimVal - DIAGNOSTIC.baseValidation;
+      var clientsLost = Math.round((55 - DIAGNOSTIC.baseValidation) * 1.8);
+      upsellEl.innerHTML = '<strong>⚠ ' + clientsLost + ' clients/mois perdus face à la concurrence</strong><br>'
+        + '<span style="font-size:11px;font-weight:600;color:#047857;">Passez de <s>' + DIAGNOSTIC.baseValidation + '%</s> à <strong>' + avecOptimVal + '%</strong> (+' + gain + ' pts)</span>';
+      upsellEl.onclick = function() { toggleBooster(); };
+    }
+
+    // Playbook dynamique basé sur les vraies données
+    var rc = data.reviewCount;
+    var hasSp = data.hasSpike;
+    var ville = data.ville || '';
+    var bizName = data.name || 'votre fiche';
+    var diff = DIAGNOSTIC.baseDifficulty || 70;
+
+    var playbookTitle, playbookIntro, ph0Detail, ph1Cible, ph2Strategy;
+    if (rc < 10) {
+      playbookTitle = 'Démarrage d\'urgence — fiche quasi-invisible';
+      playbookIntro = '<strong>' + bizName + '</strong> n\'a que <strong>' + rc + ' avis</strong>. En dessous de 15, Google vous ignore dans les résultats locaux. Vos concurrents captent vos clients maintenant.';
+      ph0Detail = 'Audit complet de votre fiche. Optimisation des catégories et attributs manquants.';
+      ph1Cible = '30+ avis pour sortir de l\'invisibilité Google';
+      ph2Strategy = 'Croisière 1/jour pour consolider et dépasser les concurrents ' + (ville ? 'à ' + ville : 'de votre zone') + '.';
+    } else if (rc < 30) {
+      playbookTitle = 'Accélération contrôlée — zone de danger';
+      playbookIntro = 'Avec <strong>' + rc + ' avis</strong>, <strong>' + bizName + '</strong> est vulnérable. Les fiches à ' + (rc * 2 + 10) + '+ avis vous écrasent sur toutes les requêtes ' + (ville ? 'à ' + ville : 'locales') + '.';
+      ph0Detail = hasSp ? 'Refroidissement 2 semaines — pic détecté à diluer avant accélération.' : 'Optimisation fiche lancée. Préparation du profil de diversité.';
+      ph1Cible = (rc + 40) + '+ avis pour intégrer le top 3 local';
+      ph2Strategy = 'Maintien 1/jour + backlinks sectoriels pour verrouiller la position.';
+    } else if (rc < 80) {
+      playbookTitle = 'Consolidation — la concurrence vous rattrape';
+      playbookIntro = '<strong>' + bizName + '</strong> a <strong>' + rc + ' avis</strong> mais la pression concurrentielle est à <strong>' + diff + '/100</strong>. Sans action, vos concurrents comblent l\'écart en ' + Math.round(diff / 10) + ' semaines.';
+      ph0Detail = hasSp ? 'Refroidissement obligatoire — pic suspect détecté, risque de suppression en masse.' : 'Audit complet + optimisation des mots-clés manquants.';
+      ph1Cible = (rc + 50) + '+ avis pour créer un écart infranchissable';
+      ph2Strategy = 'Réseau croisé : renforcez cette fiche + préparez l\'expansion ' + (ville ? 'à ' + ville : '') + '.';
+    } else {
+      playbookTitle = hasSp ? 'Dilution d\'urgence + verrouillage top 3' : 'Verrouillage top 3 — défendez votre position';
+      playbookIntro = '<strong>' + bizName + '</strong> a <strong>' + rc + ' avis</strong> mais' + (hasSp ? ' un <strong>pic suspect détecté</strong> expose vos avis à une suppression rétroactive.' : ' la concurrence est à <strong>' + diff + '/100</strong>. Un concurrent en accélération peut vous détrôner en 30 jours.');
+      ph0Detail = hasSp ? 'Aucun avis posté 2 semaines — refroidissement critique pour éviter la vague de suppression.' : 'Audit des avis existants + optimisation des catégories sectorielles.';
+      ph1Cible = (rc + 60) + '+ avis pour verrouiller définitivement la 1ère place';
+      ph2Strategy = 'Extension réseau : fiche secondaire ' + (ville ? 'à ' + ville : '') + ' + maillage cross-établissements.';
+    }
+
+    var stratTitle = document.querySelector('.strategy-title');
+    var stratIntro = document.querySelector('.strategy-intro');
+    if (stratTitle) stratTitle.textContent = playbookTitle;
+    if (stratIntro) stratIntro.innerHTML = playbookIntro;
+
+    var phRows = document.querySelectorAll('.phase.p0 .phase-row');
+    if (phRows && phRows[0]) {
+      var ph0detail = phRows[0].querySelector('.detail');
+      if (ph0detail) ph0detail.textContent = ph0Detail;
+    }
+    var ph1CibleEl = document.querySelector('.phase.p1 .phase-row:last-child .detail');
+    if (ph1CibleEl) ph1CibleEl.textContent = ph1Cible;
+    var ph2StratEl = document.querySelector('.phase.p2 .phase-row:last-child .detail');
+    if (ph2StratEl) ph2StratEl.textContent = ph2Strategy;
 
     DIAGNOSTIC.recommendedOffer = recommendOffer(data.reviewCount, data.scores.difficulty, data.hasSpike);
     state.offer = DIAGNOSTIC.recommendedOffer;
@@ -1736,7 +1795,7 @@
     document.getElementById('booster').classList.toggle('active', state.optimisation);
     document.getElementById('gaugeCard1').classList.toggle('boosted', state.optimisation);
     document.getElementById('boostBadge').classList.toggle('active', state.optimisation);
-    var newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 65) : DIAGNOSTIC.baseValidation;
+    var newValue = state.optimisation ? Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 55) : DIAGNOSTIC.baseValidation;
     animateGauge('gauge1', 'gauge1Val', newValue, 427, gaugeColor(newValue, 'validation'));
     document.getElementById('gauge1Label').textContent = state.optimisation ? 'Avec optimisation' : 'Sans optimisation';
     document.getElementById('gauge1Label').style.color = state.optimisation ? 'var(--green-deep)' : 'var(--muted)';

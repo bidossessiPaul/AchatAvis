@@ -104,36 +104,37 @@ function scoreValidation(reviewCount: number, rating: number, anciennete: number
 
     score -= Math.floor(sectorDiff / 7);
 
-    return Math.min(65, Math.max(10, Math.round(score)));
+    return Math.min(55, Math.max(10, Math.round(score)));
 }
 
 function scoreSEO(reviewCount: number, rating: number, hasWebsite: boolean, hasPhone: boolean, hasPhotos: boolean): number {
-    let score = 45;
-    if (reviewCount > 100) score += 25;
-    else if (reviewCount > 50) score += 15;
-    else if (reviewCount > 20) score += 8;
-    else if (reviewCount > 5)  score += 3;
+    let score = 30;
+    if (reviewCount > 100) score += 20;
+    else if (reviewCount > 50) score += 12;
+    else if (reviewCount > 20) score += 6;
+    else if (reviewCount > 5)  score += 2;
 
-    if (rating >= 4.5) score += 10;
-    else if (rating >= 4.0) score += 5;
+    if (rating >= 4.5) score += 7;
+    else if (rating >= 4.0) score += 3;
 
-    if (hasWebsite) score += 8;
-    if (hasPhone)   score += 5;
-    if (hasPhotos)  score += 5;
+    if (hasWebsite) score += 5;
+    if (hasPhone)   score += 3;
+    if (hasPhotos)  score += 3;
 
-    return Math.min(70, Math.max(0, Math.round(score)));
+    return Math.min(58, Math.max(0, Math.round(score)));
 }
 
 function scoreDifficulty(reviewCount: number, sectorDiff: number, anciennete: number): number {
     let score = sectorDiff;
     if (reviewCount < 5)       score += 22;
     else if (reviewCount < 10) score += 15;
-    else if (reviewCount > 50) score -= 8;
+    else if (reviewCount > 50) score -= 5;
 
     if (anciennete < 6)  score += 20;
-    else if (anciennete > 36) score -= 5;
+    else if (anciennete > 36) score -= 3;
 
-    return Math.min(100, Math.max(0, Math.round(score)));
+    // Toujours au moins 65 — la concurrence est toujours une menace réelle
+    return Math.min(100, Math.max(65, Math.round(score)));
 }
 
 // Pression concurrentielle : représente la compétition active dans le secteur/zone.
