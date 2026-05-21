@@ -126,6 +126,7 @@ export const ArtisanDetail: React.FC = () => {
     const [submissionsLoading, setSubmissionsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [ficheFilter, setFicheFilter] = useState('all');
 
     useEffect(() => {
         if (id) {
@@ -934,32 +935,43 @@ export const ArtisanDetail: React.FC = () => {
 
                 {/* Reviews Section */}
                 <div className="premium-card table-card" style={{ marginTop: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h3><MessageSquare size={20} /> Avis de cet Artisan</h3>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <div className="search-box-premium" style={{ position: 'relative' }}>
-                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
-                                <input
-                                    type="text"
-                                    placeholder="Rechercher..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0 }}><MessageSquare size={20} /> Avis de cet Artisan</h3>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                            {/* Filtre par fiche */}
+                            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)', pointerEvents: 'none' }} />
+                                <select
+                                    value={ficheFilter}
+                                    onChange={(e) => setFicheFilter(e.target.value)}
                                     style={{
-                                        padding: '0.6rem 1rem 0.6rem 2.5rem',
+                                        padding: '0.6rem 1rem 0.6rem 2.25rem',
                                         borderRadius: '10px',
                                         border: '1px solid var(--gray-200)',
-                                        width: '220px',
-                                        fontSize: '0.875rem'
+                                        background: 'white',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        color: 'var(--gray-700)',
+                                        cursor: 'pointer',
+                                        maxWidth: '220px'
                                     }}
-                                />
+                                >
+                                    <option value="all">Toutes les fiches</option>
+                                    {Array.from(
+                                        new Map(submissions.map(s => [s.order_id, s.fiche_name])).entries()
+                                    ).map(([orderId, ficheName]) => (
+                                        <option key={orderId} value={orderId}>{ficheName}</option>
+                                    ))}
+                                </select>
                             </div>
+                            {/* Filtre par statut */}
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                                 <Filter size={16} style={{ position: 'absolute', left: '12px', color: 'var(--gray-500)', pointerEvents: 'none' }} />
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                     style={{
-                                        padding: '0.6rem 2rem 0.6rem 2.25rem',
+                                        padding: '0.6rem 1rem 0.6rem 2.25rem',
                                         borderRadius: '10px',
                                         border: '1px solid var(--gray-200)',
                                         background: 'white',
@@ -975,6 +987,22 @@ export const ArtisanDetail: React.FC = () => {
                                     <option value="validated">Validés</option>
                                     <option value="rejected">Rejetés</option>
                                 </select>
+                            </div>
+                            <div className="search-box-premium" style={{ position: 'relative' }}>
+                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)' }} />
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{
+                                        padding: '0.6rem 1rem 0.6rem 2.5rem',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--gray-200)',
+                                        width: '200px',
+                                        fontSize: '0.875rem'
+                                    }}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1003,6 +1031,8 @@ export const ArtisanDetail: React.FC = () => {
                                                 sub.guide_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                 sub.proposal_content?.toLowerCase().includes(searchTerm.toLowerCase());
 
+                                            const matchesFiche = ficheFilter === 'all' || sub.order_id === ficheFilter;
+
                                             let matchesStatus = true;
                                             if (statusFilter === 'pending') {
                                                 matchesStatus = !sub.submission_id || sub.submission_status === 'pending';
@@ -1014,7 +1044,7 @@ export const ArtisanDetail: React.FC = () => {
                                                 matchesStatus = sub.submission_status === 'rejected';
                                             }
 
-                                            return matchesSearch && matchesStatus;
+                                            return matchesSearch && matchesFiche && matchesStatus;
                                         });
 
                                         if (filtered.length === 0) {
