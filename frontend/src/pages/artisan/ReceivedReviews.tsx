@@ -342,8 +342,6 @@ export const ReceivedReviews: React.FC = () => {
                                                             className="action-btn ai-btn"
                                                             onClick={() => handleEdit(review)}
                                                             title="Modifier l'avis"
-                                                            disabled={review.submission_status === 'validated'}
-                                                            style={review.submission_status === 'validated' ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                                                         >
                                                             <Edit2 size={16} />
                                                         </button>
