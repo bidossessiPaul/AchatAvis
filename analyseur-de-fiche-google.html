@@ -375,6 +375,21 @@
   .review-row-text { font-size: 13px; color: #475569; line-height: 1.5; }
   .review-row-empty { font-size: 13px; color: #94a3b8; font-style: italic; }
   .all-reviews-counter { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+  .neg-summary { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  .neg-summary-stat { text-align: center; min-width: 60px; }
+  .neg-summary-stat .val { font-size: 26px; font-weight: 800; color: #dc2626; display: block; }
+  .neg-summary-stat .lbl { font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.06em; }
+  .neg-summary-divider { width: 1px; height: 40px; background: #fca5a5; }
+  .neg-summary-text { color: #7f1d1d; font-size: 14px; line-height: 1.6; flex: 1; min-width: 180px; }
+  .neg-review-card { background: #fff; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+  .neg-review-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .neg-review-stars { color: #dc2626; font-size: 13px; font-weight: 700; }
+  .neg-review-date { color: #94a3b8; font-size: 12px; }
+  .neg-noreply { background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .neg-review-text { color: #475569; font-size: 14px; line-height: 1.6; font-style: italic; }
+  .neg-review-text:before { content: '\201C'; }
+  .neg-review-text:after  { content: '\201D'; }
+  .neg-empty-text { color: #94a3b8; font-size: 13px; font-style: italic; padding: 8px 0; }
 
   /* Bannière volume critique */
   .volume-alert { border-radius: 12px; padding: 16px 20px; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 20px; }
@@ -582,7 +597,17 @@
       </div>
     </div>
 
-    <!-- Section tous les avis — affiche les 50 derniers avis, mauvais avis en rouge intégrés -->
+    <!-- Section avis négatifs — populée dynamiquement, cachée si aucun -->
+    <div id="negReviewsSection" style="display:none;">
+      <div class="sec-title">
+        <div class="sec-title-badge" style="background:#fee2e2;color:#dc2626;">!</div>
+        <h2 style="color:#dc2626;">Avis négatifs détectés sur votre fiche</h2>
+      </div>
+      <div id="negSummary" class="neg-summary"></div>
+      <div id="negReviewsList"></div>
+    </div>
+
+    <!-- Section tous les avis — 50 derniers, mauvais avis en rouge -->
     <div id="allReviewsSection" style="display:none;">
       <div class="sec-title">
         <div class="sec-title-badge" style="background:#dbeafe;color:#2563eb;">★</div>
@@ -1327,7 +1352,62 @@
       }
     }
 
-    // Section tous les avis (inclut les avis négatifs en rouge dans la liste)
+    // Section avis négatifs
+    var negSection = document.getElementById('negReviewsSection');
+    var negSummary = document.getElementById('negSummary');
+    var negList    = document.getElementById('negReviewsList');
+    var negCount   = data.negativeCount || 0;
+    var negUnans   = data.unansweredNegative || 0;
+    var negRevs    = data.negativeReviews || [];
+    if (negSection && negSummary && negList) {
+      negList.textContent = '';
+      negSummary.textContent = '';
+      if (negCount > 0) {
+        var s1 = document.createElement('div'); s1.className = 'neg-summary-stat';
+        var v1 = document.createElement('span'); v1.className = 'val'; v1.textContent = String(negCount);
+        var l1 = document.createElement('span'); l1.className = 'lbl'; l1.textContent = 'Avis négatifs';
+        s1.appendChild(v1); s1.appendChild(l1); negSummary.appendChild(s1);
+        if (negUnans > 0) {
+          var nd1 = document.createElement('div'); nd1.className = 'neg-summary-divider'; negSummary.appendChild(nd1);
+          var s2 = document.createElement('div'); s2.className = 'neg-summary-stat';
+          var v2 = document.createElement('span'); v2.className = 'val'; v2.textContent = String(negUnans);
+          var l2 = document.createElement('span'); l2.className = 'lbl'; l2.textContent = 'Sans réponse';
+          s2.appendChild(v2); s2.appendChild(l2); negSummary.appendChild(s2);
+        }
+        var nd2 = document.createElement('div'); nd2.className = 'neg-summary-divider'; negSummary.appendChild(nd2);
+        var summText = document.createElement('div'); summText.className = 'neg-summary-text';
+        summText.textContent = negUnans > 0
+          ? negUnans + ' avis négatif' + (negUnans > 1 ? 's restent' : ' reste') + ' sans réponse — Google pénalise les propriétaires qui ignorent leurs clients mécontents. Chaque avis sans réponse fait baisser votre classement local.'
+          : 'Vous avez répondu à vos avis négatifs. Mais leur présence continue à impacter votre note et vos conversions. Diluer avec des avis positifs ciblés est la solution.';
+        negSummary.appendChild(summText);
+        if (negRevs.length > 0) {
+          negRevs.forEach(function(rev) {
+            var card = document.createElement('div'); card.className = 'neg-review-card';
+            var header = document.createElement('div'); header.className = 'neg-review-header';
+            var stars = document.createElement('span'); stars.className = 'neg-review-stars';
+            stars.textContent = Array(rev.rating + 1).join('★') + Array(6 - rev.rating).join('☆');
+            var dateEl = document.createElement('span'); dateEl.className = 'neg-review-date'; dateEl.textContent = rev.date || '';
+            header.appendChild(stars); header.appendChild(dateEl);
+            if (!rev.hasResponse) {
+              var badge = document.createElement('span'); badge.className = 'neg-noreply'; badge.textContent = 'Sans réponse';
+              header.appendChild(badge);
+            }
+            var textEl = document.createElement('div'); textEl.className = 'neg-review-text';
+            textEl.textContent = rev.text || '(Avis sans commentaire)';
+            card.appendChild(header); card.appendChild(textEl); negList.appendChild(card);
+          });
+        } else {
+          var emptyEl = document.createElement('p'); emptyEl.className = 'neg-empty-text';
+          emptyEl.textContent = 'Avis négatifs détectés mais texte non disponible.';
+          negList.appendChild(emptyEl);
+        }
+        negSection.style.display = 'block';
+      } else {
+        negSection.style.display = 'none';
+      }
+    }
+
+    // Section tous les avis
     var allRevSection  = document.getElementById('allReviewsSection');
     var allRevList     = document.getElementById('allReviewsList');
     var allRevCounter  = document.getElementById('allReviewsCounter');
