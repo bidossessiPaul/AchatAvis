@@ -559,7 +559,7 @@
         </div>
         <div class="phase p1"><span class="phase-tag">Mois 1 · Accélération</span><div class="phase-title">Cadence 2/jour</div>
           <div class="phase-row"><div class="side">Nous</div><div class="detail"><strong id="pace1">2 avis / jour</strong> = <strong id="vol1">~60 avis</strong>, max <strong id="maxTested">6</strong> "testé".</div></div>
-          <div class="phase-row"><div class="side">SEO</div><div class="detail">Mots-clés services + géo Rambouillet intégrés.</div></div>
+          <div class="phase-row"><div class="side">SEO</div><div class="detail" id="ph1SeoDetail">Mots-clés services + géo intégrés.</div></div>
           <div class="phase-row"><div class="side">Cible</div><div class="detail">~180 avis stables, note ≥ 4,8.</div></div>
           <div class="phase-result">📊 <strong id="stableResult">~50 stables</strong> ajoutés</div>
         </div>
@@ -661,7 +661,7 @@
           <div class="kw-section">
             <div class="kw-section-label">📍 Mots-clés géolocalisation</div>
             <div class="kw-list">
-              <span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">78120</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip geo">proche Rambouillet</span><span class="kw-chip geo">région Île-de-France</span><span class="kw-chip geo">dans le coin</span><span class="kw-chip geo">localement</span><span class="kw-chip geo">à proximité</span>
+              <span class="kw-chip geo">votre ville</span><span class="kw-chip geo">votre secteur</span><span class="kw-chip geo">dans le coin</span><span class="kw-chip geo">localement</span><span class="kw-chip geo">à proximité</span>
             </div>
           </div>
 
@@ -680,13 +680,13 @@
           <div class="phrases-col ok">
             <div class="phrases-col-title">✓ Autorisé (opinion)</div>
             <ul>
-              <li>"Envie de tester leurs services de plomberie à Rambouillet"</li>
+              <li>"Envie de tester leurs services bientôt"</li>
               <li>"Bonne impression au téléphone, je recommande"</li>
-              <li>"Site clair sur leurs services de chaudière, très satisfait du contact"</li>
-              <li>"Artisan plombier sérieux dans le 78120, à retenir"</li>
-              <li>"Communication impeccable, je note pour mes futurs travaux SDB"</li>
-              <li>"Belle présentation de leurs prestations de débouchage"</li>
-              <li>"Acteur fiable de la plomberie secteur Rambouillet"</li>
+              <li>"Site clair sur leurs services, très satisfait du contact"</li>
+              <li>"Artisan sérieux dans le secteur, à retenir"</li>
+              <li>"Communication impeccable, je note pour mes futurs travaux"</li>
+              <li>"Belle présentation de leurs prestations"</li>
+              <li>"Acteur fiable du secteur local"</li>
             </ul>
           </div>
           <div class="phrases-col ko">
@@ -737,227 +737,27 @@
 
       <!-- OPINION PRO -->
       <div class="tab-content active" data-cat="opinion-pro">
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">En cherchant un <span class="hl-service">artisan plombier</span> dans le secteur de <span class="hl-geo">Rambouillet</span>, je suis tombé sur ETS Tamarys. L'image qui se dégage transpire le <span class="hl-sat">sérieux</span> : présence soignée, communication <span class="hl-sat">professionnelle</span>, transparence sur les <span class="hl-service">services de plomberie</span> proposés. <span class="hl-sat">Très satisfait</span> de l'impression globale, je note 5 étoiles. <span class="hl-sat">À recommander</span> selon moi.</div>
-          <div class="example-keywords"><span class="kw-chip service">artisan plombier</span><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">très satisfait</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Ce qui me plaît avec ETS Tamarys c'est la sensation d'<span class="hl-sat">équipe fiable</span> qui se dégage. La présentation de leurs prestations en <span class="hl-service">plomberie, chaudière, débouchage</span> est <span class="hl-sat">impeccable</span>. Pour un acteur local des <span class="hl-geo">Yvelines</span>, c'est <span class="hl-sat">au top</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">débouchage</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">fiable</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">au top</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Pour qui cherche un <span class="hl-service">plombier de confiance</span> dans le <span class="hl-geo">78120</span>, leur présentation rassure d'emblée. Multi-services (<span class="hl-service">plomberie, serrurerie, dépannage</span>), tout semble organisé. <span class="hl-sat">Excellent</span> positionnement local. Je note 5 étoiles pour la <span class="hl-sat">qualité</span> de l'image renvoyée par leur fiche.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier de confiance</span><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">qualité</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
-          <div class="example-text">Belle entreprise de <span class="hl-service">plomberie à Rambouillet</span>. Communication <span class="hl-sat">soignée</span>, image <span class="hl-sat">professionnelle</span>. <span class="hl-sat">À recommander</span> sans hésiter selon moi.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">soignée</span><span class="kw-chip sat">professionnelle</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
-          <div class="example-text"><span class="hl-sat">Très bonne impression</span> globale sur cette société de <span class="hl-service">plomberie et serrurerie</span> basée à <span class="hl-geo">Rambouillet</span>. La diversité des <span class="hl-service">services proposés</span> sur la fiche (<span class="hl-service">dépannage plomberie, installation chaudière, remplacement ballon eau chaude, débouchage canalisation, serrurerie urgence</span>) témoigne d'une vraie expertise affichée. Présentation <span class="hl-sat">impeccable</span>, équipe qui semble <span class="hl-sat">sérieuse</span>. Pour un acteur local du <span class="hl-geo">78120</span>, je suis <span class="hl-sat">ravi</span> d'avoir découvert cette entreprise.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip service">ballon eau chaude</span><span class="kw-chip service">débouchage canalisation</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">bonne impression</span><span class="kw-chip sat">ravi</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Acteur incontournable de la <span class="hl-service">plomberie</span> dans le secteur <span class="hl-geo">Rambouillet</span> d'après ce que je vois. Belle <span class="hl-sat">image de qualité</span> qui se dégage de leur fiche. <span class="hl-sat">Parfait</span> pour ceux qui cherchent du <span class="hl-sat">sérieux et de la fiabilité</span> à proximité.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">à proximité</span><span class="kw-chip sat">qualité</span><span class="kw-chip sat">parfait</span><span class="kw-chip sat">sérieux</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">L'éventail de <span class="hl-service">services (plombier, chauffagiste, serrurier, dépannage)</span> proposés à <span class="hl-geo">Rambouillet</span> est <span class="hl-sat">excellent</span>. Cela donne l'impression d'une entreprise complète, <span class="hl-sat">de confiance</span>, qui ne sous-traite pas. Image <span class="hl-sat">au top</span> à mon sens.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">chauffagiste</span><span class="kw-chip service">serrurier</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">de confiance</span><span class="kw-chip sat">au top</span></div>
-        </div>
+      <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <!-- OPINION ONLINE -->
       <div class="tab-content" data-cat="opinion-online">
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Site internet vraiment bien fait pour un <span class="hl-service">plombier à Rambouillet</span>. Les <span class="hl-service">services (dépannage plomberie, installation chaudière, rénovation salle de bain)</span> sont clairement présentés. Transparence <span class="hl-sat">impeccable</span>, rare dans le secteur du dépannage. <span class="hl-sat">Excellent</span> travail de communication, bravo.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">dépannage plomberie</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">excellent</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">J'ai jeté un œil à leur Instagram et je suis <span class="hl-sat">positivement surpris</span>. Les photos publiées de chantiers <span class="hl-service">plomberie et salle de bain</span>, les avant/après de <span class="hl-service">installation chaudière</span> donnent une idée concrète de ce qu'ils proposent. Quand une entreprise ose montrer son travail comme ça, c'est <span class="hl-sat">très bon signe</span>. Belle image pour un acteur des <span class="hl-geo">Yvelines</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">salle de bain</span><span class="kw-chip service">installation chaudière</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">positivement surpris</span><span class="kw-chip sat">très bon signe</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Les photos publiées sur leur fiche montrent un vrai <span class="hl-sat">souci du détail</span> dans leurs <span class="hl-service">interventions de plomberie</span>. <span class="hl-service">Travaux finis</span> proprement visibles à l'image, équipements posés droits, joints visibles propres. Ces petites choses transparaissent et font la différence pour un <span class="hl-service">artisan plombier</span> de <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Soigné</span>, je note.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan plombier</span><span class="kw-chip service">travaux</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">souci du détail</span><span class="kw-chip sat">soigné</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
-          <div class="example-text">Site clair et soigné. <span class="hl-service">Plomberie, serrurerie</span>, tout est listé. Présentation donne envie. <span class="hl-sat">Très bonne image pro</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip sat">très bonne image pro</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Ce qui m'a marqué en parcourant la fiche, c'est la façon dont ils répondent aux avis. Même aux mécontents, réponses <span class="hl-sat">polies</span>, propositions de solutions. Marque d'une <span class="hl-sat">entreprise sérieuse</span> de <span class="hl-service">plomberie</span> à <span class="hl-geo">Rambouillet</span> qui assume et veut s'améliorer. <span class="hl-sat">Très satisfait</span> de l'attitude affichée, je note.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">polies</span><span class="kw-chip sat">entreprise sérieuse</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Très bonne visibilité en ligne — je suis tombé sur eux en cherchant <span class="hl-service">plombier 78120</span>. Fiche <span class="hl-sat">impeccable</span> : horaires, photos, <span class="hl-service">services (chauffe-eau, fuite, débouchage)</span> détaillés. <span class="hl-sat">Parfait</span> pour savoir à qui on a affaire localement. Belle entreprise visiblement.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">chauffe-eau</span><span class="kw-chip service">fuite</span><span class="kw-chip service">débouchage</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">parfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
-          <div class="example-text">J'ai consulté plusieurs sites de <span class="hl-service">plombiers</span> dans le secteur <span class="hl-geo">Rambouillet</span> avant de me faire un avis général. Tamarys ressort vraiment du lot : présentation claire des <span class="hl-service">services (dépannage, chaudière, rénovation salle de bain, serrurerie)</span>, zone d'intervention précisée, photos de <span class="hl-service">travaux</span> visibles, témoignages détaillés. Tout est là pour rassurer. <span class="hl-sat">Excellent</span> positionnement local, je suis <span class="hl-sat">très satisfait</span> de cette découverte.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip service">dépannage</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">serrurerie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
+      <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <!-- OPINION TEL -->
       <div class="tab-content" data-cat="opinion-tel">
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Je les ai eus au téléphone pour me renseigner sur leurs prestations de <span class="hl-service">remplacement de chaudière</span>. Accueil <span class="hl-sat">chaleureux</span>, prise de temps pour expliquer le fonctionnement de leur société, sans pression commerciale. Ça change vraiment du discours habituel d'autres <span class="hl-service">plombiers</span> du <span class="hl-geo">secteur Rambouillet</span>. <span class="hl-sat">Bonne impression</span>, je n'hésiterai pas le moment venu. <span class="hl-sat">À recommander</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip service">plombiers</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">chaleureux</span><span class="kw-chip sat">bonne impression</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Appel pris dès la première sonnerie pour une question générale sur leurs prestations en <span class="hl-service">plomberie</span>. Personne très posée au bout du fil, prend le temps de répondre. Ce niveau de disponibilité affiché en dit long sur l'entreprise pour un <span class="hl-service">artisan</span> à <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Très satisfait</span> du contact.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">J'ai appelé pour avoir un premier avis sur leurs services de <span class="hl-service">dépannage fuite</span>. On m'a donné des explications claires sur leur démarche, gratuitement, avant même de parler de tarif. C'est rare et ça met <span class="hl-sat">en confiance</span> immédiatement. <span class="hl-sat">Excellent</span> service client pour ce <span class="hl-service">plombier de Rambouillet</span>, je note.</div>
-          <div class="example-keywords"><span class="kw-chip service">dépannage fuite</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">en confiance</span><span class="kw-chip sat">excellent</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Échange téléphonique de <span class="hl-sat">qualité</span> en me renseignant sur un futur projet de <span class="hl-service">rénovation salle de bain</span>. La personne sait expliquer simplement, sans jargon technique. Très appréciable. <span class="hl-sat">Au top</span> niveau accueil chez ce <span class="hl-service">plombier-chauffagiste</span> des <span class="hl-geo">Yvelines</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">plombier-chauffagiste</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">qualité</span><span class="kw-chip sat">au top</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
-          <div class="example-text">Accueil téléphonique <span class="hl-sat">impeccable</span> en demandant des infos sur leur <span class="hl-service">service de dépannage plomberie</span>. <span class="hl-sat">Très satisfait</span> du contact.</div>
-          <div class="example-keywords"><span class="kw-chip service">dépannage plomberie</span><span class="kw-chip sat">impeccable</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Premier contact téléphonique <span class="hl-sat">très satisfaisant</span>. Un ordre de grandeur de tarif annoncé honnêtement dès le départ pour une éventuelle <span class="hl-service">installation de ballon d'eau chaude</span>. Pas de surprise prévisible, c'est exactement ce que je recherche chez un <span class="hl-service">plombier à Rambouillet</span>. <span class="hl-sat">Très professionnel</span> au bout du fil.</div>
-          <div class="example-keywords"><span class="kw-chip service">installation ballon eau chaude</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfaisant</span><span class="kw-chip sat">très professionnel</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Joints du premier coup, ce qui devient rare avec les <span class="hl-service">artisans plombiers</span> aujourd'hui. La personne au téléphone connaissait son sujet sur l'<span class="hl-service">entretien chaudière</span> et a su me renseigner. Très <span class="hl-sat">bonne</span> première approche pour un acteur du <span class="hl-geo">78120</span>. <span class="hl-sat">À recommander</span> sur la base de ce premier contact.</div>
-          <div class="example-keywords"><span class="kw-chip service">artisans plombiers</span><span class="kw-chip service">entretien chaudière</span><span class="kw-chip geo">78120</span><span class="kw-chip sat">bonne</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
+      <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <!-- OPINION RECO -->
       <div class="tab-content" data-cat="opinion-reco">
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Recommandé par plusieurs personnes de mon entourage à <span class="hl-geo">Rambouillet</span> qui en parlent en très bons termes pour leurs prestations de <span class="hl-service">plomberie</span> et <span class="hl-service">remplacement de chaudière</span>. Avant de faire appel je voulais donner un retour positif sur la réputation qui les précède. Apparemment <span class="hl-sat">très fiable</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très fiable</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Quand on demande un bon <span class="hl-service">plombier</span> dans le <span class="hl-geo">secteur Rambouillet</span>, le nom Tamarys revient souvent dans les conversations. Pas par hasard sans doute. <span class="hl-sat">À recommander</span> sur la base de cette réputation <span class="hl-sat">excellente</span> que j'entends.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">à recommander</span><span class="kw-chip sat">excellente</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Bonne réputation locale d'après ce que j'entends sur cette entreprise de <span class="hl-service">plomberie et serrurerie</span> à <span class="hl-geo">Rambouillet</span>. La fiche Google confirme le ressenti : plus de 100 avis positifs, c'est <span class="hl-sat">rassurant</span>. <span class="hl-sat">Très satisfaisant</span> de voir un acteur des <span class="hl-geo">Yvelines</span> aussi bien noté.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">rassurant</span><span class="kw-chip sat">très satisfaisant</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Plusieurs personnes m'ont parlé de cette entreprise de <span class="hl-service">plomberie</span> en termes très positifs pour leurs prestations en <span class="hl-service">chaudière et débouchage</span>. Sans même avoir fait appel, je leur fais <span class="hl-sat">confiance</span> sur cette base. C'est de l'avis crédible que je donne ici, prêt à les contacter le jour où j'aurai besoin d'un <span class="hl-service">plombier sur Rambouillet</span>. <span class="hl-sat">À recommander</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">chaudière</span><span class="kw-chip service">débouchage</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">confiance</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
-          <div class="example-text">Recommandé chaudement par un ami <span class="hl-service">artisan</span> lui-même. Avis posé sur cette base. <span class="hl-service">Plombier</span> apparemment reconnu par ses pairs dans la région <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> signe.</div>
-          <div class="example-keywords"><span class="kw-chip service">artisan</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Acteur local connu et reconnu de la <span class="hl-service">plomberie et serrurerie</span> dans le <span class="hl-geo">78120</span>. Quand on demande un <span class="hl-service">artisan sérieux dans le coin</span>, c'est leur nom qui revient en premier dans le bouche-à-oreille. Voilà, c'est dit. <span class="hl-sat">À recommander</span> selon ce que j'entends autour de moi.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">artisan</span><span class="kw-chip geo">78120</span><span class="kw-chip geo">dans le coin</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Long</span></div>
-          <div class="example-text">Entendu parler de cette entreprise par plusieurs voisins avant même de regarder leur fiche Google. J'ai voulu vérifier par curiosité : très bonnes notes, communication <span class="hl-sat">professionnelle</span>, présence soignée. Tout converge vers une image positive de <span class="hl-service">plombier de confiance à Rambouillet</span> capable d'intervenir sur des sujets variés (<span class="hl-service">fuites, chaudières, débouchages, salles de bain</span>). Acteur <span class="hl-sat">fiable</span> du secteur visiblement, <span class="hl-sat">je recommande</span> les yeux fermés sur la base de tout ce que je vois.</div>
-          <div class="example-keywords"><span class="kw-chip service">plombier de confiance</span><span class="kw-chip service">fuites</span><span class="kw-chip service">chaudières</span><span class="kw-chip service">débouchages</span><span class="kw-chip service">salles de bain</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">professionnelle</span><span class="kw-chip sat">fiable</span><span class="kw-chip sat">je recommande</span></div>
-        </div>
+      <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <!-- OPINION INTENTION -->
       <div class="tab-content" data-cat="opinion-intention">
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">J'ai vraiment envie de tester leurs services de <span class="hl-service">plomberie</span> prochainement. La présentation de leur fiche est tellement engageante que j'ai déjà sauvegardé leur contact pour le jour où j'aurai besoin d'un <span class="hl-service">dépannage</span> à <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> positionnement local.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">dépannage</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Je vais m'y rendre prochainement pour un projet de <span class="hl-service">rénovation salle de bain</span> qui s'annonce dans les semaines à venir. Sur la base de tout ce que j'ai vu sur leur fiche, c'est vers ce <span class="hl-service">plombier de Rambouillet</span> que je vais me tourner sans hésiter. <span class="hl-sat">Très bonne impression</span>, <span class="hl-sat">à recommander</span> de mon point de vue.</div>
-          <div class="example-keywords"><span class="kw-chip service">rénovation salle de bain</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très bonne impression</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">À garder absolument dans les contacts utiles pour la <span class="hl-service">plomberie</span> à <span class="hl-geo">Rambouillet</span>. Ce genre d'<span class="hl-service">artisan plombier sérieux</span> et bien présenté, on se félicite de l'avoir repéré avant d'en avoir besoin en urgence. <span class="hl-sat">Au top</span> visuellement.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">artisan plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">au top</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span><span class="example-tag">Court</span></div>
-          <div class="example-text">Hâte de tester pour mes futurs travaux de <span class="hl-service">plomberie</span>. <span class="hl-sat">Sérieux</span> qui transpire de la fiche, je note <span class="hl-sat">parfait</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip sat">sérieux</span><span class="kw-chip sat">parfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">J'ai un projet de <span class="hl-service">remplacement de chaudière</span> qui démarre dans quelques mois. Après comparaison de plusieurs <span class="hl-service">plombiers chauffagistes</span> dans les <span class="hl-geo">Yvelines</span>, c'est vers ETS Tamarys que je me tournerai en priorité. Tout me plaît dans leur image <span class="hl-sat">professionnelle</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">remplacement chaudière</span><span class="kw-chip service">plombiers chauffagistes</span><span class="kw-chip geo">Yvelines</span><span class="kw-chip sat">professionnelle</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Je vais leur demander un devis dans les prochaines semaines pour le <span class="hl-service">remplacement de mon ballon d'eau chaude</span>. La transparence affichée et le sérieux apparent me donnent envie de leur confier ce projet à ce <span class="hl-service">plombier de Rambouillet</span>. <span class="hl-sat">Très satisfait</span> du premier contact visuel avec leur communication.</div>
-          <div class="example-keywords"><span class="kw-chip service">remplacement ballon eau chaude</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag opinion">Opinion</span></div>
-          <div class="example-text">Mon avis avant même d'avoir testé leurs <span class="hl-service">services de plomberie et serrurerie</span> : je <span class="hl-sat">recommande</span> déjà sur la base de tout ce qui est visible. Et je n'hésiterai pas le moment venu à les solliciter pour un <span class="hl-service">dépannage urgent</span> sur <span class="hl-geo">Rambouillet</span>. <span class="hl-sat">Excellent</span> profil d'artisan d'après moi.</div>
-          <div class="example-keywords"><span class="kw-chip service">plomberie</span><span class="kw-chip service">serrurerie</span><span class="kw-chip service">dépannage urgent</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">recommande</span><span class="kw-chip sat">excellent</span></div>
-        </div>
+      <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <!-- TESTÉ (10% MAX) -->
@@ -966,47 +766,7 @@
           ⚠️ <strong>Catégorie limitée à 10% du volume total.</strong> Réservée à VOS avis physiques : vous-même, votre famille, votre équipe, vos vrais clients qui ont réellement été sur place. Mots-clés services et satisfaction intégrés naturellement. Les Local Guides n'écrivent JAMAIS ce type d'avis.
         </div>
 
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text">Très <span class="hl-sat">satisfait</span> de leur intervention pour une <span class="hl-service">fuite sous l'évier</span>. Service propre, respect du devis annoncé. Je recommande pour ceux qui cherchent un <span class="hl-service">plombier sérieux à Rambouillet</span>. <span class="hl-sat">Excellent</span> service.</div>
-          <div class="example-keywords"><span class="kw-chip service">fuite</span><span class="kw-chip service">plombier</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">satisfait</span><span class="kw-chip sat">excellent</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text">Intervenus chez moi pour un <span class="hl-service">remplacement de chauffe-eau Atlantic 200L</span>. Travail soigné, ancien évacué proprement. Tarif conforme au devis annoncé. <span class="hl-sat">Très bonne expérience</span> avec ce <span class="hl-service">plombier-chauffagiste de Rambouillet</span>. <span class="hl-sat">À recommander</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">remplacement chauffe-eau</span><span class="kw-chip service">plombier-chauffagiste</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très bonne expérience</span><span class="kw-chip sat">à recommander</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text"><span class="hl-service">Fuite</span> réparée rapidement et proprement. <span class="hl-sat">Très satisfait</span>, je recommande.</div>
-          <div class="example-keywords"><span class="kw-chip service">fuite</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text">Intervention d'urgence un samedi soir pour une <span class="hl-service">fuite importante dans la salle de bain</span>. Réponse immédiate, sur place rapidement. Réparation propre, retour le lendemain pour reboucher. Tarif annoncé en amont, montant respecté. <span class="hl-sat">Excellent</span> service pour ce <span class="hl-service">plombier d'urgence à Rambouillet</span>. <span class="hl-sat">Au top</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">fuite salle de bain</span><span class="kw-chip service">plombier d'urgence</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">au top</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text"><span class="hl-service">Installation complète de salle de bain</span> pour un appartement en location à <span class="hl-geo">Rambouillet</span>. Délais respectés, finitions impeccables. Résultat conforme au devis présenté. Je recommande pour les chantiers d'envergure de <span class="hl-service">rénovation plomberie</span>. <span class="hl-sat">Très satisfait</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">installation salle de bain</span><span class="kw-chip service">rénovation plomberie</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text">Appelé pour des <span class="hl-service">WC bouchés</span> à répétition. Solution trouvée et appliquée. Plus aucun problème depuis. <span class="hl-sat">Excellent</span> service et travail <span class="hl-sat">professionnel</span> pour ce <span class="hl-service">plombier débouchage</span> du <span class="hl-geo">secteur Rambouillet</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">WC bouchés</span><span class="kw-chip service">plombier débouchage</span><span class="kw-chip geo">secteur Rambouillet</span><span class="kw-chip sat">excellent</span><span class="kw-chip sat">professionnel</span></div>
-        </div>
-
-        <div class="example-card tested">
-          <div class="example-header"><span class="example-stars">★★★★★</span><span class="example-tag tested">Testé · client</span></div>
-          <div class="example-text"><span class="hl-service">Remplacement d'une pièce sur ma chaudière</span> qui ne fonctionnait plus. Diagnostic posé rapidement après plusieurs autres techniciens qui n'avaient rien trouvé. Pièce changée le jour même. Niveau d'expertise vraiment au-dessus pour ce <span class="hl-service">chauffagiste à Rambouillet</span>. <span class="hl-sat">Très satisfait</span>, <span class="hl-sat">bluffant</span>.</div>
-          <div class="example-keywords"><span class="kw-chip service">chaudière</span><span class="kw-chip service">chauffagiste</span><span class="kw-chip geo">Rambouillet</span><span class="kw-chip sat">très satisfait</span><span class="kw-chip sat">bluffant</span></div>
-        </div>
+        <!-- cartes générées dynamiquement par injectDynamicExamples() -->
       </div>
 
       <div class="examples-disclaimer">
@@ -1224,6 +984,229 @@
   let state = { offer: DIAGNOSTIC.recommendedOffer, optimisation: DIAGNOSTIC.optimisationPreSelected };
   let currentLeadId = null;    // ID du rapport sauvegardé (reçu depuis l'API)
   let capturedContact = null;  // { name, email, phone } saisi avant le lancement
+
+  // ── Injecte les exemples d'avis dynamiquement selon le secteur et la ville réelle ──
+  function injectDynamicExamples(B, V, sectorKey, catLabel, kwServices) {
+    var geo    = V ? 'à ' + V : 'localement';
+    var deV    = V ? 'de ' + V : '';
+    var sectV  = V ? 'secteur ' + V : 'secteur local';
+
+    var S = (kwServices && kwServices.length > 0) ? kwServices : [catLabel || 'services'];
+    function s(i) { return S[i % S.length] || catLabel || 'services'; }
+
+    var sectorLabels = {
+      plumber: 'artisan plombier', locksmith: 'serrurier', electrician: 'électricien',
+      restaurant: 'restaurateur', garage: 'garagiste', beauty_salon: 'professionnel de beauté',
+      driving_school: 'auto-école', hotel: 'établissement hôtelier', health: 'praticien de santé',
+      default: catLabel || 'prestataire'
+    };
+    var artisan = sectorLabels[sectorKey] || catLabel || 'prestataire';
+
+    var hl = {
+      s: function(t){ return '<span class="hl-service">' + t + '</span>'; },
+      g: function(t){ return '<span class="hl-geo">' + t + '</span>'; },
+      a: function(t){ return '<span class="hl-sat">' + t + '</span>'; }
+    };
+    function chip(type, text){ return '<span class="kw-chip ' + type + '">' + text + '</span>'; }
+
+    function card(extra, tag, text, chips) {
+      return '<div class="example-card' + (extra ? ' ' + extra : '') + '">'
+        + '<div class="example-header"><span class="example-stars">★★★★★</span>'
+        + '<span class="example-tag opinion">' + tag + '</span></div>'
+        + '<div class="example-text">' + text + '</div>'
+        + '<div class="example-keywords">' + chips + '</div></div>';
+    }
+    function testedCard(tag, text, chips) {
+      return '<div class="example-card tested">'
+        + '<div class="example-header"><span class="example-stars">★★★★★</span>'
+        + '<span class="example-tag tested">' + tag + '</span></div>'
+        + '<div class="example-text">' + text + '</div>'
+        + '<div class="example-keywords">' + chips + '</div></div>';
+    }
+
+    var geoChip = V ? chip('geo', V) : '';
+
+    var tabs = {
+      'opinion-pro': [
+        card('', 'Opinion',
+          'En cherchant ' + hl.s('un ' + artisan) + (V ? ' ' + hl.g(geo) : '') + ', je suis tombé sur ' + B + '. L\'image qui se dégage transpire le ' + hl.a('sérieux') + ' : présence soignée, communication ' + hl.a('professionnelle') + ', transparence sur les ' + hl.s(s(0)) + ' proposés. ' + hl.a('Très satisfait') + ' de l\'impression globale. ' + hl.a('À recommander') + ' selon moi.',
+          chip('service', artisan) + chip('service', s(0)) + geoChip + chip('sat','sérieux') + chip('sat','très satisfait') + chip('sat','à recommander')
+        ),
+        card('', 'Opinion',
+          'Ce qui me plaît avec ' + B + ' c\'est la sensation d\'' + hl.a('équipe fiable') + ' qui se dégage. La présentation de leurs prestations en ' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', ' + hl.s(s(2)) + ' est ' + hl.a('impeccable') + '. ' + hl.a('Au top') + ' pour un acteur ' + (V ? hl.g(geo) : 'local') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + chip('service', s(2)) + geoChip + chip('sat','fiable') + chip('sat','impeccable') + chip('sat','au top')
+        ),
+        card('', 'Opinion',
+          'Pour qui cherche ' + hl.s('un ' + artisan + ' de confiance') + (V ? ' ' + hl.g(geo) : '') + ', leur présentation rassure d\'emblée. Multi-services (' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', ' + hl.s(s(2)) + '), tout semble organisé. ' + hl.a('Excellent') + ' positionnement local.',
+          chip('service', artisan) + chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','excellent') + chip('sat','qualité')
+        ),
+        card('', 'Opinion · Court',
+          'Belle entreprise de ' + hl.s(s(0)) + (V ? ' ' + hl.g(geo) : '') + '. Communication ' + hl.a('soignée') + ', image ' + hl.a('professionnelle') + '. ' + hl.a('À recommander') + ' sans hésiter.',
+          chip('service', s(0)) + geoChip + chip('sat','soignée') + chip('sat','professionnelle') + chip('sat','à recommander')
+        ),
+        card('', 'Opinion · Long',
+          hl.a('Très bonne impression') + ' globale sur ' + B + '. La diversité des ' + hl.s('services proposés') + ' (' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', ' + hl.s(s(2)) + ', ' + hl.s(s(3)) + ') témoigne d\'une vraie expertise affichée. Présentation ' + hl.a('impeccable') + ', équipe qui semble ' + hl.a('sérieuse') + (V ? '. Acteur local ' + hl.g(geo) : '') + ' — je suis ' + hl.a('ravi') + ' d\'avoir découvert cette entreprise.',
+          chip('service', s(0)) + chip('service', s(1)) + chip('service', s(2)) + geoChip + chip('sat','bonne impression') + chip('sat','ravi')
+        ),
+        card('', 'Opinion',
+          'L\'éventail de ' + hl.s('services (' + [s(0),s(1),s(2)].join(', ') + ')') + (V ? ' proposé ' + hl.g(geo) : '') + ' est ' + hl.a('excellent') + '. Impression d\'une entreprise complète, ' + hl.a('de confiance') + ', qui ne sous-traite pas. Image ' + hl.a('au top') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + chip('service', s(2)) + geoChip + chip('sat','excellent') + chip('sat','de confiance') + chip('sat','au top')
+        )
+      ],
+      'opinion-online': [
+        card('', 'Opinion',
+          'Site internet vraiment bien fait pour ' + hl.s('un ' + artisan) + (V ? ' ' + hl.g(geo) : '') + '. Les services (' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', ' + hl.s(s(2)) + ') sont clairement présentés. Transparence ' + hl.a('impeccable') + ', rare dans ce secteur. ' + hl.a('Excellent') + ' travail de communication.',
+          chip('service', artisan) + chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','impeccable') + chip('sat','excellent')
+        ),
+        card('', 'Opinion',
+          'J\'ai jeté un œil à leur Instagram et je suis ' + hl.a('positivement surpris') + '. Les photos de réalisations en ' + hl.s(s(0)) + ' et ' + hl.s(s(1)) + ' donnent une idée concrète de ce qu\'ils font. Quand une entreprise ose montrer son travail comme ça, c\'est ' + hl.a('très bon signe') + (V ? '. Belle image pour un acteur ' + hl.g(geo) : '') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','positivement surpris') + chip('sat','très bon signe')
+        ),
+        card('', 'Opinion',
+          'Les photos publiées sur la fiche de ' + B + ' montrent un vrai ' + hl.a('souci du détail') + '. Les réalisations en ' + hl.s(s(0)) + ' sont propres et soignées. Ces petites choses font la différence. ' + hl.a('Soigné') + ', je note.',
+          chip('service', s(0)) + chip('service', artisan) + geoChip + chip('sat','souci du détail') + chip('sat','soigné')
+        ),
+        card('', 'Opinion · Court',
+          'Site clair et soigné. ' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', tout est listé. ' + hl.a('Très bonne image pro') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + chip('sat','très bonne image pro')
+        ),
+        card('', 'Opinion',
+          'Ce qui m\'a marqué sur la fiche, c\'est la façon dont ils répondent aux avis. Même aux mécontents, réponses ' + hl.a('polies') + ', propositions de solutions. Marque d\'une ' + hl.a('entreprise sérieuse') + ' qui assume et veut s\'améliorer. ' + hl.a('Très satisfait') + ' de l\'attitude affichée.',
+          geoChip + chip('sat','polies') + chip('sat','entreprise sérieuse') + chip('sat','très satisfait')
+        ),
+        card('', 'Opinion · Long',
+          'J\'ai consulté plusieurs sites ' + (V ? 'dans le ' + hl.g(sectV) : 'du secteur') + ' avant de me faire un avis. ' + B + ' ressort vraiment du lot : présentation claire des services (' + hl.s(s(0)) + ', ' + hl.s(s(1)) + ', ' + hl.s(s(2)) + '), photos de réalisations visibles, témoignages détaillés. ' + hl.a('Excellent') + ' positionnement local, je suis ' + hl.a('très satisfait') + ' de cette découverte.',
+          chip('service', s(0)) + chip('service', s(1)) + chip('service', s(2)) + geoChip + chip('sat','excellent') + chip('sat','très satisfait')
+        )
+      ],
+      'opinion-tel': [
+        card('', 'Opinion',
+          'Je les ai eus au téléphone pour me renseigner sur leurs prestations de ' + hl.s(s(0)) + '. Accueil ' + hl.a('chaleureux') + ', prise de temps pour expliquer, sans pression commerciale. Ça change vraiment du discours habituel d\'autres ' + hl.s(artisan + 's') + (V ? ' du ' + hl.g(sectV) : '') + '. ' + hl.a('Bonne impression') + '. ' + hl.a('À recommander') + '.',
+          chip('service', s(0)) + chip('service', artisan) + geoChip + chip('sat','chaleureux') + chip('sat','bonne impression') + chip('sat','à recommander')
+        ),
+        card('', 'Opinion',
+          'Appel pris dès la première sonnerie pour une question sur leurs prestations en ' + hl.s(s(0)) + '. Personne très posée au bout du fil, prend le temps de répondre. Ce niveau de disponibilité en dit long sur ' + B + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Très satisfait') + ' du contact.',
+          chip('service', s(0)) + geoChip + chip('sat','très satisfait')
+        ),
+        card('', 'Opinion',
+          'J\'ai appelé pour avoir un premier avis sur leurs services de ' + hl.s(s(1)) + '. On m\'a donné des explications claires sur leur démarche, gratuitement, avant même de parler de tarif. C\'est rare et ça met ' + hl.a('en confiance') + ' immédiatement. ' + hl.a('Excellent') + ' service client.',
+          chip('service', s(1)) + chip('service', artisan) + geoChip + chip('sat','en confiance') + chip('sat','excellent')
+        ),
+        card('', 'Opinion',
+          'Échange téléphonique de ' + hl.a('qualité') + ' en me renseignant sur un projet de ' + hl.s(s(2)) + '. La personne sait expliquer simplement, sans jargon technique. Très appréciable. ' + hl.a('Au top') + ' niveau accueil chez ' + B + '.',
+          chip('service', s(2)) + geoChip + chip('sat','qualité') + chip('sat','au top')
+        ),
+        card('', 'Opinion · Court',
+          'Accueil téléphonique ' + hl.a('impeccable') + ' en demandant des infos sur leur ' + hl.s('service de ' + s(0)) + '. ' + hl.a('Très satisfait') + ' du contact.',
+          chip('service', s(0)) + chip('sat','impeccable') + chip('sat','très satisfait')
+        ),
+        card('', 'Opinion',
+          'Premier contact téléphonique ' + hl.a('très satisfaisant') + '. Tarif annoncé honnêtement dès le départ, sans surprise. C\'est exactement ce que je recherche chez ' + hl.s('un ' + artisan) + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Très professionnel') + ' au bout du fil.',
+          chip('service', artisan) + geoChip + chip('sat','très satisfaisant') + chip('sat','très professionnel')
+        )
+      ],
+      'opinion-reco': [
+        card('', 'Opinion',
+          'Recommandé par plusieurs personnes de mon entourage' + (V ? ' ' + hl.g(geo) : '') + ' qui en parlent en très bons termes pour leurs prestations de ' + hl.s(s(0)) + ' et ' + hl.s(s(1)) + '. Avant de faire appel, je voulais donner un retour positif sur la réputation qui les précède. Apparemment ' + hl.a('très fiable') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','très fiable')
+        ),
+        card('', 'Opinion',
+          'Quand on demande ' + hl.s('un bon ' + artisan) + (V ? ' dans le ' + hl.g(sectV) : '') + ', le nom ' + B + ' revient souvent dans les conversations. Pas par hasard. ' + hl.a('À recommander') + ' sur la base de cette réputation ' + hl.a('excellente') + '.',
+          chip('service', artisan) + geoChip + chip('sat','à recommander') + chip('sat','excellente')
+        ),
+        card('', 'Opinion',
+          'Bonne réputation locale d\'après ce que j\'entends. La fiche Google confirme le ressenti : beaucoup d\'avis positifs, c\'est ' + hl.a('rassurant') + '. ' + hl.a('Très satisfaisant') + ' de voir un acteur' + (V ? ' ' + hl.g(geo) : ' du secteur') + ' aussi bien noté.',
+          chip('service', s(0)) + geoChip + chip('sat','rassurant') + chip('sat','très satisfaisant')
+        ),
+        card('', 'Opinion',
+          'Plusieurs personnes m\'ont parlé de ' + B + ' en termes très positifs pour leurs prestations en ' + hl.s(s(0)) + ' et ' + hl.s(s(1)) + '. Sans même avoir fait appel, je leur fais ' + hl.a('confiance') + ' sur cette base. ' + hl.a('À recommander') + '.',
+          chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','confiance') + chip('sat','à recommander')
+        ),
+        card('', 'Opinion · Court',
+          'Recommandé chaudement par un ami ' + hl.s(artisan) + ' lui-même. ' + B + ' apparemment reconnu par ses pairs' + (V ? ' dans la région ' + hl.g(V) : '') + '. ' + hl.a('Excellent') + ' signe.',
+          chip('service', artisan) + geoChip + chip('sat','excellent')
+        ),
+        card('', 'Opinion · Long',
+          'Entendu parler de ' + B + ' par plusieurs contacts avant même de regarder leur fiche. J\'ai voulu vérifier : très bonnes notes, communication ' + hl.a('professionnelle') + ', présence soignée. Tout converge vers une image de ' + hl.s(artisan + ' de confiance') + (V ? ' ' + hl.g(geo) : '') + '. Acteur ' + hl.a('fiable') + ' du secteur visiblement, ' + hl.a('je recommande') + ' les yeux fermés.',
+          chip('service', artisan) + chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','professionnelle') + chip('sat','fiable') + chip('sat','je recommande')
+        )
+      ],
+      'opinion-intention': [
+        card('', 'Opinion',
+          'J\'ai vraiment envie de tester leurs services de ' + hl.s(s(0)) + ' prochainement. La présentation de leur fiche est tellement engageante que j\'ai déjà sauvegardé leur contact' + (V ? ' pour le jour où j\'aurai besoin d\'un ' + artisan + ' ' + geo : '') + '. ' + hl.a('Excellent') + ' positionnement local.',
+          chip('service', s(0)) + geoChip + chip('sat','excellent')
+        ),
+        card('', 'Opinion',
+          'Je vais me tourner vers ' + B + ' prochainement pour un projet de ' + hl.s(s(1)) + '. Sur la base de tout ce que j\'ai vu sur leur fiche, c\'est vers eux que j\'irai sans hésiter. ' + hl.a('Très bonne impression') + ', ' + hl.a('à recommander') + '.',
+          chip('service', s(1)) + chip('service', artisan) + geoChip + chip('sat','très bonne impression') + chip('sat','à recommander')
+        ),
+        card('', 'Opinion',
+          'À garder absolument dans les contacts utiles pour ' + hl.s(s(0)) + (V ? ' ' + hl.g(geo) : '') + '. Ce genre d\'' + hl.s(artisan + ' sérieux') + ' et bien présenté, on se félicite de l\'avoir repéré avant d\'en avoir besoin en urgence. ' + hl.a('Au top') + ' visuellement.',
+          chip('service', s(0)) + chip('service', artisan) + geoChip + chip('sat','sérieux') + chip('sat','au top')
+        ),
+        card('', 'Opinion · Court',
+          'Hâte de tester pour mes futurs travaux de ' + hl.s(s(0)) + '. ' + hl.a('Sérieux') + ' qui transpire de la fiche, je note ' + hl.a('parfait') + '.',
+          chip('service', s(0)) + chip('sat','sérieux') + chip('sat','parfait')
+        ),
+        card('', 'Opinion',
+          'Mon avis avant même d\'avoir testé leurs ' + hl.s('services de ' + s(0) + ' et ' + s(1)) + ' : je ' + hl.a('recommande') + ' déjà sur la base de tout ce qui est visible. Et je n\'hésiterai pas le moment venu à les solliciter' + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Excellent') + ' profil d\'après moi.',
+          chip('service', s(0)) + chip('service', s(1)) + geoChip + chip('sat','recommande') + chip('sat','excellent')
+        )
+      ],
+      'teste': [
+        testedCard('Testé · client',
+          hl.a('Satisfait') + ' de leur intervention. Service propre, respect du devis. Je recommande pour ceux qui cherchent ' + hl.s('un ' + artisan + ' sérieux') + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Excellent') + ' service.',
+          chip('service', artisan) + geoChip + chip('sat','satisfait') + chip('sat','excellent')
+        ),
+        testedCard('Testé · client',
+          'Intervention propre et soignée en ' + hl.s(s(0)) + '. Travail de qualité. Tarif conforme au devis. ' + hl.a('Très bonne expérience') + ' avec ' + B + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('À recommander') + '.',
+          chip('service', s(0)) + chip('service', artisan) + geoChip + chip('sat','très bonne expérience') + chip('sat','à recommander')
+        ),
+        testedCard('Testé · client',
+          hl.s(s(0).charAt(0).toUpperCase() + s(0).slice(1)) + ' réalisé rapidement et proprement. ' + hl.a('Très satisfait') + ', je recommande.',
+          chip('service', s(0)) + chip('sat','très satisfait')
+        ),
+        testedCard('Testé · client',
+          'Intervention d\'urgence prise rapidement. Sur place sans attente. Réparation propre. Tarif annoncé en amont, montant respecté. ' + hl.a('Excellent') + ' service pour ' + hl.s('ce ' + artisan) + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Au top') + '.',
+          chip('service', artisan) + geoChip + chip('sat','excellent') + chip('sat','au top')
+        ),
+        testedCard('Testé · client',
+          'Prestation complète en ' + hl.s(s(0)) + '. Délais respectés, finitions impeccables. Résultat conforme au devis. ' + hl.a('Très satisfait') + '.',
+          chip('service', s(0)) + chip('sat','très satisfait')
+        ),
+        testedCard('Testé · client',
+          'Diagnostic posé rapidement là où d\'autres prestataires avaient échoué. Solution trouvée le jour même. Niveau d\'expertise vraiment au-dessus pour ' + hl.s('ce ' + artisan) + (V ? ' ' + hl.g(geo) : '') + '. ' + hl.a('Très satisfait') + ', ' + hl.a('bluffant') + '.',
+          chip('service', s(0)) + chip('service', artisan) + geoChip + chip('sat','très satisfait') + chip('sat','bluffant')
+        )
+      ]
+    };
+
+    Object.keys(tabs).forEach(function(cat) {
+      var el = document.querySelector('.tab-content[data-cat="' + cat + '"]');
+      if (!el) return;
+      var aiCards = Array.from(el.querySelectorAll('.example-card.ai-generated'));
+      // Conserver l'intro fixe (alerte "Testé 10%") si présente
+      var introEl = el.querySelector('.examples-intro');
+      var introHTML = introEl ? introEl.outerHTML : '';
+      el.innerHTML = introHTML + tabs[cat].join('');
+      aiCards.forEach(function(c) { el.insertBefore(c, el.querySelector('.example-card') || null); });
+    });
+
+    // Formulations OK — remplacer si encore hardcodées
+    var okList = document.querySelector('.phrases-col.ok ul');
+    if (okList && okList.querySelectorAll('li').length > 0 && !okList.dataset.dynamic) {
+      var localGeo = V ? ' à ' + V : '';
+      okList.innerHTML = [
+        '"Envie de tester leurs services de ' + s(0) + localGeo + '"',
+        '"Bonne impression au téléphone, je recommande"',
+        '"Site clair sur leurs services de ' + s(1) + ', très satisfait du contact"',
+        '"' + artisan.charAt(0).toUpperCase() + artisan.slice(1) + ' sérieux' + localGeo + ', à retenir"',
+        '"Communication impeccable, je note pour mes futurs travaux"',
+        '"Belle présentation de leurs prestations de ' + s(2) + '"',
+        '"Acteur fiable ' + (V ? 'secteur ' + V : 'du secteur') + '"',
+      ].map(function(t){ return '<li>' + t + '</li>'; }).join('');
+    }
+  }
 
   function populatePage(data) {
     var sectorIcons = { plumber:'🔧', locksmith:'🔑', restaurant:'🍽️', electrician:'⚡', garage:'🚗', beauty_salon:'💇', driving_school:'🚦', hotel:'🏨', health:'🩺', default:'🏢' };
@@ -1626,6 +1609,19 @@
         if (cat) prependAICard(cat, data.name, ex.text);
       });
     }
+
+    // Exemples statiques — remplacés dynamiquement avec le bon secteur et la vraie ville
+    injectDynamicExamples(
+      data.name || 'cette entreprise',
+      data.ville || '',
+      sectorKey,
+      data.categoryLabel || '',
+      data.keywords && data.keywords.services ? data.keywords.services : []
+    );
+
+    // Mise à jour ligne SEO du playbook
+    var ph1Seo = document.getElementById('ph1SeoDetail');
+    if (ph1Seo) ph1Seo.textContent = 'Mots-clés services' + (data.ville ? ' + géo ' + data.ville : '') + ' intégrés.';
   }
 
   // Formulaire de capture AVANT l'analyse — les infos sont ensuite envoyées en arrière-plan
