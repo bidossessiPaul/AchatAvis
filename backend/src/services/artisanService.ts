@@ -678,6 +678,7 @@ export const artisanService = {
                 p.author_name as proposal_author,
                 p.rating,
                 p.status as proposal_status,
+                p.modified_by_artisan_at,
                 s.id as submission_id,
                 s.status as submission_status,
                 s.review_url,

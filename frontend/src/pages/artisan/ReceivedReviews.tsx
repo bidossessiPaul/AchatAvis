@@ -38,6 +38,7 @@ interface Submission {
     company_name: string;
     guide_name?: string;
     proposal_date?: string;
+    modified_by_artisan_at?: string | null;
 }
 
 interface fiche {
@@ -61,6 +62,7 @@ export const ReceivedReviews: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
 
     // Editing State
+    const [disclaimerTarget, setDisclaimerTarget] = useState<Submission | null>(null);
     const [editingProposal, setEditingProposal] = useState<Submission | null>(null);
     const [editForm, setEditForm] = useState({
         content: '',
@@ -125,12 +127,18 @@ export const ReceivedReviews: React.FC = () => {
     };
 
     const handleEdit = (submission: Submission) => {
-        setEditingProposal(submission);
+        setDisclaimerTarget(submission);
+    };
+
+    const handleDisclaimerAccept = () => {
+        if (!disclaimerTarget) return;
+        setEditingProposal(disclaimerTarget);
         setEditForm({
-            content: submission.proposal_content,
-            author_name: submission.proposal_author,
-            rating: submission.rating
+            content: disclaimerTarget.proposal_content,
+            author_name: disclaimerTarget.proposal_author,
+            rating: disclaimerTarget.rating
         });
+        setDisclaimerTarget(null);
     };
 
     const handleSaveProposal = async (e: React.FormEvent) => {
@@ -145,14 +153,15 @@ export const ReceivedReviews: React.FC = () => {
                 rating: editForm.rating
             });
 
-            // Update local state
+            // Update local state + marquer comme modifié par l'artisan
             setSubmissions(prev => prev.map(s =>
                 s.proposal_id === editingProposal.proposal_id
                     ? {
                         ...s,
                         proposal_content: editForm.content,
                         proposal_author: editForm.author_name,
-                        rating: editForm.rating
+                        rating: editForm.rating,
+                        modified_by_artisan_at: new Date().toISOString()
                     }
                     : s
             ));
@@ -299,7 +308,7 @@ export const ReceivedReviews: React.FC = () => {
                                     </thead>
                                     <tbody>
                                         {paginatedSubmissions.map((review) => (
-                                            <tr key={review.proposal_id} className={`review-row ${review.submission_status || 'pending'}`}>
+                                            <tr key={review.proposal_id} className={`review-row ${review.submission_status || 'pending'}`} style={review.modified_by_artisan_at ? { background: '#fdf4ff', borderLeft: '3px solid #a855f7' } : {}}>
                                                 <td>
                                                     <span className="fiche-name-badge">{review.fiche_name}</span>
                                                 </td>
@@ -313,6 +322,11 @@ export const ReceivedReviews: React.FC = () => {
                                                                 color={i < review.rating ? "#facc15" : "#d1d5db"}
                                                             />
                                                         ))}
+                                                        {review.modified_by_artisan_at && (
+                                                            <span style={{ marginLeft: '0.5rem', fontSize: '0.65rem', fontWeight: 700, background: '#f3e8ff', color: '#7c3aed', padding: '0.15rem 0.5rem', borderRadius: '1rem', verticalAlign: 'middle' }}>
+                                                                Modifié par vous
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <p className="summary-text truncate" title={review.proposal_content}>
                                                         {review.proposal_content}
@@ -495,6 +509,59 @@ export const ReceivedReviews: React.FC = () => {
                     </div>
                 </div>
             )}
+            {/* Disclaimer modal — affiché avant l'édition */}
+            {disclaimerTarget && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,23,42,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(8px)', padding: '1rem' }}>
+                    <div style={{ background: 'white', borderRadius: '1.25rem', width: '100%', maxWidth: '520px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', padding: '1.5rem 2rem' }}>
+                            <h3 style={{ margin: 0, color: 'white', fontSize: '1.125rem', fontWeight: 800 }}>Règles de modification d'avis</h3>
+                            <p style={{ margin: '0.35rem 0 0', color: '#ddd6fe', fontSize: '0.85rem' }}>À lire avant de modifier votre avis</p>
+                        </div>
+                        <div style={{ padding: '1.5rem 2rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>📋</span>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.6 }}>
+                                        L'avis doit rester <strong>authentique et conforme aux règles Google</strong> : il doit refléter une véritable expérience (site web, service client, visite, échange téléphonique…).
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>⚖️</span>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.6 }}>
+                                        En modifiant cet avis, <strong>vous en assumez l'entière responsabilité</strong>. Toute modification contraire aux règles engage votre seule responsabilité.
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>🛡️</span>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.6 }}>
+                                        <strong>Votre garantie AchatAvis reste valable</strong>, quelle que soit la modification apportée au contenu de l'avis.
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>🚫</span>
+                                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.6 }}>
+                                        Ne pas supprimer les mots-clés SEO locaux, ne pas introduire de fausses informations, ne pas dénigrer un concurrent.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '0.75rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#92400e', fontWeight: 600 }}>
+                                    En cliquant sur "J'accepte et je modifie", vous confirmez avoir lu et accepté ces règles.
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setDisclaimerTarget(null)} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#64748b' }}>
+                                    Annuler
+                                </button>
+                                <button onClick={handleDisclaimerAccept} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: 'none', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: 'white' }}>
+                                    J'accepte et je modifie
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Edit Proposal Modal */}
             {editingProposal && (
                 <div style={{
