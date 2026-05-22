@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { ReviewOrder, ReviewProposal } from '../../../types';
 import { artisanService } from '../../../services/artisanService';
-import { Trash2, Check, RefreshCw, Sparkles, AlertCircle, Star } from 'lucide-react';
+import { Trash2, Check, RefreshCw, Sparkles, AlertCircle, Star, Edit3, ShieldAlert, X } from 'lucide-react';
 import { showConfirm } from '../../../utils/Swal';
 
 const EXPERIENCE_LABELS: Record<string, { label: string; bg: string; color: string }> = {
@@ -47,6 +47,10 @@ interface Step3Props {
 export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNext, onBack, setProposals, onError }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [progress, setProgress] = useState<{ current: number, target: number } | null>(null);
+    const [disclaimerTarget, setDisclaimerTarget] = useState<ReviewProposal | null>(null);
+    const [editingProposal, setEditingProposal] = useState<ReviewProposal | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
     const abortRef = useRef(false);
 
     const handleGenerate = async (force: boolean = false) => {
@@ -67,19 +71,17 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                 const result = await artisanService.generateBatch(order.id, isForce);
                 setProposals(result.proposals);
                 setProgress({ current: result.generated, target: result.target });
-                isForce = false; // Only force on first call
+                isForce = false;
 
                 if (result.complete) {
-                    // All done
                     retries = 0;
                     break;
                 }
-                retries = 0; // Reset retries on success
+                retries = 0;
             } catch (error: any) {
                 console.error("Batch generation error:", error);
                 retries++;
                 if (retries > maxRetries) {
-                    // After max retries, stop but don't show error if some reviews exist
                     if (onError) {
                         const serverMsg = error.response?.data?.message || error.response?.data?.error;
                         if (error.response?.status === 502) {
@@ -92,7 +94,6 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                     }
                     break;
                 }
-                // Wait before retry
                 await new Promise(r => setTimeout(r, 2000));
             }
         }
@@ -108,6 +109,31 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
             setProposals(prev => prev.filter(item => item.id !== p.id));
         } catch (error) {
             console.error("Delete failed", error);
+        }
+    };
+
+    const handleDisclaimerAccept = () => {
+        if (!disclaimerTarget) return;
+        setEditingProposal(disclaimerTarget);
+        setEditContent(disclaimerTarget.content || '');
+        setDisclaimerTarget(null);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingProposal) return;
+        setIsSaving(true);
+        try {
+            await artisanService.updateProposal(editingProposal.id, { content: editContent });
+            setProposals(prev => prev.map(p =>
+                p.id === editingProposal.id
+                    ? { ...p, content: editContent, modified_by_artisan_at: new Date().toISOString() }
+                    : p
+            ));
+            setEditingProposal(null);
+        } catch (err: any) {
+            alert(err?.response?.data?.error || 'Erreur lors de la sauvegarde.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -127,7 +153,6 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         onNext();
     };
 
-    // Progress bar component
     const ProgressBar = () => {
         if (!progress) return null;
         const percent = progress.target > 0 ? Math.round((progress.current / progress.target) * 100) : 0;
@@ -169,11 +194,71 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
         );
     };
 
-    // Initial state: no proposals, not generating — show launch button + spinner area
     const showInitialSpinner = isGenerating && proposals.length === 0;
 
     return (
         <div>
+            {/* Disclaimer modal */}
+            {disclaimerTarget && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <div style={{ background: 'white', borderRadius: '1.25rem', maxWidth: '520px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+                        <div style={{ background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <ShieldAlert size={24} color="white" />
+                            <h3 style={{ margin: 0, color: 'white', fontWeight: 700, fontSize: '1.1rem' }}>Avant de modifier cet avis</h3>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <p style={{ margin: '0 0 1rem', color: '#374151', fontWeight: 500 }}>En modifiant cet avis, vous acceptez les règles suivantes :</p>
+                            <ul style={{ margin: '0 0 1rem', padding: '0 0 0 1.25rem', color: '#4b5563', lineHeight: 1.7, fontSize: '0.9rem' }}>
+                                <li>L'avis doit rester authentique et conforme aux règles Google.</li>
+                                <li>Vous êtes responsable du contenu que vous modifiez.</li>
+                                <li>Aucune information fausse, trompeuse ou à visée SEO n'est autorisée.</li>
+                            </ul>
+                            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.75rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                                <p style={{ margin: 0, color: '#991b1b', fontSize: '0.875rem', fontWeight: 600 }}>
+                                    Les avis que vous modifiez ne sont plus couverts par la garantie AchatAvis. En cas de suppression par Google, nous ne pourrons pas les remplacer.
+                                </p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setDisclaimerTarget(null)} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer', fontWeight: 600, color: '#374151' }}>
+                                    Annuler
+                                </button>
+                                <button onClick={handleDisclaimerAccept} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: 'none', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: 'white', cursor: 'pointer', fontWeight: 700 }}>
+                                    J'accepte et je modifie
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit modal */}
+            {editingProposal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                    <div style={{ background: 'white', borderRadius: '1.25rem', maxWidth: '580px', width: '100%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden' }}>
+                        <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ margin: 0, fontWeight: 700, color: '#0f172a' }}>Modifier l'avis</h3>
+                            <button onClick={() => setEditingProposal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+                        </div>
+                        <div style={{ padding: '1.5rem' }}>
+                            <textarea
+                                value={editContent}
+                                onChange={e => setEditContent(e.target.value)}
+                                rows={8}
+                                style={{ width: '100%', border: '2px solid #7c3aed', borderRadius: '8px', padding: '0.75rem', fontSize: '0.9rem', lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
+                            />
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                <button onClick={() => setEditingProposal(null)} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer', fontWeight: 600 }}>
+                                    Annuler
+                                </button>
+                                <button onClick={handleSaveEdit} disabled={isSaving} style={{ padding: '0.65rem 1.25rem', borderRadius: '0.625rem', border: 'none', background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', color: 'white', cursor: 'pointer', fontWeight: 700 }}>
+                                    {isSaving ? 'Sauvegarde...' : 'Enregistrer'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div style={{
                 display: 'flex',
                 gap: '0.75rem',
@@ -235,10 +320,8 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                 </div>
             ) : proposals.length > 0 ? (
                 <div className="proposals-list">
-                    {/* Progress bar during incremental generation */}
                     {isGenerating && <ProgressBar />}
 
-                    {/* Status banner (only when NOT generating) */}
                     {!isGenerating && (
                         <div className={`proposals-status-banner ${(order.quantity || 0) > proposals.length ? 'incomplete' : 'complete'}`}>
                             <div className="psb-left">
@@ -283,13 +366,18 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                             </thead>
                             <tbody>
                                 {proposals.map((p, index) => (
-                                    <tr key={p.id}>
+                                    <tr key={p.id} style={p.modified_by_artisan_at ? { background: '#fdf4ff', borderLeft: '3px solid #a855f7' } : {}}>
                                         <td className="pt-cell pt-cell-author">
                                             <div className="pt-author-info">
                                                 <span className="pt-author-name">Avis {index + 1}</span>
                                                 {p.submission_id && (
                                                     <span className="pt-published-badge">
                                                         <Check size={10} /> PUBLIÉ
+                                                    </span>
+                                                )}
+                                                {p.modified_by_artisan_at && (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', background: '#ede9fe', color: '#6d28d9', borderRadius: '1rem', padding: '0.15rem 0.5rem', fontSize: '0.65rem', fontWeight: 700, marginTop: '0.2rem' }}>
+                                                        <Edit3 size={10} /> Modifié par vous
                                                     </span>
                                                 )}
                                             </div>
@@ -315,6 +403,13 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                         <td className="pt-cell pt-cell-actions">
                                             {!p.submission_id && (
                                                 <div className="pt-action-btns">
+                                                    <button
+                                                        onClick={() => setDisclaimerTarget(p)}
+                                                        title="Modifier"
+                                                        style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '0.375rem', padding: '0.35rem', cursor: 'pointer', color: '#7c3aed', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <Edit3 size={15} />
+                                                    </button>
                                                     <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
                                                 </div>
                                             )}
@@ -328,7 +423,7 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                     {/* Mobile: Card layout */}
                     <div className="proposals-mobile">
                         {proposals.map((p, index) => (
-                            <div key={p.id} className="proposal-card-mobile">
+                            <div key={p.id} className="proposal-card-mobile" style={p.modified_by_artisan_at ? { background: '#fdf4ff', borderLeft: '3px solid #a855f7' } : {}}>
                                 <div className="pcm-header">
                                     <div className="pcm-author-row">
                                         <span className="pt-author-name">Avis {index + 1}</span>
@@ -337,9 +432,21 @@ export const Step3AIGeneration: React.FC<Step3Props> = ({ order, proposals, onNe
                                                 <Check size={10} /> PUBLIÉ
                                             </span>
                                         )}
+                                        {p.modified_by_artisan_at && (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', background: '#ede9fe', color: '#6d28d9', borderRadius: '1rem', padding: '0.15rem 0.5rem', fontSize: '0.65rem', fontWeight: 700 }}>
+                                                <Edit3 size={10} /> Modifié par vous
+                                            </span>
+                                        )}
                                     </div>
                                     {!p.submission_id && (
                                         <div className="pt-action-btns">
+                                            <button
+                                                onClick={() => setDisclaimerTarget(p)}
+                                                title="Modifier"
+                                                style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '0.375rem', padding: '0.35rem', cursor: 'pointer', color: '#7c3aed', display: 'flex', alignItems: 'center' }}
+                                            >
+                                                <Edit3 size={15} />
+                                            </button>
                                             <button onClick={() => handleDelete(p)} className="pt-btn-delete"><Trash2 size={16} /></button>
                                         </div>
                                     )}
