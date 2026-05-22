@@ -216,11 +216,8 @@ export const artisanService = {
     async getOrderById(orderId: string) {
         const orders: any = await query(`
         SELECT ro.*, p.description as payment_description, p.amount as payment_amount,
-               (SELECT COUNT(*) FROM (
-                   SELECT proposal_id AS pid FROM reviews_submissions WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL
-                   UNION
-                   SELECT id AS pid FROM review_proposals WHERE order_id = ro.id AND modified_by_artisan_at IS NOT NULL AND deleted_at IS NULL
-               ) t_val) as reviews_validated,
+               (SELECT COUNT(*) FROM reviews_submissions
+                WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL) as reviews_validated,
                (SELECT COUNT(*) FROM reviews_submissions s
                 WHERE s.order_id = ro.id AND s.status = 'pending') as reviews_pending
         FROM reviews_orders ro
@@ -292,11 +289,8 @@ export const artisanService = {
     async getArtisanOrders(artisanId: string) {
         const orders: any[] = await query(`
             SELECT ro.*, p.description as payment_description, p.amount as payment_amount, p.review_credits,
-                   (SELECT COUNT(*) FROM (
-                       SELECT proposal_id AS pid FROM reviews_submissions WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL
-                       UNION
-                       SELECT id AS pid FROM review_proposals WHERE order_id = ro.id AND modified_by_artisan_at IS NOT NULL AND deleted_at IS NULL
-                   ) t_val) as reviews_validated,
+                   (SELECT COUNT(*) FROM reviews_submissions
+                    WHERE order_id = ro.id AND status = 'validated' AND proposal_id IS NOT NULL) as reviews_validated,
                    (SELECT COUNT(*) FROM reviews_submissions s
                     WHERE s.order_id = ro.id AND s.status = 'pending') as reviews_pending
             FROM reviews_orders ro

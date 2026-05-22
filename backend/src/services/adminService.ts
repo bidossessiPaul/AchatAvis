@@ -603,6 +603,15 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
         `, { submissionId });
         const subInfo = preInfo?.[0] || null;
 
+        // 0b. Vérifier si l'avis a été modifié par l'artisan (pas de garantie dans ce cas)
+        const [modCheck]: any = await connection.query(`
+            SELECT p.modified_by_artisan_at
+            FROM reviews_submissions s
+            JOIN review_proposals p ON s.proposal_id = p.id
+            WHERE s.id = :submissionId
+        `, { submissionId });
+        const isModifiedByArtisan = !!(modCheck?.[0]?.modified_by_artisan_at);
+
         // 1. Update submission status
         let validatedAtPart = "";
         if (status === 'validated') {
@@ -680,7 +689,8 @@ export const updateSubmissionStatus = async (submissionId: string, status: strin
                     `, { submissionId });
 
                     // Logique slot : resubmit garde le slot 24h, sinon libération immédiate
-                    const shouldReleaseSlot = !allowResubmit;
+                    // Exception : avis modifié par l'artisan → pas de garantie, slot non libéré
+                    const shouldReleaseSlot = !allowResubmit && !isModifiedByArtisan;
                     if (shouldReleaseSlot) {
                         await connection.query(`
                             UPDATE reviews_orders
@@ -1047,7 +1057,7 @@ export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
                 // 1. Get submission + order info
                 const [subRows]: any = await connection.query(`
                     SELECT s.id, s.guide_id, s.status, s.slot_released_at,
-                           p.order_id, p.id as proposal_id,
+                           p.order_id, p.id as proposal_id, p.modified_by_artisan_at,
                            ro.reviews_received, ro.quantity
                     FROM reviews_submissions s
                     JOIN review_proposals p ON s.proposal_id = p.id
@@ -1066,7 +1076,9 @@ export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
 
                 // 2. Free the slot FIRST (before marking as recycled) so the check on
                 //    slot_released_at still reflects the state at admin decision time.
-                if (!sub.slot_released_at) {
+                // Exception : avis modifié par l'artisan → pas de garantie, slot non libéré, pas de remplacement
+                const isModifiedByArtisan = !!sub.modified_by_artisan_at;
+                if (!sub.slot_released_at && !isModifiedByArtisan) {
                     await connection.query(`
                         UPDATE reviews_orders
                         SET reviews_received = GREATEST(0, COALESCE(reviews_received, 1) - 1)
@@ -1091,21 +1103,20 @@ export const recycleRejectedSubmissions = async (ids: string[]): Promise<{
                     WHERE id = :submissionId
                 `, { submissionId });
 
-                // 4. Ensure fiche is in_progress so new guides can see it
-                await connection.query(`
-                    UPDATE reviews_orders
-                    SET status = 'in_progress'
-                    WHERE id = :orderId AND status IN ('completed', 'cancelled')
-                `, { orderId: sub.order_id });
+                // 4 & 5. Si avis modifié par l'artisan : pas de remplacement, pas de remise dans le pool
+                if (!isModifiedByArtisan) {
+                    await connection.query(`
+                        UPDATE reviews_orders
+                        SET status = 'in_progress'
+                        WHERE id = :orderId AND status IN ('completed', 'cancelled')
+                    `, { orderId: sub.order_id });
 
-                // 5. Reset the proposal status so it's available for a new guide
-                // Note: CHECK constraint only allows ('draft', 'approved', 'rejected')
-                // 'approved' = content ready, waiting for a guide to submit proof
-                await connection.query(`
-                    UPDATE review_proposals
-                    SET status = 'approved'
-                    WHERE id = :proposalId AND status != 'approved'
-                `, { proposalId: sub.proposal_id });
+                    await connection.query(`
+                        UPDATE review_proposals
+                        SET status = 'approved'
+                        WHERE id = :proposalId AND status != 'approved'
+                    `, { proposalId: sub.proposal_id });
+                }
 
                 await connection.commit();
                 success++;
