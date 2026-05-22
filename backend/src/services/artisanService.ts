@@ -430,7 +430,7 @@ export const artisanService = {
         // Bloquer la modification si l'avis est déjà publié (submission validée)
         const published: any = await query(`
             SELECT id FROM reviews_submissions
-            WHERE proposal_id = ? AND status = 'validated' AND deleted_at IS NULL
+            WHERE proposal_id = ? AND status = 'validated'
             LIMIT 1
         `, [proposalId]);
 
