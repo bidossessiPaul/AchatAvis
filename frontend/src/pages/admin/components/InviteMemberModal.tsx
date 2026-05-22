@@ -29,6 +29,7 @@ interface PermissionsState {
     can_manage_signalement_packs: boolean;
     can_manage_signalements: boolean;
     can_validate_signalements: boolean;
+    can_validate_levels: boolean;
 }
 
 const initialPermissions: PermissionsState = {
@@ -51,6 +52,7 @@ const initialPermissions: PermissionsState = {
     can_manage_signalement_packs: false,
     can_manage_signalements: false,
     can_validate_signalements: false,
+    can_validate_levels: false,
 };
 
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ isOpen, onClose, onInvite, onUpdate, memberToEdit }) => {

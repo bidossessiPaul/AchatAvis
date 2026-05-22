@@ -19,6 +19,7 @@ const PACKS = checkPermission('can_manage_packs');
 const SECTORS = checkPermission('can_manage_sectors');
 const STATS = checkPermission('can_view_stats');
 const GMAIL_VERIF = checkPermission('can_validate_gmail');
+const LEVEL_VERIF = checkPermission('can_validate_levels');
 
 // Middleware to ensure admin access
 router.use(authenticate, authorize('admin'));
@@ -70,8 +71,8 @@ router.patch('/users/:userId/status', USERS, adminController.updateUserStatus);
 router.delete('/users/:userId', USERS, adminController.deleteUser);
 
 // Level & Identity Verifications
-router.get('/level-verifications', USERS, adminController.getLevelVerifications);
-router.patch('/level-verifications/:verificationId', USERS, adminController.reviewLevelVerification);
+router.get('/level-verifications', LEVEL_VERIF, adminController.getLevelVerifications);
+router.patch('/level-verifications/:verificationId', LEVEL_VERIF, adminController.reviewLevelVerification);
 router.get('/identity-verifications', USERS, identityVerif.adminList);
 router.post('/identity-verifications/:id/approve', USERS, identityVerif.adminApprove);
 router.post('/identity-verifications/:id/reject', USERS, identityVerif.adminReject);

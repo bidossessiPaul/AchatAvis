@@ -509,7 +509,7 @@ function App() {
                             path="/admin/level-verifications"
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
-                                    <PermissionGuard requiredPermission={['can_manage_users', 'can_validate_profiles']}>
+                                    <PermissionGuard requiredPermission={['can_validate_levels']}>
                                         <AdminLevelVerifications />
                                     </PermissionGuard>
                                 </ProtectedRoute>
