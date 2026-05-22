@@ -152,8 +152,9 @@ export const guideService = {
             WHERE o.status IN ('in_progress') AND o.deleted_at IS NULL
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
+            AND (o.locked_by IS NULL OR o.locked_until < NOW() OR o.locked_by = ?)
             ORDER BY o.created_at DESC
-        `, [guideId]);
+        `, [guideId, guideId]);
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
@@ -199,6 +200,11 @@ export const guideService = {
         }
 
         const order = orderResult[0];
+
+        // Vérifier si la fiche est verrouillée par un autre guide
+        if (order.locked_by && order.locked_by !== guide_id && order.locked_until && new Date(order.locked_until) > new Date()) {
+            throw new Error('fiche_LOCKED');
+        }
 
         // 🎯 TRUST SCORE: Vérifier l'éligibilité basée sur le niveau
         if (guideAccountResult && guideAccountResult.length > 0) {
@@ -296,12 +302,18 @@ export const guideService = {
 
         const slot = availableSlotRows[0];
 
-        // Verrouiller le slot pour 5 minutes
+        // Verrouiller le slot ET la fiche pour 5 minutes
         await query(`
             UPDATE review_proposals
             SET reserved_by = ?, reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
             WHERE id = ?
         `, [guide_id, slot.id]);
+
+        await query(`
+            UPDATE reviews_orders
+            SET locked_by = ?, locked_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+            WHERE id = ?
+        `, [guide_id, order_id]);
 
         slot.reserved_until = new Date(Date.now() + 5 * 60 * 1000).toISOString();
         slot.images = parseImages(slot.images);
