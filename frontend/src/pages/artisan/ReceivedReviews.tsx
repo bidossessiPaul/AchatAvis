@@ -534,7 +534,7 @@ export const ReceivedReviews: React.FC = () => {
                                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
                                     <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>🛡️</span>
                                     <p style={{ margin: 0, fontSize: '0.875rem', color: '#374151', lineHeight: 1.6 }}>
-                                        <strong>Votre garantie AchatAvis reste valable</strong>, quelle que soit la modification apportée au contenu de l'avis.
+                                        <strong>Les avis que vous modifiez ne sont plus couverts par la garantie AchatAvis.</strong> En cas de suppression par Google, nous ne pourrons pas les remplacer.
                                     </p>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
@@ -544,9 +544,9 @@ export const ReceivedReviews: React.FC = () => {
                                     </p>
                                 </div>
                             </div>
-                            <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '0.75rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
-                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#92400e', fontWeight: 600 }}>
-                                    En cliquant sur "J'accepte et je modifie", vous confirmez avoir lu et accepté ces règles.
+                            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.75rem', padding: '0.875rem 1rem', marginBottom: '1.5rem' }}>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: '#991b1b', fontWeight: 600 }}>
+                                    En cliquant sur "J'accepte et je modifie", vous confirmez avoir lu ces règles et acceptez que cet avis ne sera plus couvert par la garantie AchatAvis.
                                 </p>
                             </div>
                             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
