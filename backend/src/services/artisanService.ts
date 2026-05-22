@@ -427,7 +427,16 @@ export const artisanService = {
             throw new Error('Non autorisé à modifier cette proposition');
         }
 
-        // Artisan can modify at ANY TIME (removed submission_id check per user request)
+        // Bloquer la modification si l'avis est déjà publié (submission validée)
+        const published: any = await query(`
+            SELECT id FROM reviews_submissions
+            WHERE proposal_id = ? AND status = 'validated' AND deleted_at IS NULL
+            LIMIT 1
+        `, [proposalId]);
+
+        if (published && published.length > 0) {
+            throw new Error('Cet avis est déjà publié sur Google et ne peut plus être modifié');
+        }
 
         // 2. Prepare update fields (ensure no undefined values)
         const updates: string[] = [];
