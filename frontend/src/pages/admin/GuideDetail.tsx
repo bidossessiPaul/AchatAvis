@@ -484,20 +484,37 @@ export const GuideDetail: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {profile.payout_details && (
-                                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                                {Object.entries(typeof profile.payout_details === 'string' ? JSON.parse(profile.payout_details) : profile.payout_details).map(([key, value]) => (
-                                                    <div key={key} style={{ display: 'flex', flexDirection: 'column', marginBottom: '0.5rem' }}>
-                                                        <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>
-                                                            {key.replace(/_/g, ' ')}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
-                                                            {String(value)}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                        {profile.payout_details && (() => {
+                                            let details: any;
+                                            try {
+                                                details = typeof profile.payout_details === 'string'
+                                                    ? JSON.parse(profile.payout_details)
+                                                    : profile.payout_details;
+                                                // double-encodé : JSON.parse peut retourner une string
+                                                if (typeof details === 'string') details = JSON.parse(details);
+                                            } catch {
+                                                details = profile.payout_details;
+                                            }
+                                            if (!details || typeof details !== 'object') return (
+                                                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
+                                                    {String(details ?? '')}
+                                                </div>
+                                            );
+                                            return (
+                                                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                    {Object.entries(details).map(([key, value]) => (
+                                                        <div key={key} style={{ display: 'flex', flexDirection: 'column', marginBottom: '0.5rem' }}>
+                                                            <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: '#94a3b8', fontWeight: 700 }}>
+                                                                {key.replace(/_/g, ' ')}
+                                                            </span>
+                                                            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#334155' }}>
+                                                                {String(value)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })()}
 
                                         <button
                                             className="premium-action-btn"
