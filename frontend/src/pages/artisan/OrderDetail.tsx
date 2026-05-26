@@ -14,7 +14,6 @@ import {
     AlertTriangle,
     MessageSquare,
     Zap,
-    ExternalLink,
     CheckCircle,
     Droplets,
     Zap as ElecIcon,
@@ -650,38 +649,6 @@ export const OrderDetail: React.FC = () => {
                                 <div>
                                     <h4 style={{ fontSize: '0.7rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Objectif</h4>
                                     <p style={{ margin: '0 0 0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>{order.quantity} avis attendus</p>
-                                    {/* Barre orange — avis validés d'office (admin + modifiés artisan) */}
-                                    <div style={{ marginBottom: '0.35rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#92400e', fontWeight: 600, marginBottom: '0.2rem' }}>
-                                            <span>Validés</span>
-                                            <span>{(order as any).reviews_validated ?? 0} / {order.quantity}</span>
-                                        </div>
-                                        <div style={{ width: '100%', height: 7, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-                                            <div style={{
-                                                width: `${Math.min(100, (((order as any).reviews_validated ?? 0) / (order.quantity || 1)) * 100)}%`,
-                                                height: '100%',
-                                                background: '#d97706',
-                                                borderRadius: 4,
-                                                transition: 'width 0.3s ease'
-                                            }} />
-                                        </div>
-                                    </div>
-                                    {/* Barre grise — avis en attente de validation admin */}
-                                    <div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: '0.2rem' }}>
-                                            <span>En attente</span>
-                                            <span>{(order as any).reviews_pending ?? 0}</span>
-                                        </div>
-                                        <div style={{ width: '100%', height: 5, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-                                            <div style={{
-                                                width: `${Math.min(100, (((order as any).reviews_pending ?? 0) / (order.quantity || 1)) * 100)}%`,
-                                                height: '100%',
-                                                background: '#94a3b8',
-                                                borderRadius: 4,
-                                                transition: 'width 0.3s ease'
-                                            }} />
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -736,22 +703,6 @@ export const OrderDetail: React.FC = () => {
                                                         Publié le {new Date(proposal.submitted_at!).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                <a
-                                                    href={proposal.review_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '0.4rem',
-                                                        fontSize: '0.8125rem',
-                                                        color: '#10b981',
-                                                        textDecoration: 'none',
-                                                        fontWeight: 600
-                                                    }}
-                                                >
-                                                    <ExternalLink size={14} /> Vérifier sur Google
-                                                </a>
                                             </div>
                                         </div>
                                     ))

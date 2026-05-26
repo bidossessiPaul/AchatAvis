@@ -4,7 +4,6 @@ import { artisanService } from '../../services/artisanService';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import {
     Star,
-    ExternalLink,
     MessageCircle,
     User,
     CheckCircle2,
@@ -13,8 +12,7 @@ import {
     Copy,
     Check,
     X,
-    Edit2,
-    Trash2
+    Edit2
 } from 'lucide-react';
 import { showError, showSuccess } from '../../utils/Swal';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
@@ -237,10 +235,6 @@ export const ReceivedReviews: React.FC = () => {
                                 <span className="count">{submissions.length}</span>
                                 <span className="label">Total</span>
                             </div>
-                            <div className="stat-pill success">
-                                <span className="count">{submissions.filter(s => s.submission_status === 'validated').length}</span>
-                                <span className="label">Publiés</span>
-                            </div>
                         </div>
                     </div>
 
@@ -370,21 +364,6 @@ export const ReceivedReviews: React.FC = () => {
                                                         >
                                                             <Sparkles size={16} />
                                                         </button>
-                                                        {review.review_url ? (
-                                                            <a
-                                                                href={review.review_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="action-btn-link"
-                                                                title="Voir sur Google Maps"
-                                                            >
-                                                                <ExternalLink size={16} />
-                                                            </a>
-                                                        ) : (
-                                                            <span className="action-btn-link disabled" title="Avis non publié" style={{ opacity: 0.4, cursor: 'not-allowed' }}>
-                                                                <ExternalLink size={16} />
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -488,14 +467,6 @@ export const ReceivedReviews: React.FC = () => {
                                 <p>Une fois copiée, collez cette réponse sur l'avis Google Maps.</p>
                             </div>
                             <div className="footer-actions">
-                                <a
-                                    href={selectedSubmission.review_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="google-link-btn"
-                                >
-                                    Ouvrir sur Google Maps <ExternalLink size={14} />
-                                </a>
                                 <button
                                     className={`copy-btn ${hasCopied ? 'success' : ''}`}
                                     onClick={handleCopyResponse}
