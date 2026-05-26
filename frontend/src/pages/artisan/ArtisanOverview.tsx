@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
 import { ReviewOrder } from '../../types';
-import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Target, Trash2, Clock, X } from 'lucide-react';
+import { PlusCircle, CheckCircle2, AlertCircle, ArrowRight, Star, TrendingUp, DollarSign, Trash2, Clock, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
@@ -269,25 +269,6 @@ export const ArtisanOverview: React.FC = () => {
                         </div>
                     </motion.div>
 
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Taux de Succès</span>
-                            <div style={{ background: '#eff6ff', padding: '0.5rem', borderRadius: '0.75rem' }}><Target size={20} color="#3b82f6" /></div>
-                        </div>
-                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>
-                            {stats?.kpis?.total_reviews_ordered > 0
-                                ? Math.round((stats.kpis.total_reviews_received / stats.kpis.total_reviews_ordered) * 100)
-                                : 0}%
-                        </span>
-                        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                            fiches en cours : {stats?.statusBreakdown?.find((s: any) => s.status === 'in_progress')?.count || 0}
-                        </div>
-                    </motion.div>
                 </div>
 
                 {/* Charts Section */}
