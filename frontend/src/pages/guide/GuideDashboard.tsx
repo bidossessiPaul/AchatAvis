@@ -217,18 +217,6 @@ export const GuideDashboard: React.FC = () => {
                                         <div className="payout-badge">
                                             <DollarSign size={14} /> {Number(fiche.payout_per_review || 1.50).toFixed(2)}€
                                         </div>
-                                        <div className="time-badge">
-                                            <Clock size={14} />
-                                            {(() => {
-                                                const date = new Date(fiche.published_at || fiche.created_at);
-                                                const diffMs = Date.now() - date.getTime();
-                                                const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                                                const diffMins = Math.floor(diffMs / (1000 * 60));
-                                                if (diffHrs > 0) return `Il y a ${diffHrs}h`;
-                                                if (diffMins > 0) return `Il y a ${diffMins} min`;
-                                                return `À l'instant`;
-                                            })()}
-                                        </div>
                                     </div>
 
                                     <h4 className="fiche-company-name" >

@@ -153,7 +153,7 @@ export const guideService = {
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
             AND (o.locked_by IS NULL OR o.locked_until < NOW() OR o.locked_by = ?)
-            ORDER BY o.created_at DESC
+            ORDER BY RAND()
         `, [guideId, guideId]);
     },
 
