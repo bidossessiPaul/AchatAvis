@@ -260,10 +260,10 @@ export const ArtisanOverview: React.FC = () => {
                         style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)', padding: '1.5rem', borderRadius: '1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avis Récoltés</span>
+                            <span style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Avis Postés</span>
                             <div style={{ background: '#ecfdf5', padding: '0.5rem', borderRadius: '0.75rem' }}><CheckCircle2 size={20} color="#10b981" /></div>
                         </div>
-                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>{stats?.kpis?.total_reviews_received || 0}</span>
+                        <span style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827' }}>{stats?.kpis?.total_reviews_posted || 0}</span>
                         <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
                             Sur {stats?.kpis?.total_reviews_ordered || 0} commandés
                         </div>

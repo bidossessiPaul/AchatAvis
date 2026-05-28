@@ -877,7 +877,7 @@ export const artisanService = {
 
         // 4. Global KPIs (fiches & Reviews)
         const ficheKpis: any = await query(`
-            SELECT 
+            SELECT
                 COUNT(DISTINCT id) as total_fiches,
                 SUM(quantity) as total_reviews_ordered,
                 SUM(reviews_received) as total_reviews_received
@@ -885,9 +885,18 @@ export const artisanService = {
             WHERE artisan_id = ?
         `, [artisanId]);
 
+        // Avis réellement postés sur Google (submissions validées)
+        const postedKpis: any = await query(`
+            SELECT COUNT(*) as total_reviews_posted
+            FROM reviews_submissions rs
+            JOIN review_proposals rp ON rs.proposal_id = rp.id
+            JOIN reviews_orders ro ON rp.order_id = ro.id
+            WHERE ro.artisan_id = ? AND rs.status = 'validated'
+        `, [artisanId]);
+
         // 5. Financial KPIs (Actual money spent)
         const financialKpis: any = await query(`
-            SELECT 
+            SELECT
                 SUM(amount) as total_investment
             FROM payments
             WHERE user_id = ? AND status = 'completed'
@@ -902,6 +911,7 @@ export const artisanService = {
             sectorDistribution: sectorDist,
             kpis: {
                 ...(ficheKpis[0] || { total_fiches: 0, total_reviews_ordered: 0, total_reviews_received: 0 }),
+                total_reviews_posted: postedKpis[0]?.total_reviews_posted || 0,
                 total_investment: financialKpis[0]?.total_investment || 0
             }
         };

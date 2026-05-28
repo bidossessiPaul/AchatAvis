@@ -181,22 +181,13 @@ export const ReceivedReviews: React.FC = () => {
     };
 
     const getStatusIcon = (review: Submission) => {
-        const status = review.submission_status || 'not_submitted';
-        switch (status) {
-            case 'validated': return <span>✓</span>;
-            case 'pending': return <span>●</span>;
-            default: return <Clock size={12} />;
-        }
+        if (review.submission_status === 'validated') return <span>✓</span>;
+        return <Clock size={12} />;
     };
 
     const getStatusLabel = (review: Submission) => {
-        const status = review.submission_status || 'not_submitted';
-        switch (status) {
-            case 'validated': return 'Publié Google';
-            case 'pending': return 'Vérification AchatAvis';
-            case 'rejected': return 'Rejeté';
-            default: return 'Programmé';
-        }
+        if (review.submission_status === 'validated') return 'Publié Google';
+        return 'Pas encore posté';
     };
 
     const filteredSubmissions = submissions.filter(s => {
@@ -327,7 +318,7 @@ export const ReceivedReviews: React.FC = () => {
                                                     </p>
                                                 </td>
                                                 <td>
-                                                    <div className={`status-pill-premium ${review.submission_status || 'not_submitted'}`}>
+                                                    <div className={`status-pill-premium ${review.submission_status === 'validated' ? 'validated' : 'not_submitted'}`}>
                                                         {getStatusIcon(review)}
                                                         <span>{getStatusLabel(review)}</span>
                                                     </div>
