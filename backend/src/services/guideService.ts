@@ -9,6 +9,19 @@ import { aiService } from './aiService';
 // Régénère le contenu d'un slot expiré avec un nouvel avis IA, puis libère la réservation.
 async function regenerateSingleProposal(proposalId: string, orderId: string): Promise<void> {
     try {
+        // Ne jamais écraser un avis modifié manuellement par l'artisan — juste libérer la réservation
+        const modCheck: any = await query(
+            `SELECT modified_by_artisan_at FROM review_proposals WHERE id = ?`,
+            [proposalId]
+        );
+        if (modCheck?.[0]?.modified_by_artisan_at) {
+            await query(
+                `UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?`,
+                [proposalId]
+            );
+            return;
+        }
+
         const orderResult: any = await query(`
             SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
                    o.specific_instructions, o.zones,
@@ -420,7 +433,7 @@ export const guideService = {
     // Le slot reste réservé au guide après la régénération.
     async refreshCurrentSlot(orderId: string, guideId: string) {
         const slots: any[] = await query(`
-            SELECT p.id, p.is_pregenerated FROM review_proposals p
+            SELECT p.id, p.is_pregenerated, p.modified_by_artisan_at FROM review_proposals p
             WHERE p.order_id = ? AND p.reserved_by = ? AND p.reserved_until > NOW()
               AND p.deleted_at IS NULL
               AND p.id NOT IN (
@@ -434,10 +447,11 @@ export const guideService = {
 
         const proposalId = slots[0].id;
         const isPregenerated = slots[0].is_pregenerated === 1;
+        const isModifiedByArtisan = !!slots[0].modified_by_artisan_at;
 
-        // Proposals pré-générés par l'artisan : on ne remplace jamais le contenu.
+        // Proposals pré-générés ou modifiés manuellement par l'artisan : contenu figé, jamais remplacé.
         // On renouvelle juste la réservation 5 min et on retourne le même texte.
-        if (isPregenerated) {
+        if (isPregenerated || isModifiedByArtisan) {
             await query(
                 `UPDATE review_proposals SET reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE) WHERE id = ? AND reserved_by = ?`,
                 [proposalId, guideId]
