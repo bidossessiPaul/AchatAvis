@@ -166,16 +166,15 @@ export const registerArtisan = async (data: ArtisanRegistrationInput, baseUrl?: 
  * Register a new local guide
  */
 export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: string) => {
-    // Vérifie si l'email appartient à un compte suspendu actif (non supprimé)
+    // Vérifie si l'email appartient à un compte suspendu — même supprimé (anti-ban evasion).
+    // La suppression ne lève pas la suspension : un suspendu reste bloqué à l'inscription.
     const [suspendedCheck]: any = await pool.query(`
         SELECT 'primary' as source, u.id, u.email FROM users u
         WHERE u.email = ? AND u.status = 'suspended' AND u.role = 'guide'
-          AND u.deleted_at IS NULL
         UNION
         SELECT 'gmail' as source, g.user_id as id, g.email FROM guide_gmail_accounts g
         JOIN users u ON g.user_id = u.id
-        WHERE g.email = ? AND u.status = 'suspended'
-          AND u.deleted_at IS NULL AND g.deleted_at IS NULL
+        WHERE g.email = ? AND u.status = 'suspended' AND g.deleted_at IS NULL
     `, [data.email, data.email]);
 
     if (suspendedCheck && suspendedCheck.length > 0) {

@@ -138,9 +138,14 @@ export const deleteUser = async (userId: string) => {
     // et joignable sur cet userId. L'utilisateur ne peut plus se connecter
     // (login check WHERE deleted_at IS NULL), ne figure plus dans les listes admin,
     // mais toutes ses données passées restent visibles.
-    // Libère l'email unique pour permettre une réinscription avec la même adresse
+    // Libère l'email unique pour permettre une réinscription — SAUF si le compte est suspendu :
+    // un suspendu supprimé doit rester bloqué à l'inscription (anti-ban evasion).
     const result = await query(
-        `UPDATE users SET deleted_at = NOW(), email = CONCAT('deleted_', id, '_', email)
+        `UPDATE users SET deleted_at = NOW(),
+            email = CASE
+                WHEN status != 'suspended' THEN CONCAT('deleted_', id, '_', email)
+                ELSE email
+            END
          WHERE id = ? AND deleted_at IS NULL`,
         [userId]
     );
