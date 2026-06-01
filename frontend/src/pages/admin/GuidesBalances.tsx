@@ -166,7 +166,7 @@ export const GuidesBalances: React.FC = () => {
             'Nom guide', 'Email', 'Téléphone',
             'Moyen de paiement', 'Nom bénéficiaire', 'IBAN / Numéro / Email paiement', 'BIC / Réseau',
             'Avis validés', 'Gains avis (€)', 'Extras (€)', 'Total gagné (€)',
-            'Déjà versé (€)', 'Solde disponible (€)',
+            'Déjà versé (€)', 'Solde disponible (€)', 'Net à payer (€)',
         ];
 
         const escapeCSV = (value: string) => {
@@ -217,6 +217,7 @@ export const GuidesBalances: React.FC = () => {
                 Number(guide.total_earned).toFixed(2),
                 Number(guide.total_paid).toFixed(2),
                 Number(guide.balance).toFixed(2),
+                (Number(guide.total_pending) + Number(guide.balance)).toFixed(2),
             ].join(',');
         });
 
@@ -429,13 +430,14 @@ export const GuidesBalances: React.FC = () => {
                                                 {balanceSort === 'asc' && <ArrowUp size={14} style={{ color: '#059669' }} />}
                                             </div>
                                         </th>
+                                        <th>Net à payer</th>
                                         <th className="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {paginatedGuides.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+                                            <td colSpan={9} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
                                                 Aucun guide avec des avis validés trouvé
                                             </td>
                                         </tr>
@@ -515,6 +517,18 @@ export const GuidesBalances: React.FC = () => {
                                                         );
                                                     })()}
                                                 </div>
+                                            </td>
+                                            {/* Net à payer = pending + solde libre */}
+                                            <td>
+                                                {(() => {
+                                                    const net = Number(guide.total_pending) + Number(guide.balance);
+                                                    if (net <= 0) return <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>—</span>;
+                                                    return (
+                                                        <div style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ede9fe', borderRadius: '10px', width: 'fit-content', fontWeight: 800, fontSize: '1rem', color: '#7c3aed' }}>
+                                                            {net.toFixed(2)}€
+                                                        </div>
+                                                    );
+                                                })()}
                                             </td>
                                             <td className="actions-cell">
                                                 {(Number(guide.total_pending) + Number(guide.balance)) > 0 ? (
