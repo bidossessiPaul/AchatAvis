@@ -170,10 +170,12 @@ export const GuidesBalances: React.FC = () => {
         ];
 
         const escapeCSV = (value: string) => {
-            if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                return `"${value.replace(/"/g, '""')}"`;
+            // Préfixe les valeurs commençant par =+-@\t\r pour neutraliser l'injection de formule Excel
+            const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+            if (safe.includes(',') || safe.includes('"') || safe.includes('\n')) {
+                return `"${safe.replace(/"/g, '""')}"`;
             }
-            return value;
+            return safe;
         };
 
         const methodLabel = (method: string) => {
