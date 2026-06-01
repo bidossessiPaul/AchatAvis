@@ -178,27 +178,35 @@ export const AllFiches: React.FC = () => {
                             <div className="fiche-card-content">
                                 <div className="fiche-card-header">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                        <div className="payout-badge">
-                                            <DollarSign size={14} />
-                                            {Number((fiche.payout_per_review || 1.50) + (fiche.urgency_bonus || 0)).toFixed(2)}€
-                                            {fiche.urgency_bonus > 0 && (
-                                                <span style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: 700 }}>
-                                                    ({Number(fiche.payout_per_review || 1.50).toFixed(2)} +0,15€)
-                                                </span>
-                                            )}
-                                        </div>
-                                        {fiche.urgency_bonus > 0 && (
-                                            <div style={{
-                                                display: 'flex', alignItems: 'center', gap: '4px',
-                                                background: '#fef3c7', color: '#92400e',
-                                                border: '1px solid #fde68a',
-                                                borderRadius: '1rem', padding: '0.2rem 0.6rem',
-                                                fontSize: '0.7rem', fontWeight: 700
-                                            }}>
-                                                <Zap size={11} /> BONUS URGENCE
-                                            </div>
-                                        )}
-                                        {Number(fiche.active_submissions) === 0 && fiche.urgency_bonus <= 0 && (
+                                        {(() => {
+                                            const base = Number(fiche.payout_per_review) || 1.50;
+                                            const bonus = Number(fiche.urgency_bonus) || 0;
+                                            return (
+                                                <>
+                                                    <div className="payout-badge">
+                                                        <DollarSign size={14} />
+                                                        {(base + bonus).toFixed(2)}€
+                                                        {bonus > 0 && (
+                                                            <span style={{ fontSize: '0.7rem', color: '#b91c1c', fontWeight: 700 }}>
+                                                                ({base.toFixed(2)} +0,15€)
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {bonus > 0 && (
+                                                        <div style={{
+                                                            display: 'flex', alignItems: 'center', gap: '4px',
+                                                            background: '#fee2e2', color: '#991b1b',
+                                                            border: '1px solid #fecaca',
+                                                            borderRadius: '1rem', padding: '0.2rem 0.6rem',
+                                                            fontSize: '0.7rem', fontWeight: 700
+                                                        }}>
+                                                            <Zap size={11} /> BONUS URGENCE
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
+                                        {Number(fiche.active_submissions) === 0 && !(Number(fiche.urgency_bonus) > 0) && (
                                             <div style={{
                                                 display: 'flex', alignItems: 'center', gap: '4px',
                                                 background: '#ede9fe', color: '#6d28d9',
