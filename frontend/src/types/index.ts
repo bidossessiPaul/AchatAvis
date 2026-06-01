@@ -161,6 +161,8 @@ export interface ReviewOrder {
     establishment_id?: string;
     city?: string;
     daily_submissions_count?: number;
+    urgency_bonus?: number;
+    active_submissions?: number;
 }
 
 export interface ProposalImage {

@@ -84,16 +84,25 @@ export const registerGuide = async (req: Request, res: Response) => {
         if (error instanceof ZodError) {
             console.error('Validation error details:', JSON.stringify(error.errors, null, 2));
             return res.status(400).json({
-                error: 'Validation failed',
+                error: 'Certains champs sont invalides. Vérifiez votre saisie et réessayez.',
                 details: error.errors,
             });
         }
 
-        if (error.message === 'Email already registered') {
-            return res.status(409).json({ error: error.message });
+        if (error.message === 'Email already registered' || (error.errno === 1062 && error.message?.includes('email'))) {
+            return res.status(409).json({ error: 'Cette adresse email est déjà associée à un compte. Connectez-vous ou utilisez une autre adresse.' });
         }
 
-        return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
+        if (error.message === 'ACCOUNT_SUSPENDED') {
+            return res.status(403).json({ error: 'Ce compte a été suspendu. Contactez le support pour plus d\'informations.' });
+        }
+
+        if (error.message === 'Cet email est déjà utilisé') {
+            return res.status(409).json({ error: 'Cette adresse email est déjà associée à un compte. Connectez-vous ou utilisez une autre adresse.' });
+        }
+
+        console.error('[registerGuide] Erreur inattendue:', error);
+        return res.status(500).json({ error: 'L\'inscription a échoué. Vérifiez votre connexion et réessayez dans quelques instants.' });
     }
 };
 

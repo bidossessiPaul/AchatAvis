@@ -771,7 +771,12 @@ export const FicheDetail: React.FC = () => {
                                 <div>
                                     <p className="instruction-label">Rémunération</p>
                                     <p className="instruction-value price">
-                                        {Number(fiche.payout_per_review || 1.50).toFixed(2)} €
+                                        {Number((fiche.payout_per_review || 1.50) + (fiche.urgency_bonus || 0)).toFixed(2)} €
+                                        {(fiche.urgency_bonus || 0) > 0 && (
+                                            <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600, marginLeft: '6px' }}>
+                                                (+0,15€ bonus urgence)
+                                            </span>
+                                        )}
                                     </p>
                                     <p className="instruction-value" style={{ fontSize: 'var(--text-xs)' }}>par avis validé</p>
                                 </div>

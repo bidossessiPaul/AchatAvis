@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search, LayoutGrid, List } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Shield, Filter, Search, LayoutGrid, List, Zap, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import './GuideDashboard.css'; // Reuse existing styles
@@ -177,8 +177,38 @@ export const AllFiches: React.FC = () => {
                         >
                             <div className="fiche-card-content">
                                 <div className="fiche-card-header">
-                                    <div className="payout-badge">
-                                        <DollarSign size={14} /> {Number(fiche.payout_per_review || 1.50).toFixed(2)}€
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                        <div className="payout-badge">
+                                            <DollarSign size={14} />
+                                            {Number((fiche.payout_per_review || 1.50) + (fiche.urgency_bonus || 0)).toFixed(2)}€
+                                            {fiche.urgency_bonus > 0 && (
+                                                <span style={{ fontSize: '0.7rem', color: '#d97706', fontWeight: 700 }}>
+                                                    ({Number(fiche.payout_per_review || 1.50).toFixed(2)} +0,15€)
+                                                </span>
+                                            )}
+                                        </div>
+                                        {fiche.urgency_bonus > 0 && (
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', gap: '4px',
+                                                background: '#fef3c7', color: '#92400e',
+                                                border: '1px solid #fde68a',
+                                                borderRadius: '1rem', padding: '0.2rem 0.6rem',
+                                                fontSize: '0.7rem', fontWeight: 700
+                                            }}>
+                                                <Zap size={11} /> BONUS URGENCE
+                                            </div>
+                                        )}
+                                        {Number(fiche.active_submissions) === 0 && fiche.urgency_bonus <= 0 && (
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', gap: '4px',
+                                                background: '#ede9fe', color: '#6d28d9',
+                                                border: '1px solid #ddd6fe',
+                                                borderRadius: '1rem', padding: '0.2rem 0.6rem',
+                                                fontSize: '0.7rem', fontWeight: 700
+                                            }}>
+                                                <TrendingUp size={11} /> PRIORITAIRE
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

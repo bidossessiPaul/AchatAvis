@@ -138,8 +138,10 @@ export const deleteUser = async (userId: string) => {
     // et joignable sur cet userId. L'utilisateur ne peut plus se connecter
     // (login check WHERE deleted_at IS NULL), ne figure plus dans les listes admin,
     // mais toutes ses données passées restent visibles.
+    // Libère l'email unique pour permettre une réinscription avec la même adresse
     const result = await query(
-        `UPDATE users SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+        `UPDATE users SET deleted_at = NOW(), email = CONCAT('deleted_', id, '_', email)
+         WHERE id = ? AND deleted_at IS NULL`,
         [userId]
     );
 

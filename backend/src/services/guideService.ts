@@ -159,14 +159,27 @@ export const guideService = {
                        WHERE s.order_id = o.id
                        AND DATE(s.submitted_at) = CURDATE()
                        AND s.status != 'rejected'
-                   ) as daily_submissions_count
+                   ) as daily_submissions_count,
+                   IF(
+                       TIMESTAMPDIFF(HOUR,
+                           COALESCE(
+                               (SELECT MAX(s_last.submitted_at) FROM reviews_submissions s_last
+                                WHERE s_last.order_id = o.id AND s_last.status != 'rejected'),
+                               o.published_at,
+                               o.created_at
+                           ),
+                           NOW()
+                       ) >= 48,
+                       0.15,
+                       0
+                   ) as urgency_bonus
             FROM reviews_orders o
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
             WHERE o.status IN ('in_progress') AND o.deleted_at IS NULL
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
             AND (o.locked_by IS NULL OR o.locked_until < NOW() OR o.locked_by = ?)
-            ORDER BY RAND()
+            ORDER BY active_submissions ASC, RAND()
         `, [guideId, guideId]);
     },
 
@@ -201,7 +214,20 @@ export const guideService = {
         const orderResult: any = await query(`
             SELECT o.*, a.company_name as artisan_company, a.city,
                    sd.difficulty, sd.icon_emoji as sector_icon, sd.sector_name,
-                   sd.required_gmail_level
+                   sd.required_gmail_level,
+                   IF(
+                       TIMESTAMPDIFF(HOUR,
+                           COALESCE(
+                               (SELECT MAX(s_last.submitted_at) FROM reviews_submissions s_last
+                                WHERE s_last.order_id = o.id AND s_last.status != 'rejected'),
+                               o.published_at,
+                               o.created_at
+                           ),
+                           NOW()
+                       ) >= 48,
+                       0.15,
+                       0
+                   ) as urgency_bonus
             FROM reviews_orders o
             JOIN artisans_profiles a ON o.artisan_id = a.user_id
             LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
@@ -599,9 +625,27 @@ export const guideService = {
             payoutAmount = Number(orderInfo[0]?.payout_per_review || 1.00);
         }
 
+        // Bonus urgence : +0,15€ si aucune soumission valide depuis 48h sur cette fiche
+        const urgencyResult: any = await query(`
+            SELECT IF(
+                TIMESTAMPDIFF(HOUR,
+                    COALESCE(
+                        (SELECT MAX(s.submitted_at) FROM reviews_submissions s
+                         WHERE s.order_id = ? AND s.status != 'rejected'),
+                        (SELECT published_at FROM reviews_orders WHERE id = ?),
+                        (SELECT created_at FROM reviews_orders WHERE id = ?)
+                    ),
+                    NOW()
+                ) >= 48,
+                0.15,
+                0
+            ) as urgency_bonus
+        `, [data.orderId, data.orderId, data.orderId]);
+        payoutAmount += Number(urgencyResult[0]?.urgency_bonus || 0);
+
         // 1. Check if this guide already submitted for THIS proposal
         const existingProp: any = await query(`
-            SELECT id FROM reviews_submissions 
+            SELECT id FROM reviews_submissions
             WHERE guide_id = ? AND proposal_id = ?
         `, [guideId, data.proposalId]);
 
