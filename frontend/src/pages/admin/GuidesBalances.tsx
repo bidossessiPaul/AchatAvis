@@ -33,9 +33,12 @@ interface GuideBalance {
     preferred_payout_method: string;
     payout_details: any;
     validated_reviews_count: number;
+    earned_from_reviews: number;
+    total_bonuses: number;
     total_earned: number;
     total_paid: number;
     total_pending: number;
+    oldest_pending_at: string | null;
     balance: number;
 }
 
@@ -159,7 +162,12 @@ export const GuidesBalances: React.FC = () => {
 
     const exportCSV = () => {
         const dataToExport = sortedGuides;
-        const headers = ['Nom', 'Email', 'Téléphone', 'Moyen de paiement', 'Coordonnées Paiement', 'Avis Validés', 'Total Gagné (€)', 'Déjà Payé (€)', 'En attente retrait (€)', 'Solde disponible (€)', 'Net à payer (€)'];
+        const headers = [
+            'Nom guide', 'Email', 'Téléphone',
+            'Moyen de paiement', 'Nom bénéficiaire', 'IBAN / Numéro / Email paiement', 'BIC / Réseau',
+            'Avis validés', 'Gains avis (€)', 'Extras (€)', 'Total gagné (€)',
+            'Déjà versé (€)', 'Solde disponible (€)',
+        ];
 
         const escapeCSV = (value: string) => {
             if (value.includes(',') || value.includes('"') || value.includes('\n')) {
@@ -168,56 +176,47 @@ export const GuidesBalances: React.FC = () => {
             return value;
         };
 
-        const getPayoutDetailsText = (guide: GuideBalance): string => {
-            const details = typeof guide.payout_details === 'string'
-                ? (() => { try { return JSON.parse(guide.payout_details); } catch { return null; } })()
-                : guide.payout_details;
-            if (!details || Object.keys(details).length === 0) return '';
-            const method = guide.preferred_payout_method;
-            if (method === 'bank_transfer') {
-                const parts = [];
-                // Accepte camelCase (accountName) et snake_case (account_name) selon l'âge du record
-                const name = details.accountName || details.account_name;
-                if (name) parts.push(name);
-                if (details.iban) parts.push(`IBAN: ${details.iban}`);
-                if (details.bic) parts.push(`BIC: ${details.bic}`);
-                return parts.join(' | ');
-            }
-            if (method === 'paypal') return details.email || details.paypal_email || '';
-            if (method === 'mobile_money' || method === 'wave') {
-                const parts = [];
-                if (details.network) parts.push(details.network);
-                const name = details.fullName || details.full_name;
-                if (name) parts.push(name);
-                const phone = details.phone || details.phone_number;
-                if (phone) parts.push(phone);
-                return parts.join(' | ');
-            }
-            if (method === 'other') return details.info || '';
-            return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(' | ');
-        };
-
-        const getMethodLabel = (method: string): string => {
-            if (method === 'bank_transfer') return 'Virement';
+        const methodLabel = (method: string) => {
+            if (method === 'bank_transfer') return 'Virement bancaire';
             if (method === 'paypal') return 'PayPal';
             if (method === 'mobile_money') return 'Mobile Money';
             if (method === 'wave') return 'Wave';
             return method || '';
         };
 
-        const rows = dataToExport.map(guide => [
-            escapeCSV(guide.full_name || ''),
-            escapeCSV(guide.google_email || guide.email || ''),
-            escapeCSV(guide.phone || ''),
-            escapeCSV(getMethodLabel(guide.preferred_payout_method)),
-            escapeCSV(getPayoutDetailsText(guide)),
-            String(guide.validated_reviews_count),
-            Number(guide.total_earned).toFixed(2),
-            (Number(guide.total_paid) + Number(guide.total_pending)).toFixed(2),
-            Number(guide.total_pending).toFixed(2),
-            Number(guide.balance).toFixed(2),
-            (Number(guide.total_pending) + Number(guide.balance)).toFixed(2),
-        ].join(','));
+        const parseDetails = (guide: GuideBalance) => {
+            const d = (() => {
+                if (!guide.payout_details) return {};
+                if (typeof guide.payout_details === 'string') {
+                    try { return JSON.parse(guide.payout_details); } catch { return {}; }
+                }
+                return guide.payout_details;
+            })();
+            const m = guide.preferred_payout_method;
+            if (m === 'bank_transfer') return { name: d.accountName || d.account_name || '', ref: d.iban || '', extra: d.bic || '' };
+            if (m === 'paypal') return { name: d.name || '', ref: d.email || d.paypal_email || '', extra: '' };
+            if (m === 'mobile_money' || m === 'wave') return { name: d.fullName || d.full_name || '', ref: d.phone || d.phone_number || '', extra: d.network || '' };
+            return { name: '', ref: d.info || '', extra: '' };
+        };
+
+        const rows = dataToExport.map(guide => {
+            const { name, ref, extra } = parseDetails(guide);
+            return [
+                escapeCSV(guide.full_name || ''),
+                escapeCSV(guide.google_email || guide.email || ''),
+                escapeCSV(guide.phone || ''),
+                escapeCSV(methodLabel(guide.preferred_payout_method)),
+                escapeCSV(name),
+                escapeCSV(ref),
+                escapeCSV(extra),
+                String(guide.validated_reviews_count),
+                Number(guide.earned_from_reviews).toFixed(2),
+                Number(guide.total_bonuses).toFixed(2),
+                Number(guide.total_earned).toFixed(2),
+                Number(guide.total_paid).toFixed(2),
+                Number(guide.balance).toFixed(2),
+            ].join(',');
+        });
 
         const csv = '\uFEFF' + [headers.join(','), ...rows].join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -250,7 +249,8 @@ export const GuidesBalances: React.FC = () => {
     // Stats
     const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
     const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
-    const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid) + Number(g.total_pending), 0);
+    const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid), 0);
+    const totalBonuses = guides.reduce((sum, g) => sum + Number(g.total_bonuses), 0);
     const totalPending = guides.reduce((sum, g) => sum + Number(g.total_pending), 0);
     const guidesWithPending = guides.filter(g => Number(g.total_pending) > 0).length;
     const guidesWithBalance = guides.filter(g => Number(g.balance) > 0).length;
@@ -291,7 +291,18 @@ export const GuidesBalances: React.FC = () => {
                         minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalPaid.toFixed(2)}€</div>
-                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Déjà payé</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Versé réel</div>
+                    </div>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                        borderRadius: '1rem',
+                        padding: '1.25rem 1.5rem',
+                        color: 'white',
+                        flex: 1,
+                        minWidth: '160px'
+                    }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBonuses.toFixed(2)}€</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Extras versés</div>
                     </div>
                     <div style={{
                         background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
@@ -400,12 +411,11 @@ export const GuidesBalances: React.FC = () => {
                                 <thead>
                                     <tr>
                                         <th>Guide</th>
-                                        <th>Coordonnées Paiement</th>
-                                        <th>Avis Validés</th>
-                                        <th>Total Gagné</th>
-                                        <th>Déjà Payé</th>
-                                        <th>Moyen de paiement</th>
-                                        <th>En attente retrait</th>
+                                        <th>Avis validés</th>
+                                        <th>Gains avis</th>
+                                        <th>Extras</th>
+                                        <th>Total gagné</th>
+                                        <th>Déjà versé</th>
                                         <th
                                             onClick={() => setBalanceSort(prev => prev === 'none' ? 'desc' : prev === 'desc' ? 'asc' : 'none')}
                                             style={{ cursor: 'pointer', userSelect: 'none' }}
@@ -417,14 +427,13 @@ export const GuidesBalances: React.FC = () => {
                                                 {balanceSort === 'asc' && <ArrowUp size={14} style={{ color: '#059669' }} />}
                                             </div>
                                         </th>
-                                        <th>Net à payer</th>
                                         <th className="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {paginatedGuides.length === 0 ? (
                                         <tr>
-                                            <td colSpan={10} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
+                                            <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: 'var(--gray-500)' }}>
                                                 Aucun guide avec des avis validés trouvé
                                             </td>
                                         </tr>
@@ -450,158 +459,60 @@ export const GuidesBalances: React.FC = () => {
                                                     </div>
                                                 </div>
                                             </td>
+                                            {/* Avis validés */}
                                             <td>
-                                                {(() => {
-                                                    const details = typeof guide.payout_details === 'string'
-                                                        ? (() => { try { return JSON.parse(guide.payout_details); } catch { return null; } })()
-                                                        : guide.payout_details;
-                                                    if (!details || Object.keys(details).length === 0) {
-                                                        return <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontStyle: 'italic' }}>Non renseigné</span>;
-                                                    }
-                                                    const method = guide.preferred_payout_method;
-                                                    if (method === 'bank_transfer') {
-                                                        const name = details.accountName || details.account_name;
-                                                        return (
-                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                                                {name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{name}</div>}
-                                                                {details.iban && <div style={{ color: 'var(--gray-600)' }}>IBAN: <span style={{ fontWeight: 600, fontFamily: 'monospace', letterSpacing: '0.5px' }}>{details.iban}</span></div>}
-                                                                {details.bic && <div style={{ color: 'var(--gray-500)' }}>BIC: <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{details.bic}</span></div>}
-                                                            </div>
-                                                        );
-                                                    }
-                                                    if (method === 'paypal') {
-                                                        return (
-                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                                                <div style={{ color: 'var(--gray-600)' }}>{details.email || details.paypal_email}</div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    if (method === 'mobile_money' || method === 'wave') {
-                                                        const name = details.fullName || details.full_name;
-                                                        const phone = details.phone || details.phone_number;
-                                                        return (
-                                                            <div style={{ fontSize: '0.75rem', lineHeight: 1.6 }}>
-                                                                {details.network && <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.1rem' }}>{details.network}</div>}
-                                                                {name && <div style={{ fontWeight: 600, color: 'var(--gray-700)' }}>{name}</div>}
-                                                                {phone && <div style={{ color: 'var(--gray-600)', fontFamily: 'monospace' }}>{phone}</div>}
-                                                            </div>
-                                                        );
-                                                    }
-                                                    // Fallback: show raw keys
-                                                    return (
-                                                        <div style={{ fontSize: '0.75rem', lineHeight: 1.6, color: 'var(--gray-600)' }}>
-                                                            {Object.entries(details).map(([key, val]) => (
-                                                                <div key={key}>{key}: {String(val)}</div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </td>
-                                            <td>
-                                                <span style={{
-                                                    padding: '0.3rem 0.7rem',
-                                                    backgroundColor: '#f0f9ff',
-                                                    borderRadius: '8px',
-                                                    fontWeight: 700,
-                                                    color: '#0369a1',
-                                                    fontSize: '0.9rem'
-                                                }}>
+                                                <span style={{ padding: '0.3rem 0.7rem', backgroundColor: '#f0f9ff', borderRadius: '8px', fontWeight: 700, color: '#0369a1', fontSize: '0.9rem' }}>
                                                     {guide.validated_reviews_count}
                                                 </span>
                                             </td>
+                                            {/* Gains avis uniquement */}
                                             <td style={{ fontWeight: 600, color: 'var(--gray-700)' }}>
-                                                {Number(guide.total_earned).toFixed(2)}€
+                                                {Number(guide.earned_from_reviews).toFixed(2)}€
                                             </td>
-                                            <td style={{ color: 'var(--gray-500)' }}>
-                                                {(Number(guide.total_paid) + Number(guide.total_pending)).toFixed(2)}€
-                                            </td>
+                                            {/* Extras : primes, bonuses admin */}
                                             <td>
-                                                {guide.preferred_payout_method ? (
-                                                    <span style={{
-                                                        padding: '0.3rem 0.6rem',
-                                                        borderRadius: '6px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        backgroundColor: guide.preferred_payout_method === 'bank_transfer' ? '#eff6ff' :
-                                                            guide.preferred_payout_method === 'paypal' ? '#fef3c7' :
-                                                            guide.preferred_payout_method === 'mobile_money' ? '#ecfdf5' :
-                                                            guide.preferred_payout_method === 'wave' ? '#f0f9ff' : '#f3f4f6',
-                                                        color: guide.preferred_payout_method === 'bank_transfer' ? '#1d4ed8' :
-                                                            guide.preferred_payout_method === 'paypal' ? '#b45309' :
-                                                            guide.preferred_payout_method === 'mobile_money' ? '#047857' :
-                                                            guide.preferred_payout_method === 'wave' ? '#0369a1' : '#4b5563'
-                                                    }}>
-                                                        {guide.preferred_payout_method === 'bank_transfer' ? 'Virement' :
-                                                         guide.preferred_payout_method === 'paypal' ? 'PayPal' :
-                                                         guide.preferred_payout_method === 'mobile_money' ? 'Mobile Money' :
-                                                         guide.preferred_payout_method === 'wave' ? 'Wave' :
-                                                         guide.preferred_payout_method}
+                                                {Number(guide.total_bonuses) > 0 ? (
+                                                    <span style={{ padding: '0.25rem 0.6rem', background: '#ede9fe', color: '#6d28d9', border: '1px solid #ddd6fe', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                        +{Number(guide.total_bonuses).toFixed(2)}€
                                                     </span>
-                                                ) : (
-                                                    <span style={{ fontSize: '0.75rem', color: 'var(--gray-400)', fontStyle: 'italic' }}>
-                                                        Non défini
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td>
-                                                {Number(guide.total_pending) > 0 ? (
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: '6px',
-                                                        padding: '0.4rem 0.8rem',
-                                                        backgroundColor: '#fef3c7',
-                                                        borderRadius: '10px',
-                                                        width: 'fit-content',
-                                                        border: '1px solid #fde68a'
-                                                    }}>
-                                                        <span style={{ fontSize: '1rem', fontWeight: 800, color: '#b45309' }}>
-                                                            {Number(guide.total_pending).toFixed(2)}€
-                                                        </span>
-                                                    </div>
                                                 ) : (
                                                     <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>—</span>
                                                 )}
                                             </td>
-                                            <td>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '0.4rem 0.8rem',
-                                                    backgroundColor: Number(guide.balance) > 0 ? '#ecfdf5' : Number(guide.balance) < 0 ? '#fef2f2' : 'var(--gray-50)',
-                                                    borderRadius: '10px',
-                                                    width: 'fit-content'
-                                                }}>
-                                                    <Wallet size={14} style={{ color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)' }} />
-                                                    <span style={{
-                                                        fontSize: '1.1rem',
-                                                        fontWeight: 800,
-                                                        color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)'
-                                                    }}>
-                                                        {Number(guide.balance).toFixed(2)}€
-                                                    </span>
-                                                </div>
+                                            {/* Total gagné = avis + extras */}
+                                            <td style={{ fontWeight: 700, color: '#0f172a' }}>
+                                                {Number(guide.total_earned).toFixed(2)}€
                                             </td>
+                                            {/* Déjà versé : payouts status='paid' uniquement */}
                                             <td>
-                                                {(() => {
-                                                    const net = Number(guide.total_pending) + Number(guide.balance);
-                                                    const color = net > 0 ? '#7c3aed' : net < 0 ? '#dc2626' : 'var(--gray-400)';
-                                                    const bg = net > 0 ? '#ede9fe' : net < 0 ? '#fef2f2' : 'var(--gray-50)';
-                                                    return (
-                                                        <div style={{
-                                                            padding: '0.4rem 0.8rem',
-                                                            backgroundColor: bg,
-                                                            borderRadius: '10px',
-                                                            width: 'fit-content',
-                                                            fontWeight: 800,
-                                                            fontSize: '1rem',
-                                                            color
-                                                        }}>
-                                                            {net.toFixed(2)}€
-                                                        </div>
-                                                    );
-                                                })()}
+                                                {Number(guide.total_paid) > 0
+                                                    ? <span style={{ color: '#059669', fontWeight: 600 }}>{Number(guide.total_paid).toFixed(2)}€</span>
+                                                    : <span style={{ color: 'var(--gray-400)', fontSize: '0.85rem' }}>—</span>
+                                                }
+                                            </td>
+                                            {/* Solde disponible + indicateur retrait en attente */}
+                                            <td>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: 'fit-content' }}>
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                        padding: '0.4rem 0.8rem',
+                                                        backgroundColor: Number(guide.balance) > 0 ? '#ecfdf5' : Number(guide.balance) < 0 ? '#fef2f2' : 'var(--gray-50)',
+                                                        borderRadius: '10px',
+                                                    }}>
+                                                        <Wallet size={14} style={{ color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)' }} />
+                                                        <span style={{ fontSize: '1rem', fontWeight: 800, color: Number(guide.balance) > 0 ? '#059669' : Number(guide.balance) < 0 ? '#dc2626' : 'var(--gray-400)' }}>
+                                                            {Number(guide.balance).toFixed(2)}€
+                                                        </span>
+                                                    </div>
+                                                    {Number(guide.total_pending) > 0 && guide.oldest_pending_at && (() => {
+                                                        const days = Math.floor((Date.now() - new Date(guide.oldest_pending_at).getTime()) / 86400000);
+                                                        return (
+                                                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: days >= 7 ? '#dc2626' : '#92400e', paddingLeft: '2px' }}>
+                                                                {days >= 7 ? `⚠ retrait ${days}j` : `retrait ${days}j`} — {Number(guide.total_pending).toFixed(2)}€
+                                                            </span>
+                                                        );
+                                                    })()}
+                                                </div>
                                             </td>
                                             <td className="actions-cell">
                                                 {(Number(guide.total_pending) + Number(guide.balance)) > 0 ? (

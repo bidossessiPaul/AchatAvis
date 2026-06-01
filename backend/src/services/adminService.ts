@@ -2504,7 +2504,8 @@ export const getGuidesWithBalance = async () => {
         LEFT JOIN (
             SELECT guide_id,
                    COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
-                   COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending
+                   COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending,
+                   MIN(CASE WHEN status IN ('pending', 'in_revision') THEN requested_at END) as oldest_pending_at
             FROM payout_requests
             GROUP BY guide_id
         ) pay ON u.id = pay.guide_id
