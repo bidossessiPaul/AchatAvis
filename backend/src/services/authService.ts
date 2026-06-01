@@ -170,7 +170,7 @@ export const registerGuide = async (data: GuideRegistrationInput, baseUrl?: stri
     // La suppression ne lève pas la suspension : un suspendu reste bloqué à l'inscription.
     const [suspendedCheck]: any = await pool.query(`
         SELECT 'primary' as source, u.id, u.email FROM users u
-        WHERE u.email = ? AND u.status = 'suspended' AND u.role = 'guide'
+        WHERE u.email = ? AND u.status = 'suspended'
         UNION
         SELECT 'gmail' as source, g.user_id as id, g.email FROM guide_gmail_accounts g
         JOIN users u ON g.user_id = u.id
