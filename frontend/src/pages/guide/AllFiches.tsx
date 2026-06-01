@@ -195,8 +195,8 @@ export const AllFiches: React.FC = () => {
                                                     {bonus > 0 && (
                                                         <div style={{
                                                             display: 'flex', alignItems: 'center', gap: '4px',
-                                                            background: '#fee2e2', color: '#991b1b',
-                                                            border: '1px solid #fecaca',
+                                                            background: '#dc2626', color: '#ffffff',
+                                                            border: '1px solid #b91c1c',
                                                             borderRadius: '1rem', padding: '0.2rem 0.6rem',
                                                             fontSize: '0.7rem', fontWeight: 700
                                                         }}>
