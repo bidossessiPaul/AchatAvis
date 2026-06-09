@@ -855,7 +855,7 @@ export const getRejectedSubmissions = async (filters: {
             SELECT s.id, s.review_url, s.google_email, s.rejection_reason, s.rejected_at,
                    s.allow_resubmit, s.allow_appeal, s.slot_released_at,
                    s.earnings, s.submitted_at,
-                   s.proposal_id, p.content as review_text,
+                   s.proposal_id, p.content as review_text, p.modified_by_artisan_at,
                    u.id as guide_id, u.full_name as guide_name, u.email as guide_email,
                    ro.id as order_id, ro.company_name, ro.quantity, ro.reviews_received, ro.status as order_status,
                    au.id as artisan_id, au.full_name as artisan_name,
@@ -2278,10 +2278,10 @@ export const updateProposal = async (proposalId: string, data: { content: string
 /**
  * Regenerate a single proposal's content using AI, keeping the same fiche context
  */
-export const regenerateProposal = async (proposalId: string): Promise<{ content: string; author_name: string; rating: number }> => {
+export const regenerateProposal = async (proposalId: string, force = false): Promise<{ content: string; author_name: string; rating: number }> => {
     // 1. Get proposal + order context
     const rows: any = await query(`
-        SELECT p.id, p.order_id, p.author_name, p.rating,
+        SELECT p.id, p.order_id, p.content, p.author_name, p.rating, p.modified_by_artisan_at,
                ro.company_name, ro.fiche_name, ro.company_context, ro.sector,
                ro.zones, ro.services, ro.staff_names, ro.specific_instructions,
                ap.company_name as artisan_company, ap.trade,
@@ -2298,6 +2298,11 @@ export const regenerateProposal = async (proposalId: string): Promise<{ content:
     }
 
     const order = rows[0];
+
+    // Ne jamais écraser un avis modifié par l'artisan sauf si force=true (action admin explicite)
+    if (order.modified_by_artisan_at && !force) {
+        return { content: order.content, author_name: order.author_name, rating: order.rating || 5 };
+    }
 
     // 2. Generate 1 new review with AI
     const { aiService } = await import('./aiService');

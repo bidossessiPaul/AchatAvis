@@ -369,7 +369,7 @@ export const artisanService = {
         const values: any[] = [];
         const placeholders: string[] = [];
 
-        const validExperienceTypes = ['tested', 'visited', 'online', 'hearsay'];
+        const validExperienceTypes = ['tested', 'visited', 'contact', 'hearsay'];
 
         for (const p of proposals) {
             const id = uuidv4();

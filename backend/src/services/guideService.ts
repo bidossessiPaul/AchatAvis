@@ -72,7 +72,7 @@ async function regenerateSingleProposal(proposalId: string, orderId: string): Pr
                         ELSE reserved_until
                     END
                 WHERE id = ?
-            `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId]);
+            `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'tested', proposalId]);
         } else {
             // Pas d'avis généré : libère le marqueur regen_pending ou les slots expirés
             await query(`
@@ -525,7 +525,7 @@ export const guideService = {
             UPDATE review_proposals
             SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW()
             WHERE id = ? AND reserved_by = ?
-        `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'online', proposalId, guideId]);
+        `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'tested', proposalId, guideId]);
 
         const updated: any[] = await query(
             `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,

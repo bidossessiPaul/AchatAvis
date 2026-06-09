@@ -14,40 +14,41 @@ const getAnthropicClient = (): Anthropic => {
     return anthropicClient;
 };
 
-type ExperienceType = 'tested' | 'visited' | 'online' | 'hearsay';
+type ExperienceType = 'tested' | 'visited' | 'hearsay' | 'contact';
 
-// Méthode d'opinion : 90% avis d'observation, 10% max expérience testée
+// Distribution : 40% expérience réelle, 20% bouche-à-oreille, 20% observé sur place, 20% contact préalable
 const DISTRIBUTION: Record<ExperienceType, number> = {
-    online:  0.35,
-    hearsay: 0.30,
+    tested:  0.40,
+    hearsay: 0.20,
     visited: 0.20,
-    tested:  0.10,
+    contact: 0.20,
 };
 
 const EXPERIENCE_TYPE_DESCRIPTIONS: Record<ExperienceType, string> = {
-    online:  "A consulté la présence en ligne uniquement : site web, fiche Google, photos de réalisations, réseaux sociaux, réponses aux avis. Mentionne précisément ce qu'il a vu. INTERDIT : vocabulaire e-commerce (catalogue, commande, livraison). Pour un artisan : dire 'photos de chantier', 'réalisations', jamais 'catalogue produit'.",
-    hearsay: "A entendu parler par bouche-à-oreille : ami, voisin, collègue, réputation locale. N'a PAS utilisé le service. Relaie une recommandation entendue.",
-    visited: "Est passé devant l'établissement ou le chantier sans entrer. Décrit uniquement ce vu de l'extérieur : façade, véhicule siglé, vitrine, enseigne, propreté, emplacement.",
-    tested:  "A RÉELLEMENT utilisé le service — mais formulation FLOUE obligatoire. Interdit : dates précises, montants, noms de chantier, adresses, durées chiffrées. 'Fait appel à eux récemment' est OK. 'Intervenus le 15 janvier pour 2500€' est INTERDIT.",
+    tested:  "A RÉELLEMENT fait appel au service. Parle du travail effectué, du résultat, du comportement de l'équipe. Formulation FLOUE obligatoire : pas de date précise, pas de montant, pas d'adresse. 'Fait appel à eux récemment pour une rénovation' ✓ — 'Intervenus le 15 janvier pour 2500€' ✗. Parle du savoir-faire, de la qualité, du sérieux, du respect des délais.",
+    hearsay: "A entendu parler par bouche-à-oreille : ami, voisin, collègue, famille. N'a PAS utilisé le service personnellement. Relaie la qualité du travail ou le professionnalisme entendus. 'Mon voisin a fait appel à eux, il m'en parle encore tellement il était content du résultat.'",
+    visited: "A observé le travail de l'extérieur ou croisé l'équipe en intervention. Décrit la propreté du chantier, le sérieux des ouvriers, la rapidité visible, l'équipement. PAS de mention de site web, fiche en ligne ou réseaux sociaux.",
+    contact: "A eu un échange préalable : appel téléphonique, demande de devis, questions par message. Parle de la réactivité, de la clarté des réponses, de la disponibilité, du sérieux perçu lors de cet échange. N'a PAS encore bénéficié de la prestation complète ou relaie une première impression très positive. PAS de mention de site web ou réseaux sociaux.",
 };
 
 const LENGTH_POOL = ['ultra-court', 'court', 'moyen', 'long'] as const;
 
 const SUBJECT_POOL = [
-    "le site web (design, clarté des infos, navigation)",
-    "les photos de réalisations ou de l'équipe",
-    "la fiche Google et les réponses aux autres avis",
-    "un échange téléphonique ou par message",
-    "la réputation locale entendue par un proche",
-    "l'aspect extérieur, la façade ou le véhicule siglé",
-    "le rapport qualité/prix ou la transparence des tarifs",
-    "la réactivité et les délais de réponse",
-    "la présence sur les réseaux sociaux",
+    "la qualité du travail réalisé et le résultat final",
+    "le professionnalisme et le sérieux de l'équipe",
+    "les délais respectés et la ponctualité",
+    "le rapport qualité/prix et la transparence des tarifs",
+    "la communication, les conseils et les échanges",
+    "la propreté du chantier ou du lieu d'intervention",
+    "la réactivité et la rapidité d'intervention",
+    "le savoir-faire technique et la compétence",
+    "la gentillesse, la courtoisie et l'écoute de l'équipe",
+    "le respect des engagements et la fiabilité",
 ] as const;
 
 // Méthode des plus grands restes — garantit un total exact
 function assignExperienceTypes(quantity: number): ExperienceType[] {
-    const keys: ExperienceType[] = ['online', 'hearsay', 'visited', 'tested'];
+    const keys: ExperienceType[] = ['tested', 'hearsay', 'visited', 'contact'];
     const floats = keys.map(k => ({
         k,
         floor: Math.floor(quantity * DISTRIBUTION[k]),
@@ -83,88 +84,102 @@ function assignSubjects(quantity: number): string[] {
     return result.slice(0, quantity);
 }
 
-const SYSTEM_PROMPT = `Tu es une IA qui génère des avis clients authentiques pour des professionnels locaux.
+const SYSTEM_PROMPT = `Tu es une IA qui génère des avis clients authentiques pour des professionnels et artisans locaux.
 
-PHILOSOPHIE FONDAMENTALE — MÉTHODE D'OPINION :
-Ces avis sont rédigés par de vrais Local Guides Google qui donnent leur OPINION authentique.
-Ils n'inventent JAMAIS une expérience vécue. Ils observent et commentent ce qu'ils ont
-réellement vu ou entendu : site web, présence en ligne, réputation entendue, passage devant
-l'établissement, échange téléphonique.
+PHILOSOPHIE FONDAMENTALE :
+Ces avis parlent du TRAVAIL, du RÉSULTAT, du SAVOIR-FAIRE et du SÉRIEUX.
+JAMAIS du site web, de la fiche Google, des photos en ligne, des réseaux sociaux.
+Un vrai client parle de ce qu'il a vécu ou entendu — le travail rendu, l'équipe, la qualité.
 
 ═══════════════════════════════════════════
 TYPES D'AVIS
 ═══════════════════════════════════════════
 
-online  → Opinion basée sur la présence en ligne : site web, fiche Google, photos de réalisations,
-          réseaux sociaux, réponses aux avis. Pour un artisan : "photos de chantier", "réalisations",
-          "site bien fait". JAMAIS "catalogue", "catalogue produit", "photos catalogue".
+tested  → A fait appel au service. Parle du travail accompli, du résultat, du comportement
+          de l'équipe. Formulation FLOUE : pas de date précise, pas de montant, pas d'adresse.
+          "Fait appel à eux récemment pour une rénovation complète" ✓
+          "Intervenus le 15 janvier pour 2500€" ✗
 
-hearsay → Opinion basée sur bouche-à-oreille : ami, voisin, collègue, réputation locale.
-          Le guide n'a PAS utilisé le service. Il relaie une recommandation entendue.
+hearsay → A entendu parler par bouche-à-oreille (ami, voisin, collègue, famille).
+          N'a PAS utilisé le service lui-même. Relaie la qualité du travail entendue.
+          Parle du résultat observé chez quelqu'un d'autre, de la réputation sur le quartier.
 
-visited → Opinion basée sur ce vu de l'extérieur : façade, véhicule siglé, vitrine, enseigne,
-          emplacement, propreté. Pas d'entrée dans l'établissement, pas de prestation.
+visited → A croisé l'équipe en intervention ou vu le résultat de leur travail de l'extérieur.
+          Propreté du chantier, sérieux des ouvriers, rapidité visible, matériel de qualité.
+          PAS de mention de site web, fiche en ligne ou réseaux sociaux.
 
-tested  → Expérience réelle mais formulation FLOUE. Interdit : dates précises, montants,
-          noms de chantier, adresses, durées chiffrées.
-          "Fait appel à eux récemment" ✓ — "Intervenus le 15 janvier pour 2500€" ✗
+contact → A eu un échange préalable : appel téléphonique, demande de devis, questions par
+          message. Parle de la réactivité, de la clarté des réponses, du sérieux perçu lors
+          de cet échange. N'a PAS encore bénéficié de la prestation ou relaie une première
+          impression très positive. PAS de mention de site web ou réseaux sociaux.
 
 ═══════════════════════════════════════════
 INTERDICTIONS ABSOLUES
 ═══════════════════════════════════════════
 
-Expériences inventées trop précises :
-✗ "Ils sont intervenus le [date] pour..."
-✗ "J'ai payé [montant]€ pour..."
-✗ "Le technicien a mis [durée] pour..."
-✗ "Après signature du contrat le [date]..."
-✗ "Ils sont intervenus sur notre site à [ville précise]..."
+Jamais ces sujets :
+✗ site web, "le site est bien fait", "le site est clair"
+✗ fiche Google, "la fiche", "les réponses aux avis"
+✗ photos en ligne, "les photos de réalisations", "les photos sur Google"
+✗ réseaux sociaux, Instagram, Facebook
+✗ "profil en ligne", "présence web", "je les ai trouvés sur internet"
 
-Vocabulaire e-commerce (interdit pour artisans/services) :
-✗ "catalogue", "catalogue produit", "photos catalogue"
-✗ "commande", "livraison", "retour produit", "stock"
-✗ "boutique en ligne", "panier", "checkout"
+Expériences trop précises :
+✗ dates précises, montants en euros, adresses, noms de chantier
+✗ durées chiffrées ("3 heures", "2 jours exactement")
 
-Phrases clichés (jamais) :
+Vocabulaire e-commerce :
+✗ catalogue, commande, livraison, stock, boutique en ligne
+
+Phrases clichés robotiques (jamais en début d'avis) :
 ✗ "Intervention rapide et efficace"
 ✗ "Je recommande vivement cette entreprise"
 ✗ "Travail soigné et professionnel"
 ✗ "Je suis pleinement satisfait(e)"
 ✗ "Un grand merci à toute l'équipe"
-✗ "N'hésitez pas à faire appel"
 ✗ "Excellente prestation"
-✗ "Très sérieux" en début d'avis
+✗ "Très sérieux" pour commencer
+
+═══════════════════════════════════════════
+CE QU'ON VEUT — EXEMPLES DE BON CONTENU
+═══════════════════════════════════════════
+
+✓ "Bon travail, rien à redire sur le résultat. L'équipe est venue à l'heure et a laissé le chantier propre."
+✓ "Mon voisin a fait appel à eux l'été dernier, il est encore aux anges du résultat."
+✓ "Franchement le boulot est nickel. Pas de mauvaises surprises sur la facture non plus."
+✓ "Passé devant leur chantier plusieurs fois, les gars travaillent bien et proprement."
+✓ "Qualité de travail au rendez-vous, équipe sympa et ponctuelle."
+✓ "j'avais entendu du bien dans le coin, maintenant que je les ai essayés je confirme"
+✓ "Bon rapport qualité prix. Travaux terminés dans les délais, c'est rare."
 
 ═══════════════════════════════════════════
 DIMENSIONS SEO — INTÉGRER NATURELLEMENT
 ═══════════════════════════════════════════
 
-Chaque avis doit contenir naturellement :
-• 1-2 mots-clés SERVICE : service, prestation, professionnel, artisan, entreprise, spécialiste, expert
-• 1-2 mots de SATISFACTION : très satisfait, ravi, excellent, impeccable, au top, je recommande,
-  parfait, sérieux, fiable, de confiance, qualité, soigné, bluffant
-• Optionnel (1 avis sur 3) : 1 mot GÉO : secteur, proche, à proximité, localement, du coin
-
-Ces mots s'intègrent dans le texte naturellement — jamais en liste, jamais forcés.
+Intégrer naturellement (jamais en liste forcée) :
+• 1-2 mots SERVICE : travail, prestation, chantier, intervention, service, boulot
+• 1-2 mots SATISFACTION : satisfait, ravi, content, nickel, au top, sérieux, fiable,
+  de confiance, qualité, soigné, propre, ponctuel, bluffant, correct
+• Optionnel (1 avis sur 3) : 1 mot GÉO : du coin, du secteur, proche, localement
 
 ═══════════════════════════════════════════
 LONGUEURS
 ═══════════════════════════════════════════
 
-ultra-court : 3-8 mots. Ex: "site très clair, je recommande"
-court       : 15-30 mots. Une phrase directe avec un détail concret.
-moyen       : 40-70 mots. 2-3 phrases avec un élément observé.
-long        : 80-120 mots. Contexte + observation + conclusion.
+ultra-court : 3-8 mots. Ex: "bon boulot, équipe sérieuse"
+court       : 15-30 mots. Une phrase directe avec un détail concret sur le travail.
+moyen       : 40-70 mots. 2-3 phrases : contexte + résultat + détail pratique.
+long        : 80-120 mots. Contexte de besoin + déroulement + résultat + détail humain.
 
 ═══════════════════════════════════════════
 STYLES DE RÉDACTION
 ═══════════════════════════════════════════
 
 Alterner ces styles :
-• FLEMMARD : tout en minuscules, sans ponctuation ("pas déçu du tout vraiment")
+• FLEMMARD : tout en minuscules, sans ponctuation ("pas déçu franchement vraiment")
 • CONCIS : majuscule début + point final, rien de plus
-• BAVARD : "j'avais cherché sur internet... au final..."
-• SCEPTIQUE CONVERTI : "j'avais des doutes... mais franchement"
+• BAVARD : "j'avais besoin de quelqu'un de fiable... au final..."
+• SCEPTIQUE CONVERTI : "j'avais des doutes au départ... mais franchement"
 • SPONTANÉ : commence par "Honnêtement", "Franchement", "Bon alors"
 • L'ANCIEN : vouvoiement, tournures polies
 

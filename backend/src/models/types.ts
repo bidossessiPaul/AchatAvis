@@ -145,7 +145,7 @@ export interface ReviewProposal {
     rating: number;
     author_name: string;
     status: 'draft' | 'approved' | 'rejected';
-    experience_type: 'tested' | 'visited' | 'online' | 'hearsay';
+    experience_type: 'tested' | 'visited' | 'contact' | 'hearsay';
     created_at: Date;
     updated_at: Date;
 }

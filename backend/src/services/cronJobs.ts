@@ -20,8 +20,9 @@ export const startCronJobs = () => {
 const autoRegenerateRejectedReviews = async () => {
     try {
         const rows: any = await query(`
-            SELECT rs.id, rs.proposal_id
+            SELECT rs.id, rs.proposal_id, rp.modified_by_artisan_at
             FROM reviews_submissions rs
+            JOIN review_proposals rp ON rp.id = rs.proposal_id
             WHERE rs.status = 'rejected'
               AND rs.recycled_at IS NULL
               AND rs.dismissed_at IS NULL
@@ -35,9 +36,13 @@ const autoRegenerateRejectedReviews = async () => {
 
         for (const row of rows) {
             try {
-                await regenerateProposal(row.proposal_id);
+                // Si l'artisan a modifié cet avis manuellement, ne pas écraser son contenu
+                if (!row.modified_by_artisan_at) {
+                    await regenerateProposal(row.proposal_id);
+                }
                 await recycleRejectedSubmissions([row.id]);
-                console.log(`[CRON] Soumission ${row.id} régénérée et remise en ligne`);
+                const label = row.modified_by_artisan_at ? 'recyclée (contenu artisan préservé)' : 'régénérée et remise en ligne';
+                console.log(`[CRON] Soumission ${row.id} ${label}`);
             } catch (e: any) {
                 console.error(`[CRON] Échec pour soumission ${row.id} :`, e.message);
             }

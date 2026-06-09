@@ -804,10 +804,12 @@ export const updateProposal = async (req: Request, res: Response) => {
  */
 export const regenerateProposal = async (req: Request, res: Response) => {
     const { proposalId } = req.params;
+    // force=true permet à l'admin d'écraser explicitement un avis modifié par l'artisan
+    const force = req.body?.force === true || req.query?.force === 'true';
 
     try {
-        const result = await adminService.regenerateProposal(proposalId);
-        await LogService.logAction(req.user!.userId, 'REGENERATE_PROPOSAL', 'proposal', proposalId, {}, req.ip);
+        const result = await adminService.regenerateProposal(proposalId, force);
+        await LogService.logAction(req.user!.userId, 'REGENERATE_PROPOSAL', 'proposal', proposalId, { force }, req.ip);
         res.json(result);
     } catch (error: any) {
         console.error('Regenerate proposal error:', error);

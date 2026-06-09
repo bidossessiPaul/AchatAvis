@@ -57,11 +57,15 @@ async function processOneFiche(fiche: any, force: boolean, preview: boolean, chu
     const proposals: any[] = await query(force ? `
         SELECT DISTINCT p.id FROM review_proposals p
         LEFT JOIN reviews_submissions s ON s.proposal_id = p.id AND s.status = 'validated'
-        WHERE p.order_id = ? AND p.deleted_at IS NULL AND s.id IS NULL ORDER BY p.created_at ASC
+        WHERE p.order_id = ? AND p.deleted_at IS NULL AND s.id IS NULL
+          AND p.modified_by_artisan_at IS NULL
+        ORDER BY p.created_at ASC
     ` : `
         SELECT p.id FROM review_proposals p
         LEFT JOIN reviews_submissions s ON s.proposal_id = p.id
-        WHERE p.order_id = ? AND s.id IS NULL AND p.deleted_at IS NULL ORDER BY p.created_at ASC
+        WHERE p.order_id = ? AND s.id IS NULL AND p.deleted_at IS NULL
+          AND p.modified_by_artisan_at IS NULL
+        ORDER BY p.created_at ASC
     `, [fiche.id]);
 
     if (proposals.length === 0) {
@@ -88,7 +92,7 @@ async function processOneFiche(fiche: any, force: boolean, preview: boolean, chu
         if (!review) continue;
         await query(
             `UPDATE review_proposals SET content=?, author_name=?, experience_type=?, updated_at=NOW() WHERE id=?`,
-            [review.content?.trim(), review.author_name?.trim(), review.experience_type || 'online', proposals[i].id]
+            [review.content?.trim(), review.author_name?.trim(), review.experience_type || 'tested', proposals[i].id]
         );
         updated++;
     }
