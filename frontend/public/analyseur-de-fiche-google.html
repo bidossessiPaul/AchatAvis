@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Analyseur de fiche Google — AchatAvis</title>
+<link rel="icon" type="image/png" href="favicon.png">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -406,6 +408,44 @@
   .volume-alert.warning  .volume-alert-text  { color: #c2410c; }
 
   /* Section avis négatifs */
+
+  /* ── MEGA MENU #aa-nav ── */
+  #aa-nav *, #aa-nav *::before, #aa-nav *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  #aa-nav a { text-decoration: none; color: inherit; }
+  #aa-nav ul { list-style: none; }
+  #aa-nav { --text: #0F172A; --text-soft: #475569; --border: #E2E8F0; --bg-soft: #F8FAFC; --blue: #2563EB; --blue-dark: #1D4ED8; --blue-light: #DBEAFE; --orange: #F97316; --shadow: 0 20px 60px -10px rgba(15,23,42,.15); font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+  #aa-nav .nav-list { display: flex; align-items: center; gap: 4px; }
+  #aa-nav .nav-item { position: relative; }
+  #aa-nav .nav-link { display: inline-flex; align-items: center; gap: 5px; padding: 9px 13px; font-size: 14.5px; font-weight: 600; color: var(--text); border-radius: 8px; cursor: pointer; transition: background .15s, color .15s; background: none; border: none; white-space: nowrap; }
+  #aa-nav .nav-link:hover, #aa-nav .nav-item.is-open .nav-link { background: var(--bg-soft); color: var(--blue); }
+  #aa-nav .nav-link i.chevron-icon { width: 11px !important; height: 11px !important; transition: transform .2s; flex-shrink: 0; }
+  #aa-nav .nav-item.is-open .nav-link i.chevron-icon { transform: rotate(180deg); }
+  #aa-nav .nav-link--accent { color: var(--blue); font-weight: 700; }
+  #aa-nav .nav-item::after { content: ''; position: absolute; top: 100%; left: -20px; right: -20px; height: 16px; background: transparent; }
+  #aa-nav .mega { position: absolute; top: calc(100% + 12px); left: 50%; transform: translateX(-50%) translateY(-6px); background: #fff; border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); padding: 28px 32px; min-width: 680px; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1), visibility .22s; z-index: 9999; }
+  #aa-nav .mega--narrow { min-width: 340px; padding: 20px 24px; }
+  #aa-nav .nav-item.is-open .mega { opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+  #aa-nav .mega::before { content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%) rotate(45deg); width: 12px; height: 12px; background: #fff; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+  #aa-nav .mega::after { content: ''; position: absolute; top: -14px; left: 0; right: 0; height: 14px; background: transparent; }
+  #aa-nav .mega__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 32px; }
+  #aa-nav .mega__grid--3 { grid-template-columns: repeat(3, 1fr); gap: 4px 28px; }
+  #aa-nav .mega__col-title { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--text-soft); padding: 0 12px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
+  #aa-nav .mega__link { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; transition: background .13s; min-height: 60px; }
+  #aa-nav .mega__link:hover { background: var(--bg-soft); }
+  #aa-nav .mega__icon { width: 40px; height: 40px; border-radius: 10px; background: var(--blue-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  #aa-nav .mega__icon i { width: 19px !important; height: 19px !important; }
+  #aa-nav .mega__icon--orange { background: #FFEDD5; }
+  #aa-nav .mega__icon--green  { background: #DCFCE7; }
+  #aa-nav .mega__icon--purple { background: #F3E8FF; }
+  #aa-nav .mega__icon--pink   { background: #FCE7F3; }
+  #aa-nav .mega__icon--yellow { background: #FEF9C3; }
+  #aa-nav .mega__text { display: flex; flex-direction: column; gap: 3px; }
+  #aa-nav .mega__title { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.35; }
+  #aa-nav .mega__desc  { font-size: 12.5px; color: var(--text-soft); line-height: 1.45; }
+  #aa-nav .mega__badge { display: inline-block; background: var(--orange); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; text-transform: uppercase; letter-spacing: .5px; vertical-align: middle; }
+  #aa-nav .mega__footer { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-soft); }
+  #aa-nav .mega__footer-link { color: var(--blue); font-weight: 600; }
+  #aa-nav .mega__footer-link:hover { color: var(--blue-dark); }
 </style>
 </head>
 <body>
@@ -417,15 +457,225 @@
 
 <nav class="nav">
   <div class="logo"><a href="https://achatavis.com/"><img src="logo.png" alt="Achat Avis" style="height:48px; width:auto; display:block;"></a></div>
-  <div class="nav-links">
-    <a href="https://achatavis.com/calculateur-davis/">Calculateur d'avis</a>
-    <a href="https://achatavis.com/analyseur-de-fiche-google/" class="active">Analyseur de fiche Google</a>
-    <a href="https://achatavis.com/#tarifs">Tarifs</a>
-    <a href="https://achatavis.com/remove-fiche-google/">Suppression de fiche</a>
-    <a href="https://achatavis.com/creation-de-fiche-gmb/">Creation de fiche GMB</a>
-  </div>
+
+  <nav id="aa-nav" aria-label="Navigation principale">
+    <ul class="nav-list">
+
+      <!-- ACHETER DES AVIS -->
+      <li class="nav-item" data-menu="avis">
+        <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+          Acheter des avis
+          <i data-lucide="chevron-down" class="chevron-icon"></i>
+        </button>
+        <div class="mega">
+          <div class="mega__grid">
+            <div>
+              <div class="mega__col-title">Plateformes principales</div>
+              <a href="https://achatavis.com/acheter-des-avis-google/" class="mega__link">
+                <div class="mega__icon" style="background:#E8F0FE;"><i data-lucide="map-pin" style="color:#4285F4;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Avis Google My Business</div>
+                  <div class="mega__desc">Local Guides vérifiés, dès 5,98€</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/acheter-des-avis-trustpilot-verifies-boostez-votre-e-commerce/" class="mega__link">
+                <div class="mega__icon mega__icon--green"><i data-lucide="star" style="color:#059669;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Avis Trustpilot</div>
+                  <div class="mega__desc">Boostez votre e-commerce</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/acheter-des-avis-tripadvisor/" class="mega__link">
+                <div class="mega__icon mega__icon--orange"><i data-lucide="compass" style="color:#EA580C;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Avis Tripadvisor</div>
+                  <div class="mega__desc">Restaurants, hôtels, activités</div>
+                </div>
+              </a>
+            </div>
+            <div>
+              <div class="mega__col-title">Par secteur</div>
+              <a href="https://achatavis.com/avis-google-artisans/" class="mega__link">
+                <div class="mega__icon mega__icon--purple"><i data-lucide="wrench" style="color:#7C3AED;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Avis pour artisans</div>
+                  <div class="mega__desc">Plombier, électricien, serrurier…</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/acheter-des-avis-toutes-plateformes/" class="mega__link">
+                <div class="mega__icon mega__icon--pink"><i data-lucide="globe" style="color:#BE185D;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Autres plateformes</div>
+                  <div class="mega__desc">Yelp, Pages Jaunes, Facebook…</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/calculateur-davis/" class="mega__link">
+                <div class="mega__icon"><i data-lucide="calculator" style="color:#2563EB;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Calculateur d'avis</div>
+                  <div class="mega__desc">Estimez votre besoin en 30s</div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="mega__footer">
+            <span>5 avis gratuits offerts</span>
+            <a href="https://achatavis.com/services/" class="mega__footer-link">Voir tous nos services →</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- AGENCE -->
+      <li class="nav-item" data-menu="agence">
+        <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+          Agence
+          <i data-lucide="chevron-down" class="chevron-icon"></i>
+        </button>
+        <div class="mega">
+          <div class="mega__grid mega__grid--3">
+            <div>
+              <div class="mega__col-title">Fiche Google</div>
+              <a href="https://achatavis.com/creation-fiche-google-business-profile-en-48h/" class="mega__link">
+                <div class="mega__icon"><i data-lucide="map-pin" style="color:#2563EB;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Création de fiche</div>
+                  <div class="mega__desc">Référencement express en 48h</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/optimisation-fiche-google-maps/" class="mega__link">
+                <div class="mega__icon"><i data-lucide="trending-up" style="color:#2563EB;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Optimisation Google Maps<span class="mega__badge">Top</span></div>
+                  <div class="mega__desc">Top 3 du Local Pack</div>
+                </div>
+              </a>
+            </div>
+            <div>
+              <div class="mega__col-title">Publicité</div>
+              <a href="https://achatavis.com/gestion-google-ads/" class="mega__link">
+                <div class="mega__icon mega__icon--green"><i data-lucide="bar-chart-2" style="color:#059669;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Gestion Google Ads</div>
+                  <div class="mega__desc">Leads qualifiés, ROAS garanti</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/google-local-services-ads/" class="mega__link">
+                <div class="mega__icon mega__icon--orange"><i data-lucide="shield-check" style="color:#EA580C;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Local Services Ads</div>
+                  <div class="mega__desc">Badge Google Garanti</div>
+                </div>
+              </a>
+            </div>
+            <div>
+              <div class="mega__col-title">Site web</div>
+              <a href="https://achatavis.com/creation-site-internet-pro-seo-local/" class="mega__link">
+                <div class="mega__icon mega__icon--purple"><i data-lucide="monitor" style="color:#7C3AED;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Création site internet</div>
+                  <div class="mega__desc">SEO local + widget avis</div>
+                </div>
+              </a>
+            </div>
+          </div>
+          <div class="mega__footer">
+            <span>Audit gratuit de votre présence locale</span>
+            <a href="https://achatavis.com/agence/" class="mega__footer-link">Découvrir l'agence →</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- E-RÉPUTATION -->
+      <li class="nav-item" data-menu="reputation">
+        <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+          E-réputation
+          <i data-lucide="chevron-down" class="chevron-icon"></i>
+        </button>
+        <div class="mega">
+          <div class="mega__grid">
+            <div>
+              <div class="mega__col-title">Avis négatifs</div>
+              <a href="https://achatavis.com/gestion-des-avis-negatifs-google/" class="mega__link">
+                <div class="mega__icon mega__icon--orange"><i data-lucide="alert-triangle" style="color:#EA580C;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Gestion des avis négatifs</div>
+                  <div class="mega__desc">Réponse, suppression, dilution</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/supprimer-un-avis-google/" class="mega__link">
+                <div class="mega__icon mega__icon--pink"><i data-lucide="trash-2" style="color:#BE185D;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Supprimer un avis Google</div>
+                  <div class="mega__desc">Procédure complète + accompagnement</div>
+                </div>
+              </a>
+            </div>
+            <div>
+              <div class="mega__col-title">Suppression</div>
+              <a href="https://achatavis.com/remove-fiche-google/" class="mega__link">
+                <div class="mega__icon"><i data-lucide="x-circle" style="color:#2563EB;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Suppression de fiche</div>
+                  <div class="mega__desc">Fiche Google obsolète ou doublon</div>
+                </div>
+              </a>
+              <a href="https://achatavis.com/crisis-management-e-reputation/" class="mega__link">
+                <div class="mega__icon mega__icon--purple"><i data-lucide="shield" style="color:#7C3AED;"></i></div>
+                <div class="mega__text">
+                  <div class="mega__title">Crisis management</div>
+                  <div class="mega__desc">Pack gestion de crise</div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </li>
+
+      <!-- OUTILS -->
+      <li class="nav-item" data-menu="outils">
+        <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+          Outils
+          <i data-lucide="chevron-down" class="chevron-icon"></i>
+        </button>
+        <div class="mega mega--narrow">
+          <div class="mega__col-title">Outils gratuits</div>
+          <a href="https://achatavis.com/generateur-qr-code-avis-google/" class="mega__link">
+            <div class="mega__icon mega__icon--green"><i data-lucide="qr-code" style="color:#059669;"></i></div>
+            <div class="mega__text">
+              <div class="mega__title">Générateur QR Code avis<span class="mega__badge">Nouveau</span></div>
+              <div class="mega__desc">QR + jeu-concours pour multiplier vos avis</div>
+            </div>
+          </a>
+          <a href="https://achatavis.com/calculateur-davis/" class="mega__link">
+            <div class="mega__icon"><i data-lucide="calculator" style="color:#2563EB;"></i></div>
+            <div class="mega__text">
+              <div class="mega__title">Calculateur d'avis</div>
+              <div class="mega__desc">Combien d'avis vous faut-il ?</div>
+            </div>
+          </a>
+          <a href="https://manager.achatavis.com/analyseur-de-fiche-google.html" class="mega__link">
+            <div class="mega__icon mega__icon--orange"><i data-lucide="search" style="color:#EA580C;"></i></div>
+            <div class="mega__text">
+              <div class="mega__title">Audit fiche Google gratuit</div>
+              <div class="mega__desc">Score de performance en 60s</div>
+            </div>
+          </a>
+        </div>
+      </li>
+
+      <!-- LIENS DIRECTS -->
+      <li class="nav-item">
+        <a href="https://achatavis.com/#tarifs" class="nav-link">Tarifs</a>
+      </li>
+      <li class="nav-item">
+        <a href="https://achatavis.com/remove-fiche-google/" class="nav-link nav-link--accent">Suppression de fiche</a>
+      </li>
+
+    </ul>
+  </nav>
+
   <div class="nav-cta-group">
-    <a href="https://manager.achatavis.com/" class="btn-orange">🛡 Devenir Guide Local</a>
+    <a href="https://manager.achatavis.com/" class="btn-orange">Devenir Guide Local</a>
     <a href="https://manager.achatavis.com/" class="btn-outline">Connexion</a>
     <a href="https://achatavis.com/#tarifs" class="btn-blue" style="text-decoration:none;">Commencer</a>
   </div>
@@ -1469,14 +1719,16 @@
     }
 
     // Sync booster-impact avec la jauge (même valeur sans optim = baseValidation)
-    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + OPTIM.validationBoost, 55);
+    // Delta aléatoire entre 15 et 30 points pour "avec optim"
+    var boosterDelta = Math.floor(Math.random() * 16) + 15;
+    var avecOptimVal = Math.min(DIAGNOSTIC.baseValidation + boosterDelta, 95);
     var bSans = document.getElementById('boosterSansOptimNum');
     var bAvec = document.getElementById('boosterAvecOptimNum');
     var bDelta = document.getElementById('boosterOptimDelta');
     var upsellVal = document.getElementById('gauge1UpsellVal');
     if (bSans) bSans.textContent = DIAGNOSTIC.baseValidation + '%';
     if (bAvec) bAvec.textContent = avecOptimVal + '%';
-    if (bDelta) bDelta.textContent = '+' + (avecOptimVal - DIAGNOSTIC.baseValidation) + '%';
+    if (bDelta) bDelta.textContent = '+' + boosterDelta + '%';
     if (upsellVal) upsellVal.textContent = avecOptimVal + '%';
 
     // CTA upsell dynamique — montre le gain réel avec chiffres
@@ -1915,6 +2167,58 @@
         Swal.fire({ icon: 'error', title: 'Rapport introuvable', text: err.message, confirmButtonColor: '#2563eb' });
       });
   })();
+</script>
+
+<script>
+if (typeof lucide !== 'undefined') lucide.createIcons();
+
+(function() {
+  var nav = document.getElementById('aa-nav');
+  if (!nav) return;
+  var items = nav.querySelectorAll('.nav-item[data-menu]');
+  var timers = new Map();
+
+  function openItem(item) {
+    var t = timers.get(item);
+    if (t) { clearTimeout(t); timers.delete(item); }
+    items.forEach(function(i) { if (i !== item) closeItem(i, 0); });
+    item.classList.add('is-open');
+    var btn = item.querySelector('.nav-link');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeItem(item, delay) {
+    var t = timers.get(item);
+    if (t) clearTimeout(t);
+    if (delay === 0) {
+      item.classList.remove('is-open');
+      var btn = item.querySelector('.nav-link');
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+    } else {
+      timers.set(item, setTimeout(function() {
+        item.classList.remove('is-open');
+        var btn = item.querySelector('.nav-link');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+        timers.delete(item);
+      }, delay || 200));
+    }
+  }
+
+  items.forEach(function(item) {
+    var btn = item.querySelector('.nav-link');
+    item.addEventListener('mouseenter', function() { openItem(item); });
+    item.addEventListener('mouseleave', function() { closeItem(item, 200); });
+    if (btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (item.classList.contains('is-open')) { closeItem(item, 0); } else { openItem(item); }
+      });
+    }
+  });
+
+  document.addEventListener('click', function(e) { if (!nav.contains(e.target)) items.forEach(function(i) { closeItem(i, 0); }); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') items.forEach(function(i) { closeItem(i, 0); }); });
+})();
 </script>
 
 </body>
