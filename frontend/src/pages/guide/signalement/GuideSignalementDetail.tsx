@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Flag, ExternalLink, Upload, ArrowLeft } from 'lucide-react';
+import CopyLinkButton from '../../../components/common/CopyLinkButton';
+import { Flag, Upload, ArrowLeft } from 'lucide-react';
 import { showSuccess, showError } from '../../../utils/Swal';
 import { guideSignalementApi } from '../../../services/signalement';
 import type { ActiveSlotForGuide } from '../../../types/signalement';
@@ -112,16 +113,14 @@ export const GuideSignalementDetail = () => {
                     <div style={{ marginBottom: 12 }}>
                         <strong>Avis à signaler :</strong>
                         <div style={{ marginTop: 4 }}>
-                            <a href={slot.google_review_url} target="_blank" rel="noreferrer">
-                                <ExternalLink size={14} /> Ouvrir l'avis Google
-                            </a>
+                            <CopyLinkButton url={slot.google_review_url} label="Copier le lien de l'avis" />
                         </div>
                     </div>
 
                     <div className="gsig-instructions">
                         <strong>Procédure</strong>
                         <ol>
-                            <li>Cliquez sur le lien ci-dessus pour ouvrir l'avis Google</li>
+                            <li>Copiez le lien ci-dessus et collez-le dans un nouvel onglet pour ouvrir l'avis Google</li>
                             <li>Cliquez sur les 3 points de l'avis → <em>"Signaler l'avis"</em></li>
                             <li>Choisissez la raison <strong>« {SIGNALEMENT_RAISONS[slot.raison]} »</strong></li>
                             <li>Validez le signalement et faites une <strong>capture d'écran</strong> de la confirmation</li>

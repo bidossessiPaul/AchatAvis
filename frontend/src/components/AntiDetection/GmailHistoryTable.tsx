@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CopyLinkButton from '../common/CopyLinkButton';
 import {
     Calendar,
     CheckCircle2,
@@ -7,7 +8,6 @@ import {
     TrendingUp,
     Search,
     Edit3,
-    ExternalLink,
     Mail,
     Link,
     X,
@@ -371,24 +371,7 @@ export const GmailHistoryTable: React.FC<GmailHistoryTableProps> = ({ history })
                                                     </button>
                                                 )}
                                                 {item.review_url && (
-                                                    <a
-                                                        href={item.review_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{
-                                                            padding: '0.4rem',
-                                                            borderRadius: '0.5rem',
-                                                            border: 'none',
-                                                            background: '#f1f5f9',
-                                                            color: '#64748b',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
-                                                        title="Voir l'avis"
-                                                    >
-                                                        <ExternalLink size={16} />
-                                                    </a>
+                                                    <CopyLinkButton url={item.review_url} label="Copier" size="sm" />
                                                 )}
                                             </div>
                                         </td>

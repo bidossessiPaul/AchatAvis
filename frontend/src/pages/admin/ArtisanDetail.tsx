@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { adminService } from '../../services/adminService';
 import { useAuthStore } from '../../context/authStore';
 import {
@@ -14,7 +15,6 @@ import {
     CheckCircle,
     XCircle,
     Globe,
-    ExternalLink,
     Zap,
     Power,
     Search,
@@ -648,9 +648,7 @@ export const ArtisanDetail: React.FC = () => {
                                                     placeholder="https://g.page/..."
                                                 />
                                             ) : (
-                                                <a href={profile.google_business_url} target="_blank" rel="noopener noreferrer" className="info-value link">
-                                                    Voir la fiche <ExternalLink size={12} />
-                                                </a>
+                                                <CopyLinkButton url={profile.google_business_url} label="Copier la fiche" size="sm" />
                                             )}
                                         </div>
                                     </div>
@@ -1183,26 +1181,7 @@ export const ArtisanDetail: React.FC = () => {
                                                 </td>
                                                 <td>
                                                     {sub.review_url ? (
-                                                        <a
-                                                            href={sub.review_url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '0.4rem 0.8rem',
-                                                                backgroundColor: '#f8fafc',
-                                                                borderRadius: '8px',
-                                                                color: 'var(--primary-brand)',
-                                                                textDecoration: 'none',
-                                                                fontSize: '0.8rem',
-                                                                fontWeight: 600,
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                        >
-                                                            Voir <ExternalLink size={14} />
-                                                        </a>
+                                                        <CopyLinkButton url={sub.review_url} label="Voir" size="sm" />
                                                     ) : (
                                                         <span style={{ color: '#9ca3af', fontSize: '12px' }}>-</span>
                                                     )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import {
     Save,
     Trash2,
@@ -555,9 +556,7 @@ export const AdminFicheDetail: React.FC = () => {
                                 <h3 className="card-title">Visibilité</h3>
                             </div>
                             <div style={{ padding: '1.5rem' }}>
-                                <a href={fiche.google_business_url} target="_blank" rel="noopener noreferrer" className="review-link-simple" style={{ gap: '0.5rem' }}>
-                                    Voir sur Google Maps <ExternalLink size={16} />
-                                </a>
+                                <CopyLinkButton url={fiche.google_business_url} label="Copier le lien Google Maps" />
                             </div>
                         </div>
                     </div>

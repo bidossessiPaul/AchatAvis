@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Flag, ExternalLink, ArrowRight, Lock, Clock } from 'lucide-react';
+import CopyLinkButton from '../../../components/common/CopyLinkButton';
+import { Flag, ArrowRight, Lock, Clock } from 'lucide-react';
 import { showSuccess, showError } from '../../../utils/Swal';
 import { guideSignalementApi } from '../../../services/signalement';
 import type {
@@ -125,9 +126,7 @@ export const GuideSignalementsList = () => {
                                 <div style={{ marginTop: 4 }}>Slots restants : {a.nb_slots_remaining} / {a.nb_signalements_target}</div>
                             </div>
                             <div className="footer">
-                                <a href={a.google_review_url} target="_blank" rel="noreferrer">
-                                    <ExternalLink size={14} /> Voir l'avis sur Google
-                                </a>
+                                <CopyLinkButton url={a.google_review_url} label="Copier le lien" size="sm" />
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                     <span className="payout">{(a.payout_per_signalement_cents / 100).toFixed(2)} €</span>
                                     {a.can_take ? (

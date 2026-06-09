@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import {
     Search,
     Filter,
@@ -10,7 +11,6 @@ import {
     ChevronLeft,
     ChevronRight,
     Clock,
-    ExternalLink,
     X,
     User,
     Building2,
@@ -468,16 +468,7 @@ export const ReviewTracking360: React.FC = () => {
                                                 <td className="actions-cell" style={{ border: 'none', borderRadius: '0 16px 16px 0' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
                                                         {item.review_url && (
-                                                            <a
-                                                                href={item.review_url}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="action-btn"
-                                                                style={{ backgroundColor: '#f8fafc', borderRadius: '10px', color: 'var(--primary-brand)' }}
-                                                                title="Voir la preuve"
-                                                            >
-                                                                <ExternalLink size={18} />
-                                                            </a>
+                                                            <CopyLinkButton url={item.review_url} label="Preuve" size="sm" />
                                                         )}
                                                         <button
                                                             className="action-btn"
@@ -901,36 +892,7 @@ export const ReviewTracking360: React.FC = () => {
                             {/* Review URL */}
                             {selectedItem.review_url && (
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <a
-                                        href={selectedItem.review_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '0.875rem 1.5rem',
-                                            backgroundColor: 'var(--primary-brand)',
-                                            color: 'white',
-                                            borderRadius: '12px',
-                                            textDecoration: 'none',
-                                            fontWeight: 600,
-                                            fontSize: '0.875rem',
-                                            transition: 'all 0.2s',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-2px)';
-                                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                                        }}
-                                    >
-                                        <ExternalLink size={18} />
-                                        Voir la preuve sur Google
-                                    </a>
+                                    <CopyLinkButton url={selectedItem.review_url} label="Copier le lien de la preuve" />
                                 </div>
                             )}
                         </div>

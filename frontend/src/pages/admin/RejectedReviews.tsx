@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { adminApi } from '../../services/api';
 import {
     Search,
     // CheckCircle2 removed - no more direct validate buttons
-    ExternalLink,
     User,
     RotateCcw,
     ChevronLeft,
@@ -36,6 +36,7 @@ interface RejectedRow {
 
     proposal_id?: string;
     review_text?: string;
+    modified_by_artisan_at?: string | null;
 
     guide_id: string;
     guide_name: string;
@@ -92,17 +93,18 @@ export const RejectedReviews: React.FC = () => {
     }, [fetchData]);
 
     const handleRegenerateAndRelaunchSingle = async (row: RejectedRow) => {
-        const result = await showConfirm(
-            'Régénérer et relancer cet avis ?',
-            `Le contenu sera réécrit par l'IA, la soumission actuelle sera supprimée (preuves, lien) et le slot sera libéré pour qu'un autre guide puisse reprendre la fiche.`
-        );
+        const isModifiedByArtisan = !!row.modified_by_artisan_at;
+        const confirmMsg = isModifiedByArtisan
+            ? `⚠️ Cet avis a été personnalisé par l'artisan. En régénérant, le texte artisan sera écrasé par une version IA. Confirmer quand même ?`
+            : `Le contenu sera réécrit par l'IA, la soumission actuelle sera supprimée (preuves, lien) et le slot sera libéré pour qu'un autre guide puisse reprendre la fiche.`;
+        const result = await showConfirm('Régénérer et relancer cet avis ?', confirmMsg);
         if (!result.isConfirmed) return;
 
         setActionLoadingId(row.id);
         try {
-            // Step 1: Regenerate content
+            // Step 1: Regenerate content (force=true si l'artisan avait modifié et l'admin confirme)
             if (row.proposal_id) {
-                await adminApi.regenerateProposal(row.proposal_id);
+                await adminApi.regenerateProposal(row.proposal_id, isModifiedByArtisan);
             }
             // Step 2: Delete submission + free slot for a new guide
             await adminApi.recycleRejectedSubmissions([row.id]);
@@ -182,8 +184,8 @@ export const RejectedReviews: React.FC = () => {
                 const row = allRows[i];
 
                 try {
-                    // 1. Regenerate content
-                    if (row.proposal_id) {
+                    // 1. Régénère sauf si l'artisan a personnalisé le contenu (ne pas écraser)
+                    if (row.proposal_id && !row.modified_by_artisan_at) {
                         await adminApi.regenerateProposal(row.proposal_id);
                     }
                     // 2. Recycle (delete submission + free slot)
@@ -274,7 +276,10 @@ export const RejectedReviews: React.FC = () => {
             setRegenProgress({ current: i + 1, total: count });
             const row = selectedRows[i];
             try {
-                await adminApi.regenerateProposal(row.proposal_id!);
+                // Ne pas écraser le contenu artisan en bulk (force=false)
+                if (!row.modified_by_artisan_at) {
+                    await adminApi.regenerateProposal(row.proposal_id!);
+                }
                 await adminApi.recycleRejectedSubmissions([row.id]);
                 setRows(prev => prev.filter(r => r.id !== row.id));
                 setTotal(prev => Math.max(0, prev - 1));
@@ -583,16 +588,29 @@ export const RejectedReviews: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none' }}>
-                                                    <div style={{
-                                                        color: '#111827',
-                                                        fontWeight: 700,
-                                                        fontSize: '0.875rem',
-                                                        maxWidth: '200px',
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis'
-                                                    }} title={row.company_name}>
-                                                        {row.company_name || '-'}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                        <div style={{
+                                                            color: '#111827',
+                                                            fontWeight: 700,
+                                                            fontSize: '0.875rem',
+                                                            maxWidth: '200px',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        }} title={row.company_name}>
+                                                            {row.company_name || '-'}
+                                                        </div>
+                                                        {row.modified_by_artisan_at && (
+                                                            <span title="Contenu personnalisé par l'artisan — ne sera pas régénéré automatiquement" style={{
+                                                                fontSize: '0.65rem',
+                                                                fontWeight: 700,
+                                                                background: '#ede9fe',
+                                                                color: '#6d28d9',
+                                                                borderRadius: '1rem',
+                                                                padding: '0.1rem 0.45rem',
+                                                                whiteSpace: 'nowrap'
+                                                            }}>Personnalisé</span>
+                                                        )}
                                                     </div>
                                                     {row.artisan_id && row.artisan_name && (
                                                         <div
@@ -636,22 +654,7 @@ export const RejectedReviews: React.FC = () => {
                                                     </div>
                                                 </td>
                                                 <td style={{ border: 'none' }}>
-                                                    <a
-                                                        href={row.review_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '0.25rem',
-                                                            color: '#2563eb',
-                                                            fontSize: '0.75rem',
-                                                            textDecoration: 'none',
-                                                            fontWeight: 600
-                                                        }}
-                                                    >
-                                                        <ExternalLink size={12} /> Lien
-                                                    </a>
+                                                    <CopyLinkButton url={row.review_url} label="Lien" size="sm" />
                                                     {row.google_email && (
                                                         <div style={{
                                                             fontSize: '0.7rem',

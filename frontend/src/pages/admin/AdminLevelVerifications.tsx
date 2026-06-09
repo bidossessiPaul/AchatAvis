@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SignalementValidations } from './signalement/SignalementValidations';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
     Search,
     CheckCircle2,
     XCircle,
-    ExternalLink,
     Clock,
     Trophy,
     ArrowRight,
@@ -340,19 +340,7 @@ export const AdminLevelVerifications: React.FC = () => {
                                                 >
                                                     <ImageIcon size={13} /> Capture
                                                 </button>
-                                                <a
-                                                    href={v.profile_link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        display: 'flex', alignItems: 'center', gap: '0.3rem',
-                                                        background: '#eff6ff', color: '#2383e2', border: 'none',
-                                                        padding: '0.3rem 0.6rem', borderRadius: '0.375rem',
-                                                        fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none'
-                                                    }}
-                                                >
-                                                    <ExternalLink size={13} /> Profil
-                                                </a>
+                                                <CopyLinkButton url={v.profile_link} label="Profil" size="sm" />
                                             </div>
                                         </td>
                                         {/* Status */}
@@ -485,19 +473,7 @@ export const AdminLevelVerifications: React.FC = () => {
                                             >
                                                 <ImageIcon size={13} /> Capture
                                             </button>
-                                            <a
-                                                href={v.profile_link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
-                                                    background: '#eff6ff', color: '#2383e2',
-                                                    padding: '0.35rem 0.65rem', borderRadius: '0.375rem',
-                                                    fontSize: '0.75rem', fontWeight: 600, textDecoration: 'none'
-                                                }}
-                                            >
-                                                <ExternalLink size={13} /> Profil
-                                            </a>
+                                            <CopyLinkButton url={v.profile_link} label="Profil" size="sm" />
                                         </div>
                                     </div>
 

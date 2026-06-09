@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import {
     AlertTriangle,
     Link,
     Mail,
     RefreshCw,
     X,
-    ExternalLink,
     CheckCircle2,
     Clock
 } from 'lucide-react';
@@ -234,9 +234,7 @@ export const Corrections: React.FC = () => {
                                     <Link size={14} />
                                     <span style={{ wordBreak: 'break-all' }}>{item.review_url || 'Aucun lien'}</span>
                                     {item.review_url && (
-                                        <a href={item.review_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', flexShrink: 0 }}>
-                                            <ExternalLink size={14} />
-                                        </a>
+                                        <CopyLinkButton url={item.review_url} size="sm" label="Copier" />
                                     )}
                                 </div>
                             </div>

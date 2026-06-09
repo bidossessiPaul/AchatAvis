@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { ShieldCheck, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
+import CopyLinkButton from '../../../components/common/CopyLinkButton';
+import { ShieldCheck, CheckCircle2, XCircle } from 'lucide-react';
 import { showSuccess, showError } from '../../../utils/Swal';
 import Swal from 'sweetalert2';
 import { adminValidationsApi } from '../../../services/signalement';
@@ -111,9 +112,7 @@ export const SignalementValidations: React.FC = () => {
                                     </div>
                                 )}
                                 <div style={{ marginTop: 4 }}>
-                                    <a href={p.google_review_url} target="_blank" rel="noreferrer">
-                                        <ExternalLink size={14} /> Avis Google
-                                    </a>
+                                    <CopyLinkButton url={p.google_review_url} label="Avis Google" size="sm" />
                                     <span className="sig-badge sig-badge-pending" style={{ marginLeft: 8 }}>
                                         {SIGNALEMENT_RAISONS[p.raison] || p.raison}
                                     </span>
@@ -141,8 +140,8 @@ export const SignalementValidations: React.FC = () => {
                         <img src={p.screenshot_url} alt="capture" className="sig-screenshot-thumb" onClick={() => openImage(p.screenshot_url)} />
 
                         {p.report_link && (
-                            <div style={{ marginTop: 8, fontSize: '0.85rem' }}>
-                                Lien fourni : <a href={p.report_link} target="_blank" rel="noreferrer">{p.report_link}</a>
+                            <div style={{ marginTop: 8, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                Lien fourni : <CopyLinkButton url={p.report_link} label="Copier" size="sm" />
                             </div>
                         )}
                         {p.note_guide && (

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
+import CopyLinkButton from '../../../components/common/CopyLinkButton';
 import {
-    Flag, ExternalLink, CheckCircle2, XCircle, RefreshCw, Edit3,
+    Flag, CheckCircle2, XCircle, RefreshCw, Edit3,
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../../utils/Swal';
 import Swal from 'sweetalert2';
@@ -155,9 +156,7 @@ export const SignalementsList: React.FC = () => {
                                         <tr key={a.id}>
                                             <td><Link to={`/admin/artisans/${a.artisan_id}`}>{a.artisan_id.slice(0, 8)}…</Link></td>
                                             <td>
-                                                <a href={a.google_review_url} target="_blank" rel="noreferrer" title={a.google_review_url}>
-                                                    <ExternalLink size={14} /> Lien
-                                                </a>
+                                                <CopyLinkButton url={a.google_review_url} label="Lien" size="sm" />
                                             </td>
                                             <td><span className="sig-badge sig-badge-pending">{SIGNALEMENT_RAISONS[a.raison] || a.raison}</span></td>
                                             <td>{a.nb_signalements_validated} / {a.nb_signalements_target}</td>

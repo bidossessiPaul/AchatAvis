@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { adminApi } from '../../services/api';
 import {
     Search,
     Filter,
     CheckCircle2,
     XCircle,
-    ExternalLink,
     Clock,
     User,
     RotateCcw,
@@ -477,21 +477,7 @@ export const ReviewValidation: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <a href={submission.review_url} target="_blank" rel="noopener noreferrer" className="review-link-premium" style={{
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '6px',
-                                                    padding: '0.4rem 0.8rem',
-                                                    backgroundColor: '#f8fafc',
-                                                    borderRadius: '8px',
-                                                    color: 'var(--primary-brand)',
-                                                    textDecoration: 'none',
-                                                    fontSize: '0.8rem',
-                                                    fontWeight: 600,
-                                                    transition: 'all 0.2s'
-                                                }}>
-                                                    Voir la preuve <ExternalLink size={14} />
-                                                </a>
+                                                <CopyLinkButton url={submission.review_url} label="Copier la preuve" />
                                             </td>
                                             <td style={{ border: 'none', maxWidth: '250px' }}>
                                                 <div style={{

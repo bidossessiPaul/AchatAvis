@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
-import { Flag, Plus, RefreshCw, ExternalLink, Lock } from 'lucide-react';
+import CopyLinkButton from '../../../components/common/CopyLinkButton';
+import { Flag, Plus, RefreshCw, Lock } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../../utils/Swal';
 import { artisanSignalementApi } from '../../../services/signalement';
 import { artisanService } from '../../../services/artisanService';
@@ -163,7 +164,7 @@ export const ArtisanSignalementDashboard = () => {
                             <tbody>
                                 {avis.map(a => (
                                     <tr key={a.id}>
-                                        <td><a href={a.google_review_url} target="_blank" rel="noreferrer"><ExternalLink size={14} /> Lien</a></td>
+                                        <td><CopyLinkButton url={a.google_review_url} label="Lien" size="sm" /></td>
                                         <td>{SIGNALEMENT_RAISONS[a.raison] || a.raison}</td>
                                         <td>{a.nb_signalements_validated} / {a.nb_signalements_target}</td>
                                         <td>{STATUS_LABELS[a.status] || a.status}</td>

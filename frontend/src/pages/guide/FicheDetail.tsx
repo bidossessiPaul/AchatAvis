@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { guideService } from '../../services/guideService';
 import apiClient from '../../services/api';
 import { showSuccess, showError } from '../../utils/Swal';
 import { ReviewOrder, ReviewProposal, ReviewSubmission } from '../../types';
 import {
     MapPin,
-    ExternalLink,
     Copy,
     CheckCircle2,
     ChevronLeft,
@@ -483,10 +483,7 @@ export const FicheDetail: React.FC = () => {
                                                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', marginBottom: 4 }}>
                                                         Avis à signaler
                                                     </div>
-                                                    <a href={s.google_review_url} target="_blank" rel="noreferrer"
-                                                        style={{ fontSize: '0.85rem', color: '#2383e2', wordBreak: 'break-all' }}>
-                                                        {s.google_review_url}
-                                                    </a>
+                                                    <CopyLinkButton url={s.google_review_url} label="Copier le lien de l'avis" size="sm" />
                                                     <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 4 }}>
                                                         {s.nb_signalements_validated}/{s.nb_signalements_target} signalements · {(s.payout_per_signalement_cents / 100).toFixed(2)}€/signalement
                                                     </div>
@@ -850,9 +847,7 @@ export const FicheDetail: React.FC = () => {
                                                 </div>
                                                 <div className="published-meta-row">
                                                     <div className="published-meta-left">
-                                                        <a href={item.submission?.review_url} target="_blank" rel="noopener noreferrer" className="proof-link">
-                                                            Preuve <ExternalLink size={10} />
-                                                        </a>
+                                                        <CopyLinkButton url={item.submission?.review_url} label="Preuve" size="sm" />
                                                         {item.submission?.guide_id !== user?.id && (
                                                             <span className="published-author">
                                                                 par {item.submission?.guide_name?.split(' ')[0]}

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import api from '../../services/api';
-import { CheckCircle2, XCircle, Mail, ExternalLink, ShieldCheck, Clock, User, Image } from 'lucide-react';
+import { CheckCircle2, XCircle, Mail, ShieldCheck, Clock, User, Image } from 'lucide-react';
 import Swal, { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import './AdminLists.css';
@@ -249,10 +250,7 @@ export const AdminGmailVerifications: React.FC<any> = () => {
                                         </div>
 
                                         {/* Lien Maps */}
-                                        <a href={v.maps_profile_url} target="_blank" rel="noopener noreferrer"
-                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#2383e2', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 8, padding: '0.45rem 0.75rem' }}>
-                                            <ExternalLink size={13} /> Voir profil Google Maps
-                                        </a>
+                                        <CopyLinkButton url={v.maps_profile_url} label="Copier profil Google Maps" />
                                     </div>
 
                                     {/* Colonne droite : actions */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { adminService } from '../../services/adminService';
 import { useAuthStore } from '../../context/authStore';
 import {
@@ -11,7 +12,6 @@ import {
     Trash2,
     CheckCircle,
     XCircle,
-    ExternalLink,
     BarChart3,
     Shield,
     Briefcase,
@@ -610,9 +610,7 @@ export const GuideDetail: React.FC = () => {
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                        <a href={sub.proof_url} target="_blank" rel="noopener noreferrer" className="info-value link" title="Voir la preuve">
-                                                            <ExternalLink size={14} /> Preuve
-                                                        </a>
+                                                        <CopyLinkButton url={sub.proof_url} label="Preuve" size="sm" />
                                                         {sub.review_text && (
                                                             <button
                                                                 onClick={() => showSuccess(`Avis (${sub.rating} ★)`, sub.review_text || '')}

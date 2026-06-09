@@ -513,8 +513,8 @@ export const adminApi = {
         await api.put(`/admin/proposals/${proposalId}`, data);
     },
 
-    regenerateProposal: async (proposalId: string): Promise<{ content: string; author_name: string; rating: number }> => {
-        const response = await api.post(`/admin/proposals/${proposalId}/regenerate`);
+    regenerateProposal: async (proposalId: string, force = false): Promise<{ content: string; author_name: string; rating: number }> => {
+        const response = await api.post(`/admin/proposals/${proposalId}/regenerate`, { force });
         return response.data;
     },
 

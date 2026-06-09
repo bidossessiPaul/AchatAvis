@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { artisanService } from '../../services/artisanService';
+import CopyLinkButton from '../../components/common/CopyLinkButton';
 import { ReviewOrder, ReviewProposal } from '../../types';
 import { PremiumBlurOverlay } from '../../components/layout/PremiumBlurOverlay';
 import { useAuthStore } from '../../context/authStore';
@@ -9,7 +10,6 @@ import { showConfirm, showError } from '../../utils/Swal';
 import {
     ArrowLeft,
     Calendar,
-    Link as LinkIcon,
     Trash2,
     AlertTriangle,
     Zap,
@@ -362,14 +362,7 @@ export const OrderDetail: React.FC = () => {
                                             <Calendar size={14} /> {new Date(order.created_at).toLocaleDateString()}
                                         </span>
                                         {order.google_business_url && (
-                                            <a
-                                                href={order.google_business_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{ color: tradeInfo.color, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 500, whiteSpace: 'nowrap' }}
-                                            >
-                                                <LinkIcon size={14} /> Voir sur Google
-                                            </a>
+                                            <CopyLinkButton url={order.google_business_url} label="Copier le lien Google" size="sm" />
                                         )}
                                     </div>
                                 </div>
