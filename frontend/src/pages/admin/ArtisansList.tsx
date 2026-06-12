@@ -28,12 +28,14 @@ import './AdminLists.css';
 interface Artisan {
     id: string;
     email: string;
+    full_name: string;
     avatar_url: string | null;
     status: string;
     created_at: string;
     last_seen: string | null;
     company_name: string;
     trade: string;
+    phone: string;
     city: string;
     subscription_status: string;
 }
@@ -158,10 +160,16 @@ export const ArtisansList: React.FC = () => {
 
 
 
-    const filteredArtisans = artisans.filter(a =>
-        a.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredArtisans = artisans.filter(a => {
+        const t = searchTerm.toLowerCase().replace(/\s/g, '');
+        return (
+            a.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            a.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            // Recherche téléphone insensible aux espaces, +, 0 initial
+            (a.phone && a.phone.replace(/\s/g, '').includes(t))
+        );
+    });
 
     const getStatusWeight = (status: string) => {
         if (status === 'active') return 2;
@@ -216,7 +224,7 @@ export const ArtisansList: React.FC = () => {
                                 <Search size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Rechercher une entreprise ou email..."
+                                    placeholder="Rechercher entreprise, email, nom, téléphone..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                 />

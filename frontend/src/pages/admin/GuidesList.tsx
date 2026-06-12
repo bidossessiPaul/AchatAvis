@@ -25,6 +25,7 @@ import './AdminLists.css';
 interface Guide {
     id: string;
     email: string;
+    full_name: string;
     avatar_url: string | null;
     status: string;
     created_at: string;
@@ -147,11 +148,15 @@ export const GuidesList: React.FC = () => {
         }
     };
 
-    const filteredGuides = guides.filter(g =>
-        g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.phone?.includes(searchTerm)
-    );
+    const filteredGuides = guides.filter(g => {
+        const t = searchTerm.toLowerCase().replace(/\s/g, '');
+        return (
+            g.google_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            g.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            g.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (g.phone && g.phone.replace(/\s/g, '').includes(t))
+        );
+    });
 
     const sortedGuides = sortOrder === 'none'
         ? filteredGuides
