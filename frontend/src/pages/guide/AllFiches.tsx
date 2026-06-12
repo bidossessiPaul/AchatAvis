@@ -180,18 +180,21 @@ export const AllFiches: React.FC = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         {(() => {
                                             const base = Number(fiche.payout_per_review) || 1.50;
-                                            const bonus = Number(fiche.urgency_bonus) || 0;
+                                            // const bonus = Number(fiche.urgency_bonus) || 0; // BONUS URGENCE
                                             return (
                                                 <>
                                                     <div className="payout-badge">
                                                         <DollarSign size={14} />
-                                                        {(base + bonus).toFixed(2)}€
+                                                        {base.toFixed(2)}€
+                                                        {/* BONUS URGENCE
                                                         {bonus > 0 && (
                                                             <span style={{ fontSize: '0.7rem', color: '#b91c1c', fontWeight: 700 }}>
                                                                 ({base.toFixed(2)} +0,15€)
                                                             </span>
                                                         )}
+                                                        */}
                                                     </div>
+                                                    {/* BONUS URGENCE
                                                     {bonus > 0 && (
                                                         <div style={{
                                                             display: 'flex', alignItems: 'center', gap: '4px',
@@ -203,6 +206,7 @@ export const AllFiches: React.FC = () => {
                                                             <Zap size={11} /> BONUS URGENCE
                                                         </div>
                                                     )}
+                                                    */}
                                                 </>
                                             );
                                         })()}

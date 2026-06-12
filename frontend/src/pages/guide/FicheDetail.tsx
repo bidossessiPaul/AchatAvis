@@ -48,6 +48,7 @@ export const FicheDetail: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [submittingId, setSubmittingId] = useState<string | null>(null);
     const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+    const [proofScreenshots, setProofScreenshots] = useState<Record<string, File>>({});
     const [googleEmails, setGoogleEmails] = useState<Record<string, string>>({});
     const [selectedGmailId, setSelectedGmailId] = useState<number | null>(null);
     const [compatibilityResult, setCompatibilityResult] = useState<any>(null);
@@ -226,6 +227,7 @@ export const FicheDetail: React.FC = () => {
     const handleSubmitProof = async (proposalId: string) => {
         const url = proofUrls[proposalId];
         const email = googleEmails[proposalId] || googleEmails['current'];
+        const screenshot = proofScreenshots[proposalId];
 
         if (!selectedGmailId && !compatibilityResult?.can_take) {
             showError('Attention', "Veuillez d'abord vérifier la compatibilité de votre compte Gmail.");
@@ -239,6 +241,11 @@ export const FicheDetail: React.FC = () => {
 
         if (!email || !email.includes('@')) {
             showError('Email invalide', "Veuillez entrer un email Google valide.");
+            return;
+        }
+
+        if (!screenshot) {
+            showError('Capture manquante', "Veuillez joindre une capture d'écran de l'avis posté.");
             return;
         }
 
@@ -270,11 +277,17 @@ export const FicheDetail: React.FC = () => {
                 reviewUrl: url,
                 googleEmail: email,
                 artisanId: fiche!.artisan_id,
-                gmailAccountId: selectedGmailId || undefined
+                gmailAccountId: selectedGmailId || undefined,
+                screenshot: proofScreenshots[proposalId]
             });
             showSuccess('Succès', "Preuve soumise avec succès ! Elle sera validée par un administrateur.");
             loadficheDetails(orderId!);
             setProofUrls(prev => {
+                const next = { ...prev };
+                delete next[proposalId];
+                return next;
+            });
+            setProofScreenshots(prev => {
                 const next = { ...prev };
                 delete next[proposalId];
                 return next;
@@ -726,18 +739,59 @@ export const FicheDetail: React.FC = () => {
                                                         </div>
                                                         <div className="field-group">
                                                             <label className="field-label">Lien de l'avis posté</label>
-                                                            <div className="proof-input-row">
-                                                                <input
-                                                                    type="text"
-                                                                    placeholder="https://maps.app.goo.gl/..."
-                                                                    className="text-input"
-                                                                    value={proofUrls[proposal.id] || ''}
-                                                                    onChange={(e) => setProofUrls(prev => ({ ...prev, [proposal.id]: e.target.value }))}
-                                                                />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="https://maps.app.goo.gl/..."
+                                                                className="text-input"
+                                                                value={proofUrls[proposal.id] || ''}
+                                                                onChange={(e) => setProofUrls(prev => ({ ...prev, [proposal.id]: e.target.value }))}
+                                                            />
+                                                        </div>
+                                                        <div className="field-group">
+                                                            <label className="field-label">
+                                                                <ImageIcon size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                                                Capture d'écran de l'avis posté <span style={{ color: '#dc2626' }}>*</span>
+                                                            </label>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                style={{ display: 'none' }}
+                                                                id={`screenshot-${proposal.id}`}
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (file) setProofScreenshots(prev => ({ ...prev, [proposal.id]: file }));
+                                                                }}
+                                                            />
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                                <label
+                                                                    htmlFor={`screenshot-${proposal.id}`}
+                                                                    style={{
+                                                                        display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                                                        padding: '0.5rem 0.9rem',
+                                                                        background: proofScreenshots[proposal.id] ? '#dcfce7' : '#f8fafc',
+                                                                        border: `1px solid ${proofScreenshots[proposal.id] ? '#059669' : '#cbd5e1'}`,
+                                                                        borderRadius: '8px', fontSize: '0.8rem', fontWeight: 600,
+                                                                        color: proofScreenshots[proposal.id] ? '#047857' : '#475569',
+                                                                        cursor: 'pointer'
+                                                                    }}
+                                                                >
+                                                                    <ImageIcon size={14} />
+                                                                    {proofScreenshots[proposal.id] ? proofScreenshots[proposal.id].name : 'Choisir une capture'}
+                                                                </label>
+                                                                {proofScreenshots[proposal.id] && (
+                                                                    <img
+                                                                        src={URL.createObjectURL(proofScreenshots[proposal.id])}
+                                                                        alt="Aperçu"
+                                                                        style={{ height: 40, borderRadius: 6, border: '1px solid #e2e8f0', objectFit: 'cover' }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                            <div className="proof-input-row" style={{ marginTop: '0.5rem' }}>
                                                                 <button
                                                                     onClick={() => handleSubmitProof(proposal.id)}
                                                                     disabled={submittingId === proposal.id}
                                                                     className="submit-btn"
+                                                                    style={{ width: '100%' }}
                                                                 >
                                                                     {submittingId === proposal.id ? '...' : <><Send size={18} /> Soumettre</>}
                                                                 </button>
@@ -793,12 +847,14 @@ export const FicheDetail: React.FC = () => {
                                 <div>
                                     <p className="instruction-label">Rémunération</p>
                                     <p className="instruction-value price">
-                                        {Number((fiche.payout_per_review || 1.50) + (fiche.urgency_bonus || 0)).toFixed(2)} €
+                                        {Number(fiche.payout_per_review || 1.50).toFixed(2)} €
+                                        {/* BONUS URGENCE
                                         {(fiche.urgency_bonus || 0) > 0 && (
                                             <span style={{ fontSize: '0.75rem', color: '#d97706', fontWeight: 600, marginLeft: '6px' }}>
                                                 (+0,15€ bonus urgence)
                                             </span>
                                         )}
+                                        */}
                                     </p>
                                     <p className="instruction-value" style={{ fontSize: 'var(--text-xs)' }}>par avis validé</p>
                                 </div>
