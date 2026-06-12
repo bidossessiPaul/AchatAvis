@@ -19,6 +19,7 @@ import {
     Download,
     Image as ImageIcon,
     Flag,
+    Lock,
 } from 'lucide-react';
 import { guideSignalementApi } from '../../services/signalement';
 
@@ -361,6 +362,9 @@ export const FicheDetail: React.FC = () => {
         .filter(p => !publishedProposalIds.includes(p.id))
         .slice(0, totalRemaining);
 
+    // L'avis en attente a-t-il été rédigé/validé par l'artisan ?
+    const pendingIsArtisanAuthored = pendingProposals.length > 0 && !!pendingProposals[0].modified_by_artisan_at;
+
     // Map over SUBficheS to allow showing all reviews (even if multiple guides did the same one)
     const publishedProposals = activeSubmissions.map((submission: any) => {
         const proposal = fiche.proposals.find(p => p.id === submission.proposal_id);
@@ -537,7 +541,28 @@ export const FicheDetail: React.FC = () => {
                                         {pendingProposals.map((proposal) => (
                                             <div key={proposal.id} className="review-card">
                                                 <div className="review-card-header">
-                                                    <span className="review-card-label">Texte à copier</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                        <span className="review-card-label">Texte à copier</span>
+                                                        {proposal.modified_by_artisan_at && (
+                                                            <span style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '0.25rem',
+                                                                background: '#fef3c7',
+                                                                border: '1px solid #fde68a',
+                                                                color: '#92400e',
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: 700,
+                                                                padding: '0.15rem 0.5rem',
+                                                                borderRadius: '1rem',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.03em',
+                                                            }}>
+                                                                <Lock size={10} />
+                                                                Texte fixé
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <div className="stars-row">
                                                         {[...Array(proposal.rating)].map((_, i) => (
                                                             <Star key={i} size={18} fill="currentColor" />
@@ -905,39 +930,74 @@ export const FicheDetail: React.FC = () => {
                     />
                     <div className="stars-warning-modal">
                         <div className="stars-warning-icon-circle">
-                            <AlertTriangle size={32} color="#0369a1" />
+                            {pendingIsArtisanAuthored
+                                ? <Lock size={32} color="#92400e" />
+                                : <AlertTriangle size={32} color="#0369a1" />
+                            }
                         </div>
 
-                        <h3 className="stars-warning-title" style={{ color: '#0369a1' }}>
-                            Personnalisez vos avis !
-                        </h3>
+                        {pendingIsArtisanAuthored ? (
+                            <>
+                                <h3 className="stars-warning-title" style={{ color: '#92400e' }}>
+                                    Texte fixé par l'établissement
+                                </h3>
 
-                        <p className="stars-warning-text" style={{ textAlign: 'left', lineHeight: 1.6 }}>
-                            L'avis qui va s'afficher est fourni tel quel par l'établissement. Vous pouvez simplement <strong style={{ color: '#0369a1' }}>l'adapter légèrement</strong> (quelques mots, tournures) en y ajoutant votre <strong>expérience personnelle</strong>, sans en changer le sens.
-                        </p>
+                                <p className="stars-warning-text" style={{ textAlign: 'left', lineHeight: 1.6 }}>
+                                    Cet avis a été <strong>rédigé directement par le client</strong>. Il doit être publié <strong style={{ color: '#92400e' }}>mot pour mot, sans aucune modification</strong>.
+                                </p>
 
-                        <div style={{
-                            background: '#f0f9ff',
-                            border: '1px solid #bae6fd',
-                            borderRadius: '8px',
-                            padding: '0.75rem 1rem',
-                            margin: '0.75rem 0',
-                            fontSize: '0.85rem',
-                            color: '#0c4a6e',
-                            textAlign: 'left',
-                            lineHeight: 1.5
-                        }}>
-                            <strong>Exemples :</strong>
-                            <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
-                                <li>Décrivez ce que vous avez vu en passant devant le commerce</li>
-                                <li>Partagez les retours de vos proches</li>
-                                <li>Ajoutez des détails sur l'emplacement ou l'ambiance</li>
-                            </ul>
-                        </div>
+                                <div style={{
+                                    background: '#fef3c7',
+                                    border: '1px solid #fde68a',
+                                    borderRadius: '8px',
+                                    padding: '0.75rem 1rem',
+                                    margin: '0.75rem 0',
+                                    fontSize: '0.85rem',
+                                    color: '#78350f',
+                                    textAlign: 'left',
+                                    lineHeight: 1.5
+                                }}>
+                                    <strong>Important :</strong> ne changez pas la formulation, l'orthographe, ni la ponctuation. Copiez-collez le texte tel quel.
+                                </div>
 
-                        <p className="stars-warning-text" style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                            Un avis personnalisé a plus de valeur et réduit le risque de rejet. Respectez également le <strong>nombre d'étoiles</strong> indiqué.
-                        </p>
+                                <p className="stars-warning-text" style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                    Respectez également le <strong>nombre d'étoiles</strong> indiqué.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h3 className="stars-warning-title" style={{ color: '#0369a1' }}>
+                                    Personnalisez vos avis !
+                                </h3>
+
+                                <p className="stars-warning-text" style={{ textAlign: 'left', lineHeight: 1.6 }}>
+                                    L'avis qui va s'afficher est fourni tel quel par l'établissement. Vous pouvez simplement <strong style={{ color: '#0369a1' }}>l'adapter légèrement</strong> (quelques mots, tournures) en y ajoutant votre <strong>expérience personnelle</strong>, sans en changer le sens.
+                                </p>
+
+                                <div style={{
+                                    background: '#f0f9ff',
+                                    border: '1px solid #bae6fd',
+                                    borderRadius: '8px',
+                                    padding: '0.75rem 1rem',
+                                    margin: '0.75rem 0',
+                                    fontSize: '0.85rem',
+                                    color: '#0c4a6e',
+                                    textAlign: 'left',
+                                    lineHeight: 1.5
+                                }}>
+                                    <strong>Exemples :</strong>
+                                    <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
+                                        <li>Décrivez ce que vous avez vu en passant devant le commerce</li>
+                                        <li>Partagez les retours de vos proches</li>
+                                        <li>Ajoutez des détails sur l'emplacement ou l'ambiance</li>
+                                    </ul>
+                                </div>
+
+                                <p className="stars-warning-text" style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                    Un avis personnalisé a plus de valeur et réduit le risque de rejet. Respectez également le <strong>nombre d'étoiles</strong> indiqué.
+                                </p>
+                            </>
+                        )}
 
                         <button
                             className="stars-warning-btn"
