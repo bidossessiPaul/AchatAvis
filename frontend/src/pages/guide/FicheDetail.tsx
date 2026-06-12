@@ -545,7 +545,7 @@ export const FicheDetail: React.FC = () => {
                                                     </div>
                                                 </div>
 
-                                                {/* Countdown réservation 5 min */}
+                                                {/* Countdown de la réservation du slot (basé sur reserved_until renvoyé par le backend) */}
                                                 {countdown && (
                                                     <div style={{
                                                         display: 'flex',
@@ -563,7 +563,7 @@ export const FicheDetail: React.FC = () => {
                                                         <Clock size={13} />
                                                         {slotExpired
                                                             ? isRegenerating
-                                                                ? <>Génération d'un nouvel avis en cours…</>
+                                                                ? <>Rechargement de votre avis…</>
                                                                 : <>Slot expiré — <button onClick={() => orderId && loadficheDetails(orderId)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: '#991b1b', textDecoration: 'underline', padding: 0, fontSize: 'inherit' }}>Recharger un nouveau slot</button></>
                                                             : <>Slot réservé pour vous — expire dans <strong style={{ marginLeft: '0.25rem' }}>{countdown}</strong></>
                                                         }
@@ -913,7 +913,7 @@ export const FicheDetail: React.FC = () => {
                         </h3>
 
                         <p className="stars-warning-text" style={{ textAlign: 'left', lineHeight: 1.6 }}>
-                            Vous pouvez <strong style={{ color: '#0369a1' }}>modifier le texte des avis</strong> proposés en y ajoutant votre <strong>expérience personnelle</strong> et votre <strong>vécu réel</strong>.
+                            L'avis qui va s'afficher est fourni tel quel par l'établissement. Vous pouvez simplement <strong style={{ color: '#0369a1' }}>l'adapter légèrement</strong> (quelques mots, tournures) en y ajoutant votre <strong>expérience personnelle</strong>, sans en changer le sens.
                         </p>
 
                         <div style={{
@@ -985,9 +985,9 @@ export const FicheDetail: React.FC = () => {
                                         borderTopColor: '#fff', borderRadius: '50%',
                                         display: 'inline-block', animation: 'spin 0.7s linear infinite',
                                     }} />
-                                    Génération en cours…
+                                    Chargement…
                                 </>
-                            ) : 'J\'ai compris — générer mon avis'}
+                            ) : 'J\'ai compris — voir mon avis'}
                         </button>
                     </div>
                 </div>

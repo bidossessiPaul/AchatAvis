@@ -1,28 +1,28 @@
 // Tâches planifiées (cron interne, sans dépendance externe).
-// Actuellement : auto-régénération des avis rejetés depuis 48h sans action artisan.
+// Actuellement : auto-recyclage des avis rejetés depuis 48h sans action artisan.
+// Le contenu des avis n'est JAMAIS réécrit — seul le slot est libéré (rotation côté guide).
 
 import { query } from '../config/database';
-import { regenerateProposal, recycleRejectedSubmissions } from './adminService';
+import { recycleRejectedSubmissions } from './adminService';
 
 const INTERVAL_MS = 60 * 60 * 1000; // toutes les heures
 
 export const startCronJobs = () => {
     // Premier passage au démarrage, puis toutes les heures
-    autoRegenerateRejectedReviews();
-    setInterval(autoRegenerateRejectedReviews, INTERVAL_MS);
+    autoRecycleRejectedReviews();
+    setInterval(autoRecycleRejectedReviews, INTERVAL_MS);
 };
 
 /**
  * Cherche les avis rejetés depuis plus de 48h sans relance artisan ni action admin.
- * Pour chacun : régénère le contenu IA puis recycle la soumission (libère le slot).
+ * Pour chacun : recycle la soumission (libère le slot) — sans toucher au contenu.
  * Traite les plus anciens en premier.
  */
-const autoRegenerateRejectedReviews = async () => {
+const autoRecycleRejectedReviews = async () => {
     try {
         const rows: any = await query(`
-            SELECT rs.id, rs.proposal_id, rp.modified_by_artisan_at
+            SELECT rs.id
             FROM reviews_submissions rs
-            JOIN review_proposals rp ON rp.id = rs.proposal_id
             WHERE rs.status = 'rejected'
               AND rs.recycled_at IS NULL
               AND rs.dismissed_at IS NULL
@@ -32,22 +32,17 @@ const autoRegenerateRejectedReviews = async () => {
 
         if (!rows || rows.length === 0) return;
 
-        console.log(`[CRON] Auto-régénération : ${rows.length} avis rejeté(s) depuis +48h`);
+        console.log(`[CRON] Auto-recyclage : ${rows.length} avis rejeté(s) depuis +48h`);
 
         for (const row of rows) {
             try {
-                // Si l'artisan a modifié cet avis manuellement, ne pas écraser son contenu
-                if (!row.modified_by_artisan_at) {
-                    await regenerateProposal(row.proposal_id);
-                }
                 await recycleRejectedSubmissions([row.id]);
-                const label = row.modified_by_artisan_at ? 'recyclée (contenu artisan préservé)' : 'régénérée et remise en ligne';
-                console.log(`[CRON] Soumission ${row.id} ${label}`);
+                console.log(`[CRON] Soumission ${row.id} recyclée (contenu préservé)`);
             } catch (e: any) {
                 console.error(`[CRON] Échec pour soumission ${row.id} :`, e.message);
             }
         }
     } catch (e: any) {
-        console.error('[CRON] Erreur auto-régénération avis rejetés :', e.message);
+        console.error('[CRON] Erreur auto-recyclage avis rejetés :', e.message);
     }
 };

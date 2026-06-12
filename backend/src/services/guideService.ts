@@ -4,92 +4,15 @@ import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
 import { sendAdminEventNotification } from './emailService';
 import { parseImages } from './artisanService';
-import { aiService } from './aiService';
 
-// Régénère le contenu d'un slot expiré avec un nouvel avis IA, puis libère la réservation.
-async function regenerateSingleProposal(proposalId: string, orderId: string): Promise<void> {
-    try {
-        // Ne jamais écraser un avis modifié manuellement par l'artisan — juste libérer la réservation
-        const modCheck: any = await query(
-            `SELECT modified_by_artisan_at FROM review_proposals WHERE id = ?`,
-            [proposalId]
-        );
-        if (modCheck?.[0]?.modified_by_artisan_at) {
-            await query(
-                `UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?`,
-                [proposalId]
-            );
-            return;
-        }
-
-        const orderResult: any = await query(`
-            SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
-                   o.specific_instructions, o.zones,
-                   sd.sector_name, sd.sector_slug,
-                   a.city
-            FROM reviews_orders o
-            JOIN artisans_profiles a ON o.artisan_id = a.user_id
-            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
-            WHERE o.id = ?
-        `, [orderId]);
-
-        if (!orderResult || orderResult.length === 0) {
-            await query('UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL WHERE id = ?', [proposalId]);
-            return;
-        }
-
-        const order = orderResult[0];
-        const reviews = await aiService.generateReviews({
-            companyName: order.company_name || 'Entreprise locale',
-            ficheName: order.fiche_name,
-            trade: order.sector_name || 'Artisan',
-            quantity: 1,
-            sector: order.sector_name,
-            sectorSlug: order.sector_slug,
-            zones: order.zones || order.city,
-            services: order.services,
-            staffNames: order.staff_names,
-            specificInstructions: order.specific_instructions,
-        });
-
-        if (reviews && reviews.length > 0) {
-            const r = reviews[0];
-            // Met à jour le contenu + efface le marqueur 'regen_pending'.
-            // Si un autre guide a pris le slot entre-temps (reserved_by != 'regen_pending'
-            // et reserved_until > NOW()), on garde sa réservation mais on met quand même
-            // le nouveau contenu à jour (il verra le texte frais).
-            await query(`
-                UPDATE review_proposals
-                SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW(),
-                    reserved_by = CASE
-                        WHEN reserved_by = 'regen_pending' THEN NULL
-                        WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL
-                        ELSE reserved_by
-                    END,
-                    reserved_until = CASE
-                        WHEN reserved_by = 'regen_pending' THEN NULL
-                        WHEN reserved_until IS NULL OR reserved_until < NOW() THEN NULL
-                        ELSE reserved_until
-                    END
-                WHERE id = ?
-            `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'tested', proposalId]);
-        } else {
-            // Pas d'avis généré : libère le marqueur regen_pending ou les slots expirés
-            await query(`
-                UPDATE review_proposals
-                SET reserved_by = NULL, reserved_until = NULL
-                WHERE id = ? AND (reserved_by = 'regen_pending' OR reserved_until IS NULL OR reserved_until < NOW())
-            `, [proposalId]);
-        }
-    } catch (err) {
-        console.error(`Erreur régénération proposal ${proposalId}:`, err);
-        // En cas d'erreur IA, libère le marqueur regen_pending pour ne pas bloquer le slot indéfiniment
-        await query(`
-            UPDATE review_proposals SET reserved_by = NULL, reserved_until = NULL
-            WHERE id = ? AND (reserved_by = 'regen_pending' OR reserved_until IS NULL OR reserved_until < NOW())
-        `, [proposalId]);
-    }
-}
+// Durée pendant laquelle un slot est réservé activement à un guide (le temps de poster sur Google).
+const RESERVATION_MINUTES = 25;
+// Pause après expiration : le slot reste invisible aux autres guides ET réclamable
+// uniquement par le guide d'origine s'il revient. Évite qu'un autre guide reposte
+// pendant qu'un premier est encore en train de publier son avis.
+const COOLDOWN_MINUTES = 20;
+// Un slot est "occupé" (bloque les autres + compte dans le quota) tant qu'il est
+// dans la fenêtre réservation + pause. Au-delà, il redevient libre pour tout le monde.
 
 export const guideService = {
     /**
@@ -179,8 +102,32 @@ export const guideService = {
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
             AND (o.locked_by IS NULL OR o.locked_until < NOW() OR o.locked_by = ?)
+            -- Masque la fiche si son quota journalier est déjà pris (preuves du jour +
+            -- slots tenus par d'autres guides, réservation ou pause en cours), sauf si CE
+            -- guide détient déjà son propre slot. Évite d'afficher une fiche inouvrable.
+            AND (
+                EXISTS (
+                    SELECT 1 FROM review_proposals pme
+                    WHERE pme.order_id = o.id AND pme.reserved_by = ?
+                      AND pme.reserved_until > NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
+                      AND pme.deleted_at IS NULL
+                )
+                OR (
+                    (SELECT COUNT(*) FROM reviews_submissions sq
+                     WHERE sq.order_id = o.id AND DATE(sq.submitted_at) = CURDATE() AND sq.status != 'rejected')
+                    +
+                    (SELECT COUNT(*) FROM review_proposals pq
+                     WHERE pq.order_id = o.id AND pq.deleted_at IS NULL
+                       AND pq.reserved_by IS NOT NULL AND pq.reserved_by != ?
+                       AND pq.reserved_until > NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
+                       AND pq.id NOT IN (
+                           SELECT proposal_id FROM reviews_submissions
+                           WHERE order_id = o.id AND status != 'rejected' AND proposal_id IS NOT NULL
+                       ))
+                ) < o.reviews_per_day
+            )
             ORDER BY active_submissions ASC, RAND()
-        `, [guideId, guideId]);
+        `, [guideId, guideId, guideId]);
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
@@ -269,15 +216,35 @@ export const guideService = {
             throw new Error('fiche_FULL');
         }
 
-        // 2. Daily Quota Check — count only active (non-rejected) submissions today
+        // 2. Quota journalier — on compte les "occupations" du jour, PAS seulement les preuves
+        //    soumises. Une occupation = une preuve soumise aujourd'hui OU un slot encore tenu
+        //    par un autre guide (réservation active OU pause après expiration : il est peut-être
+        //    en train de poster sur Google ou va revenir). Sans ça, plusieurs guides entrent
+        //    pendant qu'un autre poste → doublons Google.
+        //    Le guide qui détient déjà un slot (actif ou en pause) n'est jamais compté contre lui-même.
         const dailyStats: any = await query(`
-            SELECT COUNT(*) as count
-            FROM reviews_submissions
-            WHERE order_id = ? AND DATE(submitted_at) = CURDATE() AND status != 'rejected'
-        `, [order_id]);
+            SELECT
+                (SELECT COUNT(*) FROM reviews_submissions
+                 WHERE order_id = ? AND DATE(submitted_at) = CURDATE() AND status != 'rejected') AS submitted_today,
+                (SELECT COUNT(*) FROM review_proposals
+                 WHERE order_id = ? AND deleted_at IS NULL
+                   AND reserved_by IS NOT NULL AND reserved_by != ?
+                   AND reserved_until > NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
+                   AND id NOT IN (
+                       SELECT proposal_id FROM reviews_submissions
+                       WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
+                   )) AS reserved_by_others
+        `, [order_id, order_id, guide_id, order_id]);
 
-        const dailyCount = dailyStats[0].count;
-        if (dailyCount >= order.reviews_per_day) {
+        const dailyCount = dailyStats[0].submitted_today + dailyStats[0].reserved_by_others;
+        // Le guide garde l'accès s'il détient déjà un slot (réservation active ou pause en cours).
+        const hasOwnActiveSlot: any = await query(`
+            SELECT COUNT(*) AS count FROM review_proposals
+            WHERE order_id = ? AND reserved_by = ?
+              AND reserved_until > NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
+              AND deleted_at IS NULL
+        `, [order_id, guide_id]);
+        if (dailyCount >= order.reviews_per_day && hasOwnActiveSlot[0].count === 0) {
             throw new Error('DAILY_QUOTA_FULL');
         }
 
@@ -298,39 +265,44 @@ export const guideService = {
             throw new Error(`fiche_OUTSIDE_HOURS:${fromStr.slice(0, 5)}-${toStr.slice(0, 5)}`);
         }
 
-        // 4. Régénération lazy des slots expirés sans soumission.
-        // Si un guide est parti sans soumettre, on régénère le texte de son slot
-        // avant qu'il soit réassigné — évite les doublons Google.
-        const expiredSlots: any[] = await query(`
-            SELECT id FROM review_proposals
+        // 4. Libère UNIQUEMENT les slots d'autres guides dont la réservation ET la pause
+        // sont terminées (fenêtre réservation + pause écoulée). Pendant la pause, le slot
+        // reste réservé au guide d'origine — invisible aux autres, réclamable par lui seul.
+        // Le contenu n'est JAMAIS réécrit — l'avis fourni par l'artisan reste intact.
+        await query(`
+            UPDATE review_proposals
+            SET reserved_by = NULL, reserved_until = NULL
             WHERE order_id = ?
               AND deleted_at IS NULL
               AND reserved_by IS NOT NULL
               AND reserved_by != ?
-              AND reserved_until < NOW()
+              AND reserved_until < NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
               AND id NOT IN (
                   SELECT proposal_id FROM reviews_submissions
                   WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
               )
         `, [order_id, guide_id, order_id]);
 
-        for (const slot of expiredSlots) {
-            await regenerateSingleProposal(slot.id, order_id);
-        }
-
-        // 5. Trouver/assigner un seul slot disponible pour ce guide (5 min).
-        // Priorité : son propre slot s'il en a déjà un, sinon le plus ancien libre.
+        // 5. Trouver/assigner un slot pour ce guide.
+        // Priorité : son propre slot s'il en détient un (réclamable même pendant la pause),
+        // sinon un slot totalement libre (jamais réservé OU dont la pause est écoulée).
+        // ROTATION anti-doublons : l'avis le moins récemment montré d'abord.
         const availableSlotRows: any[] = await query(`
             SELECT * FROM review_proposals
             WHERE order_id = ?
               AND deleted_at IS NULL
-              AND (reserved_by = ? OR reserved_by IS NULL OR reserved_until < NOW())
+              AND (
+                  reserved_by = ?
+                  OR reserved_by IS NULL
+                  OR reserved_until < NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
+              )
               AND id NOT IN (
                   SELECT proposal_id FROM reviews_submissions
                   WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
               )
             ORDER BY
               CASE WHEN reserved_by = ? THEN 0 ELSE 1 END,
+              COALESCE(last_shown_at, '1970-01-01') ASC,
               created_at ASC
             LIMIT 1
         `, [order_id, guide_id, order_id, guide_id]);
@@ -341,20 +313,21 @@ export const guideService = {
 
         const slot = availableSlotRows[0];
 
-        // Verrouiller le slot ET la fiche pour 5 minutes
+        // Réserver le slot ET la fiche. last_shown_at = NOW() → cet avis part en bas de la rotation.
         await query(`
             UPDATE review_proposals
-            SET reserved_by = ?, reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+            SET reserved_by = ?, reserved_until = DATE_ADD(NOW(), INTERVAL ${RESERVATION_MINUTES} MINUTE),
+                last_shown_at = NOW()
             WHERE id = ?
         `, [guide_id, slot.id]);
 
         await query(`
             UPDATE reviews_orders
-            SET locked_by = ?, locked_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
+            SET locked_by = ?, locked_until = DATE_ADD(NOW(), INTERVAL ${RESERVATION_MINUTES} MINUTE)
             WHERE id = ?
         `, [guide_id, order_id]);
 
-        slot.reserved_until = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        slot.reserved_until = new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000).toISOString();
         slot.images = parseImages(slot.images);
 
         // Fetch ALL submissions for this order (from ALL guides)
@@ -411,56 +384,25 @@ export const guideService = {
         };
     },
 
-    async releaseficheLock(order_id: string, guide_id: string) {
-        // Récupère les proposals qui vont être libérés AVANT de les libérer
-        const toRelease: any[] = await query(`
-            SELECT id FROM review_proposals
-            WHERE order_id = ? AND reserved_by = ?
-              AND id NOT IN (
-                  SELECT proposal_id FROM reviews_submissions
-                  WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
-              )
-        `, [order_id, guide_id, order_id]);
-
-        // Ancien verrou fiche (legacy, on garde pour compatibilité)
-        await query(`
-            UPDATE reviews_orders
-            SET locked_by = NULL, locked_until = NULL
-            WHERE id = ? AND locked_by = ?
-        `, [order_id, guide_id]);
-
-        // Marque le slot 'regen_pending' pendant la régénération (30s max).
-        // Rend le slot INVISIBLE aux autres guides jusqu'à ce que le nouveau contenu soit prêt.
-        // Après 30s, le slot redevient disponible via le lazy-regen de getficheDetails.
-        if (toRelease.length > 0) {
-            await query(`
-                UPDATE review_proposals
-                SET reserved_by = 'regen_pending',
-                    reserved_until = DATE_ADD(NOW(), INTERVAL 30 SECOND)
-                WHERE order_id = ? AND reserved_by = ?
-                  AND id NOT IN (
-                      SELECT proposal_id FROM reviews_submissions
-                      WHERE order_id = ? AND status != 'rejected' AND proposal_id IS NOT NULL
-                  )
-            `, [order_id, guide_id, order_id]);
-
-            // Regen en arrière-plan — efface 'regen_pending' dès que le nouveau contenu est prêt
-            for (const slot of toRelease) {
-                regenerateSingleProposal(slot.id, order_id).catch(err =>
-                    console.error(`Regen background (releaseLock) proposal ${slot.id}:`, err)
-                );
-            }
-        }
-
+    async releaseficheLock(_order_id: string, _guide_id: string) {
+        // IMPORTANT : quitter la page NE libère PLUS le slot.
+        // Le guide peut être en train de poster sur Google ou revenir plus tard ;
+        // sa réservation court jusqu'à son terme (réservation + pause), période pendant
+        // laquelle la fiche reste invisible aux autres et réclamable par lui seul.
+        // Le slot est libéré automatiquement à la prochaine consultation d'un autre guide,
+        // une fois la fenêtre réservation + pause écoulée (cf. getficheDetails étape 4).
         return { success: true };
     },
 
-    // Régénère le slot actuel du guide de façon synchrone (appelé sur "J'ai compris").
-    // Le slot reste réservé au guide après la régénération.
+    // Renouvelle la réservation du slot actuel du guide (appelé sur "J'ai compris").
+    // Le contenu n'est JAMAIS modifié — l'avis est retourné tel que fourni par l'artisan.
+    // Le guide peut reprendre son slot même pendant la pause (réservation expirée mais
+    // dans la fenêtre de pause).
     async refreshCurrentSlot(orderId: string, guideId: string) {
         const slots: any[] = await query(`
-            SELECT p.id, p.is_pregenerated, p.modified_by_artisan_at FROM review_proposals p
-            WHERE p.order_id = ? AND p.reserved_by = ? AND p.reserved_until > NOW()
+            SELECT p.id FROM review_proposals p
+            WHERE p.order_id = ? AND p.reserved_by = ?
+              AND p.reserved_until > NOW() - INTERVAL ${COOLDOWN_MINUTES} MINUTE
               AND p.deleted_at IS NULL
               AND p.id NOT IN (
                   SELECT proposal_id FROM reviews_submissions
@@ -472,67 +414,16 @@ export const guideService = {
         if (!slots || slots.length === 0) throw new Error('NO_ACTIVE_SLOT');
 
         const proposalId = slots[0].id;
-        const isPregenerated = slots[0].is_pregenerated === 1;
-        const isModifiedByArtisan = !!slots[0].modified_by_artisan_at;
-
-        // Proposals pré-générés ou modifiés manuellement par l'artisan : contenu figé, jamais remplacé.
-        // On renouvelle juste la réservation 5 min et on retourne le même texte.
-        if (isPregenerated || isModifiedByArtisan) {
-            await query(
-                `UPDATE review_proposals SET reserved_until = DATE_ADD(NOW(), INTERVAL 5 MINUTE) WHERE id = ? AND reserved_by = ?`,
-                [proposalId, guideId]
-            );
-            const same: any[] = await query(
-                `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,
-                [proposalId]
-            );
-            if (!same || same.length === 0) throw new Error('PROPOSAL_NOT_FOUND');
-            return same[0];
-        }
-
-        // Proposals non pré-générés (cas legacy) : génération d'un nouveau contenu IA
-        const orderResult: any = await query(`
-            SELECT o.company_name, o.fiche_name, o.services, o.staff_names,
-                   o.specific_instructions, o.zones,
-                   sd.sector_name, sd.sector_slug,
-                   a.city
-            FROM reviews_orders o
-            JOIN artisans_profiles a ON o.artisan_id = a.user_id
-            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
-            WHERE o.id = ?
-        `, [orderId]);
-
-        if (!orderResult || orderResult.length === 0) throw new Error('ORDER_NOT_FOUND');
-
-        const order = orderResult[0];
-        const reviews = await aiService.generateReviews({
-            companyName: order.company_name || 'Entreprise locale',
-            ficheName: order.fiche_name,
-            trade: order.sector_name || 'Artisan',
-            quantity: 1,
-            sector: order.sector_name,
-            sectorSlug: order.sector_slug,
-            zones: order.zones || order.city,
-            services: order.services,
-            staffNames: order.staff_names,
-            specificInstructions: order.specific_instructions,
-        });
-
-        if (!reviews || reviews.length === 0) throw new Error('GENERATION_FAILED');
-
-        const r = reviews[0];
-        await query(`
-            UPDATE review_proposals
-            SET content = ?, author_name = ?, experience_type = ?, updated_at = NOW()
-            WHERE id = ? AND reserved_by = ?
-        `, [r.content, r.author_name || 'Anonyme', r.experience_type || 'tested', proposalId, guideId]);
-
-        const updated: any[] = await query(
+        await query(
+            `UPDATE review_proposals SET reserved_until = DATE_ADD(NOW(), INTERVAL ${RESERVATION_MINUTES} MINUTE) WHERE id = ? AND reserved_by = ?`,
+            [proposalId, guideId]
+        );
+        const same: any[] = await query(
             `SELECT id, content, author_name, experience_type, rating FROM review_proposals WHERE id = ?`,
             [proposalId]
         );
-        if (!updated || updated.length === 0) throw new Error('PROPOSAL_NOT_FOUND');
-        return updated[0];
+        if (!same || same.length === 0) throw new Error('PROPOSAL_NOT_FOUND');
+        return same[0];
     },
 
     async getMySubmissions(guideId: string) {
