@@ -804,16 +804,15 @@ export const updateProposal = async (req: Request, res: Response) => {
  */
 export const regenerateProposal = async (req: Request, res: Response) => {
     const { proposalId } = req.params;
-    // force=true permet à l'admin d'écraser explicitement un avis modifié par l'artisan
-    const force = req.body?.force === true || req.query?.force === 'true';
-
     try {
-        const result = await adminService.regenerateProposal(proposalId, force);
-        await LogService.logAction(req.user!.userId, 'REGENERATE_PROPOSAL', 'proposal', proposalId, { force }, req.ip);
+        const result = await adminService.regenerateProposal(proposalId);
+        await LogService.logAction(req.user!.userId, 'REGENERATE_PROPOSAL', 'proposal', proposalId, {}, req.ip);
         res.json(result);
     } catch (error: any) {
         console.error('Regenerate proposal error:', error);
-        res.status(500).json({ error: error.message || 'Internal server error' });
+        // 403 si avis artisan, 500 sinon
+        const status = error.message?.includes('rédigé par l\'artisan') ? 403 : 500;
+        res.status(status).json({ error: error.message || 'Internal server error' });
     }
 };
 

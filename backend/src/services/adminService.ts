@@ -2269,16 +2269,24 @@ export const getReview360Data = async () => {
 };
 
 /**
- * Update a review proposal
+ * Update a review proposal (admin).
+ * Interdit sur les avis rédigés/modifiés par l'artisan : leur contenu est intouchable.
  */
 export const updateProposal = async (proposalId: string, data: { content: string }) => {
+    const check: any = await query(
+        'SELECT modified_by_artisan_at FROM review_proposals WHERE id = ?',
+        [proposalId]
+    );
+    if (check?.[0]?.modified_by_artisan_at) {
+        throw new Error('Cet avis a été rédigé par l\'artisan et ne peut pas être modifié par la plateforme.');
+    }
     return await query('UPDATE review_proposals SET content = ? WHERE id = ?', [data.content, proposalId]);
 };
 
 /**
  * Regenerate a single proposal's content using AI, keeping the same fiche context
  */
-export const regenerateProposal = async (proposalId: string, force = false): Promise<{ content: string; author_name: string; rating: number }> => {
+export const regenerateProposal = async (proposalId: string): Promise<{ content: string; author_name: string; rating: number }> => {
     // 1. Get proposal + order context
     const rows: any = await query(`
         SELECT p.id, p.order_id, p.content, p.author_name, p.rating, p.modified_by_artisan_at,
@@ -2299,9 +2307,9 @@ export const regenerateProposal = async (proposalId: string, force = false): Pro
 
     const order = rows[0];
 
-    // Ne jamais écraser un avis modifié par l'artisan sauf si force=true (action admin explicite)
-    if (order.modified_by_artisan_at && !force) {
-        return { content: order.content, author_name: order.author_name, rating: order.rating || 5 };
+    // Avis rédigé/modifié par l'artisan : intouchable, peu importe qui demande.
+    if (order.modified_by_artisan_at) {
+        throw new Error('Cet avis a été rédigé par l\'artisan et ne peut pas être régénéré.');
     }
 
     // 2. Generate 1 new review with AI
