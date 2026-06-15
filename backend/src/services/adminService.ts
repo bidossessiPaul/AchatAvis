@@ -495,11 +495,11 @@ export const getSubmissionTrend = async (
         `SELECT
             DATE_FORMAT(${dateExpr}, ?) as period_key,
             DATE_FORMAT(${dateExpr}, ?) as label,
+            COUNT(*) as submitted,
             SUM(CASE WHEN status = 'validated' THEN 1 ELSE 0 END) as validated,
             SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected
          FROM reviews_submissions
          WHERE ${whereClause}
-           AND status IN ('validated', 'rejected')
          GROUP BY period_key, label
          ORDER BY period_key ASC`,
         params
@@ -507,6 +507,7 @@ export const getSubmissionTrend = async (
 
     return rows.map((r: any) => ({
         label: r.label,
+        submitted: Number(r.submitted),
         validated: Number(r.validated),
         rejected: Number(r.rejected),
     }));

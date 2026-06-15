@@ -79,7 +79,7 @@ export const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [trendPeriod, setTrendPeriod] = useState<TrendPeriod>('day');
-    const [trendData, setTrendData] = useState<{ label: string; validated: number; rejected: number }[]>([]);
+    const [trendData, setTrendData] = useState<{ label: string; submitted: number; validated: number; rejected: number }[]>([]);
     const [trendLoading, setTrendLoading] = useState(false);
     const [customFrom, setCustomFrom] = useState(daysAgoStr(7));
     const [customTo, setCustomTo] = useState(todayStr());
@@ -574,6 +574,9 @@ export const AdminDashboard: React.FC = () => {
                         <>
                             <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem' }}>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                    <div style={{ width: 12, height: 3, borderRadius: 2, background: '#2383e2' }} /> Soumis
+                                </span>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
                                     <div style={{ width: 12, height: 3, borderRadius: 2, background: '#059669' }} /> Validés
                                 </span>
                                 <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
@@ -599,8 +602,17 @@ export const AdminDashboard: React.FC = () => {
                                     />
                                     <Tooltip
                                         contentStyle={{ borderRadius: 12, border: '1px solid #f1f5f9', fontSize: '0.85rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.08)' }}
-                                        formatter={(value: number, name: string) => [value, name === 'validated' ? 'Validés' : 'Rejetés']}
+                                        formatter={(value: number, name: string) => [value, name === 'submitted' ? 'Soumis' : name === 'validated' ? 'Validés' : 'Rejetés']}
                                         labelStyle={{ fontWeight: 700, color: '#475569', marginBottom: 4 }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="submitted"
+                                        stroke="#2383e2"
+                                        strokeWidth={2}
+                                        dot={false}
+                                        strokeDasharray="5 3"
+                                        activeDot={{ r: 5, fill: '#2383e2', stroke: '#fff', strokeWidth: 2 }}
                                     />
                                     <Line
                                         type="monotone"
@@ -621,13 +633,19 @@ export const AdminDashboard: React.FC = () => {
                                 </LineChart>
                             </ResponsiveContainer>
                             {(() => {
+                                const totalS = trendData.reduce((s, d) => s + d.submitted, 0);
                                 const totalV = trendData.reduce((s, d) => s + d.validated, 0);
                                 const totalR = trendData.reduce((s, d) => s + d.rejected, 0);
-                                const total = totalV + totalR;
-                                const pctV = total > 0 ? Math.round((totalV / total) * 100) : 0;
-                                const pctR = total > 0 ? Math.round((totalR / total) * 100) : 0;
+                                const pctV = totalS > 0 ? Math.round((totalV / totalS) * 100) : 0;
+                                const pctR = totalS > 0 ? Math.round((totalR / totalS) * 100) : 0;
                                 return (
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
+                                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#2383e2', flexShrink: 0 }} />
+                                            <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Soumis</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#2383e2', marginLeft: 'auto' }}>{totalS}</span>
+                                        </div>
+                                        <div style={{ width: 1, background: '#e2e8f0', flexShrink: 0 }} />
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
                                             <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#059669', flexShrink: 0 }} />
                                             <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Validés</span>
@@ -644,7 +662,7 @@ export const AdminDashboard: React.FC = () => {
                                         <div style={{ width: 1, background: '#e2e8f0', flexShrink: 0 }} />
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 120 }}>
                                             <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Total traité</span>
-                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#475569', marginLeft: 'auto' }}>{total}</span>
+                                            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#475569', marginLeft: 'auto' }}>{totalV + totalR}</span>
                                         </div>
                                     </div>
                                 );

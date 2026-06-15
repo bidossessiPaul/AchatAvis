@@ -19,7 +19,7 @@ export const adminService = {
         if (dateFrom) params.append('dateFrom', dateFrom);
         if (dateTo) params.append('dateTo', dateTo);
         const response = await api.get(`/admin/stats/submissions-trend?${params}`);
-        return response.data as { label: string; validated: number; rejected: number }[];
+        return response.data as { label: string; submitted: number; validated: number; rejected: number }[];
     },
 
     /**
