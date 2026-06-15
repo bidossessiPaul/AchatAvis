@@ -24,9 +24,10 @@ const LEVEL_VERIF = checkPermission('can_validate_levels');
 // Middleware to ensure admin access
 router.use(authenticate, authorize('admin'));
 
-// Audit Logs (owner-only: dossoumaxime888@gmail.com)
+// Audit Logs (accès restreint : owner + contact@achatavis.com)
+const LOGS_ALLOWED_EMAILS = new Set(['dossoumaxime888@gmail.com', 'contact@achatavis.com']);
 router.get('/logs', (req, res, next): void => {
-    if (req.user?.email !== 'dossoumaxime888@gmail.com') {
+    if (!LOGS_ALLOWED_EMAILS.has(req.user?.email ?? '')) {
         res.status(403).json({ error: 'Accès réservé' });
         return;
     }

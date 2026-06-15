@@ -109,9 +109,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 
-                // Owner-only: Logs + Analyses fiches
-                if (user.email === 'dossoumaxime888@gmail.com') {
+                // Logs : owner + contact@achatavis.com
+                const LOGS_ALLOWED = ['dossoumaxime888@gmail.com', 'contact@achatavis.com'];
+                if (LOGS_ALLOWED.includes(user.email ?? '')) {
                     allAdminItems.splice(-1, 0, { label: 'Logs Activité', path: '/admin/logs', icon: <Activity size={20} /> });
+                }
+                // Owner-only : Analyses fiches
+                if (user.email === 'dossoumaxime888@gmail.com') {
                     allAdminItems.splice(-1, 0, { label: 'Analyses fiches', path: '/admin/analyze-leads', icon: <BarChart2 size={20} /> });
                 }
 
