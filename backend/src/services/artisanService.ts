@@ -676,6 +676,7 @@ export const artisanService = {
                 s.id as submission_id,
                 s.status as submission_status,
                 s.review_url,
+                s.screenshot_url,
                 s.submitted_at,
                 s.earnings,
                 s.rejection_reason,

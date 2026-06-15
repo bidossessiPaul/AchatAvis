@@ -28,6 +28,7 @@ interface Submission {
     submission_id?: string;
     submission_status?: 'pending' | 'validated' | 'rejected';
     review_url?: string;
+    screenshot_url?: string;
     submitted_at?: string;
     earnings?: number;
     rejection_reason?: string;
@@ -286,6 +287,7 @@ export const ReceivedReviews: React.FC = () => {
                                             <th>fiche</th>
                                             <th>NOTE & AVIS</th>
                                             <th>STATUT</th>
+                                            <th>CAPTURE</th>
                                             <th>SOUMIS LE</th>
                                             <th>PUBLICATION PRÉVUE</th>
                                             <th>ACTIONS</th>
@@ -322,6 +324,19 @@ export const ReceivedReviews: React.FC = () => {
                                                         {getStatusIcon(review)}
                                                         <span>{getStatusLabel(review)}</span>
                                                     </div>
+                                                </td>
+                                                <td>
+                                                    {review.screenshot_url ? (
+                                                        <a href={review.screenshot_url} target="_blank" rel="noopener noreferrer" title="Voir la capture d'écran">
+                                                            <img
+                                                                src={review.screenshot_url}
+                                                                alt="Capture"
+                                                                style={{ height: 44, borderRadius: 6, border: '1px solid #e2e8f0', objectFit: 'cover', display: 'block' }}
+                                                            />
+                                                        </a>
+                                                    ) : (
+                                                        <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>—</span>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <div className="date-cell">

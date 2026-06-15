@@ -334,6 +334,7 @@ export const login = async (email: string, password: string, trustedDeviceToken?
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.password_hash, u.role, u.status, u.suspension_reason, u.email_verified,
                 u.two_factor_enabled, u.two_factor_secret, u.failed_login_attempts, u.account_locked_until, u.permissions,
+                u.training_score, u.training_completed_at,
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,
@@ -679,6 +680,7 @@ export const invalidateUserCache = (userId: string) => {
 export const getUserById = async (userId: string): Promise<UserResponse | null> => {
     const rows: any = await query(
         `SELECT u.id, u.email, u.full_name, u.avatar_url, u.role, u.status, u.suspension_reason, u.email_verified, u.created_at, u.updated_at, u.last_login, u.permissions,
+                u.training_score, u.training_completed_at,
                 ap.company_name, ap.trade, ap.google_business_url,
                 ap.subscription_status, ap.subscription_end_date, ap.subscription_tier, ap.monthly_reviews_quota, ap.current_month_reviews, ap.subscription_start_date, ap.fiches_allowed,
                 COALESCE(ap.phone, gp.phone) as phone,

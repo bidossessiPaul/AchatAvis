@@ -1,0 +1,37 @@
+/* Formation guide : vidéo à gauche, questions de la vidéo à droite.
+   En mobile (<= 900px) les colonnes s'empilent : vidéo au-dessus, questions dessous. */
+
+.gt-columns {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.gt-video-col {
+    flex: 1.4;
+    min-width: 0;
+}
+
+.gt-questions-col {
+    flex: 1;
+    min-width: 0;
+    max-height: 520px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+@media (max-width: 900px) {
+    .gt-columns {
+        flex-direction: column;
+    }
+
+    .gt-questions-col {
+        max-height: none;
+        overflow-y: visible;
+        width: 100%;
+    }
+
+    .gt-video-col {
+        width: 100%;
+    }
+}

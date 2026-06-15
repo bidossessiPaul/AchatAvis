@@ -26,6 +26,7 @@ interface Submission {
     order_id: string;
     proposal_id: string;
     review_url: string;
+    screenshot_url?: string;
     google_email: string;
     status: 'pending' | 'validated' | 'rejected';
     rejection_reason?: string;
@@ -477,7 +478,23 @@ export const ReviewValidation: React.FC = () => {
                                                 </div>
                                             </td>
                                             <td style={{ border: 'none' }}>
-                                                <CopyLinkButton url={submission.review_url} label="Copier la preuve" />
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                    <CopyLinkButton url={submission.review_url} label="Copier le lien" />
+                                                    {submission.screenshot_url && (
+                                                        <a
+                                                            href={submission.screenshot_url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="Voir la capture d'écran"
+                                                        >
+                                                            <img
+                                                                src={submission.screenshot_url}
+                                                                alt="Capture"
+                                                                style={{ height: 48, borderRadius: 6, border: '1px solid #e2e8f0', objectFit: 'cover', display: 'block' }}
+                                                            />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ border: 'none', maxWidth: '250px' }}>
                                                 <div style={{

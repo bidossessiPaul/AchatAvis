@@ -24,9 +24,20 @@ export const guideService = {
         reviewUrl: string,
         googleEmail: string,
         artisanId: string,
-        gmailAccountId?: number
+        gmailAccountId?: number,
+        screenshot?: File
     }): Promise<any> {
-        const response = await api.post('/guide/submissions', data);
+        const form = new FormData();
+        form.append('orderId', data.orderId);
+        form.append('proposalId', data.proposalId);
+        form.append('reviewUrl', data.reviewUrl);
+        form.append('googleEmail', data.googleEmail);
+        form.append('artisanId', data.artisanId);
+        if (data.gmailAccountId !== undefined) form.append('gmailAccountId', String(data.gmailAccountId));
+        if (data.screenshot) form.append('screenshot', data.screenshot);
+        const response = await api.post('/guide/submissions', form, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     },
 
@@ -52,6 +63,54 @@ export const guideService = {
 
     async getLeaderboard(): Promise<any[]> {
         const response = await api.get('/guide/leaderboard');
+        return response.data;
+    },
+
+    // --- Formation obligatoire post-inscription ---
+    // Chaque vidéo a ses questions (affichées à droite pendant le visionnage).
+    // >= 80% sur les questions d'une vidéo → vidéo suivante débloquée.
+
+    async getTrainingContent(): Promise<{
+        videos: { id: number; title: string; description: string | null; video_url: string; position: number }[];
+        questions: { id: number; video_id: number | null; question: string; options: { id: string; text: string }[] }[];
+        passingScore: number;
+    }> {
+        const response = await api.get('/guide/training');
+        return response.data;
+    },
+
+    async getTrainingStatus(): Promise<{
+        completed: boolean;
+        score: number | null;
+        passingScore: number;
+        passedVideoIds: number[];
+    }> {
+        const response = await api.get('/guide/training/status');
+        return response.data;
+    },
+
+    async submitTrainingVideoQuiz(videoId: number, answers: Record<number, string>): Promise<{
+        score: number;
+        passed: boolean;
+        correctCount: number;
+        totalQuestions: number;
+        passingScore: number;
+        trainingCompleted: boolean;
+    }> {
+        const response = await api.post('/guide/training/submit-video', { videoId, answers });
+        return response.data;
+    },
+
+    // Fallback : QCM global tant qu'aucune vidéo n'est en ligne
+    async submitTrainingQuiz(answers: Record<number, string>): Promise<{
+        score: number;
+        passed: boolean;
+        correctCount: number;
+        totalQuestions: number;
+        passingScore: number;
+        trainingCompleted: boolean;
+    }> {
+        const response = await api.post('/guide/training/submit', { answers });
         return response.data;
     }
 };

@@ -46,6 +46,9 @@ const IDENTITY_VERIF_ALLOWED_PATHS = [
     '/api/auth/refresh-token',
     '/api/auth/identity-verification',
     '/api/auth/identity-verification/status',
+    // Formation obligatoire post-inscription : le guide suspendu doit pouvoir
+    // charger les vidéos/QCM et soumettre ses réponses avant la vérif d'identité.
+    '/api/guide/training',
 ];
 
 const statusCache = new Map<string, StatusCacheEntry>();

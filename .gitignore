@@ -16,3 +16,6 @@ coverage/
 temp/
 tmp/
 uploads/
+
+# Videos de formation (uploadees sur Cloudinary, pas dans le repo)
+frontend/public/FAQ/

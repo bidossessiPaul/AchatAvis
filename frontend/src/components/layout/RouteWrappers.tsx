@@ -40,13 +40,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Users suspended for identity verification may only access the verification page
+    // Users suspended for identity verification may only access the training
+    // page (guides who haven't passed the mandatory QCM yet) or the
+    // verification page (training validated, ID document pending).
     if (
         user?.status === 'suspended' &&
-        user?.suspension_reason === 'identity_verification_required' &&
-        location.pathname !== '/identity-verification'
+        user?.suspension_reason === 'identity_verification_required'
     ) {
-        return <Navigate to="/identity-verification" replace />;
+        const needsTraining = user.role === 'guide' && !user.training_completed_at;
+        const allowedPath = needsTraining ? '/formation' : '/identity-verification';
+        if (location.pathname !== allowedPath) {
+            return <Navigate to={allowedPath} replace />;
+        }
     }
 
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
@@ -71,6 +76,10 @@ export const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children
     if (isAuthenticated && user) {
         // Redirect authenticated users away from public pages like login/register
         if (user.status === 'suspended' && user.suspension_reason === 'identity_verification_required') {
+            // Formation obligatoire avant la vérification d'identité pour les guides
+            if (user.role === 'guide' && !user.training_completed_at) {
+                return <Navigate to="/formation" replace />;
+            }
             return <Navigate to="/identity-verification" replace />;
         }
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;

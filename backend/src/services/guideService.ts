@@ -449,6 +449,7 @@ export const guideService = {
         googleEmail: string,
         artisanId: string,
         gmailAccountId?: number,
+        screenshotUrl?: string,
         baseUrl?: string
     }) {
         // 0. 🎯 TRUST SCORE: Vérifier quota mensuel du compte Gmail sélectionné
@@ -558,10 +559,10 @@ export const guideService = {
 
         // 3. Create submission record
         await query(`
-            INSERT INTO reviews_submissions 
-            (id, guide_id, artisan_id, order_id, proposal_id, review_url, google_email, gmail_account_id, status, earnings, submitted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
-        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.googleEmail, data.gmailAccountId || null, payoutAmount]);
+            INSERT INTO reviews_submissions
+            (id, guide_id, artisan_id, order_id, proposal_id, review_url, screenshot_url, google_email, gmail_account_id, status, earnings, submitted_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
+        `, [submissionId, guideId, data.artisanId, data.orderId, data.proposalId, data.reviewUrl, data.screenshotUrl || null, data.googleEmail, data.gmailAccountId || null, payoutAmount]);
 
         // 4. Increment reviews_received + libérer la réservation du slot.
         // La soumission existe → le slot est "consommé", plus besoin de réservation.

@@ -36,6 +36,9 @@ export interface User {
     total_reviews_validated?: number;
     total_earnings?: number;
     google_email?: string;
+    // Formation obligatoire post-inscription (vidéos + QCM >= 80%)
+    training_score?: number | null;
+    training_completed_at?: string | null;
 }
 
 export interface ArtisanProfile {

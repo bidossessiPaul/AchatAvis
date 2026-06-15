@@ -3,6 +3,7 @@ import { guideService } from '../services/guideService';
 import { query } from '../config/database';
 import { invalidateAuthCache } from '../middleware/auth';
 import { SUSPENSION_REASON } from '../utils/geolocation';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 
 /**
  * Anti-scraping: per-user sliding window for fiche views.
@@ -122,11 +123,19 @@ export const guideController = {
                 return res.status(400).json({ error: 'orderId est requis' });
             }
 
+            // Upload screenshot sur Cloudinary si fourni
+            let screenshotUrl: string | undefined;
+            if (req.file) {
+                const uploaded = await uploadToCloudinary(req.file.buffer, 'review-screenshots');
+                screenshotUrl = uploaded.secure_url;
+            }
+
             const origin = req.get('origin') || req.get('referer');
             const baseUrl = origin ? new URL(origin).origin : undefined;
 
             const result = await guideService.submitReviewProof(user.userId, {
                 ...req.body,
+                screenshotUrl,
                 baseUrl
             });
 

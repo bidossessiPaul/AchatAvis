@@ -542,6 +542,7 @@ export const updatePayoutStatus = async (payoutId: string, status: string, admin
 export const getAllSubmissions = async () => {
     return await query(`
         SELECT s.*,
+               s.screenshot_url,
                u.full_name as guide_name, u.avatar_url as guide_avatar,
                gp.google_email,
                ap.company_name as artisan_name,
@@ -573,6 +574,7 @@ export const getArtisanSubmissions = async (artisanId: string) => {
             s.id as submission_id,
             s.status as submission_status,
             s.review_url,
+            s.screenshot_url,
             s.submitted_at,
             s.earnings,
             s.rejection_reason,
@@ -1515,10 +1517,18 @@ export const updatefiche = async (orderId: string, data: any) => {
         'available_from', 'available_to',
     ]);
 
+    // Colonnes DATETIME de reviews_orders — converties de l'ISO JS (ex: "2026-06-07T02:16:58.000Z")
+    // au format MySQL ("2026-06-07 02:16:58") pour éviter ER_TRUNCATED_WRONG_VALUE.
+    const DATETIME_FIELDS = new Set(['paused_at']);
+
     const filteredData: Record<string, any> = {};
     for (const [key, val] of Object.entries(data || {})) {
         if (EDITABLE_FIELDS.has(key)) {
-            filteredData[key] = val;
+            if (DATETIME_FIELDS.has(key) && typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(val)) {
+                filteredData[key] = new Date(val).toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '');
+            } else {
+                filteredData[key] = val;
+            }
         }
     }
 

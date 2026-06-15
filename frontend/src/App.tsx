@@ -17,6 +17,7 @@ const lazyNamed = <T extends Record<string, React.ComponentType<unknown>>>(
 
 const Login = lazyNamed(() => import('./pages/auth/Login'), 'Login');
 const IdentityVerification = lazyNamed(() => import('./pages/auth/IdentityVerification'), 'IdentityVerification');
+const GuideTraining = lazyNamed(() => import('./pages/guide/GuideTraining'), 'GuideTraining');
 const ImpersonateLanding = lazyNamed(() => import('./pages/auth/ImpersonateLanding'), 'ImpersonateLanding');
 const RegisterArtisan = lazyNamed(() => import('./pages/auth/RegisterArtisan'), 'RegisterArtisan');
 const RegisterGuide = lazyNamed(() => import('./pages/auth/RegisterGuide'), 'RegisterGuide');
@@ -130,6 +131,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <IdentityVerification />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/formation"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <GuideTraining />
                                 </ProtectedRoute>
                             }
                         />
