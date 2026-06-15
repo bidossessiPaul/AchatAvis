@@ -61,12 +61,28 @@ export const getTrainingStatus = async (userId: string) => {
 
 /** Corrige un jeu de réponses contre une liste de questions (côté serveur uniquement) */
 const scoreAnswers = (questions: any[], answers: Record<string, string>) => {
+    // Rejeter si toutes les questions ne sont pas répondues — évite le cherry-picking
+    if (Object.keys(answers).length !== questions.length) {
+        throw new Error('Toutes les questions doivent avoir une réponse.');
+    }
     let correctCount = 0;
     for (const q of questions) {
         if (answers[String(q.id)] === q.correct_option) correctCount++;
     }
     const score = Math.round((correctCount / questions.length) * 100);
     return { score, correctCount, passed: score >= TRAINING_PASSING_SCORE };
+};
+
+/** Vérifie le rate limit : max 5 tentatives par vidéo par heure */
+const checkAttemptRateLimit = async (userId: string, videoId: number | null) => {
+    const rows: any = await query(
+        `SELECT COUNT(*) AS n FROM training_attempts
+         WHERE user_id = ? AND video_id <=> ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
+        [userId, videoId]
+    );
+    if (rows[0].n >= 5) {
+        throw new Error('Trop de tentatives. Attendez 1 heure avant de réessayer.');
+    }
 };
 
 /** Marque la formation comme terminée et fige le score global (moyenne des vidéos validées) */
@@ -86,6 +102,8 @@ const completeTraining = async (userId: string, score: number) => {
  * Si toutes les vidéos (ayant des questions) sont validées → formation terminée.
  */
 export const submitVideoQuiz = async (userId: string, videoId: number, answers: Record<string, string>) => {
+    await checkAttemptRateLimit(userId, videoId);
+
     const questions: any = await query(
         `SELECT id, correct_option FROM training_questions WHERE is_active = 1 AND video_id = ?`,
         [videoId]
@@ -149,6 +167,8 @@ export const submitVideoQuiz = async (userId: string, videoId: number, answers: 
  * Utilisé tant qu'aucune vidéo n'est en ligne.
  */
 export const submitTrainingQuiz = async (userId: string, answers: Record<string, string>) => {
+    await checkAttemptRateLimit(userId, null);
+
     const questions: any = await query(
         `SELECT id, correct_option FROM training_questions WHERE is_active = 1 AND video_id IS NULL`
     );

@@ -117,11 +117,23 @@ export const guideController = {
             const user = (req as any).user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-            const { orderId } = req.body;
+            const { orderId, proposalId, reviewUrl, googleEmail, gmailAccountId } = req.body;
 
-            if (!orderId) {
-                return res.status(400).json({ error: 'orderId est requis' });
+            if (!orderId || !proposalId || !reviewUrl || !googleEmail) {
+                return res.status(400).json({ error: 'orderId, proposalId, reviewUrl, googleEmail sont requis' });
             }
+
+            // Vérifier que proposalId appartient bien à orderId — empêche de substituer
+            // un proposal d'une autre fiche via le corps de la requête.
+            const proposalCheck: any = await query(
+                'SELECT artisan_id FROM review_proposals WHERE id = ? AND order_id = ? AND deleted_at IS NULL',
+                [proposalId, orderId]
+            );
+            if (!proposalCheck || proposalCheck.length === 0) {
+                return res.status(403).json({ error: 'Proposition invalide pour cette fiche.' });
+            }
+            // artisanId dérivé de la DB, pas du body
+            const artisanId = proposalCheck[0].artisan_id;
 
             // Upload screenshot sur Cloudinary si fourni
             let screenshotUrl: string | undefined;
@@ -134,9 +146,14 @@ export const guideController = {
             const baseUrl = origin ? new URL(origin).origin : undefined;
 
             const result = await guideService.submitReviewProof(user.userId, {
-                ...req.body,
+                orderId,
+                proposalId,
+                reviewUrl,
+                googleEmail,
+                gmailAccountId: gmailAccountId ? Number(gmailAccountId) : undefined,
+                artisanId,
                 screenshotUrl,
-                baseUrl
+                baseUrl,
             });
 
             return res.json(result);
