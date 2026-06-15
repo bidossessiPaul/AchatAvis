@@ -125,8 +125,12 @@ export const guideController = {
 
             // Vérifier que proposalId appartient bien à orderId — empêche de substituer
             // un proposal d'une autre fiche via le corps de la requête.
+            // artisan_id est sur reviews_orders, pas sur review_proposals.
             const proposalCheck: any = await query(
-                'SELECT artisan_id FROM review_proposals WHERE id = ? AND order_id = ? AND deleted_at IS NULL',
+                `SELECT o.artisan_id
+                 FROM review_proposals rp
+                 JOIN reviews_orders o ON rp.order_id = o.id
+                 WHERE rp.id = ? AND rp.order_id = ? AND rp.deleted_at IS NULL`,
                 [proposalId, orderId]
             );
             if (!proposalCheck || proposalCheck.length === 0) {
