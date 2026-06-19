@@ -679,6 +679,9 @@ export const guideService = {
             WHERE guide_id = ?
         `, [guideId]);
 
+        // Les extras (guide_bonuses) ne rentrent plus dans le solde principal
+        // Ils sont affichés séparément via getBonusDetails
+
         const payouts: any = await query(`
             SELECT
                 COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
@@ -699,7 +702,8 @@ export const guideService = {
         const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
         const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
 
-        const totalEarned = Number(stats[0].total_earned) + Number(bonuses[0].total_bonuses) + sigEarned;
+        // Solde principal = avis validés + signalements uniquement (extras exclus)
+        const totalEarned = Number(stats[0].total_earned) + sigEarned;
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
