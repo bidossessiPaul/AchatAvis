@@ -98,13 +98,22 @@ export const LevelVerificationModal: React.FC<LevelVerificationModalProps> = ({ 
                 </div>
 
                 {/* Title */}
-                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
                     <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
                         Vérifier mon niveau
                     </h3>
                     <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem', fontWeight: 500 }}>
                         Soumettez une capture d'écran de votre profil Local Guide pour faire valider votre niveau.
                     </p>
+                </div>
+
+                {/* Banner suspension */}
+                <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '0.75rem', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <span style={{ fontSize: '1.25rem', flexShrink: 0 }}>⏸️</span>
+                    <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#92400e' }}>Fonctionnalité temporairement suspendue</div>
+                        <div style={{ fontSize: '0.8rem', color: '#b45309', marginTop: '2px' }}>La validation de niveau est en pause. Elle sera bientôt disponible — revenez dans quelques jours.</div>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -214,7 +223,7 @@ export const LevelVerificationModal: React.FC<LevelVerificationModalProps> = ({ 
                             variant="primary"
                             fullWidth
                             isLoading={isSubmitting}
-                            disabled={!screenshot || !profileLink || isSubmitting}
+                            disabled={true}
                             style={{ padding: '1.25rem', borderRadius: '1.25rem', fontSize: '1rem', fontWeight: 800 }}
                         >
                             Soumettre la vérification

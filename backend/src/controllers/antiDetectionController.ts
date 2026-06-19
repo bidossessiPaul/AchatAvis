@@ -469,6 +469,12 @@ WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
     },
 
     async submitLevelVerification(req: Request, res: Response) {
+        // Fonctionnalité temporairement suspendue
+        return res.status(503).json({
+            success: false,
+            error: 'La validation de niveau est temporairement suspendue. Elle sera bientôt disponible.'
+        });
+
         try {
             const user_id = req.user?.userId;
             if (!user_id) return res.status(401).json({ success: false, error: 'Unauthorized' });

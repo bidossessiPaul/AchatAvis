@@ -26,7 +26,10 @@ import {
     Megaphone,
     Flag,
     Settings,
-    BarChart2
+    BarChart2,
+    Globe,
+    Link2,
+    FileSearch
 } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
@@ -76,6 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mes contributions', path: '/guide/submissions', icon: <Star size={20} /> },
                     { label: 'Corrections', path: '/guide/corrections', icon: <RefreshCw size={20} /> },
                     { label: 'Mes Gmails', path: '/guide/my-gmails', icon: <Mail size={20} /> },
+                    { label: 'Citations GEO', path: '/guide/citations', icon: <Globe size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Signalement', path: '/guide/signalement', icon: <Flag size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
@@ -106,6 +110,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Avis à signaler', path: '/admin/signalement/avis', icon: <Flag size={20} />, permissions: ['can_manage_signalements'] },
                     { label: 'Config Signalement', path: '/admin/signalement/config', icon: <Settings size={20} />, permissions: ['can_manage_signalement_packs'] },
                     { label: 'Équipe', path: '/admin/team', icon: <ShieldCheck size={20} />, permissions: ['can_manage_team'] },
+                    { label: 'GEO Plateformes', path: '/admin/geo/platforms', icon: <Globe size={20} /> },
+                    { label: 'GEO Missions', path: '/admin/geo/missions', icon: <Link2 size={20} /> },
+                    { label: 'GEO Soumissions', path: '/admin/geo/submissions', icon: <FileSearch size={20} /> },
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> }, // Always visible
                 ];
 

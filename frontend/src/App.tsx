@@ -44,6 +44,7 @@ const Corrections = lazyNamed(() => import('./pages/guide/Corrections'), 'Correc
 const CommunityRulesPage = lazyNamed(() => import('./pages/guide/CommunityRulesPage'), 'CommunityRulesPage');
 const CommuniquesPage = lazyNamed(() => import('./pages/guide/CommuniquesPage'), 'CommuniquesPage');
 const MyGmailsPage = lazyNamed(() => import('./pages/guide/MyGmailsPage'), 'MyGmailsPage');
+const GuideCitations = lazyNamed(() => import('./pages/guide/GuideCitations'), 'GuideCitations');
 
 const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard');
 const ArtisansList = lazyNamed(() => import('./pages/admin/ArtisansList'), 'ArtisansList');
@@ -70,6 +71,11 @@ const AdminGmailVerifications = lazyNamed(() => import('./pages/admin/AdminGmail
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
 const AdminAnalyzeLeads = lazyNamed(() => import('./pages/admin/AdminAnalyzeLeads'), 'AdminAnalyzeLeads');
 const CommuniquesAdmin = lazyNamed(() => import('./pages/admin/CommuniquesAdmin'), 'CommuniquesAdmin');
+
+// GEO Citations (admin)
+const AdminGeoPlatforms = lazyNamed(() => import('./pages/admin/AdminGeoPlatforms'), 'AdminGeoPlatforms');
+const AdminGeoMissions = lazyNamed(() => import('./pages/admin/AdminGeoMissions'), 'AdminGeoMissions');
+const AdminGeoSubmissions = lazyNamed(() => import('./pages/admin/AdminGeoSubmissions'), 'AdminGeoSubmissions');
 
 // Signalement (admin)
 const SignalementsList = lazyNamed(() => import('./pages/admin/signalement/SignalementsList'), 'SignalementsList');
@@ -385,6 +391,14 @@ function App() {
                             }
                         />
                         <Route
+                            path="/guide/citations"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <GuideCitations />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/guide/quiz"
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
@@ -639,6 +653,32 @@ function App() {
                                     <PermissionGuard requiredPermission={['can_validate_gmail']}>
                                         <AdminGmailVerifications />
                                     </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* GEO Citations — admin */}
+                        <Route
+                            path="/admin/geo/platforms"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminGeoPlatforms />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/geo/missions"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminGeoMissions />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/geo/submissions"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminGeoSubmissions />
                                 </ProtectedRoute>
                             }
                         />
