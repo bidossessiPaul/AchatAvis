@@ -6,6 +6,13 @@ const router = Router();
 
 // Guide Routes
 router.get(
+    '/guide/bonus-details',
+    authenticate,
+    authorize('guide'),
+    payoutController.getBonusDetails
+);
+
+router.get(
     '/guide/earnings',
     authenticate,
     authorize('guide'),

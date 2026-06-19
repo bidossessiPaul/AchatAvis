@@ -3,6 +3,21 @@ import { guideService } from '../services/guideService';
 import * as adminService from '../services/adminService';
 
 /**
+ * GET /payouts/guide/bonus-details
+ * Retourne le détail avis + extras + reversements pour la page Mes gains
+ */
+export const getBonusDetails = async (req: Request, res: Response) => {
+    try {
+        const guideId = (req as any).user.userId;
+        const details = await guideService.getBonusDetails(guideId);
+        res.json(details);
+    } catch (error) {
+        console.error('Get bonus details error:', error);
+        res.status(500).json({ error: 'Erreur lors de la récupération des détails des gains' });
+    }
+};
+
+/**
  * Get guide earnings and stats
  */
 export const getEarnings = async (req: Request, res: Response) => {

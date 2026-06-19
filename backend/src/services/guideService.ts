@@ -634,6 +634,37 @@ export const guideService = {
         return { id: submissionId, success: true };
     },
 
+    async getBonusDetails(guideId: string) {
+        const fromReviews: any = await query(`
+            SELECT COALESCE(SUM(CASE WHEN status = 'validated' THEN earnings ELSE 0 END), 0) as total
+            FROM reviews_submissions
+            WHERE guide_id = ?
+        `, [guideId]);
+
+        const extras: any = await query(`
+            SELECT
+                COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) AS total_added,
+                COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) AS total_reversed
+            FROM guide_bonuses
+            WHERE guide_id = ?
+        `, [guideId]);
+
+        // Détail des reversements pour affichage guide
+        const reversals: any = await query(`
+            SELECT amount, reason, created_at
+            FROM guide_bonuses
+            WHERE guide_id = ? AND amount < 0
+            ORDER BY created_at DESC
+        `, [guideId]);
+
+        return {
+            totalFromReviews: Number(fromReviews[0].total),
+            totalExtrasAdded: Number(extras[0].total_added),
+            totalReversed: Number(extras[0].total_reversed),
+            reversals: reversals as { amount: number; reason: string; created_at: string }[],
+        };
+    },
+
     async getEarningsStats(guideId: string) {
         const stats: any = await query(`
             SELECT

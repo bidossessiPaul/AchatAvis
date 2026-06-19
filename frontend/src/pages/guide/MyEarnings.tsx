@@ -33,6 +33,7 @@ interface PayoutRequest {
 
 export const MyEarnings: React.FC = () => {
     const [stats, setStats] = useState<{ totalEarned: number, totalPaid: number, totalPending: number, sigPending: number, balance: number } | null>(null);
+    const [bonusDetails, setBonusDetails] = useState<{ totalFromReviews: number; totalExtrasAdded: number; totalReversed: number; reversals: { amount: number; reason: string; created_at: string }[] } | null>(null);
 
     const [history, setHistory] = useState<PayoutRequest[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,13 +50,15 @@ export const MyEarnings: React.FC = () => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [statsData, historyData, paymentData] = await Promise.all([
+            const [statsData, historyData, paymentData, bonusData] = await Promise.all([
                 payoutApi.getEarnings(),
                 payoutApi.getPayoutHistory(),
-                payoutApi.getPaymentMethod()
+                payoutApi.getPaymentMethod(),
+                payoutApi.getBonusDetails()
             ]);
             setStats(statsData);
             setHistory(historyData);
+            setBonusDetails(bonusData);
             setPaymentMethod(paymentData);
             if (paymentData) {
                 setSelectedMethod(paymentData.method);
@@ -211,6 +214,47 @@ export const MyEarnings: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Détail des gains : avis + extras + reversements */}
+                {bonusDetails && (bonusDetails.totalExtrasAdded !== 0 || bonusDetails.totalReversed !== 0) && (
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '1rem', padding: '1.25rem 1.5rem', marginBottom: '1.5rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '0.75rem' }}>Détail de vos gains</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569' }}>
+                                <span>Avis validés</span>
+                                <span style={{ fontWeight: 600, color: '#059669' }}>+{Number(bonusDetails.totalFromReviews).toFixed(2)} €</span>
+                            </div>
+                            {bonusDetails.totalExtrasAdded > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#475569' }}>
+                                    <span>Extras (primes, bonus)</span>
+                                    <span style={{ fontWeight: 600, color: '#059669' }}>+{Number(bonusDetails.totalExtrasAdded).toFixed(2)} €</span>
+                                </div>
+                            )}
+                            {bonusDetails.totalReversed !== 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#b91c1c', fontWeight: 600 }}>
+                                    <span>Extras retirés</span>
+                                    <span>{Number(bonusDetails.totalReversed).toFixed(2)} €</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bloc détail des retraits d'extras */}
+                        {bonusDetails.reversals.length > 0 && (
+                            <div style={{ marginTop: '1rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.625rem', padding: '0.875rem 1rem' }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <AlertCircle size={14} />
+                                    Des extras ont été retirés de votre compte
+                                </div>
+                                {bonusDetails.reversals.map((r, i) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#b91c1c', paddingTop: i > 0 ? '0.35rem' : 0, borderTop: i > 0 ? '1px solid #fecaca' : 'none', marginTop: i > 0 ? '0.35rem' : 0 }}>
+                                        <span>{r.reason}</span>
+                                        <span style={{ fontWeight: 700, flexShrink: 0, marginLeft: '1rem' }}>{Number(r.amount).toFixed(2)} €</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Withdraw Action Section */}
                 <div className="withdraw-section-container">
