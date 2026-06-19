@@ -418,9 +418,6 @@ export const FicheDetail: React.FC = () => {
                                         </span>
                                         <span className="location-item">
                                             <span style={{ fontSize: '1.2rem' }}>{(fiche as any).sector_icon}</span>
-                                            <span className={`difficulty-badge ${(fiche as any).difficulty}`}>
-                                                {(fiche as any).difficulty === 'easy' ? 'Simple' : ((fiche as any).difficulty === 'medium' ? 'Modéré' : 'Difficile')}
-                                            </span>
                                         </span>
                                     </p>
                                 </div>

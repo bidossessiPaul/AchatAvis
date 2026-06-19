@@ -80,7 +80,7 @@ export const ProofSubmissionChecklist: React.FC<ProofSubmissionChecklistProps> =
                             <ShieldCheck size={24} color="#f97316" /> Validation avant envoi
                         </div>
                         <p style={{ margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.875rem' }}>
-                            Secteur : {sectorName} {isHardSector && <span style={{ color: '#ef4444' }}>(🔴 Difficile)</span>}
+                            Secteur : {sectorName}
                         </p>
                         <button onClick={onClose} style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'transparent', border: 'none', color: 'white', opacity: 0.5, cursor: 'pointer' }}>
                             <X size={20} />

@@ -234,16 +234,6 @@ export const AllFiches: React.FC = () => {
                                             <MapPin size={16} />
                                             <span>{fiche.sector || 'Secteur non précisé'}</span>
                                         </div>
-                                        <div
-                                            className="fiche-difficulty"
-                                            style={{
-                                                background: fiche.difficulty === 'hard' ? '#fef2f2' : (fiche.difficulty === 'medium' ? '#fffbeb' : '#f0fdf4'),
-                                                color: fiche.difficulty === 'hard' ? '#ef4444' : (fiche.difficulty === 'medium' ? '#f59e0b' : '#FF991F'),
-                                                border: `1px solid ${fiche.difficulty === 'hard' ? '#fee2e2' : (fiche.difficulty === 'medium' ? '#fef3c7' : '#dcfce7')}`
-                                            }}
-                                        >
-                                            {fiche.difficulty === 'easy' ? 'Simple' : (fiche.difficulty === 'medium' ? 'Modéré' : 'Difficile')}
-                                        </div>
                                     </div>
                                 </div>
 
