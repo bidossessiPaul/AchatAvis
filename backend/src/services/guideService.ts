@@ -64,7 +64,20 @@ export const guideService = {
         // Libérer en amont les slots expirés (rejets allow_resubmit > 24h)
         await this.releaseExpiredResubmitSlots();
 
-        return query(`
+        // Rang 0-indexé du guide parmi tous les guides actifs (trié par ancienneté).
+        // Sert à calculer la tranche de 10 fiches qui lui est assignée ce jour.
+        const rankResult: any = await query(`
+            SELECT COUNT(*) as cnt FROM users
+            WHERE role = 'guide'
+              AND status NOT IN ('suspended', 'banned')
+              AND deleted_at IS NULL
+              AND created_at <= (SELECT created_at FROM users WHERE id = ? AND deleted_at IS NULL)
+        `, [guideId]);
+        const guideRank = Math.max(0, Number(rankResult?.[0]?.cnt ?? 1) - 1);
+
+        // Toutes les fiches éligibles dans l'ordre quotidien commun à tous les guides.
+        // Seed = date seule → même ordre pour tout le monde, change chaque jour.
+        const allFiches: any[] = await query(`
             SELECT o.*,
                    (SELECT COUNT(*) FROM reviews_submissions s2
                     WHERE s2.order_id = o.id AND s2.status != 'rejected') as active_submissions,
@@ -126,14 +139,27 @@ export const guideService = {
                        ))
                 ) < o.reviews_per_day
             )
-            ORDER BY
-                -- Fiches où le guide a déjà un slot actif : toujours visibles en premier
-                CASE WHEN o.locked_by = ? THEN 0 ELSE 1 END,
-                -- Rotation quotidienne déterministe : même 10 fiches toute la journée,
-                -- différentes chaque jour, différentes par guide
-                RAND(CRC32(CONCAT(?, DATE_FORMAT(NOW(), '%Y%m%d'))))
-            LIMIT 10
-        `, [guideId, guideId, guideId, guideId, guideId]);
+            ORDER BY RAND(CRC32(DATE_FORMAT(NOW(), '%Y%m%d')))
+        `, [guideId, guideId, guideId]);
+
+        if (!allFiches || allFiches.length === 0) return [];
+
+        // Fiches que CE guide a déjà lockées : toujours incluses, pas soumises au tour de rôle.
+        const myLockedFiches = allFiches.filter(f => f.locked_by === guideId);
+        const lockedIds = new Set(myLockedFiches.map(f => f.id));
+        const unlockedFiches = allFiches.filter(f => !lockedIds.has(f.id));
+
+        // Tranche circulaire de 10 fiches pour ce guide (sans ses fiches déjà lockées)
+        const QUOTA = 10;
+        const remaining = Math.max(0, QUOTA - myLockedFiches.length);
+        const total = unlockedFiches.length;
+        const offset = total > 0 ? (guideRank * remaining) % total : 0;
+        const slice: any[] = [];
+        for (let i = 0; i < remaining && i < total; i++) {
+            slice.push(unlockedFiches[(offset + i) % total]);
+        }
+
+        return [...myLockedFiches, ...slice];
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
