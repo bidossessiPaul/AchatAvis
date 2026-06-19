@@ -159,8 +159,9 @@ export const AllFiches: React.FC = () => {
 
             <div className="fiches-header">
                 <h3 className="fiches-header-title">
-                    {filteredfiches.length} fiche{filteredfiches.length !== 1 ? 's' : ''} trouvée{filteredfiches.length !== 1 ? 's' : ''}
+                    {filteredfiches.length} fiche{filteredfiches.length !== 1 ? 's' : ''} du jour
                 </h3>
+                <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 500 }}>Sélection quotidienne — renouvelée chaque jour</span>
             </div>
 
             {isLoading ? (

@@ -126,8 +126,14 @@ export const guideService = {
                        ))
                 ) < o.reviews_per_day
             )
-            ORDER BY active_submissions ASC, RAND()
-        `, [guideId, guideId, guideId]);
+            ORDER BY
+                -- Fiches où le guide a déjà un slot actif : toujours visibles en premier
+                CASE WHEN o.locked_by = ? THEN 0 ELSE 1 END,
+                -- Rotation quotidienne déterministe : même 10 fiches toute la journée,
+                -- différentes chaque jour, différentes par guide
+                RAND(CRC32(CONCAT(?, DATE_FORMAT(NOW(), '%Y%m%d'))))
+            LIMIT 10
+        `, [guideId, guideId, guideId, guideId, guideId]);
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
