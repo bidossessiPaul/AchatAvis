@@ -674,13 +674,15 @@ export const guideService = {
         `, [guideId]);
 
         const bonuses: any = await query(`
-            SELECT COALESCE(SUM(amount), 0) as total_bonuses
+            SELECT
+                COALESCE(SUM(amount), 0) as total_bonuses,
+                COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) as total_negative
             FROM guide_bonuses
             WHERE guide_id = ?
         `, [guideId]);
 
-        // Les extras (guide_bonuses) ne rentrent plus dans le solde principal
-        // Ils sont affichés séparément via getBonusDetails
+        // Les extras positifs (guide_bonuses > 0) ne rentrent plus dans le solde principal.
+        // Les entrées négatives (reversements, avances admin) réduisent toujours le solde.
 
         const payouts: any = await query(`
             SELECT
@@ -702,8 +704,8 @@ export const guideService = {
         const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
         const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
 
-        // Solde principal = avis validés + signalements uniquement (extras exclus)
-        const totalEarned = Number(stats[0].total_earned) + sigEarned;
+        // Solde principal = avis validés + signalements + entrées négatives (reversements/avances)
+        const totalEarned = Number(stats[0].total_earned) + sigEarned + Number(bonuses[0].total_negative);
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
