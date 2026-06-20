@@ -34,6 +34,7 @@ const isSameUser = (a: User | null, b: User | null): boolean => {
         'current_month_reviews',
         'fiches_allowed',
         'fiches_used',
+        'training_completed_at',
     ];
     for (const k of keys) {
         if (a[k] !== b[k]) return false;
