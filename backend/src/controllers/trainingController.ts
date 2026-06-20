@@ -36,6 +36,12 @@ export const trainingController = {
             if (error.message === 'Aucune question de formation disponible') {
                 return res.status(409).json({ error: error.message });
             }
+            if (error.message === 'Trop de tentatives. Attendez 1 heure avant de réessayer.') {
+                return res.status(429).json({ error: error.message });
+            }
+            if (error.message === 'Toutes les questions doivent avoir une réponse.') {
+                return res.status(400).json({ error: 'Réponses incomplètes, rechargez la page et réessayez.' });
+            }
             return res.status(500).json({ error: 'Impossible de soumettre le QCM' });
         }
     },
@@ -56,6 +62,12 @@ export const trainingController = {
             console.error('❌ [Training] submitVideo:', error.message);
             if (error.message === 'Aucune question pour cette vidéo') {
                 return res.status(409).json({ error: error.message });
+            }
+            if (error.message === 'Trop de tentatives. Attendez 1 heure avant de réessayer.') {
+                return res.status(429).json({ error: error.message });
+            }
+            if (error.message === 'Toutes les questions doivent avoir une réponse.') {
+                return res.status(400).json({ error: 'Réponses incomplètes, rechargez la page et réessayez.' });
             }
             return res.status(500).json({ error: 'Impossible de soumettre les réponses' });
         }
