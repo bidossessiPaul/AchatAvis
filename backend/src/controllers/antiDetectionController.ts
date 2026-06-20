@@ -532,8 +532,12 @@ WHERE g.user_id = ? AND g.is_active = 1 AND g.deleted_at IS NULL
             }
 
             // Upload screenshot to Cloudinary
+            const uploadedFile = req.file;
+            if (!uploadedFile) {
+                return res.status(400).json({ success: false, error: 'Screenshot manquant.' });
+            }
             const { uploadToCloudinary } = require('../services/cloudinaryService');
-            const uploadResult = await uploadToCloudinary(req.file.buffer, 'level-verifications');
+            const uploadResult = await uploadToCloudinary(uploadedFile!.buffer, 'level-verifications');
 
             // Create verification request
             await query(`
