@@ -39,8 +39,10 @@ interface CreatePlatformData {
 }
 
 interface CreateMissionData {
-    artisan_id: string;
+    artisan_id?: string | null;
     fiche_id?: string | null;
+    external_name?: string | null;
+    external_email?: string | null;
     name: string;
     activity_type: string;
     city: string;
@@ -117,7 +119,7 @@ export const getMissionPlatforms = async (missionId: string, guideId: string) =>
             gp.reward_amount,
             -- Soumission de CE guide sur cette plateforme/mission
             gs.id             AS submission_id,
-            gs.status         AS submission_status,
+            gs.status         AS my_status,
             gs.submission_url,
             gs.screenshot_url AS submission_screenshot_url,
             gs.created_at     AS submitted_at
@@ -295,19 +297,19 @@ export const adminGetMissions = async (filters: MissionFilters) => {
     return query(`
         SELECT
             gm.*,
-            u.full_name  AS artisan_name,
-            u.email      AS artisan_email,
+            COALESCE(u.full_name, gm.external_name, 'Client externe') AS artisan_name,
+            COALESCE(u.email, gm.external_email)                       AS artisan_email,
             ap.company_name,
             COUNT(DISTINCT gs.id)                                               AS total_submissions,
             COUNT(DISTINCT CASE WHEN gs.status = 'pending'   THEN gs.id END)   AS pending_count,
             COUNT(DISTINCT CASE WHEN gs.status = 'validated' THEN gs.id END)   AS validated_count
         FROM geo_missions gm
-        JOIN users u ON u.id = gm.artisan_id
+        LEFT JOIN users u ON u.id = gm.artisan_id
         LEFT JOIN artisans_profiles ap ON ap.user_id = gm.artisan_id
         LEFT JOIN geo_submissions gs ON gs.mission_id = gm.id AND gs.deleted_at IS NULL
         ${where}
         GROUP BY
-            gm.id, u.full_name, u.email, ap.company_name
+            gm.id, u.full_name, u.email, ap.company_name, gm.external_name, gm.external_email
         ORDER BY gm.created_at DESC
     `, params);
 };
@@ -319,15 +321,19 @@ export const adminCreateMission = async (data: CreateMissionData) => {
     const id = uuidv4();
     await query(`
         INSERT INTO geo_missions
-            (id, artisan_id, fiche_id, name, activity_type, city, website, phone, address,
+            (id, artisan_id, fiche_id, external_name, external_email,
+             name, activity_type, city, website, phone, address,
              description, citation_target, reward_per_submission, status, created_at)
         VALUES
-            (:id, :artisan_id, :fiche_id, :name, :activity_type, :city, :website, :phone, :address,
+            (:id, :artisan_id, :fiche_id, :external_name, :external_email,
+             :name, :activity_type, :city, :website, :phone, :address,
              :description, :citation_target, :reward_per_submission, :status, NOW())
     `, {
         id,
-        artisan_id: data.artisan_id,
+        artisan_id: data.artisan_id ?? null,
         fiche_id: data.fiche_id ?? null,
+        external_name: data.external_name ?? null,
+        external_email: data.external_email ?? null,
         name: data.name,
         activity_type: data.activity_type,
         city: data.city,
@@ -348,7 +354,7 @@ export const adminCreateMission = async (data: CreateMissionData) => {
  * Met à jour les champs fournis d'une mission existante (soft-delete préservé).
  */
 export const adminUpdateMission = async (id: string, data: Partial<CreateMissionData & { status: string }>) => {
-    const allowed = ['name', 'activity_type', 'city', 'website', 'phone', 'address', 'description', 'citation_target', 'reward_per_submission', 'status'];
+    const allowed = ['name', 'activity_type', 'city', 'website', 'phone', 'address', 'description', 'citation_target', 'reward_per_submission', 'status', 'external_name', 'external_email'];
     const setClauses: string[] = [];
     const params: Record<string, any> = { id };
 

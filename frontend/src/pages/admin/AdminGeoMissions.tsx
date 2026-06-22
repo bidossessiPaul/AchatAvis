@@ -20,11 +20,16 @@ import Swal from 'sweetalert2';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import api from '../../services/api';
 
+type MissionMode = 'artisan' | 'fiche' | 'externe';
+
 interface Mission {
     id: number;
-    artisan_id: string;
+    artisan_id: string | null;
     artisan_name: string;
-    artisan_email: string;
+    artisan_email: string | null;
+    external_name: string | null;
+    external_email: string | null;
+    fiche_id: string | null;
     name: string;
     activity_type: string;
     city: string;
@@ -38,6 +43,16 @@ interface Mission {
     validated_count: number;
     pending_count: number;
     created_at: string;
+}
+
+interface Fiche {
+    id: string;
+    artisan_id: string;
+    fiche_name: string | null;
+    company_name: string | null;
+    sector: string | null;
+    google_business_url: string | null;
+    artisan_name: string;
 }
 
 interface Artisan {
@@ -90,14 +105,25 @@ export const AdminGeoMissions: React.FC = () => {
     const [editingMission, setEditingMission] = useState<Mission | null>(null);
     const [formData, setFormData] = useState(defaultForm);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [missionMode, setMissionMode] = useState<MissionMode>('artisan');
+    // Artisan mode
     const [selectedArtisans, setSelectedArtisans] = useState<Artisan[]>([]);
     const [artisanSearch, setArtisanSearch] = useState('');
     const [artisanDropdownOpen, setArtisanDropdownOpen] = useState(false);
     const artisanSearchRef = useRef<HTMLDivElement>(null);
+    // Fiche mode
+    const [fiches, setFiches] = useState<Fiche[]>([]);
+    const [selectedFiche, setSelectedFiche] = useState<Fiche | null>(null);
+    const [ficheSearch, setFicheSearch] = useState('');
+    const [ficheDropdownOpen, setFicheDropdownOpen] = useState(false);
+    // Externe mode
+    const [externalName, setExternalName] = useState('');
+    const [externalEmail, setExternalEmail] = useState('');
 
     useEffect(() => {
         fetchMissions();
         fetchArtisans();
+        fetchFiches();
     }, []);
 
     const fetchMissions = async (silent = false) => {
@@ -117,24 +143,48 @@ export const AdminGeoMissions: React.FC = () => {
             const { data } = await api.get('/admin/artisans');
             setArtisans(data);
         } catch {
-            // Silencieux — artisans non critiques au chargement
+            // Silencieux
+        }
+    };
+
+    const fetchFiches = async () => {
+        try {
+            const { data } = await api.get('/admin/fiches');
+            setFiches(data);
+        } catch {
+            // Silencieux
         }
     };
 
     const handleOpenModal = (mission: Mission | null = null) => {
         setArtisanSearch('');
         setArtisanDropdownOpen(false);
+        setFicheSearch('');
+        setFicheDropdownOpen(false);
+        setSelectedFiche(null);
+        setExternalName('');
+        setExternalEmail('');
         if (mission) {
             setEditingMission(mission);
-            setSelectedArtisans([{
-                id: mission.artisan_id,
-                full_name: mission.artisan_name,
-                email: mission.artisan_email,
-                company_name: '',
-                trade: mission.activity_type,
-                phone: mission.phone || '',
-                city: mission.city,
-            }]);
+            // Détecte le mode d'origine
+            if (mission.fiche_id) {
+                setMissionMode('fiche');
+            } else if (!mission.artisan_id || mission.external_name) {
+                setMissionMode('externe');
+                setExternalName(mission.external_name ?? '');
+                setExternalEmail(mission.external_email ?? '');
+            } else {
+                setMissionMode('artisan');
+                setSelectedArtisans([{
+                    id: mission.artisan_id,
+                    full_name: mission.artisan_name,
+                    email: mission.artisan_email ?? '',
+                    company_name: '',
+                    trade: mission.activity_type,
+                    phone: mission.phone || '',
+                    city: mission.city,
+                }]);
+            }
             setFormData({
                 name: mission.name,
                 description: mission.description ?? '',
@@ -149,6 +199,7 @@ export const AdminGeoMissions: React.FC = () => {
             });
         } else {
             setEditingMission(null);
+            setMissionMode('artisan');
             setSelectedArtisans([]);
             setFormData(defaultForm);
         }
@@ -157,45 +208,76 @@ export const AdminGeoMissions: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!editingMission && selectedArtisans.length === 0) {
-            showError('Artisan requis', 'Veuillez sélectionner au moins un artisan');
-            return;
+        // Validations par mode
+        if (!editingMission) {
+            if (missionMode === 'artisan' && selectedArtisans.length === 0) {
+                showError('Artisan requis', 'Sélectionnez au moins un artisan');
+                return;
+            }
+            if (missionMode === 'fiche' && !selectedFiche) {
+                showError('Fiche requise', 'Sélectionnez une fiche');
+                return;
+            }
+            if (missionMode === 'externe' && !externalName.trim()) {
+                showError('Nom requis', 'Saisissez le nom du client');
+                return;
+            }
         }
         setIsSubmitting(true);
         try {
+            const commonPayload = {
+                name: formData.name,
+                description: formData.description || null,
+                citation_target: formData.citation_target,
+                reward_per_submission: formData.reward_per_submission,
+                status: formData.status,
+                activity_type: formData.activity_type || '',
+                city: formData.city || '',
+                website: formData.website || null,
+                phone: formData.phone || null,
+                address: formData.address || null,
+            };
+
             if (editingMission) {
-                await api.put(`/geo/admin/missions/${editingMission.id}`, {
-                    name: formData.name,
-                    activity_type: formData.activity_type,
-                    city: formData.city,
-                    website: formData.website || null,
-                    phone: formData.phone || null,
-                    address: formData.address || null,
-                    description: formData.description || null,
-                    citation_target: formData.citation_target,
-                    reward_per_submission: formData.reward_per_submission,
-                    status: formData.status,
-                });
+                const extraEdit = missionMode === 'externe'
+                    ? { external_name: externalName || null, external_email: externalEmail || null }
+                    : {};
+                await api.put(`/geo/admin/missions/${editingMission.id}`, { ...commonPayload, ...extraEdit });
                 showSuccess('Mission mise à jour');
-            } else {
-                // Une mission par artisan sélectionné
+            } else if (missionMode === 'artisan') {
                 for (const artisan of selectedArtisans) {
                     const missionName = formData.name || `Citations GEO — ${artisan.company_name || artisan.full_name}`;
                     await api.post('/geo/admin/missions', {
                         artisan_id: artisan.id,
+                        ...commonPayload,
                         name: missionName,
-                        activity_type: artisan.trade || '',
-                        city: artisan.city || '',
-                        website: formData.website || null,
-                        phone: artisan.phone || null,
-                        address: formData.address || null,
-                        description: formData.description || null,
-                        citation_target: formData.citation_target,
-                        reward_per_submission: formData.reward_per_submission,
-                        status: formData.status,
+                        activity_type: formData.activity_type || artisan.trade || '',
+                        city: formData.city || artisan.city || '',
+                        phone: formData.phone || artisan.phone || null,
                     });
                 }
                 showSuccess(selectedArtisans.length > 1 ? `${selectedArtisans.length} missions créées` : 'Mission créée');
+            } else if (missionMode === 'fiche' && selectedFiche) {
+                const missionName = formData.name || `Citations GEO — ${selectedFiche.company_name || selectedFiche.fiche_name}`;
+                await api.post('/geo/admin/missions', {
+                    artisan_id: selectedFiche.artisan_id,
+                    fiche_id: selectedFiche.id,
+                    ...commonPayload,
+                    name: missionName,
+                    activity_type: formData.activity_type || selectedFiche.sector || '',
+                    website: formData.website || selectedFiche.google_business_url || null,
+                });
+                showSuccess('Mission créée depuis la fiche');
+            } else if (missionMode === 'externe') {
+                const missionName = formData.name || `Citations GEO — ${externalName}`;
+                await api.post('/geo/admin/missions', {
+                    artisan_id: null,
+                    external_name: externalName.trim(),
+                    external_email: externalEmail.trim() || null,
+                    ...commonPayload,
+                    name: missionName,
+                });
+                showSuccess('Mission externe créée');
             }
             setIsModalOpen(false);
             fetchMissions(true);
@@ -241,6 +323,17 @@ export const AdminGeoMissions: React.FC = () => {
             setActionLoadingId(null);
         }
     };
+
+    const filteredFiches = fiches.filter(f => {
+        if (!ficheSearch) return true;
+        const q = ficheSearch.toLowerCase();
+        return (
+            f.company_name?.toLowerCase().includes(q) ||
+            f.fiche_name?.toLowerCase().includes(q) ||
+            f.artisan_name?.toLowerCase().includes(q) ||
+            f.sector?.toLowerCase().includes(q)
+        );
+    }).filter(f => f.id !== selectedFiche?.id);
 
     const filteredArtisans = artisans.filter(a => {
         if (!artisanSearch) return true;
@@ -564,100 +657,194 @@ export const AdminGeoMissions: React.FC = () => {
                         <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto' }}>
                             <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
 
-                                {/* Sélecteur artisan avec recherche + multi-select */}
-                                <div style={{ gridColumn: '1 / -1' }} ref={artisanSearchRef}>
-                                    <label style={labelStyle}>Artisan(s) *</label>
+                                {/* Sélecteur de mode — masqué en édition */}
+                                {!editingMission && (
+                                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '6px' }}>
+                                        {([
+                                            { key: 'artisan', label: 'Artisan inscrit' },
+                                            { key: 'fiche', label: 'Depuis une fiche' },
+                                            { key: 'externe', label: 'Client externe' },
+                                        ] as { key: MissionMode; label: string }[]).map(m => (
+                                            <button
+                                                key={m.key}
+                                                type="button"
+                                                onClick={() => { setMissionMode(m.key); setSelectedArtisans([]); setSelectedFiche(null); setExternalName(''); setExternalEmail(''); }}
+                                                style={{
+                                                    flex: 1, padding: '0.55rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+                                                    border: missionMode === m.key ? '2px solid #059669' : '1.5px solid #e2e8f0',
+                                                    background: missionMode === m.key ? '#f0fdf4' : 'white',
+                                                    color: missionMode === m.key ? '#059669' : '#64748b',
+                                                }}
+                                            >
+                                                {m.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
 
-                                    {/* Chips des artisans sélectionnés */}
-                                    {selectedArtisans.length > 0 && (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
-                                            {selectedArtisans.map(a => (
-                                                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 600, color: '#166534' }}>
-                                                    <span>{a.company_name || a.full_name}</span>
-                                                    {a.city && <span style={{ color: '#64748b', fontWeight: 400 }}>— {a.city}</span>}
-                                                    {!editingMission && (
-                                                        <button type="button" onClick={() => handleRemoveArtisan(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-                                                            <X size={12} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                {/* MODE ARTISAN */}
+                                {missionMode === 'artisan' && (
+                                    <div style={{ gridColumn: '1 / -1' }} ref={artisanSearchRef}>
+                                        <label style={labelStyle}>Artisan(s) *</label>
+                                        {selectedArtisans.length > 0 && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                                {selectedArtisans.map(a => (
+                                                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '4px 10px', fontSize: '0.8rem', fontWeight: 600, color: '#166534' }}>
+                                                        <span>{a.company_name || a.full_name}</span>
+                                                        {a.city && <span style={{ color: '#64748b', fontWeight: 400 }}>— {a.city}</span>}
+                                                        {!editingMission && (
+                                                            <button type="button" onClick={() => handleRemoveArtisan(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                                                                <X size={12} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {!editingMission && (
+                                            <div style={{ position: 'relative' }}>
+                                                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nom, email, téléphone, ville..."
+                                                    value={artisanSearch}
+                                                    onChange={e => { setArtisanSearch(e.target.value); setArtisanDropdownOpen(true); }}
+                                                    onFocus={() => setArtisanDropdownOpen(true)}
+                                                    onBlur={() => setTimeout(() => setArtisanDropdownOpen(false), 150)}
+                                                    style={{ ...inputStyle, paddingLeft: '2rem' }}
+                                                />
+                                                {artisanDropdownOpen && (
+                                                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 3000, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
+                                                        {filteredArtisans.length === 0 ? (
+                                                            <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', color: '#94a3b8' }}>Aucun résultat</div>
+                                                        ) : filteredArtisans.slice(0, 20).map(a => (
+                                                            <button key={a.id} type="button" onMouseDown={() => handleSelectArtisan(a)}
+                                                                style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #f8fafc', padding: '0.75rem 1rem', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                                                                onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                                                                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                                            >
+                                                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>
+                                                                    {a.company_name || a.full_name}
+                                                                    {a.company_name && a.full_name !== a.company_name && <span style={{ fontWeight: 400, color: '#64748b', marginLeft: '6px' }}>({a.full_name})</span>}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                                                    <span>{a.email}</span>
+                                                                    {a.city && <span>{a.city}</span>}
+                                                                    {a.trade && <span style={{ color: '#2383e2' }}>{a.trade}</span>}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
-                                    {/* Zone de recherche — masquée en mode édition */}
-                                    {!editingMission && (
-                                        <div style={{ position: 'relative' }}>
-                                            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
-                                            <input
-                                                type="text"
-                                                placeholder="Rechercher par nom, email, téléphone, ville..."
-                                                value={artisanSearch}
-                                                onChange={e => { setArtisanSearch(e.target.value); setArtisanDropdownOpen(true); }}
-                                                onFocus={() => setArtisanDropdownOpen(true)}
-                                                onBlur={() => setTimeout(() => setArtisanDropdownOpen(false), 150)}
-                                                style={{ ...inputStyle, paddingLeft: '2rem' }}
-                                            />
-                                            {artisanDropdownOpen && (
-                                                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 3000, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
-                                                    {filteredArtisans.length === 0 ? (
-                                                        <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', color: '#94a3b8' }}>Aucun résultat</div>
-                                                    ) : filteredArtisans.slice(0, 20).map(a => (
-                                                        <button
-                                                            key={a.id}
-                                                            type="button"
-                                                            onMouseDown={() => handleSelectArtisan(a)}
-                                                            style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #f8fafc', padding: '0.75rem 1rem', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px' }}
-                                                            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                                                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
-                                                        >
-                                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>
-                                                                {a.company_name || a.full_name}
-                                                                {a.company_name && a.full_name !== a.company_name && (
-                                                                    <span style={{ fontWeight: 400, color: '#64748b', marginLeft: '6px' }}>({a.full_name})</span>
-                                                                )}
-                                                            </div>
-                                                            <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                                                <span>{a.email}</span>
-                                                                {a.city && <span>{a.city}</span>}
-                                                                {a.trade && <span style={{ color: '#2383e2' }}>{a.trade}</span>}
-                                                            </div>
-                                                        </button>
-                                                    ))}
+                                {/* MODE FICHE */}
+                                {missionMode === 'fiche' && (
+                                    <div style={{ gridColumn: '1 / -1' }}>
+                                        <label style={labelStyle}>Fiche *</label>
+                                        {selectedFiche ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.65rem 0.85rem' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1e40af' }}>{selectedFiche.company_name || selectedFiche.fiche_name}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{selectedFiche.sector} — {selectedFiche.artisan_name}</div>
                                                 </div>
-                                            )}
+                                                {!editingMission && (
+                                                    <button type="button" onClick={() => { setSelectedFiche(null); setFormData(f => ({ ...f, activity_type: '', website: '' })); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
+                                                        <X size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div style={{ position: 'relative' }}>
+                                                <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nom entreprise, secteur, artisan..."
+                                                    value={ficheSearch}
+                                                    onChange={e => { setFicheSearch(e.target.value); setFicheDropdownOpen(true); }}
+                                                    onFocus={() => setFicheDropdownOpen(true)}
+                                                    onBlur={() => setTimeout(() => setFicheDropdownOpen(false), 150)}
+                                                    style={{ ...inputStyle, paddingLeft: '2rem' }}
+                                                />
+                                                {ficheDropdownOpen && (
+                                                    <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 3000, maxHeight: '220px', overflowY: 'auto', marginTop: '4px' }}>
+                                                        {filteredFiches.length === 0 ? (
+                                                            <div style={{ padding: '0.875rem 1rem', fontSize: '0.8rem', color: '#94a3b8' }}>Aucune fiche trouvée</div>
+                                                        ) : filteredFiches.slice(0, 20).map(f => (
+                                                            <button key={f.id} type="button"
+                                                                onMouseDown={() => {
+                                                                    setSelectedFiche(f);
+                                                                    setFicheSearch('');
+                                                                    setFicheDropdownOpen(false);
+                                                                    setFormData(prev => ({
+                                                                        ...prev,
+                                                                        name: prev.name || `Citations GEO — ${f.company_name || f.fiche_name || ''}`,
+                                                                        activity_type: prev.activity_type || f.sector || '',
+                                                                        website: prev.website || f.google_business_url || '',
+                                                                    }));
+                                                                }}
+                                                                style={{ width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #f8fafc', padding: '0.75rem 1rem', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '2px' }}
+                                                                onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                                                                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                                                            >
+                                                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{f.company_name || f.fiche_name}</div>
+                                                                <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                                                    {f.sector && <span style={{ color: '#2383e2' }}>{f.sector}</span>}
+                                                                    <span>{f.artisan_name}</span>
+                                                                    {f.google_business_url && <span style={{ color: '#059669' }}>Google Maps</span>}
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* MODE EXTERNE */}
+                                {missionMode === 'externe' && (
+                                    <>
+                                        <div>
+                                            <label style={labelStyle}>Nom du client *</label>
+                                            <input type="text" required value={externalName} onChange={e => setExternalName(e.target.value)} placeholder="Ex: Entreprise Martin" style={inputStyle} />
                                         </div>
-                                    )}
-                                </div>
+                                        <div>
+                                            <label style={labelStyle}>Email (optionnel)</label>
+                                            <input type="email" value={externalEmail} onChange={e => setExternalEmail(e.target.value)} placeholder="contact@exemple.fr" style={inputStyle} />
+                                        </div>
+                                    </>
+                                )}
 
                                 {/* Nom de la mission */}
                                 <div style={{ gridColumn: '1 / -1' }}>
                                     <label style={labelStyle}>
                                         Nom de la mission
-                                        {selectedArtisans.length > 0 && !editingMission && (
-                                            <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: '6px', fontSize: '0.78rem' }}>Laissez vide pour auto-générer</span>
-                                        )}
+                                        <span style={{ fontWeight: 400, color: '#94a3b8', marginLeft: '6px', fontSize: '0.78rem' }}>Laissez vide pour auto-générer</span>
                                     </label>
-                                    <input type="text" required={!selectedArtisans.length || !!editingMission} value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={selectedArtisans.length > 0 ? `Citations GEO — ${selectedArtisans[0].company_name || selectedArtisans[0].full_name}` : 'Ex: Citations plombier Paris 15e'} style={inputStyle} />
+                                    <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Ex: Citations plombier Paris 15e" style={inputStyle} />
                                 </div>
 
-                                {/* Champs NAP — affichés seulement si aucun artisan sélectionné OU en mode édition */}
-                                {(selectedArtisans.length === 0 || !!editingMission) && (
+                                {/* Champs NAP */}
+                                {(missionMode !== 'artisan' || selectedArtisans.length === 0 || !!editingMission) && (
                                     <>
                                         <div>
-                                            <label style={labelStyle}>Type d'activité *</label>
-                                            <input type="text" required value={formData.activity_type} onChange={e => setFormData({ ...formData, activity_type: e.target.value })} placeholder="Ex: Plombier" style={inputStyle} />
+                                            <label style={labelStyle}>Type d'activité</label>
+                                            <input type="text" value={formData.activity_type} onChange={e => setFormData({ ...formData, activity_type: e.target.value })} placeholder="Ex: Plombier" style={inputStyle} />
                                         </div>
                                         <div>
-                                            <label style={labelStyle}>Ville *</label>
-                                            <input type="text" required value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="Ex: Paris" style={inputStyle} />
+                                            <label style={labelStyle}>Ville</label>
+                                            <input type="text" value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="Ex: Paris" style={inputStyle} />
                                         </div>
                                         <div>
                                             <label style={labelStyle}>Téléphone</label>
                                             <input type="text" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="01 23 45 67 89" style={inputStyle} />
                                         </div>
                                         <div>
-                                            <label style={labelStyle}>Site web</label>
+                                            <label style={labelStyle}>Site web / Google Maps URL</label>
                                             <input type="url" value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })} placeholder="https://..." style={inputStyle} />
                                         </div>
                                         <div style={{ gridColumn: '1 / -1' }}>
@@ -695,7 +882,12 @@ export const AdminGeoMissions: React.FC = () => {
                                 </button>
                                 <button type="submit" disabled={isSubmitting} style={{ padding: '0.65rem 1.5rem', borderRadius: '0.625rem', border: 'none', background: 'linear-gradient(135deg, #059669, #047857)', color: 'white', fontWeight: 700, cursor: isSubmitting ? 'not-allowed' : 'pointer', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: isSubmitting ? 0.7 : 1 }}>
                                     {isSubmitting && <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />}
-                                    {editingMission ? 'Enregistrer' : selectedArtisans.length > 1 ? `Créer ${selectedArtisans.length} missions` : 'Créer la mission'}
+                                    {editingMission
+                                    ? 'Enregistrer'
+                                    : missionMode === 'artisan' && selectedArtisans.length > 1
+                                        ? `Créer ${selectedArtisans.length} missions`
+                                        : 'Créer la mission'
+                                }
                                 </button>
                             </div>
                         </form>

@@ -196,10 +196,13 @@ export const adminGetMissions = async (req: Request, res: Response) => {
  */
 export const adminCreateMission = async (req: Request, res: Response) => {
     try {
-        const { artisan_id, name } = req.body;
+        const { artisan_id, external_name, name } = req.body;
 
-        if (!artisan_id || !name) {
-            return res.status(400).json({ error: 'artisan_id et name sont requis' });
+        if (!name) {
+            return res.status(400).json({ error: 'name est requis' });
+        }
+        if (!artisan_id && !external_name) {
+            return res.status(400).json({ error: 'artisan_id ou external_name est requis' });
         }
 
         const mission = await geoService.adminCreateMission({
