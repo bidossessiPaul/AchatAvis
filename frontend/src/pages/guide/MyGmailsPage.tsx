@@ -229,7 +229,6 @@ export const MyGmailsPage: React.FC = () => {
                     </h3>
                     <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 1rem', lineHeight: 1.5 }}>
                         Le badge Local Guide s'affiche à partir du <strong>niveau 4</strong> (250 points minimum).
-                        Une <strong>prime</strong> est créditée automatiquement sur votre compte lors de la validation de votre niveau.
                     </p>
                     <div style={{ display: 'grid', gap: '0.5rem' }}>
                         {LEVELS_TABLE.map((item) => (
@@ -291,23 +290,6 @@ export const MyGmailsPage: React.FC = () => {
                                 }}>
                                     {item.points.toLocaleString('fr-FR')} pts
                                 </span>
-                                {item.bonus > 0 ? (
-                                    <span style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 700,
-                                        color: '#059669',
-                                        background: '#ecfdf5',
-                                        padding: '0.2rem 0.5rem',
-                                        borderRadius: '0.375rem',
-                                        minWidth: '50px',
-                                        textAlign: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        +{item.bonus}€
-                                    </span>
-                                ) : (
-                                    <span style={{ minWidth: '50px', flexShrink: 0 }} />
-                                )}
                             </div>
                         ))}
                     </div>
