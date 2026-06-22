@@ -39,6 +39,7 @@ interface QuizResult {
     totalQuestions: number;
     passingScore: number;
     trainingCompleted: boolean;
+    correctAnswers?: Record<string, string>;
 }
 
 // 'video'       : vidéo à gauche + questions de la vidéo à droite
@@ -531,9 +532,63 @@ export const GuideTraining: React.FC = () => {
                             }}>
                                 {result.score}%
                             </div>
-                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
+                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
                                 {result.correctCount} bonne{result.correctCount > 1 ? 's' : ''} réponse{result.correctCount > 1 ? 's' : ''} sur {result.totalQuestions} — minimum requis : {result.passingScore}%
                             </p>
+
+                            {/* Feedback par question : vert = correct, rouge = faux */}
+                            {result.correctAnswers && (() => {
+                                const feedbackQuestions = currentVideo ? videoQuestions : generalQuestions;
+                                if (!feedbackQuestions.length) return null;
+                                return (
+                                    <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
+                                        {feedbackQuestions.map((q, i) => {
+                                            const userAnswer = answers[q.id];
+                                            const correct = result.correctAnswers![String(q.id)];
+                                            const isCorrect = userAnswer === correct;
+                                            return (
+                                                <div key={q.id} style={{
+                                                    border: `1.5px solid ${isCorrect ? '#86efac' : '#fca5a5'}`,
+                                                    background: isCorrect ? '#f0fdf4' : '#fff5f5',
+                                                    borderRadius: '10px',
+                                                    padding: '0.75rem 1rem',
+                                                    marginBottom: '0.6rem'
+                                                }}>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.4rem' }}>
+                                                        {i + 1}. {q.question}
+                                                    </div>
+                                                    {q.options.map((opt: { id: string; text: string }) => {
+                                                        const isUserChoice = opt.id === userAnswer;
+                                                        const isCorrectChoice = opt.id === correct;
+                                                        let bg = 'transparent';
+                                                        let color = '#64748b';
+                                                        let border = '1px solid transparent';
+                                                        if (isCorrectChoice) { bg = '#dcfce7'; color = '#166534'; border = '1px solid #86efac'; }
+                                                        else if (isUserChoice && !isCorrect) { bg = '#fee2e2'; color = '#991b1b'; border = '1px solid #fca5a5'; }
+                                                        return (
+                                                            <div key={opt.id} style={{
+                                                                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                                                padding: '0.3rem 0.5rem', borderRadius: '6px',
+                                                                background: bg, border, marginBottom: '0.2rem'
+                                                            }}>
+                                                                <span style={{
+                                                                    width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                                                    background: isCorrectChoice ? '#059669' : (isUserChoice && !isCorrect ? '#dc2626' : '#e2e8f0'),
+                                                                    color: 'white', display: 'flex', alignItems: 'center',
+                                                                    justifyContent: 'center', fontSize: '0.6rem', fontWeight: 700
+                                                                }}>{opt.id}</span>
+                                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color }}>{opt.text}</span>
+                                                                {isCorrectChoice && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>✓ correcte</span>}
+                                                                {isUserChoice && !isCorrect && <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#dc2626', fontWeight: 700 }}>✗ votre réponse</span>}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
 
                             {result.passed ? (
                                 <button onClick={goToNextVideo} style={primaryButtonStyle(true)}>

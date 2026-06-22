@@ -3,7 +3,7 @@ import { query } from '../config/database';
 import { invalidateAuthCache } from '../middleware/auth';
 
 // Score minimum (par vidéo) pour débloquer la vidéo suivante
-export const TRAINING_PASSING_SCORE = 80;
+export const TRAINING_PASSING_SCORE = 99;
 
 /**
  * Contenu de la formation : vidéos (Cloudinary) + questions du QCM.
@@ -66,11 +66,14 @@ const scoreAnswers = (questions: any[], answers: Record<string, string>) => {
         throw new Error('Toutes les questions doivent avoir une réponse.');
     }
     let correctCount = 0;
+    // Retourné après soumission pour afficher le feedback visuel (jamais avant)
+    const correctAnswers: Record<string, string> = {};
     for (const q of questions) {
+        correctAnswers[String(q.id)] = q.correct_option;
         if (answers[String(q.id)] === q.correct_option) correctCount++;
     }
     const score = Math.round((correctCount / questions.length) * 100);
-    return { score, correctCount, passed: score >= TRAINING_PASSING_SCORE };
+    return { score, correctCount, passed: score >= TRAINING_PASSING_SCORE, correctAnswers };
 };
 
 /** Vérifie le rate limit : max 5 tentatives par vidéo par heure */
@@ -113,7 +116,7 @@ export const submitVideoQuiz = async (userId: string, videoId: number, answers: 
         throw new Error('Aucune question pour cette vidéo');
     }
 
-    const { score, correctCount, passed } = scoreAnswers(questions, answers);
+    const { score, correctCount, passed, correctAnswers } = scoreAnswers(questions, answers);
 
     await query(
         `INSERT INTO training_attempts (id, user_id, video_id, score, correct_count, total_questions, passed, answers)
@@ -159,6 +162,7 @@ export const submitVideoQuiz = async (userId: string, videoId: number, answers: 
         totalQuestions: questions.length,
         passingScore: TRAINING_PASSING_SCORE,
         trainingCompleted,
+        correctAnswers,
     };
 };
 
@@ -177,7 +181,7 @@ export const submitTrainingQuiz = async (userId: string, answers: Record<string,
         throw new Error('Aucune question de formation disponible');
     }
 
-    const { score, correctCount, passed } = scoreAnswers(questions, answers);
+    const { score, correctCount, passed, correctAnswers } = scoreAnswers(questions, answers);
 
     await query(
         `INSERT INTO training_attempts (id, user_id, score, correct_count, total_questions, passed, answers)
@@ -196,5 +200,6 @@ export const submitTrainingQuiz = async (userId: string, answers: Record<string,
         totalQuestions: questions.length,
         passingScore: TRAINING_PASSING_SCORE,
         trainingCompleted: passed,
+        correctAnswers,
     };
 };
