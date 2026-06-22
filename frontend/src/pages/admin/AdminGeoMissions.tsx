@@ -10,8 +10,13 @@ import {
     RefreshCw,
     BarChart2,
     Eye,
+    Pause,
+    Play,
+    CheckCircle,
+    Trash2,
 } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
+import Swal from 'sweetalert2';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import api from '../../services/api';
 
@@ -80,6 +85,7 @@ export const AdminGeoMissions: React.FC = () => {
     const [expandedRow, setExpandedRow] = useState<number | null>(null);
     const itemsPerPage = 20;
 
+    const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMission, setEditingMission] = useState<Mission | null>(null);
     const [formData, setFormData] = useState(defaultForm);
@@ -197,6 +203,42 @@ export const AdminGeoMissions: React.FC = () => {
             showError('Enregistrement impossible', err.response?.data?.error || 'Erreur serveur');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleStatusChange = async (mission: Mission, newStatus: Mission['status']) => {
+        setActionLoadingId(mission.id);
+        try {
+            await api.put(`/geo/admin/missions/${mission.id}`, { status: newStatus });
+            fetchMissions(true);
+        } catch {
+            showError('Erreur', 'Impossible de modifier le statut');
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
+    const handleDeleteMission = async (mission: Mission) => {
+        const result = await Swal.fire({
+            title: 'Supprimer la mission ?',
+            html: `<b>${mission.name}</b> et toutes ses soumissions seront supprimées définitivement.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Supprimer',
+            cancelButtonText: 'Annuler',
+        });
+        if (!result.isConfirmed) return;
+        setActionLoadingId(mission.id);
+        try {
+            await api.delete(`/geo/admin/missions/${mission.id}`);
+            showSuccess('Mission supprimée');
+            fetchMissions(true);
+        } catch {
+            showError('Erreur', 'Impossible de supprimer la mission');
+        } finally {
+            setActionLoadingId(null);
         }
     };
 
@@ -370,9 +412,67 @@ export const AdminGeoMissions: React.FC = () => {
                                                         </span>
                                                     </td>
                                                     <td style={{ padding: '0.875rem 1rem' }} onClick={e => e.stopPropagation()}>
-                                                        <button onClick={() => handleOpenModal(m)} style={{ width: '32px', height: '32px', borderRadius: '8px', border: 'none', background: '#f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Modifier">
-                                                            <Edit3 size={14} color="#475569" />
-                                                        </button>
+                                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                                            {/* Pause / Activer */}
+                                                            {m.status === 'active' && (
+                                                                <button
+                                                                    onClick={() => handleStatusChange(m, 'paused')}
+                                                                    disabled={actionLoadingId === m.id}
+                                                                    title="Mettre en pause"
+                                                                    style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#fef3c7', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <Pause size={13} color="#d97706" />
+                                                                </button>
+                                                            )}
+                                                            {m.status === 'paused' && (
+                                                                <button
+                                                                    onClick={() => handleStatusChange(m, 'active')}
+                                                                    disabled={actionLoadingId === m.id}
+                                                                    title="Activer"
+                                                                    style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#dcfce7', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <Play size={13} color="#059669" />
+                                                                </button>
+                                                            )}
+                                                            {m.status === 'completed' && (
+                                                                <button
+                                                                    onClick={() => handleStatusChange(m, 'active')}
+                                                                    disabled={actionLoadingId === m.id}
+                                                                    title="Réactiver"
+                                                                    style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#dcfce7', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <Play size={13} color="#059669" />
+                                                                </button>
+                                                            )}
+                                                            {/* Terminer */}
+                                                            {m.status !== 'completed' && (
+                                                                <button
+                                                                    onClick={() => handleStatusChange(m, 'completed')}
+                                                                    disabled={actionLoadingId === m.id}
+                                                                    title="Terminer la mission"
+                                                                    style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#dbeafe', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <CheckCircle size={13} color="#1e40af" />
+                                                                </button>
+                                                            )}
+                                                            {/* Modifier */}
+                                                            <button
+                                                                onClick={() => handleOpenModal(m)}
+                                                                title="Modifier"
+                                                                style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                            >
+                                                                <Edit3 size={13} color="#475569" />
+                                                            </button>
+                                                            {/* Supprimer */}
+                                                            <button
+                                                                onClick={() => handleDeleteMission(m)}
+                                                                disabled={actionLoadingId === m.id}
+                                                                title="Supprimer"
+                                                                style={{ width: '30px', height: '30px', borderRadius: '7px', border: 'none', background: '#fee2e2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                            >
+                                                                <Trash2 size={13} color="#dc2626" />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                                 {isExpanded && (

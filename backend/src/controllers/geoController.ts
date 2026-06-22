@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as geoService from '../services/geoService';
 import { query } from '../config/database';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 
 // ─── Routes guide ─────────────────────────────────────────────────────────────
 
@@ -68,11 +69,19 @@ export const submitCitation = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Cette mission n\'est plus active' });
         }
 
+        // Upload screenshot Cloudinary si fourni
+        let screenshotUrl: string | undefined;
+        if (req.file) {
+            const uploaded = await uploadToCloudinary(req.file.buffer, 'geo-citations', { skipTransform: true });
+            screenshotUrl = uploaded.secure_url;
+        }
+
         const submission = await geoService.submitCitation({
             missionId,
             platformId: Number(platformId),
             guideId: user.userId,
             submissionUrl,
+            screenshotUrl,
         });
 
         return res.status(201).json(submission);
@@ -225,6 +234,21 @@ export const adminUpdateMission = async (req: Request, res: Response) => {
         return res.json(mission);
     } catch (error: any) {
         return res.status(500).json({ error: 'Erreur lors de la mise à jour de la mission', message: error.message });
+    }
+};
+
+/**
+ * DELETE /api/geo/admin/missions/:id
+ * Soft-delete une mission et toutes ses soumissions associées.
+ */
+export const adminDeleteMission = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        if (!id) return res.status(400).json({ error: 'id de mission requis' });
+        await geoService.adminDeleteMission(id);
+        return res.json({ success: true });
+    } catch (error: any) {
+        return res.status(500).json({ error: 'Erreur lors de la suppression de la mission', message: error.message });
     }
 };
 

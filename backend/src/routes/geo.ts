@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth';
+import { uploadScreenshot } from '../middleware/upload';
 import * as geoController from '../controllers/geoController';
 
 const router = Router();
@@ -22,6 +23,7 @@ router.get('/missions/:missionId/platforms',
 router.post('/submissions',
     authenticate,
     authorize('guide'),
+    uploadScreenshot.single('screenshot'),
     geoController.submitCitation
 );
 
@@ -68,6 +70,12 @@ router.put('/admin/missions/:id',
     authenticate,
     authorize('admin'),
     geoController.adminUpdateMission
+);
+
+router.delete('/admin/missions/:id',
+    authenticate,
+    authorize('admin'),
+    geoController.adminDeleteMission
 );
 
 router.get('/admin/submissions',

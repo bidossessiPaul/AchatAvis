@@ -8,6 +8,7 @@ interface SubmitCitationData {
     platformId: number;
     guideId: string;
     submissionUrl: string;
+    screenshotUrl?: string;
 }
 
 interface PlatformFilters {
@@ -115,10 +116,11 @@ export const getMissionPlatforms = async (missionId: string, guideId: string) =>
             gp.notes,
             gp.reward_amount,
             -- Soumission de CE guide sur cette plateforme/mission
-            gs.id          AS submission_id,
-            gs.status      AS submission_status,
+            gs.id             AS submission_id,
+            gs.status         AS submission_status,
             gs.submission_url,
-            gs.created_at  AS submitted_at
+            gs.screenshot_url AS submission_screenshot_url,
+            gs.created_at     AS submitted_at
         FROM geo_platforms gp
         LEFT JOIN geo_submissions gs
             ON  gs.platform_id = gp.id
@@ -138,15 +140,16 @@ export const submitCitation = async (data: SubmitCitationData) => {
     const id = uuidv4();
     await query(`
         INSERT INTO geo_submissions
-            (id, mission_id, platform_id, guide_id, submission_url, status, earnings, created_at)
+            (id, mission_id, platform_id, guide_id, submission_url, screenshot_url, status, earnings, created_at)
         VALUES
-            (:id, :missionId, :platformId, :guideId, :submissionUrl, 'pending', 0.00, NOW())
+            (:id, :missionId, :platformId, :guideId, :submissionUrl, :screenshotUrl, 'pending', 0.00, NOW())
     `, {
         id,
         missionId: data.missionId,
         platformId: data.platformId,
         guideId: data.guideId,
         submissionUrl: data.submissionUrl,
+        screenshotUrl: data.screenshotUrl ?? null,
     });
 
     // Retourne la ligne insérée complète
@@ -165,6 +168,7 @@ export const getMyGeoSubmissions = async (guideId: string) => {
         SELECT
             gs.id,
             gs.submission_url,
+            gs.screenshot_url,
             gs.status,
             gs.rejection_reason,
             gs.earnings,
@@ -363,6 +367,18 @@ export const adminUpdateMission = async (id: string, data: Partial<CreateMission
 
     const rows: any[] = await query(`SELECT * FROM geo_missions WHERE id = :id`, { id });
     return rows[0] ?? null;
+};
+
+/**
+ * Soft-delete une mission (et ses soumissions associées).
+ */
+export const adminDeleteMission = async (id: string) => {
+    await query(`
+        UPDATE geo_missions SET deleted_at = NOW() WHERE id = :id AND deleted_at IS NULL
+    `, { id });
+    await query(`
+        UPDATE geo_submissions SET deleted_at = NOW() WHERE mission_id = :id AND deleted_at IS NULL
+    `, { id });
 };
 
 // ─── Fonctions admin — soumissions ────────────────────────────────────────────
