@@ -1978,3 +1978,62 @@ export const sendPaymentMethodReminderEmail = async (email: string, fullName: st
     }
 };
 
+/**
+ * Notifie un guide qu'il peut réclamer son bonus mensuel de 5€
+ */
+export const sendMonthlyBonusAvailableEmail = async (email: string, fullName: string, baseUrl?: string) => {
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const claimUrl = `${frontendUrl}/guide/dashboard`;
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: email,
+        subject: '🎉 Votre bonus de 5€ est disponible ! - AchatAvis',
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                    .logo { margin-bottom: 24px; }
+                    .badge { display: inline-block; background: #ecfdf5; color: #059669; font-size: 42px; font-weight: 800; padding: 16px 32px; border-radius: 16px; margin-bottom: 24px; }
+                    .title { font-size: 22px; font-weight: 800; color: #111827; margin-bottom: 12px; }
+                    .text { font-size: 15px; color: #374151; line-height: 1.7; margin-bottom: 24px; }
+                    .button { display: inline-block; background-color: #059669; color: #ffffff !important; padding: 16px 40px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; }
+                    .footer { margin-top: 32px; font-size: 13px; color: #6b7280; text-align: center; }
+                    .divider { border: 0; border-top: 1px solid #eeeeee; margin: 28px 0; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="logo"><img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 48px;"></div>
+                        <div class="badge">+5€</div>
+                        <h2 class="title">Félicitations ${fullName} !</h2>
+                        <p class="text">
+                            Vous avez atteint <strong>25 avis validés</strong> ce mois-ci.<br>
+                            Votre bonus de <strong>5€</strong> est prêt à être réclamé.<br><br>
+                            Cliquez sur le bouton ci-dessous depuis votre tableau de bord pour recevoir votre bonus.
+                        </p>
+                        <a href="${claimUrl}" class="button">Réclamer mon bonus de 5€</a>
+                        <hr class="divider">
+                        <p style="font-size: 13px; color: #6b7280;">Ce bonus est disponible jusqu'à la fin du mois en cours.</p>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis. Continuez comme ça !
+                    </div>
+                </div>
+            </body>
+            </html>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Monthly bonus email sent to ${email}`);
+    } catch (error: any) {
+        console.error(`Error sending monthly bonus email to ${email}:`, error);
+    }
+};
+

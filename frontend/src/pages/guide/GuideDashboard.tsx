@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { guideService } from '../../services/guideService';
-import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, TrendingUp, Wallet, Trophy } from 'lucide-react';
+import { MapPin, DollarSign, Clock, ArrowRight, Star, ShieldCheck, Shield, TrendingUp, Wallet, Trophy, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../context/authStore';
 import { GuideLevelProgress } from './GuideLevelProgress';
@@ -12,12 +12,15 @@ import { GuideLeaderboard } from './GuideLeaderboard';
 import { GmailVerificationBanner } from '../../components/guide/GmailVerificationBanner';
 import { GmailVerificationReminderModal } from '../../components/guide/GmailVerificationReminderModal';
 import { motion } from 'framer-motion';
+import Swal from 'sweetalert2';
 import './GuideDashboard.css';
 
 export const GuideDashboard: React.FC = () => {
     const [fiches, setfiches] = useState<any[]>([]);
     const [stats, setStats] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [monthlyBonus, setMonthlyBonus] = useState<any>(null);
+    const [claimingBonus, setClaimingBonus] = useState(false);
     const { complianceData, fetchComplianceData, gmailAccounts } = useAntiDetectionStore();
     const navigate = useNavigate();
     const { user } = useAuthStore();
@@ -32,16 +35,44 @@ export const GuideDashboard: React.FC = () => {
     const loadDashboardData = async () => {
         setIsLoading(true);
         try {
-            const [fichesData, statsData] = await Promise.all([
+            const [fichesData, statsData, bonusStatus] = await Promise.all([
                 guideService.getAvailablefiches(),
-                guideService.getStats()
+                guideService.getStats(),
+                guideService.getMonthlyBonusStatus()
             ]);
             setfiches(fichesData);
             setStats(statsData);
+            setMonthlyBonus(bonusStatus);
         } catch (error) {
             console.error("Failed to load guide dashboard data", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleClaimBonus = async () => {
+        if (!monthlyBonus?.eligible || monthlyBonus?.claimed || claimingBonus) return;
+        setClaimingBonus(true);
+        try {
+            await guideService.claimMonthlyBonus();
+            await Swal.fire({
+                icon: 'success',
+                title: '+5€ crédités !',
+                text: 'Votre bonus mensuel a été ajouté à votre solde.',
+                confirmButtonColor: '#059669',
+                confirmButtonText: 'Super !'
+            });
+            // Recharger stats + bonus
+            const [statsData, bonusStatus] = await Promise.all([
+                guideService.getStats(),
+                guideService.getMonthlyBonusStatus()
+            ]);
+            setStats(statsData);
+            setMonthlyBonus(bonusStatus);
+        } catch (error: any) {
+            Swal.fire({ icon: 'error', title: 'Erreur', text: error?.response?.data?.error || 'Impossible de réclamer le bonus.' });
+        } finally {
+            setClaimingBonus(false);
         }
     };
 
@@ -143,6 +174,77 @@ export const GuideDashboard: React.FC = () => {
                     </div>
                 </motion.div>
             </div>
+
+            {/* Bonus mensuel */}
+            {monthlyBonus && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                        marginBottom: '1.5rem',
+                        padding: '1.25rem 1.5rem',
+                        borderRadius: '1rem',
+                        border: `1.5px solid ${monthlyBonus.claimed ? '#86efac' : monthlyBonus.eligible ? '#6ee7b7' : '#e2e8f0'}`,
+                        background: monthlyBonus.claimed ? '#f0fdf4' : monthlyBonus.eligible ? '#ecfdf5' : '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        flexWrap: 'wrap'
+                    }}
+                >
+                    <div style={{
+                        width: 44, height: 44, borderRadius: '50%',
+                        background: monthlyBonus.eligible ? '#059669' : '#94a3b8',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                    }}>
+                        <Gift size={22} color="#fff" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 180 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginBottom: '0.2rem' }}>
+                            Bonus mensuel — 5€
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                            {monthlyBonus.claimed
+                                ? 'Bonus réclamé ce mois-ci.'
+                                : `${monthlyBonus.validatedCount} / ${monthlyBonus.threshold} avis validés ce mois-ci`}
+                        </div>
+                        {!monthlyBonus.claimed && (
+                            <div style={{ marginTop: '0.4rem', height: 6, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden', maxWidth: 200 }}>
+                                <div style={{
+                                    height: '100%',
+                                    borderRadius: 4,
+                                    background: monthlyBonus.eligible ? '#059669' : '#94a3b8',
+                                    width: `${Math.min(100, (monthlyBonus.validatedCount / monthlyBonus.threshold) * 100)}%`,
+                                    transition: 'width 0.4s'
+                                }} />
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        onClick={handleClaimBonus}
+                        disabled={!monthlyBonus.eligible || monthlyBonus.claimed || claimingBonus}
+                        style={{
+                            padding: '0.6rem 1.4rem',
+                            borderRadius: '0.625rem',
+                            fontWeight: 700,
+                            fontSize: '0.88rem',
+                            border: 'none',
+                            cursor: monthlyBonus.eligible && !monthlyBonus.claimed ? 'pointer' : 'not-allowed',
+                            background: monthlyBonus.claimed
+                                ? '#dcfce7'
+                                : monthlyBonus.eligible
+                                    ? 'linear-gradient(135deg, #059669, #047857)'
+                                    : '#e2e8f0',
+                            color: monthlyBonus.claimed ? '#166534' : monthlyBonus.eligible ? '#fff' : '#94a3b8',
+                            transition: 'opacity 0.2s',
+                            opacity: claimingBonus ? 0.7 : 1,
+                            flexShrink: 0
+                        }}
+                    >
+                        {monthlyBonus.claimed ? 'Bonus percu' : claimingBonus ? 'En cours...' : 'Obtenir mon bonus'}
+                    </button>
+                </motion.div>
+            )}
 
             {/* Analytics Section */}
             <div className="guide-analytics-grid">

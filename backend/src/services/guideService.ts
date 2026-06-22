@@ -2,7 +2,7 @@ import { query } from '../config/database';
 import crypto from 'crypto';
 import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
-import { sendAdminEventNotification } from './emailService';
+import { sendAdminEventNotification, sendMonthlyBonusAvailableEmail } from './emailService';
 import { parseImages } from './artisanService';
 
 // Durée pendant laquelle un slot est réservé activement à un guide (le temps de poster sur Google).
@@ -671,8 +671,16 @@ export const guideService = {
         const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
         const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
 
-        // Solde principal = avis validés + signalements + entrées négatives (reversements/avances)
-        const totalEarned = Number(stats[0].total_earned) + sigEarned + Number(bonuses[0].total_negative);
+        // Bonus mensuels réclamés — s'ajoutent directement au solde
+        const monthlyBonusRows: any = await query(`
+            SELECT COALESCE(SUM(amount), 0) AS total_claimed
+            FROM monthly_bonus_claims
+            WHERE guide_id = ? AND claimed_at IS NOT NULL
+        `, [guideId]);
+        const monthlyBonusClaimed = Number(monthlyBonusRows[0].total_claimed);
+
+        // Solde principal = avis validés + signalements + entrées négatives (reversements/avances) + bonus mensuels réclamés
+        const totalEarned = Number(stats[0].total_earned) + sigEarned + Number(bonuses[0].total_negative) + monthlyBonusClaimed;
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
@@ -951,5 +959,105 @@ export const guideService = {
             validationRate: Number(row.validation_rate) || 0,
             isCurrentUser: row.id === currentGuideId
         }));
+    },
+
+    async getMonthlyBonusStatus(guideId: string) {
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        const THRESHOLD = 25;
+        const BONUS_AMOUNT = 5.00;
+
+        const countRows: any = await query(`
+            SELECT COUNT(*) AS n
+            FROM reviews_submissions
+            WHERE guide_id = ?
+              AND status = 'validated'
+              AND MONTH(validated_at) = ?
+              AND YEAR(validated_at) = ?
+        `, [guideId, month, year]);
+
+        const validatedCount = Number(countRows[0].n);
+        const eligible = validatedCount >= THRESHOLD;
+
+        const claimRows: any = await query(`
+            SELECT * FROM monthly_bonus_claims
+            WHERE guide_id = ? AND month = ? AND year = ?
+        `, [guideId, month, year]);
+
+        const claim = claimRows[0] || null;
+
+        // Envoie le mail de notification une seule fois quand le guide devient éligible
+        if (eligible && !claim?.notified_at) {
+            const userRows: any = await query(
+                `SELECT email, full_name FROM users WHERE id = ? AND deleted_at IS NULL`,
+                [guideId]
+            );
+            if (userRows[0]) {
+                const { email, full_name } = userRows[0];
+                await sendMonthlyBonusAvailableEmail(email, full_name || 'Guide');
+                if (claim) {
+                    await query(
+                        `UPDATE monthly_bonus_claims SET notified_at = NOW() WHERE guide_id = ? AND month = ? AND year = ?`,
+                        [guideId, month, year]
+                    );
+                } else {
+                    const { v4: uuidv4 } = await import('uuid');
+                    await query(`
+                        INSERT INTO monthly_bonus_claims (id, guide_id, month, year, validated_count, notified_at, amount)
+                        VALUES (?, ?, ?, ?, ?, NOW(), ?)
+                    `, [uuidv4(), guideId, month, year, validatedCount, BONUS_AMOUNT]);
+                }
+            }
+        }
+
+        return {
+            validatedCount,
+            threshold: THRESHOLD,
+            eligible,
+            claimed: !!claim?.claimed_at,
+            claimedAt: claim?.claimed_at || null,
+            amount: BONUS_AMOUNT,
+            month,
+            year,
+        };
+    },
+
+    async claimMonthlyBonus(guideId: string) {
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+        const THRESHOLD = 25;
+        const BONUS_AMOUNT = 5.00;
+
+        const countRows: any = await query(`
+            SELECT COUNT(*) AS n
+            FROM reviews_submissions
+            WHERE guide_id = ?
+              AND status = 'validated'
+              AND MONTH(validated_at) = ?
+              AND YEAR(validated_at) = ?
+        `, [guideId, month, year]);
+
+        if (Number(countRows[0].n) < THRESHOLD) {
+            throw new Error('Pas encore 25 avis validés ce mois-ci.');
+        }
+
+        const claimRows: any = await query(`
+            SELECT claimed_at FROM monthly_bonus_claims WHERE guide_id = ? AND month = ? AND year = ?
+        `, [guideId, month, year]);
+
+        if (claimRows[0]?.claimed_at) {
+            throw new Error('Bonus déjà réclamé pour ce mois.');
+        }
+
+        const { v4: uuidv4 } = await import('uuid');
+        await query(`
+            INSERT INTO monthly_bonus_claims (id, guide_id, month, year, validated_count, claimed_at, amount)
+            VALUES (?, ?, ?, ?, ?, NOW(), ?)
+            ON DUPLICATE KEY UPDATE claimed_at = NOW(), validated_count = VALUES(validated_count)
+        `, [uuidv4(), guideId, month, year, Number(countRows[0].n), BONUS_AMOUNT]);
+
+        return { success: true, amount: BONUS_AMOUNT };
     }
 };

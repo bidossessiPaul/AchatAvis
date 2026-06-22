@@ -297,5 +297,32 @@ export const guideController = {
                 message: error.message
             });
         }
+    },
+
+    async getMonthlyBonusStatus(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+            const status = await guideService.getMonthlyBonusStatus(user.userId);
+            return res.json(status);
+        } catch (error: any) {
+            console.error('Error fetching monthly bonus status:', error);
+            return res.status(500).json({ error: 'Erreur serveur.' });
+        }
+    },
+
+    async claimMonthlyBonus(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+            const result = await guideService.claimMonthlyBonus(user.userId);
+            return res.json(result);
+        } catch (error: any) {
+            if (error.message === 'Pas encore 25 avis validés ce mois-ci.' || error.message === 'Bonus déjà réclamé pour ce mois.') {
+                return res.status(400).json({ error: error.message });
+            }
+            console.error('Error claiming monthly bonus:', error);
+            return res.status(500).json({ error: 'Erreur serveur.' });
+        }
     }
 };

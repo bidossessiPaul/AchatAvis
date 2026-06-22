@@ -112,5 +112,24 @@ export const guideService = {
     }> {
         const response = await api.post('/guide/training/submit', { answers });
         return response.data;
+    },
+
+    async getMonthlyBonusStatus(): Promise<{
+        validatedCount: number;
+        threshold: number;
+        eligible: boolean;
+        claimed: boolean;
+        claimedAt: string | null;
+        amount: number;
+        month: number;
+        year: number;
+    }> {
+        const response = await api.get('/guide/monthly-bonus/status');
+        return response.data;
+    },
+
+    async claimMonthlyBonus(): Promise<{ success: boolean; amount: number }> {
+        const response = await api.post('/guide/monthly-bonus/claim');
+        return response.data;
     }
 };

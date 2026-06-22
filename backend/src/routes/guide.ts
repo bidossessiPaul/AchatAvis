@@ -29,5 +29,7 @@ router.put('/submissions/:id', guideController.updateSubmission);
 router.get('/stats', guideController.getStats);
 router.get('/leaderboard', guideController.getLeaderboard);
 router.get('/fiches/:ficheId/gmail-quotas', guideController.getGmailQuotasForFiche);
+router.get('/monthly-bonus/status', guideController.getMonthlyBonusStatus);
+router.post('/monthly-bonus/claim', guideController.claimMonthlyBonus);
 
 export default router;
