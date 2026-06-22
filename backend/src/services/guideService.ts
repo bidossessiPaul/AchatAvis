@@ -137,32 +137,6 @@ export const guideService = {
     },
 
     async getficheDetails(order_id: string, guide_id: string) {
-        // 🎯 TRUST SCORE: Vérifier l'éligibilité du guide (défensif)
-        let guideAccountResult: any = [];
-        try {
-            guideAccountResult = await query(`
-                SELECT gga.*, u.email
-                FROM users u
-                JOIN guide_gmail_accounts gga ON gga.user_id = u.id OR gga.email = u.email
-                WHERE u.id = ? AND gga.deleted_at IS NULL
-                LIMIT 1
-            `, [guide_id]);
-
-            if (guideAccountResult && guideAccountResult.length > 0) {
-                const guideAccount = guideAccountResult[0];
-
-                // Vérifier si le compte est bloqué
-                if (guideAccount.is_blocked === true || guideAccount.is_blocked === 1 || guideAccount.trust_level === 'BLOCKED') {
-                    throw new Error('TRUST_SCORE_BLOCKED: Votre compte est bloqué. Score Trust insuffisant. Contactez le support.');
-                }
-            }
-        } catch (trustErr: any) {
-            // Re-throw trust block errors, but swallow DB errors
-            if (trustErr.message?.includes('TRUST_SCORE_BLOCKED')) throw trustErr;
-            console.warn(`⚠️ Trust check failed for guide ${guide_id}:`, trustErr.message);
-            guideAccountResult = [];
-        }
-
         // Fetch order basic info
         const orderResult: any = await query(`
             SELECT o.*, a.company_name as artisan_company, a.city,
@@ -196,19 +170,6 @@ export const guideService = {
         // Vérifier si la fiche est verrouillée par un autre guide
         if (order.locked_by && order.locked_by !== guide_id && order.locked_until && new Date(order.locked_until) > new Date()) {
             throw new Error('fiche_LOCKED');
-        }
-
-        // 🎯 TRUST SCORE: Vérifier l'éligibilité basée sur le niveau
-        if (guideAccountResult && guideAccountResult.length > 0) {
-            const guideAccount = guideAccountResult[0];
-            const trustLevel = guideAccount.trust_level;
-
-            // fiches premium réservées aux GOLD et PLATINUM
-            if (order.required_gmail_level && order.required_gmail_level >= 4) {
-                if (!['GOLD', 'PLATINUM'].includes(trustLevel)) {
-                    throw new Error(`TRUST_LEVEL_INSUFFICIENT: Cette fiche premium requiert un niveau GOLD ou PLATINUM. Votre niveau: ${trustLevel}`);
-                }
-            }
         }
 
         // 1. Quota Check (Total) — count only active (non-rejected) submissions
