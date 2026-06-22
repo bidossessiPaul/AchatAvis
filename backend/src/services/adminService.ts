@@ -2497,12 +2497,12 @@ export const getGuidesWithBalance = async () => {
             (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0)) as total_earned,
             COALESCE(pay.total_paid, 0) as total_paid,
             COALESCE(pay.total_pending, 0) as total_pending,
-            -- Solde peut être négatif : un sur-paiement (avance) sera absorbé
-            -- automatiquement par les prochains avis validés du guide.
-            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0))
-            - COALESCE(pay.total_paid, 0)
-            - COALESCE(pay.total_pending, 0)
-            as balance
+            -- Le solde ne peut pas être négatif — on cap à 0 (les sur-paiements restent dans l'historique).
+            GREATEST(0,
+                (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0))
+                - COALESCE(pay.total_paid, 0)
+                - COALESCE(pay.total_pending, 0)
+            ) as balance
         FROM users u
         JOIN guides_profiles gp ON u.id = gp.user_id
         INNER JOIN (

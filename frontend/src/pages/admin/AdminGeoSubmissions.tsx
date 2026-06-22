@@ -29,6 +29,7 @@ interface GeoSubmission {
     mission_id: number;
     mission_name: string;
     submission_url: string;
+    screenshot_url: string | null;
     status: 'pending' | 'validated' | 'rejected';
     rejection_reason: string | null;
     earnings: number;
@@ -230,7 +231,7 @@ export const AdminGeoSubmissions: React.FC = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: '#f8fafc' }}>
-                                        {['Guide', 'Plateforme', 'Mission', 'URL soumise', 'Date', 'Statut', 'Actions'].map(h => (
+                                        {['Guide', 'Plateforme', 'Mission', 'URL soumise', 'Capture', 'Date', 'Statut', 'Actions'].map(h => (
                                             <th key={h} style={{ padding: '0.875rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>{h}</th>
                                         ))}
                                     </tr>
@@ -267,6 +268,19 @@ export const AdminGeoSubmissions: React.FC = () => {
                                                         <ExternalLink size={12} />
                                                         {s.submission_url.replace(/^https?:\/\//, '').slice(0, 35)}{s.submission_url.length > 40 ? '…' : ''}
                                                     </a>
+                                                </td>
+                                                <td style={{ padding: '0.875rem 1rem' }}>
+                                                    {s.screenshot_url ? (
+                                                        <a href={s.screenshot_url} target="_blank" rel="noopener noreferrer">
+                                                            <img
+                                                                src={s.screenshot_url}
+                                                                alt="Capture preuve"
+                                                                style={{ width: '64px', height: '44px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0', display: 'block' }}
+                                                            />
+                                                        </a>
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>—</span>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '0.875rem 1rem' }}>
                                                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#374151' }}>

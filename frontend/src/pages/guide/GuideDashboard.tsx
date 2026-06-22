@@ -128,7 +128,7 @@ export const GuideDashboard: React.FC = () => {
                     className="recap-card"
                 >
                     <span className="recap-label">Solde Actuel</span>
-                    <span className="recap-value">{Number(stats?.balance || 0).toFixed(2)}€</span>
+                    <span className="recap-value">{Math.max(0, Number(stats?.balance || 0)).toFixed(2)}€</span>
                     <div className="recap-subvalue">
                         <Wallet size={14} />
                         <span>Prêt pour retrait</span>

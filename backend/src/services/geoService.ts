@@ -412,6 +412,7 @@ export const adminGetSubmissions = async (filters: SubmissionFilters) => {
         SELECT
             gs.id,
             gs.submission_url,
+            gs.screenshot_url,
             gs.status,
             gs.rejection_reason,
             gs.earnings,
@@ -425,6 +426,7 @@ export const adminGetSubmissions = async (filters: SubmissionFilters) => {
             gp.id   AS platform_id,
             gp.name AS platform_name,
             gp.url  AS platform_url,
+            gp.category AS platform_category,
             gp.reward_amount,
             -- Guide
             u.id         AS guide_id,

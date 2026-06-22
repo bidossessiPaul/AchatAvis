@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import {
-    Globe, Link, ExternalLink, CheckCircle2, XCircle, Clock,
+    Globe, Link, CheckCircle2, XCircle, Clock,
     Copy, ChevronRight, MapPin, Phone, Globe2, Building2,
-    FileText, Send, Search, BarChart2, Wallet, Star
+    FileText, Send, Search, BarChart2, Wallet, Star,
+    Camera, Image as ImageIcon, Check
 } from 'lucide-react';
 import api from '../../services/api';
 import Swal from 'sweetalert2';
@@ -37,6 +38,8 @@ interface GeoPlatform {
     notes: string;
     my_status: null | 'pending' | 'validated' | 'rejected';
     my_submission_id: number | null;
+    submission_url: string | null;
+    submission_screenshot_url: string | null;
 }
 
 interface GeoSubmissionHistory {
@@ -46,6 +49,7 @@ interface GeoSubmissionHistory {
     status: 'pending' | 'validated' | 'rejected';
     created_at: string;
     reward_amount: number;
+    screenshot_url: string | null;
 }
 
 // ─── Constantes couleurs catégories ────────────────────────────────────────
@@ -90,12 +94,18 @@ export const GuideCitations: React.FC = () => {
     const [loadingMissions, setLoadingMissions] = useState(true);
     const [loadingPlatforms, setLoadingPlatforms] = useState(false);
     const [activeTab, setActiveTab] = useState<'tous' | 'annuaire' | 'forum' | 'social' | 'blog'>('tous');
-    // Formulaire inline par plateforme : platformId → url saisie
+
+    // Formulaire inline par plateforme
     const [openFormId, setOpenFormId] = useState<number | null>(null);
     const [formUrl, setFormUrl] = useState('');
+    const [formScreenshot, setFormScreenshot] = useState<File | null>(null);
+    const [formScreenshotPreview, setFormScreenshotPreview] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [copied, setCopied] = useState(false);
+    // copié l'URL d'une plateforme : stocke l'id de la plateforme copiée
+    const [copiedPlatformId, setCopiedPlatformId] = useState<number | null>(null);
 
     // ── Chargement initial ──────────────────────────────────────────────────
     useEffect(() => {
@@ -140,16 +150,31 @@ export const GuideCitations: React.FC = () => {
     const selectMission = (mission: GeoMission) => {
         setSelectedMission(mission);
         setActiveTab('tous');
-        setOpenFormId(null);
-        setFormUrl('');
+        closeForm();
         loadPlatforms(mission.id);
     };
 
     const backToList = () => {
         setSelectedMission(null);
         setPlatforms([]);
+        closeForm();
+    };
+
+    const closeForm = () => {
         setOpenFormId(null);
         setFormUrl('');
+        setFormScreenshot(null);
+        setFormScreenshotPreview(null);
+    };
+
+    // ── Screenshot ─────────────────────────────────────────────────────────
+    const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setFormScreenshot(file);
+        const reader = new FileReader();
+        reader.onload = ev => setFormScreenshotPreview(ev.target?.result as string);
+        reader.readAsDataURL(file);
     };
 
     // ── Texte NAP ──────────────────────────────────────────────────────────
@@ -168,49 +193,69 @@ ${m.description}`;
         });
     };
 
-    // ── Soumission citation ─────────────────────────────────────────────────
+    // ── Copier URL plateforme ──────────────────────────────────────────────
+    const copyPlatformUrl = (platform: GeoPlatform) => {
+        navigator.clipboard.writeText(platform.url).then(() => {
+            setCopiedPlatformId(platform.id);
+            setTimeout(() => setCopiedPlatformId(null), 2000);
+        });
+    };
+
+    // ── Soumission citation (FormData pour le screenshot) ──────────────────
     const submitCitation = async (platform: GeoPlatform) => {
         if (!selectedMission) return;
         if (!formUrl.trim() || !formUrl.startsWith('http')) {
             Swal.fire({
                 icon: 'warning',
                 title: 'URL invalide',
-                text: "Entrez une URL complète commençant par http:// ou https://",
+                text: "Entrez l'URL complète de votre citation commençant par http:// ou https://",
+                confirmButtonColor: '#059669'
+            });
+            return;
+        }
+        if (!formScreenshot) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Capture requise',
+                text: "Joignez une capture d'écran prouvant que la citation a bien été créée.",
                 confirmButtonColor: '#059669'
             });
             return;
         }
         setSubmitting(true);
         try {
-            await api.post('/geo/submissions', {
-                missionId: selectedMission.id,
-                platformId: platform.id,
-                submissionUrl: formUrl.trim()
+            const fd = new FormData();
+            fd.append('missionId', String(selectedMission.id));
+            fd.append('platformId', String(platform.id));
+            fd.append('submissionUrl', formUrl.trim());
+            fd.append('screenshot', formScreenshot);
+
+            await api.post('/geo/submissions', fd, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
-            // Mise à jour locale : passage en 'pending' sans recharger toute la liste
+
+            // Mise à jour locale sans rechargement complet
             setPlatforms(prev =>
                 prev.map(p => p.id === platform.id
                     ? { ...p, my_status: 'pending' }
                     : p
                 )
             );
-            setOpenFormId(null);
-            setFormUrl('');
+            closeForm();
             await Swal.fire({
                 icon: 'success',
                 title: 'Citation soumise !',
-                text: "Votre citation est en attente de validation. Vous serez notifié(e) dès qu'elle est traitée.",
+                text: "Votre citation est en attente de validation.",
                 confirmButtonColor: '#059669',
                 timer: 3000,
                 timerProgressBar: true
             });
-            // Recharger l'historique
             loadHistory();
         } catch (err: any) {
             Swal.fire({
                 icon: 'error',
                 title: 'Erreur',
-                text: err?.response?.data?.message || 'Une erreur est survenue lors de la soumission.',
+                text: err?.response?.data?.message || err?.response?.data?.error || 'Une erreur est survenue lors de la soumission.',
                 confirmButtonColor: '#dc2626'
             });
         } finally {
@@ -223,7 +268,6 @@ ${m.description}`;
         const totalMissions = missions.length;
         const totalSubmitted = missions.reduce((s, m) => s + (m.my_submissions_count || 0), 0);
         const totalValidated = missions.reduce((s, m) => s + (m.validated_count || 0), 0);
-        // gains = somme des rewards des soumissions validées dans l'historique
         const totalGains = history
             .filter(h => h.status === 'validated')
             .reduce((s, h) => s + Number(h.reward_amount || 0), 0);
@@ -448,6 +492,7 @@ ${m.description}`;
                                     <th style={thStyle}>Plateforme</th>
                                     <th style={thStyle}>Mission</th>
                                     <th style={thStyle}>Statut</th>
+                                    <th style={thStyle}>Capture</th>
                                     <th style={thStyle}>Date</th>
                                     <th style={{ ...thStyle, textAlign: 'right' }}>Gains</th>
                                 </tr>
@@ -470,6 +515,20 @@ ${m.description}`;
                                                     {h.status === 'pending' && <Clock size={10} />}
                                                     {sc.label}
                                                 </Badge>
+                                            </td>
+                                            <td style={tdStyle}>
+                                                {h.screenshot_url ? (
+                                                    <a
+                                                        href={h.screenshot_url}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2383e2', fontSize: '0.82rem', fontWeight: 600, textDecoration: 'none' }}
+                                                    >
+                                                        <ImageIcon size={14} /> Voir
+                                                    </a>
+                                                ) : (
+                                                    <span style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>—</span>
+                                                )}
                                             </td>
                                             <td style={{ ...tdStyle, color: '#94a3b8', fontSize: '0.82rem' }}>
                                                 {new Date(h.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -628,10 +687,12 @@ ${m.description}`;
                         <p style={{ color: '#94a3b8' }}>Aucune plateforme dans cette catégorie.</p>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ maxHeight: '620px', overflowY: 'auto', paddingRight: '6px', marginBottom: '2rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {filteredPlatforms.map(platform => {
                             const catConfig = CATEGORY_COLORS[platform.category] || CATEGORY_COLORS.annuaire;
                             const isFormOpen = openFormId === platform.id;
+                            const isCopiedUrl = copiedPlatformId === platform.id;
 
                             return (
                                 <div key={platform.id} style={{
@@ -645,8 +706,8 @@ ${m.description}`;
                                         display: 'flex', alignItems: 'center', gap: '1rem',
                                         padding: '1.1rem 1.25rem', flexWrap: 'wrap'
                                     }}>
-                                        {/* Gauche : nom + badges */}
-                                        <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                        {/* Gauche : nom + badges + lien */}
+                                        <div style={{ flex: '1 1 220px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                                 <span style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>
                                                     {platform.name}
@@ -667,6 +728,27 @@ ${m.description}`;
                                                     </Badge>
                                                 )}
                                             </div>
+
+                                            {/* Lien plateforme : copier uniquement */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                <button
+                                                    onClick={() => copyPlatformUrl(platform)}
+                                                    title="Copier le lien"
+                                                    style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                        background: isCopiedUrl ? '#dcfce7' : '#f1f5f9',
+                                                        color: isCopiedUrl ? '#166534' : '#64748b',
+                                                        border: `1px solid ${isCopiedUrl ? '#bbf7d0' : '#e2e8f0'}`,
+                                                        borderRadius: '0.4rem', padding: '0.15rem 0.55rem',
+                                                        fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                                                        transition: 'all 0.15s'
+                                                    }}
+                                                >
+                                                    {isCopiedUrl ? <Check size={12} /> : <Copy size={12} />}
+                                                    {isCopiedUrl ? 'Copié !' : 'Copier le lien'}
+                                                </button>
+                                            </div>
+
                                             {platform.notes && (
                                                 <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8', lineHeight: 1.4 }}>
                                                     {platform.notes}
@@ -684,12 +766,13 @@ ${m.description}`;
                                                 +{Number(platform.reward_amount).toFixed(2)}€
                                             </span>
 
-                                            {/* État de soumission */}
                                             {platform.my_status === null && !isFormOpen && (
                                                 <button
                                                     onClick={() => {
                                                         setOpenFormId(platform.id);
                                                         setFormUrl('');
+                                                        setFormScreenshot(null);
+                                                        setFormScreenshotPreview(null);
                                                     }}
                                                     style={{
                                                         display: 'flex', alignItems: 'center', gap: '5px',
@@ -704,15 +787,49 @@ ${m.description}`;
                                             )}
 
                                             {platform.my_status === 'pending' && (
-                                                <Badge bg={STATUS_CONFIG.pending.bg} color={STATUS_CONFIG.pending.color} border={STATUS_CONFIG.pending.border}>
-                                                    <Clock size={10} /> En attente de validation
-                                                </Badge>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Badge bg={STATUS_CONFIG.pending.bg} color={STATUS_CONFIG.pending.color} border={STATUS_CONFIG.pending.border}>
+                                                        <Clock size={10} /> En attente de validation
+                                                    </Badge>
+                                                    {platform.submission_screenshot_url && (
+                                                        <a
+                                                            href={platform.submission_screenshot_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            title="Voir la capture"
+                                                            style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                color: '#2383e2', fontSize: '0.78rem', fontWeight: 600,
+                                                                textDecoration: 'none'
+                                                            }}
+                                                        >
+                                                            <ImageIcon size={14} /> Capture
+                                                        </a>
+                                                    )}
+                                                </div>
                                             )}
 
                                             {platform.my_status === 'validated' && (
-                                                <Badge bg={STATUS_CONFIG.validated.bg} color={STATUS_CONFIG.validated.color} border={STATUS_CONFIG.validated.border}>
-                                                    <CheckCircle2 size={10} /> Validé — +{Number(platform.reward_amount).toFixed(2)}€ gagné
-                                                </Badge>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Badge bg={STATUS_CONFIG.validated.bg} color={STATUS_CONFIG.validated.color} border={STATUS_CONFIG.validated.border}>
+                                                        <CheckCircle2 size={10} /> Validé — +{Number(platform.reward_amount).toFixed(2)}€
+                                                    </Badge>
+                                                    {platform.submission_screenshot_url && (
+                                                        <a
+                                                            href={platform.submission_screenshot_url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            title="Voir la capture"
+                                                            style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                color: '#059669', fontSize: '0.78rem', fontWeight: 600,
+                                                                textDecoration: 'none'
+                                                            }}
+                                                        >
+                                                            <ImageIcon size={14} /> Capture
+                                                        </a>
+                                                    )}
+                                                </div>
                                             )}
 
                                             {platform.my_status === 'rejected' && !isFormOpen && (
@@ -724,6 +841,8 @@ ${m.description}`;
                                                         onClick={() => {
                                                             setOpenFormId(platform.id);
                                                             setFormUrl('');
+                                                            setFormScreenshot(null);
+                                                            setFormScreenshotPreview(null);
                                                         }}
                                                         style={{
                                                             display: 'flex', alignItems: 'center', gap: '5px',
@@ -740,88 +859,144 @@ ${m.description}`;
                                         </div>
                                     </div>
 
-                                    {/* Formulaire inline (visible si form ouvert) */}
+                                    {/* Formulaire inline de soumission */}
                                     {isFormOpen && (
                                         <div style={{
                                             background: '#f8fafc', borderTop: '1px solid #e2e8f0',
                                             padding: '1.25rem'
                                         }}>
-                                            <p style={{ margin: '0 0 0.85rem', fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
-                                                <strong>Mode opératoire :</strong> Ouvrez la plateforme, créez votre citation avec le texte NAP ci-dessus, puis collez l'URL de la page créée ci-dessous.
+                                            <p style={{ margin: '0 0 1rem', fontSize: '0.88rem', color: '#475569', lineHeight: 1.5 }}>
+                                                <strong>Mode opératoire :</strong> Ouvrez la plateforme via le lien ci-dessus, créez votre citation avec le texte NAP, puis collez l'URL de la page créée et joignez une capture d'écran comme preuve.
                                             </p>
-                                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                                                {/* Bouton ouvrir plateforme */}
-                                                <a
-                                                    href={platform.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
+
+                                            {/* Champ URL de preuve */}
+                                            <div style={{ marginBottom: '0.85rem' }}>
+                                                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                                                    URL de la citation *
+                                                </label>
+                                                <input
+                                                    type="url"
+                                                    placeholder="https://www.nomdusite.fr/votre-citation-créée"
+                                                    value={formUrl}
+                                                    onChange={e => setFormUrl(e.target.value)}
                                                     style={{
-                                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                                        background: '#eff6ff', color: '#2383e2',
-                                                        border: '1px solid #bfdbfe', borderRadius: '0.5rem',
-                                                        padding: '0.5rem 1rem', fontWeight: 700,
-                                                        fontSize: '0.85rem', textDecoration: 'none',
-                                                        whiteSpace: 'nowrap'
+                                                        width: '100%', padding: '0.65rem 0.85rem',
+                                                        borderRadius: '8px',
+                                                        border: formUrl && !formUrl.startsWith('http')
+                                                            ? '2px solid #dc2626'
+                                                            : formUrl ? '2px solid #059669' : '1px solid #e2e8f0',
+                                                        fontSize: '0.88rem', outline: 'none',
+                                                        boxSizing: 'border-box'
                                                     }}
-                                                >
-                                                    <ExternalLink size={14} /> Ouvrir {platform.name}
-                                                </a>
-                                                {/* Champ URL */}
-                                                <div style={{ flex: 1, minWidth: '240px' }}>
-                                                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '4px' }}>
-                                                        URL de preuve *
-                                                    </label>
-                                                    <input
-                                                        type="url"
-                                                        placeholder="https://..."
-                                                        value={formUrl}
-                                                        onChange={e => setFormUrl(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Upload screenshot */}
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#64748b', display: 'block', marginBottom: '6px' }}>
+                                                    Capture d'écran (preuve) *
+                                                </label>
+                                                <input
+                                                    id="screenshot-file-input"
+                                                    type="file"
+                                                    accept="image/jpeg,image/png,image/webp"
+                                                    onChange={handleScreenshotChange}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                {formScreenshotPreview ? (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                                        <div style={{ position: 'relative' }}>
+                                                            <img
+                                                                src={formScreenshotPreview}
+                                                                alt="Aperçu capture"
+                                                                style={{
+                                                                    width: '120px', height: '80px',
+                                                                    objectFit: 'cover', borderRadius: '8px',
+                                                                    border: '2px solid #059669'
+                                                                }}
+                                                            />
+                                                            <div style={{
+                                                                position: 'absolute', bottom: '4px', right: '4px',
+                                                                background: '#059669', borderRadius: '50%',
+                                                                width: '18px', height: '18px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                            }}>
+                                                                <Check size={11} color="white" />
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#059669', marginBottom: '3px' }}>
+                                                                Capture prête
+                                                            </div>
+                                                            <label
+                                                                htmlFor="screenshot-file-input"
+                                                                style={{
+                                                                    display: 'inline-block',
+                                                                    background: 'none', border: '1px solid #e2e8f0',
+                                                                    borderRadius: '0.4rem', padding: '0.25rem 0.65rem',
+                                                                    fontSize: '0.78rem', fontWeight: 600, color: '#64748b',
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            >
+                                                                Changer
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <label
+                                                        htmlFor="screenshot-file-input"
                                                         style={{
-                                                            width: '100%', padding: '0.65rem 0.85rem',
-                                                            borderRadius: '8px',
-                                                            border: formUrl && !formUrl.startsWith('http')
-                                                                ? '2px solid #dc2626'
-                                                                : formUrl ? '2px solid #059669' : '1px solid #e2e8f0',
-                                                            fontSize: '0.88rem', outline: 'none',
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            background: 'white',
+                                                            border: '2px dashed #cbd5e1',
+                                                            borderRadius: '8px', padding: '0.75rem 1.25rem',
+                                                            color: '#64748b', fontSize: '0.85rem', fontWeight: 600,
+                                                            cursor: 'pointer', width: '100%', justifyContent: 'center',
                                                             boxSizing: 'border-box'
                                                         }}
-                                                    />
-                                                </div>
-                                                {/* Boutons Soumettre / Annuler */}
-                                                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                                                    <button
-                                                        onClick={() => submitCitation(platform)}
-                                                        disabled={submitting}
-                                                        style={{
-                                                            display: 'flex', alignItems: 'center', gap: '5px',
-                                                            background: 'linear-gradient(135deg, #059669, #047857)',
-                                                            color: 'white', border: 'none',
-                                                            borderRadius: '0.5rem', padding: '0.6rem 1.1rem',
-                                                            fontWeight: 700, fontSize: '0.85rem',
-                                                            cursor: submitting ? 'not-allowed' : 'pointer',
-                                                            opacity: submitting ? 0.7 : 1
-                                                        }}
                                                     >
-                                                        <Send size={14} /> {submitting ? 'Envoi...' : 'Soumettre'}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => { setOpenFormId(null); setFormUrl(''); }}
-                                                        style={{
-                                                            background: 'white', color: '#64748b',
-                                                            border: '1px solid #e2e8f0', borderRadius: '0.5rem',
-                                                            padding: '0.6rem 1rem', fontWeight: 700,
-                                                            fontSize: '0.85rem', cursor: 'pointer'
-                                                        }}
-                                                    >
-                                                        Annuler
-                                                    </button>
-                                                </div>
+                                                        <Camera size={16} color="#94a3b8" />
+                                                        Joindre une capture d'écran (JPG, PNG, WEBP — 5MB max)
+                                                    </label>
+                                                )}
+                                            </div>
+
+                                            {/* Boutons Soumettre / Annuler */}
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                <button
+                                                    onClick={() => submitCitation(platform)}
+                                                    disabled={submitting}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '5px',
+                                                        background: 'linear-gradient(135deg, #059669, #047857)',
+                                                        color: 'white', border: 'none',
+                                                        borderRadius: '0.5rem', padding: '0.6rem 1.25rem',
+                                                        fontWeight: 700, fontSize: '0.85rem',
+                                                        cursor: submitting ? 'not-allowed' : 'pointer',
+                                                        opacity: submitting ? 0.7 : 1
+                                                    }}
+                                                >
+                                                    <Send size={14} /> {submitting ? 'Envoi en cours...' : 'Soumettre la citation'}
+                                                </button>
+                                                <button
+                                                    onClick={closeForm}
+                                                    disabled={submitting}
+                                                    style={{
+                                                        background: 'white', color: '#64748b',
+                                                        border: '1px solid #e2e8f0', borderRadius: '0.5rem',
+                                                        padding: '0.6rem 1rem', fontWeight: 700,
+                                                        fontSize: '0.85rem', cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    Annuler
+                                                </button>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             );
                         })}
+                    </div>
                     </div>
                 )}
             </>
