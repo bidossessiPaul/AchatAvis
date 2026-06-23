@@ -178,12 +178,16 @@ export const GuideCitations: React.FC = () => {
     };
 
     // ── Texte NAP ──────────────────────────────────────────────────────────
-    const buildNapText = (m: GeoMission) =>
-        `${m.artisan_name} — ${m.activity_type} à ${m.city}
-📍 ${m.address}
-📞 ${m.phone}
-🌐 ${m.website}
-${m.description}`;
+    const buildNapText = (m: GeoMission) => {
+        const lines: string[] = [];
+        lines.push(`${m.artisan_name}`);
+        lines.push(`${m.activity_type.charAt(0).toUpperCase() + m.activity_type.slice(1)} — ${m.city}`);
+        if (m.address && m.address !== 'null') lines.push(`Adresse : ${m.address}`);
+        if (m.phone && m.phone !== 'null') lines.push(`Tél. : ${m.phone}`);
+        if (m.website && m.website !== 'null') lines.push(`Site : ${m.website}`);
+        if (m.description && m.description !== 'null') lines.push(`\n${m.description}`);
+        return lines.join('\n');
+    };
 
     const copyNap = () => {
         if (!selectedMission) return;
