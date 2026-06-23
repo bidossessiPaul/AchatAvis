@@ -76,17 +76,17 @@ export const getMissions = async (guideId: string) => {
             gm.reward_per_submission,
             gm.status,
             gm.created_at,
-            -- Infos artisan
-            u.full_name  AS artisan_name,
-            u.email      AS artisan_email,
+            -- Infos artisan (ou client externe si pas de compte plateforme)
+            COALESCE(u.full_name, gm.external_name) AS artisan_name,
+            COALESCE(u.email, gm.external_email)    AS artisan_email,
             ap.company_name,
             ap.trade,
-            -- Nombre de citations validées par CE guide sur cette mission
+            -- Nombre de citations soumises par CE guide sur cette mission
             COUNT(DISTINCT CASE WHEN gs.guide_id = :guideId AND gs.deleted_at IS NULL THEN gs.id END) AS my_submissions_count,
             -- Total citations validées toutes sources confondues
             COUNT(DISTINCT CASE WHEN gs.status = 'validated' AND gs.deleted_at IS NULL THEN gs.id END) AS total_validated
         FROM geo_missions gm
-        JOIN users u ON u.id = gm.artisan_id
+        LEFT JOIN users u ON u.id = gm.artisan_id
         LEFT JOIN artisans_profiles ap ON ap.user_id = gm.artisan_id
         LEFT JOIN geo_submissions gs ON gs.mission_id = gm.id
         WHERE gm.status = 'active'
@@ -95,7 +95,8 @@ export const getMissions = async (guideId: string) => {
             gm.id, gm.name, gm.activity_type, gm.city, gm.website, gm.phone,
             gm.address, gm.description, gm.citation_target, gm.reward_per_submission,
             gm.status, gm.created_at,
-            u.full_name, u.email, ap.company_name, ap.trade
+            u.full_name, u.email, ap.company_name, ap.trade,
+            gm.external_name, gm.external_email
         ORDER BY gm.created_at DESC
     `, { guideId });
 };
