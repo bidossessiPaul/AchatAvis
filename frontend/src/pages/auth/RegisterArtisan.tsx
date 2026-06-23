@@ -99,15 +99,25 @@ export const RegisterArtisan: React.FC = () => {
     };
 
     return (
-        <div className="auth-container artisan-side">
+        <div className="auth-container split-layout">
             <ParticlesBackground />
-            <div className="auth-content" style={{ maxWidth: '600px' }}>
-                <div className="auth-logo">
-                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
-                    <p className="auth-tagline">Inscription Artisan</p>
-                </div>
 
-                <Card className="auth-card">
+            {/* Illustration — côté gauche */}
+            <div className="auth-register-image-side artisan-bg">
+                <img src="/artisan.png" alt="Artisan" className="auth-register-illustration" />
+            </div>
+
+            {/* Formulaire — côté droit */}
+            <div className="auth-register-form-side">
+                <div className="auth-content" style={{ maxWidth: '520px' }}>
+                    <span className="auth-type-badge artisan">Artisan — Obtenir des avis</span>
+
+                    <div className="auth-logo">
+                        <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
+                        <p className="auth-tagline">Inscription Artisan</p>
+                    </div>
+
+                    <Card className="auth-card">
                     {success ? (
                         <div className="auth-success">
                             <h3>✓ Inscription réussie !</h3>
@@ -304,7 +314,8 @@ export const RegisterArtisan: React.FC = () => {
                     )}
                     <RegionBadge />
                 </Card>
-            </div >
-        </div >
+                </div>
+            </div>
+        </div>
     );
 };

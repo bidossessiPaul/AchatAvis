@@ -67,15 +67,20 @@ export const RegisterGuide: React.FC = () => {
     };
 
     return (
-        <div className="auth-container guide-side">
+        <div className="auth-container split-layout">
             <ParticlesBackground />
-            <div className="auth-content">
-                <div className="auth-logo">
-                    <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
-                    <p className="auth-tagline">Inscription Local Guide</p>
-                </div>
 
-                <Card className="auth-card">
+            {/* Formulaire — côté gauche */}
+            <div className="auth-register-form-side">
+                <div className="auth-content">
+                    <span className="auth-type-badge guide">Local Guide — Poster des avis</span>
+
+                    <div className="auth-logo">
+                        <img src="/logo.png" alt="AchatAvis" className="auth-logo-img" />
+                        <p className="auth-tagline">Inscription Local Guide</p>
+                    </div>
+
+                    <Card className="auth-card">
                     {success ? (
                         <div className="auth-success">
                             <h3>✓ Inscription réussie !</h3>
@@ -198,6 +203,12 @@ export const RegisterGuide: React.FC = () => {
                     )}
                     <RegionBadge />
                 </Card>
+                </div>
+            </div>
+
+            {/* Illustration — côté droit */}
+            <div className="auth-register-image-side guide-bg">
+                <img src="/guide.png" alt="Local Guide" className="auth-register-illustration" />
             </div>
         </div>
     );
