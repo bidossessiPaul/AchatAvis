@@ -52,10 +52,16 @@ export const registerArtisan = async (req: Request, res: Response) => {
             });
         }
 
-        if (error.message === 'Email already registered' || error.message === 'SIRET already registered') {
-            return res.status(409).json({ error: error.message });
+        if (
+            error.message === 'Email already registered' ||
+            error.message === 'SIRET already registered' ||
+            error.message === 'Cet email est déjà utilisé'
+        ) {
+            return res.status(409).json({ error: 'Cet email est déjà utilisé' });
         }
 
+        // Log l'erreur réelle côté serveur pour diagnostiquer les 500 (le user ne voit que le message générique)
+        console.error('registerArtisan failed:', error?.sqlMessage || error?.message, error?.code || '');
         return res.status(500).json({ error: 'Une erreur est survenue, veuillez réessayer' });
     }
 };
