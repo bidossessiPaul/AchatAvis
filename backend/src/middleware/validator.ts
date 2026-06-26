@@ -13,8 +13,10 @@ export const passwordSchema = z
 export const phoneSchema = z
     .string()
     .transform(val => val.replace(/[\s.+-]/g, '')) // Supprimer espaces, points, plus, tirets
-    .refine(val => /^\d{10,}$/.test(val), {
-        message: 'Le téléphone doit contenir au moins 10 chiffres',
+    // Borne haute à 20 chiffres : la colonne phone/whatsapp_number est varchar(20) et MySQL
+    // est en mode strict (STRICT_TRANS_TABLES) → au-delà, erreur 1406 = 500 opaque côté user.
+    .refine(val => /^\d{10,20}$/.test(val), {
+        message: 'Le téléphone doit contenir entre 10 et 20 chiffres',
     });
 
 // Trade validation: Now dynamic, accepts any string corresponding to a sector slug
