@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import {
     Globe, Link, CheckCircle2, XCircle, Clock,
@@ -87,6 +88,10 @@ function Badge({
 // ─── Composant principal ───────────────────────────────────────────────────
 
 export const GuideCitations: React.FC = () => {
+    // L'URL pilote la mission affichée : /guide/citations (liste) ou /guide/citations/:missionId (page dédiée)
+    const { missionId } = useParams<{ missionId: string }>();
+    const navigate = useNavigate();
+
     const [missions, setMissions] = useState<GeoMission[]>([]);
     const [selectedMission, setSelectedMission] = useState<GeoMission | null>(null);
     const [platforms, setPlatforms] = useState<GeoPlatform[]>([]);
@@ -145,18 +150,31 @@ export const GuideCitations: React.FC = () => {
         }
     };
 
-    // ── Sélection d'une mission ─────────────────────────────────────────────
+    // ── Sélection d'une mission : on change l'URL, l'effet ci-dessous fait le reste ──
     const selectMission = (mission: GeoMission) => {
-        setSelectedMission(mission);
-        closeForm();
-        loadPlatforms(mission.id);
+        navigate(`/guide/citations/${mission.id}`);
     };
 
     const backToList = () => {
-        setSelectedMission(null);
-        setPlatforms([]);
-        closeForm();
+        navigate('/guide/citations');
     };
+
+    // ── Synchronise la mission affichée avec l'URL ───────────────────────────
+    useEffect(() => {
+        if (!missionId) {
+            setSelectedMission(null);
+            setPlatforms([]);
+            closeForm();
+            return;
+        }
+        const mission = missions.find(m => String(m.id) === missionId);
+        if (mission) {
+            setSelectedMission(mission);
+            closeForm();
+            loadPlatforms(mission.id);
+        }
+        // Si la mission n'est pas (encore) dans la liste, l'effet se relancera quand `missions` se charge.
+    }, [missionId, missions]);
 
     const closeForm = () => {
         setOpenFormId(null);

@@ -399,6 +399,14 @@ function App() {
                             }
                         />
                         <Route
+                            path="/guide/citations/:missionId"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <GuideCitations />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/guide/quiz"
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
