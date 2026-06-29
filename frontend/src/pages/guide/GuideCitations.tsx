@@ -93,7 +93,6 @@ export const GuideCitations: React.FC = () => {
     const [history, setHistory] = useState<GeoSubmissionHistory[]>([]);
     const [loadingMissions, setLoadingMissions] = useState(true);
     const [loadingPlatforms, setLoadingPlatforms] = useState(false);
-    const [activeTab, setActiveTab] = useState<'tous' | 'annuaire' | 'forum' | 'social' | 'blog'>('tous');
 
     // Formulaire inline par plateforme
     const [openFormId, setOpenFormId] = useState<number | null>(null);
@@ -149,7 +148,6 @@ export const GuideCitations: React.FC = () => {
     // ── Sélection d'une mission ─────────────────────────────────────────────
     const selectMission = (mission: GeoMission) => {
         setSelectedMission(mission);
-        setActiveTab('tous');
         closeForm();
         loadPlatforms(mission.id);
     };
@@ -278,12 +276,17 @@ export const GuideCitations: React.FC = () => {
         return { totalMissions, totalSubmitted, totalValidated, totalGains };
     }, [missions, history]);
 
-    // ── Filtres plateformes ─────────────────────────────────────────────────
+    // ── Plateformes en ordre aléatoire ──────────────────────────────────────
+    // Mélange Fisher-Yates, re-calculé seulement quand la liste change (pas à chaque render),
+    // pour que l'ordre reste stable pendant que le guide travaille sur la page.
     const filteredPlatforms = useMemo(() => {
-        let result = platforms;
-        if (activeTab !== 'tous') result = result.filter(p => p.category === activeTab);
+        const result = [...platforms];
+        for (let i = result.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [result[i], result[j]] = [result[j], result[i]];
+        }
         return result;
-    }, [platforms, activeTab]);
+    }, [platforms]);
 
     // ── Filtres missions ────────────────────────────────────────────────────
     const filteredMissions = useMemo(() => {
@@ -296,14 +299,6 @@ export const GuideCitations: React.FC = () => {
         );
     }, [missions, searchQuery]);
 
-    // ── Tabs ────────────────────────────────────────────────────────────────
-    const tabs: { key: typeof activeTab; label: string }[] = [
-        { key: 'tous', label: 'Tous' },
-        { key: 'annuaire', label: 'Annuaires' },
-        { key: 'forum', label: 'Forums' },
-        { key: 'social', label: 'Réseaux sociaux' },
-        { key: 'blog', label: 'Blogs' },
-    ];
 
     // ─── Rendu vue liste missions ──────────────────────────────────────────
     const renderMissionList = () => (
@@ -647,38 +642,6 @@ export const GuideCitations: React.FC = () => {
                     </pre>
                 </div>
 
-                {/* Tabs catégories */}
-                <div style={{
-                    display: 'flex', gap: '0.5rem', flexWrap: 'wrap',
-                    borderBottom: '2px solid #f1f5f9', marginBottom: '1.25rem', paddingBottom: '0'
-                }}>
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            style={{
-                                background: 'none', border: 'none', padding: '0.55rem 1rem',
-                                fontSize: '0.88rem', fontWeight: activeTab === tab.key ? 700 : 500,
-                                color: activeTab === tab.key ? '#059669' : '#64748b',
-                                cursor: 'pointer',
-                                borderBottom: activeTab === tab.key ? '2px solid #059669' : '2px solid transparent',
-                                marginBottom: '-2px',
-                                transition: 'color 0.15s'
-                            }}
-                        >
-                            {tab.label}
-                            {tab.key !== 'tous' && (
-                                <span style={{
-                                    marginLeft: '5px', background: '#f1f5f9', color: '#64748b',
-                                    borderRadius: '1rem', padding: '1px 6px', fontSize: '0.7rem', fontWeight: 700
-                                }}>
-                                    {platforms.filter(p => p.category === tab.key).length}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </div>
-
                 {/* Liste plateformes */}
                 {loadingPlatforms ? (
                     <div style={{ textAlign: 'center', padding: '60px 0', color: '#94a3b8' }}>
@@ -688,7 +651,7 @@ export const GuideCitations: React.FC = () => {
                 ) : filteredPlatforms.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '60px 0' }}>
                         <Link size={40} color="#cbd5e1" style={{ marginBottom: '1rem' }} />
-                        <p style={{ color: '#94a3b8' }}>Aucune plateforme dans cette catégorie.</p>
+                        <p style={{ color: '#94a3b8' }}>Aucune plateforme disponible.</p>
                     </div>
                 ) : (
                     <div style={{ maxHeight: '620px', overflowY: 'auto', paddingRight: '6px', marginBottom: '2rem' }}>
