@@ -54,6 +54,12 @@ router.put('/admin/platforms/:id',
     geoController.adminUpdatePlatform
 );
 
+router.delete('/admin/platforms/:id',
+    authenticate,
+    authorize('admin'),
+    geoController.adminDeletePlatform
+);
+
 router.get('/admin/missions',
     authenticate,
     authorize('admin'),

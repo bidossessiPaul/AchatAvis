@@ -173,6 +173,30 @@ export const adminUpdatePlatform = async (req: Request, res: Response) => {
 };
 
 /**
+ * DELETE /api/geo/admin/platforms/:id
+ * Soft-delete d'une plateforme.
+ */
+export const adminDeletePlatform = async (req: Request, res: Response) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ error: 'id de plateforme invalide' });
+        }
+
+        const deleted = await geoService.adminDeletePlatform(id);
+
+        if (!deleted) {
+            return res.status(404).json({ error: 'Plateforme introuvable' });
+        }
+
+        return res.json({ success: true });
+    } catch (error: any) {
+        return res.status(500).json({ error: 'Erreur lors de la suppression de la plateforme', message: error.message });
+    }
+};
+
+/**
  * GET /api/geo/admin/missions
  * Liste toutes les missions avec artisan + compteurs soumissions. Filtre query : status.
  */

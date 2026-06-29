@@ -130,7 +130,7 @@ export const getMissionPlatforms = async (missionId: string, guideId: string) =>
             AND gs.mission_id  = :missionId
             AND gs.guide_id    = :guideId
             AND gs.deleted_at  IS NULL
-        WHERE gp.active = 1
+        WHERE gp.active = 1 AND gp.deleted_at IS NULL
         ORDER BY gp.da_score DESC, gp.name ASC
     `, { missionId, guideId });
 };
@@ -212,6 +212,8 @@ export const adminGetPlatforms = async (filters: PlatformFilters) => {
         conditions.push('active = :active');
         params.active = filters.active;
     }
+    // Masque les plateformes soft-deleted
+    conditions.push('deleted_at IS NULL');
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -276,6 +278,19 @@ export const adminUpdatePlatform = async (id: number, data: Partial<CreatePlatfo
 
     const rows: any[] = await query(`SELECT * FROM geo_platforms WHERE id = :id`, { id });
     return rows[0] ?? null;
+};
+
+/**
+ * Soft-delete d'une plateforme. On ne hard-delete pas : des geo_submissions
+ * historiques pointent vers la plateforme et doivent garder son nom.
+ * Retourne false si la plateforme n'existe pas (ou est déjà supprimée).
+ */
+export const adminDeletePlatform = async (id: number): Promise<boolean> => {
+    const result: any = await query(
+        `UPDATE geo_platforms SET deleted_at = NOW() WHERE id = :id AND deleted_at IS NULL`,
+        { id }
+    );
+    return result.affectedRows > 0;
 };
 
 // ─── Fonctions admin — missions ───────────────────────────────────────────────
