@@ -61,6 +61,12 @@ router.delete('/proposals/:id/images', artisanController.deleteProposalImage);
 router.patch('/orders/:id/pause', artisanController.pauseFiche);
 router.patch('/orders/:id/resume', artisanController.resumeFiche);
 
+// Génération de propositions : pas de check subscription car le pack peut expirer
+// avant que l'artisan ait utilisé tous ses crédits (ex: mode split 2ème fiche).
+// L'ownership est vérifié dans generateProposals (order.artisan_id === req.user.userId).
+router.post('/orders/:id/proposals/generate', artisanController.generateProposals);
+router.post('/orders/:id/proposals', artisanController.generateProposals);
+
 // Toutes les routes suivantes demandent un abonnement actif (actions d'écriture)
 router.use(requireActiveSubscription);
 
@@ -69,9 +75,7 @@ router.post('/orders/draft', artisanController.createDraft);
 router.put('/orders/:id', artisanController.updateDraft);
 router.delete('/orders/:id', artisanController.deleteOrder);
 
-// Proposals
-router.post('/orders/:id/proposals/generate', artisanController.generateProposals);
-router.post('/orders/:id/proposals', artisanController.generateProposals);
+// Email validation
 router.post('/orders/:id/send-validation', artisanController.sendReviewValidationEmail);
 
 // AI Response Generation

@@ -228,13 +228,13 @@ export const artisanService = {
 
         let order = orders[0];
 
-        // DYNAMIC: Override quantity based on pack credits if available
+        // Enrich with pack name (sans overrider la quantité qui est déjà correcte en DB)
         if (order.payment_id) {
             const [p]: any = await query('SELECT review_credits, description FROM payments WHERE id = ?', [order.payment_id]);
             if (p) {
-                if (p.review_credits) {
-                    order.quantity = p.review_credits;
-                }
+                // On ne surcharge PAS order.quantity : la valeur DB est toujours correcte
+                // (en mode split : 60 ou 30 ; pack standard : review_credits).
+                // Ancienne logique de surcharge désactivée car elle cassait le split.
 
                 // Set human readable pack name for UI
                 const desc = p.description ? p.description.toLowerCase() : '';
@@ -304,34 +304,19 @@ export const artisanService = {
 
         return orders.map(order => {
             let packName = 'Pack Inconnu';
-            let realQuantity = order.quantity;
+            // La quantité DB est toujours correcte (split : 60/30, standard : review_credits).
+            // On n'écrase plus avec review_credits pour ne pas casser le mode split.
+            const realQuantity = order.quantity;
 
             if (order.payment_description) {
                 const desc = order.payment_description.toLowerCase();
                 const matchedPack = packs.find((p: any) => desc.includes(p.id));
 
-                if (matchedPack) {
-                    packName = matchedPack.name;
-                    // Use credits from payment record preferentially
-                    realQuantity = order.review_credits || matchedPack.quantity;
-                } else if (desc.includes('expert')) {
-                    packName = 'Pack Expert';
-                    realQuantity = order.review_credits || 20;
-                }
-                else if (desc.includes('croissance') || desc.includes('growth')) {
-                    packName = 'Pack Croissance';
-                    realQuantity = order.review_credits || 10;
-                }
-                else if (desc.includes('découverte') || desc.includes('discovery')) {
-                    packName = 'Pack Découverte';
-                    realQuantity = order.review_credits || 5;
-                }
+                if (matchedPack) packName = matchedPack.name;
+                else if (desc.includes('expert')) packName = 'Pack Expert';
+                else if (desc.includes('croissance') || desc.includes('growth')) packName = 'Pack Croissance';
+                else if (desc.includes('découverte') || desc.includes('discovery')) packName = 'Pack Découverte';
                 else packName = order.payment_description;
-
-                // Final fallback/override to specific credits if they exist and are different
-                if (order.review_credits && order.review_credits !== realQuantity) {
-                    realQuantity = order.review_credits;
-                }
             }
 
             return {

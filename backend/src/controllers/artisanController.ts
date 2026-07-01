@@ -60,6 +60,7 @@ export const artisanController = {
 
     async generateProposals(req: Request, res: Response) {
         const { id } = req.params;
+        const user = req.user;
         console.log(`🚀 START Generation pour orderId: ${id}`);
         try {
             const { proposals, force } = req.body;
@@ -71,6 +72,10 @@ export const artisanController = {
                 if (!order) {
                     return res.status(404).json({ error: 'Order not found' });
                 }
+                // Vérification ownership
+                if (order.artisan_id !== user!.userId) {
+                    return res.status(403).json({ error: 'Accès refusé' });
+                }
                 const finalProposals = proposals.slice(0, order.quantity);
                 const created = await artisanService.createProposals(id, finalProposals);
                 return res.json({ proposals: created, generated: created.length, target: order.quantity, complete: true });
@@ -80,6 +85,11 @@ export const artisanController = {
             const order = await artisanService.getOrderById(id);
             if (!order) {
                 return res.status(404).json({ error: 'Order not found' });
+            }
+
+            // Vérification ownership
+            if (order.artisan_id !== user!.userId) {
+                return res.status(403).json({ error: 'Accès refusé' });
             }
 
             const artisanProfile: any = await artisanService.getArtisanProfileByUserId(order.artisan_id);

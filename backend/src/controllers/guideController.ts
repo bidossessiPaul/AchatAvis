@@ -103,7 +103,7 @@ export const guideController = {
             return res.json(fiche);
         } catch (error: any) {
             console.error('❌ Error fetching fiche details:', error.message, error.stack);
-            const knownErrors = ['fiche non trouvée', 'fiche_FULL', 'DAILY_QUOTA_FULL', 'fiche_LOCKED', 'TRUST_SCORE_BLOCKED', 'TRUST_LEVEL_INSUFFICIENT', 'fiche_OUTSIDE_HOURS'];
+            const knownErrors = ['fiche non trouvée', 'fiche_FULL', 'DAILY_QUOTA_FULL', 'fiche_LOCKED', 'TRUST_SCORE_BLOCKED', 'TRUST_LEVEL_INSUFFICIENT', 'fiche_OUTSIDE_HOURS', 'fiche_PAUSED'];
             const isKnown = knownErrors.some(e => error.message?.includes(e));
             return res.status(isKnown ? 403 : 500).json({
                 error: 'Failed to fetch fiche details',
@@ -162,11 +162,61 @@ export const guideController = {
 
             return res.json(result);
         } catch (error: any) {
+            if (error.message === 'WARMUP_REQUIRED') {
+                return res.status(403).json({
+                    error: 'Échauffement requis',
+                    message: 'WARMUP_REQUIRED'
+                });
+            }
             console.error('Error submitting review proof:', error);
             return res.status(500).json({
                 error: 'Failed to submit review proof',
                 message: error.message
             });
+        }
+    },
+
+    // Échauffement : état + liste des fiches à visiter avant de poster sur la cible.
+    async getWarmup(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { id } = req.params;
+            const result = await guideService.getWarmupForTarget(user.userId, id);
+            return res.json(result);
+        } catch (error: any) {
+            console.error('Error fetching warmup:', error);
+            return res.status(500).json({ error: 'Failed to fetch warmup', message: error.message });
+        }
+    },
+
+    // Échauffement : valide une visite (3 interactions obligatoires + durée minimale).
+    async recordWarmupVisit(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+            const { visitId, didItinerary, didWebsite, didContact, durationSec } = req.body;
+            if (!visitId) return res.status(400).json({ error: 'visitId requis' });
+
+            const result = await guideService.recordWarmupVisit(user.userId, {
+                visitId,
+                didItinerary: !!didItinerary,
+                didWebsite: !!didWebsite,
+                didContact: !!didContact,
+                durationSec: Number(durationSec) || 0,
+            });
+            return res.json(result);
+        } catch (error: any) {
+            if (error.message === 'VISIT_NOT_FOUND') {
+                return res.status(404).json({ error: 'Visite introuvable', message: error.message });
+            }
+            if (error.message === 'ACTIONS_REQUISES' || error.message === 'DUREE_INSUFFISANTE') {
+                return res.status(400).json({ error: 'Visite incomplète', message: error.message });
+            }
+            console.error('Error recording warmup visit:', error);
+            return res.status(500).json({ error: 'Failed to record warmup visit', message: error.message });
         }
     },
 

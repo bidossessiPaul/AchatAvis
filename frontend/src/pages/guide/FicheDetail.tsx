@@ -33,6 +33,7 @@ import { useAntiDetectionStore } from '../../context/antiDetectionStore';
 import { useAuthStore } from '../../context/authStore';
 import { FicheCompatibilityModal } from '../../components/AntiDetection/FicheCompatibilityModal';
 import { ProofSubmissionChecklist } from '../../components/AntiDetection/ProofSubmissionChecklist';
+import { WarmupGate } from '../../components/AntiDetection/WarmupGate';
 import './FicheDetail.css';
 
 export const FicheDetail: React.FC = () => {
@@ -70,6 +71,9 @@ export const FicheDetail: React.FC = () => {
     const [slotExpired, setSlotExpired] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [isRefreshingSlot, setIsRefreshingSlot] = useState(false);
+    // Échauffement obligatoire avant de poster (warm-up). Le WarmupGate appelle
+    // onComplete() dès qu'il est terminé OU non requis (accès direct).
+    const [warmupPassed, setWarmupPassed] = useState(false);
 
     useEffect(() => {
         if (orderId) {
@@ -148,6 +152,12 @@ export const FicheDetail: React.FC = () => {
             } else if (message === 'fiche_LOCKED') {
                 setLockedByOther(true);
                 setError("Un autre guide est déjà en train de traiter cette fiche. Veuillez réessayer dans quelques minutes.");
+            } else if (message && message.includes('fiche_PAUSED')) {
+                // Format : "fiche_PAUSED:<minutes restantes>" — pause après un avis (étalement)
+                const mins = parseInt(message.split(':')[1], 10) || 0;
+                const delai = mins >= 60 ? `environ ${Math.round(mins / 60)}h` : `${mins} min`;
+                setIsDailyFull(true);
+                setError(`Un avis vient d'être posté sur cette fiche. Elle est en pause pour ${delai} avant le prochain. Revenez un peu plus tard.`);
             } else if (message && message.includes('fiche_OUTSIDE_HOURS')) {
                 // Format: "fiche_OUTSIDE_HOURS:07:00-23:00"
                 const range = message.split(':').slice(1).join(':');
@@ -395,6 +405,13 @@ export const FicheDetail: React.FC = () => {
 
     return (
         <DashboardLayout title="Détails de la fiche">
+            {orderId && !warmupPassed && (
+                <WarmupGate
+                    orderId={orderId}
+                    targetCompany={fiche.artisan_company}
+                    onComplete={() => setWarmupPassed(true)}
+                />
+            )}
             <div className="fiche-detail-container">
                 <button onClick={() => navigate('/guide')} className="fiche-back-button">
                     <ChevronLeft size={20} /> Retour aux fiches

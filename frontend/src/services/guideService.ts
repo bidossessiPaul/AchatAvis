@@ -41,6 +41,42 @@ export const guideService = {
         return response.data;
     },
 
+    // --- Échauffement (warm-up) avant de poster un avis ---
+    async getWarmup(orderId: string): Promise<{
+        required: boolean;
+        completed: boolean;
+        sessionsToday: number;
+        dailyLimit: number;
+        sessionId?: string;
+        requiredCount?: number;
+        completedCount?: number;
+        reason?: string;
+        visits?: {
+            id: string;
+            order_id: string;
+            company_name: string;
+            google_business_url: string;
+            city: string | null;
+            sector_icon: string | null;
+            sector_name: string | null;
+            is_done: number;
+        }[];
+    }> {
+        const response = await api.get(`/guide/fiches/${orderId}/warmup`);
+        return response.data;
+    },
+
+    async recordWarmupVisit(orderId: string, data: {
+        visitId: string;
+        didItinerary: boolean;
+        didWebsite: boolean;
+        didContact: boolean;
+        durationSec: number;
+    }): Promise<{ success: boolean; completed: boolean; completedCount: number }> {
+        const response = await api.post(`/guide/fiches/${orderId}/warmup/visit`, data);
+        return response.data;
+    },
+
     async getSubmissions(): Promise<any[]> {
         const response = await api.get('/guide/submissions');
         return response.data;

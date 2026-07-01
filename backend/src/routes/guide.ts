@@ -19,6 +19,8 @@ router.post('/training/submit', trainingController.submit);
 router.post('/training/submit-video', trainingController.submitVideo);
 
 router.get('/fiches/available', guideController.getAvailablefiches);
+router.get('/fiches/:id/warmup', guideController.getWarmup);
+router.post('/fiches/:id/warmup/visit', guideController.recordWarmupVisit);
 router.get('/fiches/:id', guideController.getficheDetails);
 router.post('/fiches/:id/release-lock', guideController.releaseLock);
 router.post('/fiches/:id/refresh-slot', guideController.refreshSlot);

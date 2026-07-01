@@ -14,6 +14,23 @@ const COOLDOWN_MINUTES = 20;
 // Un slot est "occupé" (bloque les autres + compte dans le quota) tant qu'il est
 // dans la fenêtre réservation + pause. Au-delà, il redevient libre pour tout le monde.
 
+// --- Cadence / étalement des avis dans la journée ---
+// Après CHAQUE avis soumis, la fiche se met en pause pour une durée aléatoire entre
+// PAUSE_MIN_MINUTES et PAUSE_MAX_MINUTES. Pendant cette pause, la fiche disparaît pour
+// tous les guides, puis réapparaît — jusqu'à ce que reviews_per_day soit atteint le jour.
+// But : éviter que tous les avis d'une fiche tombent en 15 min (plainte client).
+const PAUSE_MIN_MINUTES = 60;   // 1h
+const PAUSE_MAX_MINUTES = 240;  // 4h
+
+// --- Échauffement (warm-up) ---
+// Avant ses WARMUP_DAILY_LIMIT premières fiches du jour, le guide doit d'abord visiter
+// quelques autres fiches clients (interactions réelles, sans avis) pour générer du
+// trafic et crédibiliser son profil. Au-delà, accès direct aux fiches.
+const WARMUP_DAILY_LIMIT = 3;       // nb de warm-ups exigés par jour avant accès direct
+const WARMUP_MIN_FICHES = 3;        // borne basse du tirage aléatoire
+const WARMUP_MAX_FICHES = 5;        // borne haute (max 5 fiches à visiter)
+const WARMUP_MIN_DURATION_SEC = 10; // temps minimum sur une fiche pour valider la visite
+
 export const guideService = {
     /**
      * Libère les slots des rejets allow_resubmit dont le délai de 24h est dépassé.
@@ -101,6 +118,8 @@ export const guideService = {
             WHERE o.status IN ('in_progress') AND o.deleted_at IS NULL
             AND (SELECT COUNT(*) FROM reviews_submissions s3
                  WHERE s3.order_id = o.id AND s3.status != 'rejected') < o.quantity
+            -- Pause post-soumission : la fiche est masquée tant que la pause court (étalement).
+            AND (o.paused_until IS NULL OR o.paused_until < NOW())
             AND (o.locked_by IS NULL OR o.locked_until < NOW() OR o.locked_by = ?)
             -- Masque la fiche si son quota journalier est déjà pris (preuves du jour +
             -- slots tenus par d'autres guides, réservation ou pause en cours), sauf si CE
@@ -213,6 +232,13 @@ export const guideService = {
         `, [order_id, guide_id]);
         if (dailyCount >= order.reviews_per_day && hasOwnActiveSlot[0].count === 0) {
             throw new Error('DAILY_QUOTA_FULL');
+        }
+
+        // 2.b Pause post-soumission — la fiche est en pause depuis le dernier avis (étalement).
+        //     Ne bloque pas un guide qui détient déjà son propre slot : il peut finir de poster.
+        if (order.paused_until && new Date(order.paused_until) > new Date() && hasOwnActiveSlot[0].count === 0) {
+            const remainingMin = Math.max(1, Math.ceil((new Date(order.paused_until).getTime() - Date.now()) / 60000));
+            throw new Error(`fiche_PAUSED:${remainingMin}`);
         }
 
         // 3. Plage horaire de disponibilité (Europe/Paris) — toujours appliqué.
@@ -351,6 +377,172 @@ export const guideService = {
         };
     },
 
+    // Nombre de warm-ups complétés aujourd'hui par le guide (compteur journalier).
+    async countCompletedWarmupsToday(guideId: string): Promise<number> {
+        const r: any = await query(`
+            SELECT COUNT(*) AS n FROM fiche_warmup_sessions
+            WHERE guide_id = ? AND completed_at IS NOT NULL AND DATE(completed_at) = CURDATE()
+        `, [guideId]);
+        return Number(r[0].n);
+    },
+
+    // Crée une session d'échauffement : tire N fiches (aléatoire, max 5) à faible trafic,
+    // hors cible, et insère une visite "à faire" pour chacune.
+    // Renvoie null s'il n'y a aucune autre fiche disponible à réchauffer.
+    async createWarmupSession(guideId: string, targetOrderId: string) {
+        const n = WARMUP_MIN_FICHES + Math.floor(Math.random() * (WARMUP_MAX_FICHES - WARMUP_MIN_FICHES + 1));
+
+        // Priorité aux fiches qui ont reçu le moins de visites warm-up (distribue le trafic),
+        // puis aléatoire. On exige une URL Google pour que les interactions aient un sens.
+        const candidates: any[] = await query(`
+            SELECT o.id
+            FROM reviews_orders o
+            WHERE o.status = 'in_progress'
+              AND o.deleted_at IS NULL
+              AND o.id != ?
+              AND o.google_business_url IS NOT NULL AND o.google_business_url != ''
+            ORDER BY (
+                SELECT COUNT(*) FROM fiche_warmup_visits w
+                WHERE w.order_id = o.id AND w.is_done = 1
+            ) ASC, RAND()
+            LIMIT ?
+        `, [targetOrderId, n]);
+
+        if (!candidates || candidates.length === 0) return null;
+
+        const sessionId = crypto.randomUUID();
+        await query(`
+            INSERT INTO fiche_warmup_sessions (id, guide_id, target_order_id, required_count, created_at)
+            VALUES (?, ?, ?, ?, NOW())
+        `, [sessionId, guideId, targetOrderId, candidates.length]);
+
+        for (const c of candidates) {
+            await query(
+                `INSERT INTO fiche_warmup_visits (id, session_id, guide_id, order_id) VALUES (?, ?, ?, ?)`,
+                [crypto.randomUUID(), sessionId, guideId, c.id]
+            );
+        }
+
+        return { id: sessionId, required_count: candidates.length };
+    },
+
+    // État de l'échauffement pour une fiche cible. Crée la session au besoin.
+    // - required=false  → accès direct (quota du jour atteint ou aucune fiche à réchauffer)
+    // - completed=true  → warm-up déjà fait pour cette cible aujourd'hui
+    // - sinon           → liste des fiches à visiter + progression
+    async getWarmupForTarget(guideId: string, targetOrderId: string) {
+        const sessionsToday = await this.countCompletedWarmupsToday(guideId);
+
+        // Au-delà du quota du jour → plus aucun warm-up requis.
+        if (sessionsToday >= WARMUP_DAILY_LIMIT) {
+            return { required: false, completed: true, sessionsToday, dailyLimit: WARMUP_DAILY_LIMIT };
+        }
+
+        // Warm-up déjà complété pour CETTE cible aujourd'hui → ne pas le refaire.
+        const alreadyDone: any[] = await query(`
+            SELECT id FROM fiche_warmup_sessions
+            WHERE guide_id = ? AND target_order_id = ? AND completed_at IS NOT NULL
+              AND DATE(completed_at) = CURDATE()
+            LIMIT 1
+        `, [guideId, targetOrderId]);
+        if (alreadyDone.length > 0) {
+            return { required: true, completed: true, sessionsToday, dailyLimit: WARMUP_DAILY_LIMIT };
+        }
+
+        // Session en cours pour cette cible (créée aujourd'hui, non complétée) ?
+        let session: any = (await query(`
+            SELECT * FROM fiche_warmup_sessions
+            WHERE guide_id = ? AND target_order_id = ? AND completed_at IS NULL
+              AND DATE(created_at) = CURDATE()
+            ORDER BY created_at DESC LIMIT 1
+        `, [guideId, targetOrderId]))[0];
+
+        // Sinon en créer une.
+        if (!session) {
+            session = await this.createWarmupSession(guideId, targetOrderId);
+            if (!session) {
+                // Aucune autre fiche à réchauffer → on n'impose rien.
+                return { required: false, completed: true, sessionsToday, dailyLimit: WARMUP_DAILY_LIMIT, reason: 'NO_FICHE_TO_WARMUP' };
+            }
+        }
+
+        const visits: any[] = await query(`
+            SELECT v.id, v.order_id, v.did_itinerary, v.did_website, v.did_contact,
+                   v.is_done, v.duration_sec,
+                   o.company_name, o.google_business_url,
+                   a.city, sd.icon_emoji AS sector_icon, sd.sector_name
+            FROM fiche_warmup_visits v
+            JOIN reviews_orders o ON v.order_id = o.id
+            LEFT JOIN artisans_profiles a ON o.artisan_id = a.user_id
+            LEFT JOIN sector_difficulty sd ON o.sector_id = sd.id
+            WHERE v.session_id = ?
+            ORDER BY v.created_at ASC
+        `, [session.id]);
+
+        const completedCount = visits.filter((v: any) => v.is_done).length;
+
+        return {
+            required: true,
+            completed: false,
+            sessionId: session.id,
+            requiredCount: session.required_count,
+            completedCount,
+            sessionsToday,
+            dailyLimit: WARMUP_DAILY_LIMIT,
+            visits,
+        };
+    },
+
+    // Valide une visite d'échauffement : les 3 interactions sont obligatoires + durée minimale.
+    // Marque la session complétée quand toutes ses visites sont faites.
+    async recordWarmupVisit(guideId: string, data: {
+        visitId: string,
+        didItinerary: boolean,
+        didWebsite: boolean,
+        didContact: boolean,
+        durationSec: number,
+    }) {
+        const rows: any[] = await query(`
+            SELECT v.id, v.session_id FROM fiche_warmup_visits v
+            WHERE v.id = ? AND v.guide_id = ?
+        `, [data.visitId, guideId]);
+        if (!rows || rows.length === 0) throw new Error('VISIT_NOT_FOUND');
+        const visit = rows[0];
+
+        if (!data.didItinerary || !data.didWebsite || !data.didContact) {
+            throw new Error('ACTIONS_REQUISES');
+        }
+        if (Number(data.durationSec) < WARMUP_MIN_DURATION_SEC) {
+            throw new Error('DUREE_INSUFFISANTE');
+        }
+
+        await query(`
+            UPDATE fiche_warmup_visits
+            SET did_itinerary = 1, did_website = 1, did_contact = 1,
+                duration_sec = ?, is_done = 1, visited_at = NOW()
+            WHERE id = ?
+        `, [Number(data.durationSec), visit.id]);
+
+        const remaining: any = await query(
+            `SELECT COUNT(*) AS n FROM fiche_warmup_visits WHERE session_id = ? AND is_done = 0`,
+            [visit.session_id]
+        );
+        const isComplete = Number(remaining[0].n) === 0;
+        if (isComplete) {
+            await query(
+                `UPDATE fiche_warmup_sessions SET completed_at = NOW() WHERE id = ? AND completed_at IS NULL`,
+                [visit.session_id]
+            );
+        }
+
+        const doneCount: any = await query(
+            `SELECT COUNT(*) AS n FROM fiche_warmup_visits WHERE session_id = ? AND is_done = 1`,
+            [visit.session_id]
+        );
+
+        return { success: true, completed: isComplete, completedCount: Number(doneCount[0].n) };
+    },
+
     async releaseficheLock(_order_id: string, _guide_id: string) {
         // IMPORTANT : quitter la page NE libère PLUS le slot.
         // Le guide peut être en train de poster sur Google ou revenir plus tard ;
@@ -419,6 +611,22 @@ export const guideService = {
         screenshotUrl?: string,
         baseUrl?: string
     }) {
+        // 0bis. Garde-fou échauffement : avant ses WARMUP_DAILY_LIMIT premières fiches du jour,
+        // le guide doit avoir complété le warm-up de CETTE cible. Empêche le contournement
+        // du flou côté front (un guide qui forcerait la soumission sans visiter les fiches).
+        const warmupsDone = await this.countCompletedWarmupsToday(guideId);
+        if (warmupsDone < WARMUP_DAILY_LIMIT) {
+            const warmupSess: any = await query(`
+                SELECT id FROM fiche_warmup_sessions
+                WHERE guide_id = ? AND target_order_id = ? AND completed_at IS NOT NULL
+                  AND DATE(completed_at) = CURDATE()
+                LIMIT 1
+            `, [guideId, data.orderId]);
+            if (!warmupSess || warmupSess.length === 0) {
+                throw new Error('WARMUP_REQUIRED');
+            }
+        }
+
         // 0. 🎯 TRUST SCORE: Vérifier quota mensuel du compte Gmail sélectionné
         if (data.gmailAccountId) {
             const gmailAccountResult: any = await query(`
@@ -533,13 +741,18 @@ export const guideService = {
 
         // 4. Increment reviews_received + libérer la réservation du slot.
         // La soumission existe → le slot est "consommé", plus besoin de réservation.
+        // + Pause aléatoire (1-4h) : la fiche se cache pour tous les guides jusqu'à
+        //   paused_until, pour étaler les avis dans la journée (plainte client : tout
+        //   en 15 min). reviews_per_day reste la limite du nombre d'avis par jour.
+        const pauseMinutes = PAUSE_MIN_MINUTES + Math.floor(Math.random() * (PAUSE_MAX_MINUTES - PAUSE_MIN_MINUTES + 1));
         await query(`
             UPDATE reviews_orders
             SET reviews_received = reviews_received + 1,
                 locked_by = NULL,
-                locked_until = NULL
+                locked_until = NULL,
+                paused_until = DATE_ADD(NOW(), INTERVAL ? MINUTE)
             WHERE id = ?
-        `, [data.orderId]);
+        `, [pauseMinutes, data.orderId]);
 
         await query(`
             UPDATE review_proposals
