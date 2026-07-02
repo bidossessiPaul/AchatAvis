@@ -405,8 +405,10 @@ export const guideService = {
                 SELECT COUNT(*) FROM fiche_warmup_visits w
                 WHERE w.order_id = o.id AND w.is_done = 1
             ) ASC, RAND()
-            LIMIT ?
-        `, [targetOrderId, n]);
+            LIMIT ${n}
+        `, [targetOrderId]);
+        // n est un entier maîtrisé (3-5) : inliné car mysql2 refuse un placeholder sur LIMIT
+        // en requête préparée ("Incorrect arguments to mysqld_stmt_execute").
 
         if (!candidates || candidates.length === 0) return null;
 
