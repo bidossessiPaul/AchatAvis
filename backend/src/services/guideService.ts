@@ -26,7 +26,11 @@ const PAUSE_MAX_MINUTES = 240;  // 4h
 // Avant ses WARMUP_DAILY_LIMIT premières fiches du jour, le guide doit d'abord visiter
 // quelques autres fiches clients (interactions réelles, sans avis) pour générer du
 // trafic et crédibiliser son profil. Au-delà, accès direct aux fiches.
-const WARMUP_DAILY_LIMIT = 3;       // nb de warm-ups exigés par jour avant accès direct
+// DÉSACTIVÉ (incident 2026-07 : le guard bloquait les soumissions avec WARMUP_REQUIRED
+// quand il n'y avait pas d'autre fiche à réchauffer — incohérence gate front / guard serveur).
+// 0 = warmup entièrement off (pas de gate côté guide, pas de blocage à la soumission).
+// Remettre à 3 une fois le flux warmup reconstruit (warmup AVANT l'affichage de la fiche).
+const WARMUP_DAILY_LIMIT = 0;       // nb de warm-ups exigés par jour avant accès direct
 const WARMUP_MIN_FICHES = 3;        // borne basse du tirage aléatoire
 const WARMUP_MAX_FICHES = 5;        // borne haute (max 5 fiches à visiter)
 const WARMUP_MIN_DURATION_SEC = 10; // temps minimum sur une fiche pour valider la visite
