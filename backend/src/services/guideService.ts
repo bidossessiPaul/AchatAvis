@@ -26,11 +26,7 @@ const PAUSE_MAX_MINUTES = 240;  // 4h
 // Avant ses WARMUP_DAILY_LIMIT premières fiches du jour, le guide doit d'abord visiter
 // quelques autres fiches clients (interactions réelles, sans avis) pour générer du
 // trafic et crédibiliser son profil. Au-delà, accès direct aux fiches.
-// DÉSACTIVÉ (incident 2026-07 : le guard bloquait les soumissions avec WARMUP_REQUIRED
-// quand il n'y avait pas d'autre fiche à réchauffer — incohérence gate front / guard serveur).
-// 0 = warmup entièrement off (pas de gate côté guide, pas de blocage à la soumission).
-// Remettre à 3 une fois le flux warmup reconstruit (warmup AVANT l'affichage de la fiche).
-const WARMUP_DAILY_LIMIT = 0;       // nb de warm-ups exigés par jour avant accès direct
+const WARMUP_DAILY_LIMIT = 3;       // nb de warm-ups exigés par jour avant accès direct
 const WARMUP_MIN_FICHES = 3;        // borne basse du tirage aléatoire
 const WARMUP_MAX_FICHES = 5;        // borne haute (max 5 fiches à visiter)
 const WARMUP_MIN_DURATION_SEC = 10; // temps minimum sur une fiche pour valider la visite
@@ -615,20 +611,14 @@ export const guideService = {
         screenshotUrl?: string,
         baseUrl?: string
     }) {
-        // 0bis. Garde-fou échauffement : avant ses WARMUP_DAILY_LIMIT premières fiches du jour,
-        // le guide doit avoir complété le warm-up de CETTE cible. Empêche le contournement
-        // du flou côté front (un guide qui forcerait la soumission sans visiter les fiches).
-        const warmupsDone = await this.countCompletedWarmupsToday(guideId);
-        if (warmupsDone < WARMUP_DAILY_LIMIT) {
-            const warmupSess: any = await query(`
-                SELECT id FROM fiche_warmup_sessions
-                WHERE guide_id = ? AND target_order_id = ? AND completed_at IS NOT NULL
-                  AND DATE(completed_at) = CURDATE()
-                LIMIT 1
-            `, [guideId, data.orderId]);
-            if (!warmupSess || warmupSess.length === 0) {
-                throw new Error('WARMUP_REQUIRED');
-            }
+        // 0bis. Garde-fou échauffement : empêche un guide de contourner le warm-up en forçant
+        // la soumission via l'API. On s'appuie sur la MÊME logique que le gate front
+        // (getWarmupForTarget) → on bloque uniquement si le warm-up est réellement requis pour
+        // cette cible ET pas encore complété. Évite le faux positif WARMUP_REQUIRED quand il n'y
+        // a aucune autre fiche à réchauffer (NO_FICHE_TO_WARMUP) ou que le quota du jour est atteint.
+        const warmupState = await this.getWarmupForTarget(guideId, data.orderId);
+        if (warmupState.required && !warmupState.completed) {
+            throw new Error('WARMUP_REQUIRED');
         }
 
         // 0. 🎯 TRUST SCORE: Vérifier quota mensuel du compte Gmail sélectionné
