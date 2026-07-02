@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
     AlertTriangle,
     MapPin,
@@ -54,7 +54,13 @@ export const WarmupGate: React.FC<Props> = ({ orderId, targetCompany, onComplete
     const [states, setStates] = useState<Record<string, VisitState>>({});
     const [now, setNow] = useState(Date.now());
 
-    // Charge l'état de l'échauffement au montage.
+    // onComplete change d'identité à chaque render du parent (countdown 1s de FicheDetail).
+    // On le garde dans une ref pour NE PAS relancer l'effet de chargement à chaque seconde
+    // (sinon l'étape est réinitialisée à l'intro et l'écran des visites disparaît aussitôt).
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
+
+    // Charge l'état de l'échauffement au montage (une seule fois par fiche).
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -63,7 +69,7 @@ export const WarmupGate: React.FC<Props> = ({ orderId, targetCompany, onComplete
                 if (cancelled) return;
                 // Accès direct (quota du jour atteint, déjà fait, ou aucune fiche à réchauffer)
                 if (!data.required || data.completed) {
-                    onComplete();
+                    onCompleteRef.current();
                     return;
                 }
                 const v = data.visits || [];
@@ -76,11 +82,11 @@ export const WarmupGate: React.FC<Props> = ({ orderId, targetCompany, onComplete
             } catch (err: any) {
                 // En cas d'erreur, ne pas bloquer le guide : on laisse passer.
                 console.error('Warmup load failed', err);
-                onComplete();
+                onCompleteRef.current();
             }
         })();
         return () => { cancelled = true; };
-    }, [orderId, onComplete]);
+    }, [orderId]);
 
     // Ticker 1s pour les countdowns en cours.
     useEffect(() => {
