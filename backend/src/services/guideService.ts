@@ -717,9 +717,12 @@ export const guideService = {
         }
 
         // 2. Check if this Google email was already used for this specific fiche (order)
+        // On ignore les rejets : un avis rejeté ne "brûle" pas le compte Gmail sur la fiche,
+        // sinon le guide ne peut plus resoumettre ni réutiliser son compte (pool limité).
+        // Cohérent avec le reste du service qui compte les soumissions actives via status != 'rejected'.
         const existingEmail: any = await query(`
             SELECT id FROM reviews_submissions
-            WHERE order_id = ? AND google_email = ?
+            WHERE order_id = ? AND google_email = ? AND status != 'rejected'
         `, [data.orderId, data.googleEmail]);
 
         if (existingEmail && existingEmail.length > 0) {
