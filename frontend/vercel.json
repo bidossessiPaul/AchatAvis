@@ -1,17 +1,18 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/avoir-plus-avis-google.html"
+      "src": "^/$",
+      "dest": "/avoir-plus-avis-google.html"
     },
     {
-      "source": "/en",
-      "destination": "/en.html"
+      "src": "^/en/?$",
+      "dest": "/en.html"
     },
+    { "handle": "filesystem" },
     {
-      "source": "/:path*",
-      "destination": "/index.html"
+      "src": "^/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
