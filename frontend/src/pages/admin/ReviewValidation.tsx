@@ -65,6 +65,32 @@ export const ReviewValidation: React.FC = () => {
     const [allowResubmit, setAllowResubmit] = useState(false);
     const [allowAppeal, setAllowAppeal] = useState(false);
     const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>(null);
+
+    // Motifs de rejet pré-remplis selon la case cochée. L'admin peut ensuite
+    // les éditer librement dans le textarea.
+    const REASON_RESUBMIT = 'Mauvais lien, Aller copier le bon lien et soumettre';
+    const REASON_APPEAL = "Cet avis n'est plus disponible.";
+
+    // Coche/décoche "corriger le lien" : pré-remplit le motif si le champ est
+    // vide ou contient encore un des templates (pour ne pas écraser un texte
+    // rédigé à la main). Au décochage, on retire le template s'il est toujours là.
+    const toggleAllowResubmit = (checked: boolean) => {
+        setAllowResubmit(checked);
+        setRejectionReason(prev => {
+            const isTemplate = prev.trim() === '' || prev === REASON_RESUBMIT || prev === REASON_APPEAL;
+            if (!isTemplate) return prev;
+            return checked ? REASON_RESUBMIT : '';
+        });
+    };
+
+    const toggleAllowAppeal = (checked: boolean) => {
+        setAllowAppeal(checked);
+        setRejectionReason(prev => {
+            const isTemplate = prev.trim() === '' || prev === REASON_RESUBMIT || prev === REASON_APPEAL;
+            if (!isTemplate) return prev;
+            return checked ? REASON_APPEAL : '';
+        });
+    };
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(20);
     const [currentPage, setCurrentPage] = useState(1);
@@ -650,7 +676,7 @@ export const ReviewValidation: React.FC = () => {
                                     <input
                                         type="checkbox"
                                         checked={allowResubmit}
-                                        onChange={(e) => setAllowResubmit(e.target.checked)}
+                                        onChange={(e) => toggleAllowResubmit(e.target.checked)}
                                         style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
                                     />
                                     Permettre au guide de corriger le lien
@@ -664,7 +690,7 @@ export const ReviewValidation: React.FC = () => {
                                     <input
                                         type="checkbox"
                                         checked={allowAppeal}
-                                        onChange={(e) => setAllowAppeal(e.target.checked)}
+                                        onChange={(e) => toggleAllowAppeal(e.target.checked)}
                                         style={{ width: '18px', height: '18px', accentColor: '#3b82f6', cursor: 'pointer' }}
                                     />
                                     Permettre au guide de faire appel
