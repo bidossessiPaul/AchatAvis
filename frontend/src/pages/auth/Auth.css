@@ -77,7 +77,7 @@
 
 .auth-toggle-btn {
     flex: 1;
-    padding: 12px;
+    padding: 10px 12px;
     border-radius: var(--radius-lg);
     font-weight: 700;
     font-size: var(--text-sm);
@@ -86,6 +86,24 @@
     border: none;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.2;
+}
+
+/* Sous-libellé sous le nom du rôle (bénéfice utilisateur) */
+.auth-toggle-sub {
+    font-weight: 500;
+    font-size: 11px;
+    color: var(--gray-400);
+    opacity: 0.9;
+}
+
+.auth-toggle-btn.active .auth-toggle-sub {
+    color: var(--primary-brand);
+    opacity: 0.75;
 }
 
 .auth-toggle-btn.active {

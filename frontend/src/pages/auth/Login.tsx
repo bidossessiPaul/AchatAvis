@@ -126,12 +126,14 @@ export const Login: React.FC = () => {
                         onClick={() => { setUserType('artisan'); clearError(); setFormError(''); }}
                     >
                         Artisan
+                        <span className="auth-toggle-sub">(Obtenez plus d'avis)</span>
                     </button>
                     <button
                         className={`auth-toggle-btn ${userType === 'guide' ? 'active' : ''} guide-mode`}
                         onClick={() => { setUserType('guide'); clearError(); setFormError(''); }}
                     >
                         Guide Local
+                        <span className="auth-toggle-sub">(Gagnez de l'argent)</span>
                     </button>
                 </div>
 

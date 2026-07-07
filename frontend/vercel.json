@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/avoir-plus-avis-google.html"
+    },
+    {
+      "source": "/en",
+      "destination": "/en.html"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }
