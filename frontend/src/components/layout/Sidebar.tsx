@@ -29,7 +29,8 @@ import {
     BarChart2,
     Globe,
     Link2,
-    FileSearch
+    FileSearch,
+    Repeat2
 } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
@@ -82,6 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Citations GEO', path: '/guide/citations', icon: <Globe size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
                     { label: 'Signalement', path: '/guide/signalement', icon: <Flag size={20} /> },
+                    { label: 'Repost Social', path: '/guide/repost', icon: <Repeat2 size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },
                     { label: 'Communiqués', path: '/guide/communiques', icon: <Megaphone size={20} /> },
                     { label: 'Règlement', path: '/guide/community-rules', icon: <BookOpen size={20} /> },
@@ -99,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Pièces d\'identité', path: '/admin/identity-verifications', icon: <ShieldCheck size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Vérifications Gmail', path: '/admin/gmail-verifications', icon: <Mail size={20} />, permissions: ['can_validate_gmail'] },
                     { label: 'Validation des preuves', path: '/admin/level-verifications', icon: <Trophy size={20} />, permissions: ['can_validate_levels'] },
+                    { label: 'Repost Social', path: '/admin/repost', icon: <Repeat2 size={20} />, permissions: ['can_manage_repost', 'can_validate_reposts'] },
                     { label: 'Communiqués', path: '/admin/communiques', icon: <Megaphone size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Secteurs d\'activité', path: '/admin/sectors', icon: <Layers size={20} />, permissions: ['can_manage_sectors'] },
                     { label: 'Abonnements', path: '/admin/subscriptions', icon: <CreditCard size={20} />, permissions: ['can_view_payments'] },

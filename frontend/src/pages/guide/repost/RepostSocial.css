@@ -1,0 +1,303 @@
+.repost-guide-stats {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.repost-guide-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    flex: 1;
+    min-width: 160px;
+}
+
+.repost-guide-stat-card.highlight {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    border: none;
+}
+
+.repost-guide-stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.repost-guide-stat-label {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    font-weight: 600;
+}
+
+.repost-guide-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.repost-guide-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1.1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.repost-guide-tab.active {
+    color: #059669;
+    border-bottom-color: #059669;
+}
+
+.repost-guide-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.repost-guide-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.repost-guide-card h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.repost-guide-card p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+}
+
+.repost-guide-card select {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+    font-family: inherit;
+}
+
+.repost-guide-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.repost-guide-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.repost-guide-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.repost-guide-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.repost-guide-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.repost-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    white-space: nowrap;
+}
+
+.repost-guide-video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+}
+
+.repost-guide-video-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.repost-guide-video-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.repost-guide-video-placeholder {
+    width: 100%;
+    height: 150px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.repost-guide-video-body {
+    padding: 1rem;
+}
+
+.repost-guide-video-body p {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin: 0.35rem 0 0;
+}
+
+.repost-guide-video-caption {
+    margin-top: 0.5rem;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 0.5rem;
+    padding: 0.6rem 0.75rem;
+}
+
+.repost-guide-caption-warning {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #92400e;
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+}
+
+.repost-guide-video-caption p {
+    color: #78350f;
+    margin: 0;
+}
+
+.repost-guide-submission-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.repost-guide-submission-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.repost-guide-view-history {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.repost-guide-view-history-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.repost-guide-empty {
+    text-align: center;
+    padding: 4rem 1rem;
+    background: #f8fafc;
+    border-radius: 1rem;
+    border: 2px dashed #e2e8f0;
+    color: #64748b;
+}
+
+.repost-guide-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.repost-guide-form label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 0.5rem;
+}
+
+.repost-guide-form input,
+.repost-guide-form select {
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+    font-family: inherit;
+}
+
+.repost-guide-form input:focus,
+.repost-guide-form select:focus {
+    border-color: #059669;
+}
+
+@media (max-width: 640px) {
+    .repost-guide-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

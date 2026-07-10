@@ -29,6 +29,8 @@ const PERMISSIONS = [
     { key: 'can_validate_signalements', label: 'Signalement — Valider preuves', color: '#ef4444' },
     { key: 'can_validate_gmail', label: 'Vérifications Gmail (valider/rejeter)', color: '#0891b2' },
     { key: 'can_validate_levels', label: 'Validation niveaux guides', color: '#7c3aed' },
+    { key: 'can_manage_repost', label: 'Repost Social — Paliers & Vidéothèque', color: '#c026d3' },
+    { key: 'can_validate_reposts', label: 'Repost Social — Valider candidatures & preuves', color: '#a21caf' },
 ];
 
 const parsePermissions = (raw: any): Record<string, boolean> => {

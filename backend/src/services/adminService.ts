@@ -2494,12 +2494,13 @@ export const getGuidesWithBalance = async () => {
             sub.earned_from_reviews,
             COALESCE(bon.total_bonuses, 0) as total_bonuses,
             COALESCE(sig.sig_earned, 0) as sig_earned,
-            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0)) as total_earned,
+            (COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0)) as repost_earned,
+            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0) + COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0)) as total_earned,
             COALESCE(pay.total_paid, 0) as total_paid,
             COALESCE(pay.total_pending, 0) as total_pending,
             -- Le solde ne peut pas être négatif — on cap à 0 (les sur-paiements restent dans l'historique).
             GREATEST(0,
-                (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0))
+                (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0) + COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0))
                 - COALESCE(pay.total_paid, 0)
                 - COALESCE(pay.total_pending, 0)
             ) as balance
@@ -2525,6 +2526,21 @@ export const getGuidesWithBalance = async () => {
             WHERE status = 'validated' AND deleted_at IS NULL
             GROUP BY guide_id
         ) sig ON u.id = sig.guide_id
+        LEFT JOIN (
+            SELECT a.guide_id,
+                   COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.base_earnings_cents ELSE 0 END), 0) / 100 as repost_base_earned
+            FROM repost_accounts a
+            JOIN repost_submissions s ON s.account_id = a.id AND s.deleted_at IS NULL
+            GROUP BY a.guide_id
+        ) rep_base ON u.id = rep_base.guide_id
+        LEFT JOIN (
+            SELECT a.guide_id,
+                   COALESCE(SUM(vu.credited_amount_cents), 0) / 100 as repost_view_earned
+            FROM repost_accounts a
+            JOIN repost_submissions s ON s.account_id = a.id AND s.deleted_at IS NULL
+            JOIN repost_view_updates vu ON vu.submission_id = s.id AND vu.status = 'approved' AND vu.deleted_at IS NULL
+            GROUP BY a.guide_id
+        ) rep_view ON u.id = rep_view.guide_id
         LEFT JOIN (
             SELECT guide_id,
                    COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,

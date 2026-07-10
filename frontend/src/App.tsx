@@ -45,6 +45,7 @@ const CommunityRulesPage = lazyNamed(() => import('./pages/guide/CommunityRulesP
 const CommuniquesPage = lazyNamed(() => import('./pages/guide/CommuniquesPage'), 'CommuniquesPage');
 const MyGmailsPage = lazyNamed(() => import('./pages/guide/MyGmailsPage'), 'MyGmailsPage');
 const GuideCitations = lazyNamed(() => import('./pages/guide/GuideCitations'), 'GuideCitations');
+const RepostSocial = lazyNamed(() => import('./pages/guide/repost/RepostSocial'), 'RepostSocial');
 
 const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard');
 const ArtisansList = lazyNamed(() => import('./pages/admin/ArtisansList'), 'ArtisansList');
@@ -64,6 +65,7 @@ const AcceptAdminInvite = lazyNamed(() => import('./pages/admin/AcceptAdminInvit
 const TrustScoreManagement = lazyNamed(() => import('./pages/admin/TrustScoreManagement'), 'TrustScoreManagement');
 const SectorManagement = lazyNamed(() => import('./pages/admin/SectorManagement'), 'SectorManagement');
 const AdminLevelVerifications = lazyNamed(() => import('./pages/admin/AdminLevelVerifications'), 'AdminLevelVerifications');
+const AdminRepost = lazyNamed(() => import('./pages/admin/repost/AdminRepost'), 'AdminRepost');
 const IdentityVerifications = lazyNamed(() => import('./pages/admin/IdentityVerifications'), 'IdentityVerifications');
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
@@ -547,6 +549,16 @@ function App() {
                             }
                         />
                         <Route
+                            path="/admin/repost"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission={['can_manage_repost', 'can_validate_reposts']}>
+                                        <AdminRepost />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
                             path="/admin/identity-verifications"
                             element={
                                 <ProtectedRoute allowedRoles={['admin']}>
@@ -737,6 +749,16 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
                                     <GuideSignalementDetail />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        {/* Repost social — guide */}
+                        <Route
+                            path="/guide/repost"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <RepostSocial />
                                 </ProtectedRoute>
                             }
                         />

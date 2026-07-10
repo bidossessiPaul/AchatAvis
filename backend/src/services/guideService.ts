@@ -883,6 +883,25 @@ export const guideService = {
         const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
         const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
 
+        // Gains repost social : montant de base (post validé) + bonus vues (déclarations validées)
+        const repostBaseStats: any = await query(`
+            SELECT
+                COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.base_earnings_cents ELSE 0 END), 0) AS repost_base_earned_cents,
+                COALESCE(SUM(CASE WHEN s.status = 'pending' THEN s.base_earnings_cents ELSE 0 END), 0) AS repost_base_pending_cents
+            FROM repost_submissions s
+            JOIN repost_accounts a ON a.id = s.account_id
+            WHERE a.guide_id = ? AND s.deleted_at IS NULL
+        `, [guideId]);
+        const repostViewStats: any = await query(`
+            SELECT COALESCE(SUM(vu.credited_amount_cents), 0) AS repost_view_earned_cents
+            FROM repost_view_updates vu
+            JOIN repost_submissions s ON s.id = vu.submission_id
+            JOIN repost_accounts a ON a.id = s.account_id
+            WHERE a.guide_id = ? AND vu.status = 'approved' AND vu.deleted_at IS NULL
+        `, [guideId]);
+        const repostEarned = (Number(repostBaseStats[0].repost_base_earned_cents) + Number(repostViewStats[0].repost_view_earned_cents)) / 100;
+        const repostPending = Number(repostBaseStats[0].repost_base_pending_cents) / 100;
+
         // Bonus mensuels réclamés — s'ajoutent directement au solde
         const monthlyBonusRows: any = await query(`
             SELECT COALESCE(SUM(amount), 0) AS total_claimed
@@ -891,8 +910,8 @@ export const guideService = {
         `, [guideId]);
         const monthlyBonusClaimed = Number(monthlyBonusRows[0].total_claimed);
 
-        // Solde principal = avis validés + signalements + entrées négatives (reversements/avances) + bonus mensuels réclamés
-        const totalEarned = Number(stats[0].total_earned) + sigEarned + Number(bonuses[0].total_negative) + monthlyBonusClaimed;
+        // Solde principal = avis validés + signalements + repost + entrées négatives (reversements/avances) + bonus mensuels réclamés
+        const totalEarned = Number(stats[0].total_earned) + sigEarned + repostEarned + Number(bonuses[0].total_negative) + monthlyBonusClaimed;
         const totalBonuses = Number(bonuses[0].total_bonuses);
         const totalPaid = Number(payouts[0].total_paid);
         const totalPending = Number(payouts[0].total_pending);
@@ -905,6 +924,7 @@ export const guideService = {
             totalPaid,
             totalPending,
             sigPending,   // montant en attente de validation (signalements soumis)
+            repostPending, // montant en attente de validation (reposts soumis)
             balance,
         };
     },
