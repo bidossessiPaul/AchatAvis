@@ -3,16 +3,19 @@
   "routes": [
     {
       "src": "^/$",
-      "dest": "/avoir-plus-avis-google.html"
+      "dest": "/avoir-plus-avis-google.html",
+      "headers": { "X-Robots-Tag": "noindex, nofollow" }
     },
     {
       "src": "^/en/?$",
-      "dest": "/en.html"
+      "dest": "/en.html",
+      "headers": { "X-Robots-Tag": "noindex, nofollow" }
     },
     { "handle": "filesystem" },
     {
       "src": "^/(.*)",
-      "dest": "/index.html"
+      "dest": "/index.html",
+      "headers": { "X-Robots-Tag": "noindex, nofollow" }
     }
   ]
 }
