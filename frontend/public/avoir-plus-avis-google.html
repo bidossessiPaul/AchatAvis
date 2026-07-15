@@ -238,8 +238,10 @@
   .faq-item { border: 1px solid var(--line); border-radius: 12px; margin-bottom: 12px; overflow: hidden; background: #fff; }
   .faq-item summary { list-style: none; cursor: pointer; padding: 18px 20px; font-weight: 700; font-size: 16px; display: flex; justify-content: space-between; align-items: center; gap: 14px; color: var(--ink); }
   .faq-item summary::-webkit-details-marker { display: none; }
-  .faq-item summary .chev { flex-shrink: 0; color: var(--muted); transition: transform .2s; }
-  .faq-item[open] summary .chev { transform: rotate(180deg); }
+  .faq-item summary .chev { flex-shrink: 0; color: var(--muted); transition: transform .2s, color .2s; }
+  .faq-item[open] { border-color: var(--green-deep); }
+  .faq-item[open] summary { color: var(--green-deep); }
+  .faq-item[open] summary .chev { color: var(--green-deep); transform: rotate(180deg); }
   .faq-answer { padding: 0 20px 18px; }
   .faq-answer p { margin: 0; font-size: 15.5px; color: var(--ink-soft); }
 
@@ -1650,38 +1652,42 @@
     </div>
     <div class="hp-faq-wrap">
       <div class="faq">
-        <details class="faq-item">
-          <summary>Comment obtenir plus d'avis Google avec AchatAvis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Créez votre espace, indiquez votre fiche et le nombre d'avis souhaités. De vrais guides locaux proches de votre zone rédigent des avis authentiques, publiés progressivement pour rester naturels. Vous suivez chaque avis depuis votre tableau de bord.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Les avis sont-ils authentiques et sans risque ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Oui. Nos avis sont rédigés par de vrais Local Guides Google, jamais par des bots. La publication est progressive et variée pour rester crédible, ce qui protège votre fiche contre les suppressions et suspensions.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Combien d'avis Google faut-il pour être crédible ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Un minimum de 10 avis rassure, mais la crédibilité locale se joue au-delà de 40 à 50 avis, avec une note moyenne supérieure à 4,3 et des avis récents publiés régulièrement. Le volume compte, mais la fraîcheur encore plus.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Comment gagner de l'argent en tant que guide local ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Inscrivez-vous comme guide, choisissez des missions disponibles autour de vous, publiez un avis authentique et déposez la preuve. Une fois validé, le montant est crédité sur votre solde et payé selon l'historique de paiements.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Est-il légal de demander des avis à ses clients ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Oui, solliciter un avis auprès d'un vrai client est autorisé par Google. Ce qui est interdit, c'est d'offrir une contrepartie contre un avis positif ou de ne demander l'avis qu'aux clients les plus satisfaits (review gating).</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Combien de temps faut-il pour voir apparaître les premiers avis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Les premiers avis apparaissent généralement dans les jours qui suivent le lancement de votre campagne. Le rythme de publication reste ensuite volontairement progressif et étalé sur plusieurs semaines pour rester naturel aux yeux de Google.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Que se passe-t-il si Google supprime un avis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Cela reste rare grâce à la publication progressive et à des guides locaux vérifiés, mais si un avis venait à être supprimé, il est remplacé dans le cadre de votre commande. Votre tableau de bord garde une trace complète de chaque avis publié.</p></div>
-        </details>
-        <details class="faq-item">
-          <summary>Intervenez-vous en dehors de la France ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
-          <div class="faq-answer"><p>Oui. Au-delà de la France métropolitaine, nous accompagnons des entreprises en Belgique, en Suisse romande et en Afrique francophone (Bénin, Sénégal, Côte d'Ivoire), avec le même niveau d'exigence sur l'authenticité des avis.</p></div>
-        </details>
+        <div class="faq-col">
+          <details class="faq-item">
+            <summary>Comment obtenir plus d'avis Google avec AchatAvis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Créez votre espace, indiquez votre fiche et le nombre d'avis souhaités. De vrais guides locaux proches de votre zone rédigent des avis authentiques, publiés progressivement pour rester naturels. Vous suivez chaque avis depuis votre tableau de bord.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Les avis sont-ils authentiques et sans risque ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Oui. Nos avis sont rédigés par de vrais Local Guides Google, jamais par des bots. La publication est progressive et variée pour rester crédible, ce qui protège votre fiche contre les suppressions et suspensions.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Combien d'avis Google faut-il pour être crédible ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Un minimum de 10 avis rassure, mais la crédibilité locale se joue au-delà de 40 à 50 avis, avec une note moyenne supérieure à 4,3 et des avis récents publiés régulièrement. Le volume compte, mais la fraîcheur encore plus.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Comment gagner de l'argent en tant que guide local ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Inscrivez-vous comme guide, choisissez des missions disponibles autour de vous, publiez un avis authentique et déposez la preuve. Une fois validé, le montant est crédité sur votre solde et payé selon l'historique de paiements.</p></div>
+          </details>
+        </div>
+        <div class="faq-col">
+          <details class="faq-item">
+            <summary>Est-il légal de demander des avis à ses clients ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Oui, solliciter un avis auprès d'un vrai client est autorisé par Google. Ce qui est interdit, c'est d'offrir une contrepartie contre un avis positif ou de ne demander l'avis qu'aux clients les plus satisfaits (review gating).</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Combien de temps faut-il pour voir apparaître les premiers avis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Les premiers avis apparaissent généralement dans les jours qui suivent le lancement de votre campagne. Le rythme de publication reste ensuite volontairement progressif et étalé sur plusieurs semaines pour rester naturel aux yeux de Google.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Que se passe-t-il si Google supprime un avis ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Cela reste rare grâce à la publication progressive et à des guides locaux vérifiés, mais si un avis venait à être supprimé, il est remplacé dans le cadre de votre commande. Votre tableau de bord garde une trace complète de chaque avis publié.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary>Intervenez-vous en dehors de la France ? <i data-lucide="chevron-down" class="chev" width="20"></i></summary>
+            <div class="faq-answer"><p>Oui. Au-delà de la France métropolitaine, nous accompagnons des entreprises en Belgique, en Suisse romande et en Afrique francophone (Bénin, Sénégal, Côte d'Ivoire), avec le même niveau d'exigence sur l'authenticité des avis.</p></div>
+          </details>
+        </div>
       </div>
     </div>
   </div>
