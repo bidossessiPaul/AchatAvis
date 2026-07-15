@@ -167,8 +167,9 @@ export const ReceivedReviews: React.FC = () => {
 
             showSuccess('Succès', 'Avis mis à jour avec succès');
             setEditingProposal(null);
-        } catch (error) {
-            showError('Mise à jour impossible', 'Impossible de mettre à jour l\'avis');
+        } catch (error: any) {
+            const message = error.response?.data?.message || 'Impossible de mettre à jour l\'avis';
+            showError('Mise à jour impossible', message);
         } finally {
             setIsSaving(false);
         }

@@ -80,7 +80,7 @@ function detectSqlInjection(obj: any, path = ''): string | null {
             // Skip URL fields
             if (key.toLowerCase().includes('url') || key.toLowerCase().includes('link')) continue;
             // Skip content/features/instructions - free text fields
-            if (['content', 'features', 'specific_instructions', 'company_context'].includes(key)) continue;
+            if (['content', 'features', 'specific_instructions', 'company_context', 'author_name'].includes(key)) continue;
 
             const result = detectSqlInjection(obj[key], path ? `${path}.${key}` : key);
             if (result) return result;

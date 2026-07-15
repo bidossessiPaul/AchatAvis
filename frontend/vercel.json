@@ -4,17 +4,20 @@
     {
       "src": "^/$",
       "dest": "/avoir-plus-avis-google.html",
+      "has": [{ "type": "host", "value": "manager.achatavis.com" }],
       "headers": { "X-Robots-Tag": "noindex, nofollow" }
     },
     {
       "src": "^/en/?$",
       "dest": "/en.html",
+      "has": [{ "type": "host", "value": "manager.achatavis.com" }],
       "headers": { "X-Robots-Tag": "noindex, nofollow" }
     },
     { "handle": "filesystem" },
     {
       "src": "^/(.*)",
       "dest": "/index.html",
+      "has": [{ "type": "host", "value": "manager.achatavis.com" }],
       "headers": { "X-Robots-Tag": "noindex, nofollow" }
     }
   ]

@@ -314,8 +314,18 @@ export const artisanController = {
             return res.json(result);
         } catch (error: any) {
             console.error('Error updating proposal:', error);
-            return res.status(500).json({
-                error: 'Failed to update proposal',
+            // Le message porte la vraie cause (introuvable / non autorisé / déjà publié) —
+            // on la mappe sur le bon status HTTP au lieu d'aplatir en 500 générique,
+            // pour que le frontend puisse afficher la raison réelle à l'artisan.
+            const statusByMessage: Record<string, number> = {
+                'ID de proposition manquant': 400,
+                'Proposition non trouvée': 404,
+                'Non autorisé à modifier cette proposition': 403,
+                'Cet avis est déjà publié sur Google et ne peut plus être modifié': 409,
+            };
+            const status = statusByMessage[error.message] ?? 500;
+            return res.status(status).json({
+                error: status === 500 ? 'Failed to update proposal' : error.message,
                 message: error.message
             });
         }
