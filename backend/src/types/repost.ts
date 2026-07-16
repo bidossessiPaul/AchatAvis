@@ -80,6 +80,7 @@ export interface RepostAccount {
     admin_notes: string | null;
     reviewed_by: string | null;
     reviewed_at: Date | null;
+    blocked_at: Date | null; // NULL = actif, non-NULL = compte approuvé mais suspendu
     created_at: Date;
     deleted_at: Date | null;
 }

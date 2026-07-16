@@ -252,6 +252,43 @@ export const reviewAccount = async (req: Request, res: Response): Promise<void> 
     }
 };
 
+export const updateAccountTier = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { tier_id } = req.body;
+        if (!tier_id || typeof tier_id !== 'string') {
+            res.status(400).json({ error: 'tier_id requis' });
+            return;
+        }
+        await accountService.updateAccountTier(req.params.id, tier_id);
+        res.json({ ok: true });
+    } catch (err: any) {
+        res.status(400).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+export const setAccountBlock = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { blocked } = req.body;
+        if (typeof blocked !== 'boolean') {
+            res.status(400).json({ error: 'blocked (boolean) requis' });
+            return;
+        }
+        await accountService.setAccountBlocked(req.params.id, blocked);
+        res.json({ ok: true });
+    } catch (err: any) {
+        res.status(400).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+export const deleteAccount = async (req: Request, res: Response): Promise<void> => {
+    try {
+        await accountService.softDeleteAccount(req.params.id);
+        res.json({ ok: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
 // ========== Soumissions de repost ==========
 
 export const listSubmissions = async (req: Request, res: Response): Promise<void> => {

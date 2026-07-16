@@ -123,6 +123,11 @@
     color: #991b1b;
 }
 
+.repost-btn-small.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 .repost-icon-btn {
     display: inline-flex;
     align-items: center;

@@ -118,6 +118,10 @@ export const submitProof = async (req: Request, res: Response): Promise<void> =>
             res.status(403).json({ error: 'Ce compte ne vous appartient pas' });
             return;
         }
+        if (account.blocked_at) {
+            res.status(403).json({ error: 'Ce compte est bloqué, vous ne pouvez plus soumettre de repost' });
+            return;
+        }
         if (!video_id || typeof video_id !== 'string') {
             res.status(400).json({ error: 'video_id requis' });
             return;

@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { query } from '../../config/database';
 import { uploadToCloudinary } from '../cloudinaryService';
 import { RepostAccount, SubmitAccountInput } from '../../types/repost';
-import { findTierForFollowerCount } from './tierService';
+import { findTierForFollowerCount, getTierById } from './tierService';
 
 export const submitAccount = async (data: SubmitAccountInput): Promise<RepostAccount> => {
     // Pas deux demandes pending pour le même couple plateforme/lien.
@@ -97,12 +97,14 @@ export const listAccountsForAdmin = async (
 };
 
 /**
- * Un guide a accès à la vidéothèque dès qu'il a au moins un compte approuvé.
+ * Un guide a accès à la vidéothèque dès qu'il a au moins un compte approuvé
+ * ET non bloqué. Un compte bloqué (blocked_at renseigné) ne donne plus accès.
  */
 export const guideHasApprovedAccount = async (guideId: string): Promise<boolean> => {
     const rows: any = await query(
         `SELECT id FROM repost_accounts
-         WHERE guide_id = ? AND status = 'approved' AND deleted_at IS NULL
+         WHERE guide_id = ? AND status = 'approved'
+           AND blocked_at IS NULL AND deleted_at IS NULL
          LIMIT 1`,
         [guideId]
     );
@@ -132,6 +134,51 @@ export const reviewAccount = async (
     );
 };
 
+/**
+ * Change le palier assigné à un compte déjà approuvé (corriger une erreur de
+ * classement ou refléter une évolution du nombre d'abonnés).
+ */
+export const updateAccountTier = async (accountId: string, tierId: string): Promise<void> => {
+    const account = await getAccountById(accountId);
+    if (!account) throw new Error('Compte introuvable');
+    if (account.status !== 'approved') throw new Error('Seul un compte approuvé peut changer de palier');
+
+    const tier = await getTierById(tierId);
+    if (!tier) throw new Error('Palier introuvable');
+
+    await query(
+        `UPDATE repost_accounts SET tier_id = ? WHERE id = ? AND deleted_at IS NULL`,
+        [tierId, accountId]
+    );
+};
+
+/**
+ * Bloque / débloque un compte approuvé. Bloqué = accès vidéothèque coupé, mais
+ * le statut 'approved' et l'historique sont conservés (réversible).
+ */
+export const setAccountBlocked = async (accountId: string, blocked: boolean): Promise<void> => {
+    const account = await getAccountById(accountId);
+    if (!account) throw new Error('Compte introuvable');
+    if (blocked && account.status !== 'approved') {
+        throw new Error('Seul un compte approuvé peut être bloqué');
+    }
+
+    await query(
+        `UPDATE repost_accounts
+         SET blocked_at = ${blocked ? 'NOW()' : 'NULL'}
+         WHERE id = ? AND deleted_at IS NULL`,
+        [accountId]
+    );
+};
+
+/** Soft-delete d'un compte (table d'historique : jamais de hard-delete). */
+export const softDeleteAccount = async (accountId: string): Promise<void> => {
+    await query(
+        `UPDATE repost_accounts SET deleted_at = NOW() WHERE id = ? AND deleted_at IS NULL`,
+        [accountId]
+    );
+};
+
 function rowToAccount(row: any): RepostAccount {
     return {
         id: row.id,
@@ -145,6 +192,7 @@ function rowToAccount(row: any): RepostAccount {
         admin_notes: row.admin_notes,
         reviewed_by: row.reviewed_by,
         reviewed_at: row.reviewed_at,
+        blocked_at: row.blocked_at ?? null,
         created_at: row.created_at,
         deleted_at: row.deleted_at,
     };

@@ -114,6 +114,7 @@ export const softDeleteVideo = async (id: string): Promise<void> => {
 export const listVideosForAccount = async (accountId: string): Promise<RepostVideo[]> => {
     const account = await getAccountById(accountId);
     if (!account || account.status !== 'approved' || !account.tier_id) return [];
+    if (account.blocked_at) return []; // compte suspendu : plus d'accès vidéothèque
 
     const accountTier = await getTierById(account.tier_id);
     const accountAmount = accountTier?.amount_cents ?? 0;

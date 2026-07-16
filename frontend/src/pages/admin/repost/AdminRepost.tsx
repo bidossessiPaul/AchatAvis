@@ -34,6 +34,8 @@ import {
     Clock,
     Image as ImageIcon,
     Settings2,
+    Ban,
+    ShieldCheck,
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../../utils/Swal';
 import '../AdminLists.css';
@@ -45,6 +47,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; i
     pending: { label: 'En attente', color: '#92400e', bg: '#fef3c7', icon: <Clock size={13} /> },
     approved: { label: 'Approuvé', color: '#166534', bg: '#dcfce7', icon: <CheckCircle2 size={13} /> },
     rejected: { label: 'Rejeté', color: '#991b1b', bg: '#fee2e2', icon: <XCircle size={13} /> },
+    blocked: { label: 'Bloqué', color: '#475569', bg: '#e2e8f0', icon: <Ban size={13} /> },
 };
 
 const formatDateTime = (iso: string | null | undefined): string => {
@@ -106,19 +109,27 @@ export const AdminRepost: React.FC = () => {
 // ========================================================================
 // Comptes réseaux sociaux (candidatures)
 // ========================================================================
+// Ligne en cours d'édition inline : soit une revue (compte pending), soit un
+// changement de palier (compte approuvé). Un seul compte édité à la fois.
+type AccountEdit = { id: string; mode: 'review' | 'tier'; tierId: string };
+
 const AccountsTab: React.FC = () => {
     const [accounts, setAccounts] = useState<RepostAccount[]>([]);
     const [tiers, setTiers] = useState<RepostTier[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('pending');
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [reviewingId, setReviewingId] = useState<string | null>(null);
-    const [selectedTierId, setSelectedTierId] = useState<string>('');
+    const [edit, setEdit] = useState<AccountEdit | null>(null);
+
+    // includeInactive : on veut aussi afficher le libellé d'un palier désactivé
+    // depuis (compte historiquement classé dessus), mais les selects n'offrent
+    // que les paliers actifs.
+    const activeTiers = tiers.filter(t => t.is_active);
 
     const load = useCallback(async (status: typeof statusFilter) => {
         setLoading(true);
         try {
-            const [r, t] = await Promise.all([adminAccountsApi.list(status), adminTiersApi.list(false)]);
+            const [r, t] = await Promise.all([adminAccountsApi.list(status), adminTiersApi.list(true)]);
             setAccounts(r.accounts);
             setTiers(t);
         } catch {
@@ -130,20 +141,23 @@ const AccountsTab: React.FC = () => {
 
     useEffect(() => { load(statusFilter); }, [statusFilter, load]);
 
-    const startReview = (acc: RepostAccount) => {
-        setReviewingId(acc.id);
-        setSelectedTierId(acc.suggested_tier_id || '');
+    const tierLabel = (id: string | null): string => {
+        if (!id) return '—';
+        return tiers.find(t => t.id === id)?.label ?? 'Palier supprimé';
     };
 
+    const startReview = (acc: RepostAccount) => setEdit({ id: acc.id, mode: 'review', tierId: acc.suggested_tier_id || '' });
+    const startTierEdit = (acc: RepostAccount) => setEdit({ id: acc.id, mode: 'tier', tierId: acc.tier_id || '' });
+
     const approve = async (acc: RepostAccount) => {
-        if (!selectedTierId) {
+        if (!edit?.tierId) {
             showError('Palier requis', 'Sélectionnez le palier à assigner avant d\'approuver');
             return;
         }
         try {
-            await adminAccountsApi.review(acc.id, 'approved', selectedTierId);
+            await adminAccountsApi.review(acc.id, 'approved', edit.tierId);
             showSuccess('Compte approuvé', 'Le guide voit désormais la vidéothèque pour ce compte.');
-            setReviewingId(null);
+            setEdit(null);
             load(statusFilter);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible d\'approuver');
@@ -162,7 +176,107 @@ const AccountsTab: React.FC = () => {
         }
     };
 
+    const saveTier = async (acc: RepostAccount) => {
+        if (!edit?.tierId) {
+            showError('Palier requis', 'Sélectionnez un palier');
+            return;
+        }
+        try {
+            await adminAccountsApi.updateTier(acc.id, edit.tierId);
+            showSuccess('Palier mis à jour');
+            setEdit(null);
+            load(statusFilter);
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Impossible de changer le palier');
+        }
+    };
+
+    const toggleBlock = async (acc: RepostAccount) => {
+        const blocking = !acc.blocked_at;
+        const r = await showConfirm(
+            blocking ? 'Bloquer ce compte ?' : 'Débloquer ce compte ?',
+            blocking
+                ? `${acc.guide_full_name} perd l'accès à la vidéothèque pour ce compte (réversible).`
+                : `${acc.guide_full_name} retrouve l'accès à la vidéothèque pour ce compte.`
+        );
+        if (!r.isConfirmed) return;
+        try {
+            await adminAccountsApi.setBlocked(acc.id, blocking);
+            showSuccess(blocking ? 'Compte bloqué' : 'Compte débloqué');
+            load(statusFilter);
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Action impossible');
+        }
+    };
+
+    const remove = async (acc: RepostAccount) => {
+        const r = await showConfirm('Supprimer ce compte ?', `${acc.guide_full_name} — ${acc.platform}. Le compte sera archivé (soft-delete).`);
+        if (!r.isConfirmed) return;
+        try {
+            await adminAccountsApi.remove(acc.id);
+            showSuccess('Compte supprimé');
+            load(statusFilter);
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Impossible de supprimer');
+        }
+    };
+
     if (loading) return <div style={{ padding: '3rem 0' }}><LoadingSpinner text="Chargement des comptes..." /></div>;
+
+    const renderActions = (acc: RepostAccount) => {
+        // Édition inline en cours sur cette ligne (revue ou changement de palier)
+        if (edit && edit.id === acc.id) {
+            const onSave = edit.mode === 'review' ? () => approve(acc) : () => saveTier(acc);
+            return (
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <select
+                        value={edit.tierId}
+                        onChange={e => setEdit({ ...edit, tierId: e.target.value })}
+                        className="repost-inline-select"
+                    >
+                        <option value="">Palier...</option>
+                        {activeTiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                    </select>
+                    <button className="repost-icon-btn success" onClick={onSave} title="Valider"><CheckCircle2 size={14} /></button>
+                    <button className="repost-icon-btn" onClick={() => setEdit(null)} title="Annuler">✕</button>
+                </div>
+            );
+        }
+
+        if (acc.status === 'pending') {
+            return (
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button className="repost-btn-small success" onClick={() => startReview(acc)}><CheckCircle2 size={14} /> Approuver</button>
+                    <button className="repost-btn-small danger" onClick={() => reject(acc)}><XCircle size={14} /> Rejeter</button>
+                    <button className="repost-icon-btn danger" onClick={() => remove(acc)} title="Supprimer"><Trash2 size={14} /></button>
+                </div>
+            );
+        }
+
+        if (acc.status === 'approved') {
+            const blocked = !!acc.blocked_at;
+            return (
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <button className="repost-btn-small" style={{ background: '#eff6ff', color: '#2383e2' }} onClick={() => startTierEdit(acc)}>
+                        <Layers size={14} /> Palier
+                    </button>
+                    {blocked ? (
+                        <button className="repost-btn-small success" onClick={() => toggleBlock(acc)}><ShieldCheck size={14} /> Débloquer</button>
+                    ) : (
+                        <button className="repost-btn-small warning" onClick={() => toggleBlock(acc)}><Ban size={14} /> Bloquer</button>
+                    )}
+                    <button className="repost-icon-btn danger" onClick={() => remove(acc)} title="Supprimer"><Trash2 size={14} /></button>
+                </div>
+            );
+        }
+
+        // rejected
+        return (
+            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button className="repost-icon-btn danger" onClick={() => remove(acc)} title="Supprimer"><Trash2 size={14} /></button>
+            </div>
+        );
+    };
 
     return (
         <div>
@@ -179,54 +293,41 @@ const AccountsTab: React.FC = () => {
                             <th>Guide</th>
                             <th>Plateforme</th>
                             <th>Abonnés déclarés</th>
+                            <th>Palier</th>
                             <th>Preuve</th>
                             <th>Statut</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {accounts.map(acc => (
-                            <tr key={acc.id}>
-                                <td>
-                                    <div style={{ fontWeight: 600 }}>{acc.guide_full_name}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{acc.guide_email}</div>
-                                </td>
-                                <td>{acc.platform}</td>
-                                <td style={{ fontWeight: 700 }}>{acc.claimed_followers_count.toLocaleString('fr-FR')}</td>
-                                <td>
-                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                        <button className="repost-icon-btn" onClick={() => setPreviewUrl(acc.screenshot_url)}><ImageIcon size={14} /></button>
-                                        <CopyLinkButton url={acc.profile_link} label="Profil" size="sm" />
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="repost-badge" style={{ background: statusConfig[acc.status].bg, color: statusConfig[acc.status].color }}>
-                                        {statusConfig[acc.status].icon} {statusConfig[acc.status].label}
-                                    </span>
-                                </td>
-                                <td>
-                                    {acc.status === 'pending' ? (
-                                        reviewingId === acc.id ? (
-                                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                                                <select value={selectedTierId} onChange={e => setSelectedTierId(e.target.value)} className="repost-inline-select">
-                                                    <option value="">Palier...</option>
-                                                    {tiers.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                                                </select>
-                                                <button className="repost-icon-btn success" onClick={() => approve(acc)}><CheckCircle2 size={14} /></button>
-                                                <button className="repost-icon-btn" onClick={() => setReviewingId(null)}>✕</button>
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                                <button className="repost-btn-small success" onClick={() => startReview(acc)}><CheckCircle2 size={14} /> Approuver</button>
-                                                <button className="repost-btn-small danger" onClick={() => reject(acc)}><XCircle size={14} /> Rejeter</button>
-                                            </div>
-                                        )
-                                    ) : <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>—</span>}
-                                </td>
-                            </tr>
-                        ))}
+                        {accounts.map(acc => {
+                            const displayStatus = acc.blocked_at ? 'blocked' : acc.status;
+                            return (
+                                <tr key={acc.id}>
+                                    <td>
+                                        <div style={{ fontWeight: 600 }}>{acc.guide_full_name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{acc.guide_email}</div>
+                                    </td>
+                                    <td>{acc.platform}</td>
+                                    <td style={{ fontWeight: 700 }}>{acc.claimed_followers_count.toLocaleString('fr-FR')}</td>
+                                    <td>{acc.status === 'approved' ? tierLabel(acc.tier_id) : <span style={{ color: '#94a3b8' }}>—</span>}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                            <button className="repost-icon-btn" onClick={() => setPreviewUrl(acc.screenshot_url)}><ImageIcon size={14} /></button>
+                                            <CopyLinkButton url={acc.profile_link} label="Profil" size="sm" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="repost-badge" style={{ background: statusConfig[displayStatus].bg, color: statusConfig[displayStatus].color }}>
+                                            {statusConfig[displayStatus].icon} {statusConfig[displayStatus].label}
+                                        </span>
+                                    </td>
+                                    <td>{renderActions(acc)}</td>
+                                </tr>
+                            );
+                        })}
                         {accounts.length === 0 && (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucun compte</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucun compte</td></tr>
                         )}
                     </tbody>
                 </table>

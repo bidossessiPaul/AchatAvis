@@ -4,7 +4,7 @@ import { Modal } from '../../../components/common/Modal';
 import { LoadingSpinner } from '../../../components/common/LoadingSpinner';
 import { guideRepostApi } from '../../../services/repost';
 import { RepostAccount, RepostVideo, RepostSubmission, RepostViewUpdate, RepostGuideStats, REPOST_PLATFORMS } from '../../../types/repost';
-import { Layers, Video, Send, CheckCircle2, XCircle, Clock, Wallet, Upload, PlayCircle, AlertTriangle, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Layers, Video, Send, CheckCircle2, XCircle, Clock, Wallet, Upload, PlayCircle, AlertTriangle, Eye, ChevronDown, ChevronUp, Ban } from 'lucide-react';
 import { showSuccess, showError } from '../../../utils/Swal';
 import './RepostSocial.css';
 
@@ -12,6 +12,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string; i
     pending: { label: 'En attente', color: '#92400e', bg: '#fef3c7', icon: <Clock size={13} /> },
     approved: { label: 'Approuvé', color: '#166534', bg: '#dcfce7', icon: <CheckCircle2 size={13} /> },
     rejected: { label: 'Rejeté', color: '#991b1b', bg: '#fee2e2', icon: <XCircle size={13} /> },
+    blocked: { label: 'Bloqué', color: '#475569', bg: '#e2e8f0', icon: <Ban size={13} /> },
 };
 
 const centsToEuros = (cents: number): string => (cents / 100).toFixed(2).replace('.', ',') + ' €';
@@ -30,7 +31,8 @@ export const RepostSocial: React.FC = () => {
 
     useEffect(() => { refresh(); }, [refresh]);
 
-    const approvedAccounts = accounts.filter(a => a.status === 'approved');
+    // Un compte bloqué garde le statut 'approved' mais perd l'accès vidéothèque.
+    const approvedAccounts = accounts.filter(a => a.status === 'approved' && !a.blocked_at);
 
     return (
         <DashboardLayout title="Repost Social">
@@ -115,20 +117,26 @@ const AccountsTab: React.FC<{ accounts: RepostAccount[]; onChanged: () => void }
 
             {accounts.length > 0 && (
                 <div className="repost-guide-list">
-                    {accounts.map(a => (
-                        <div key={a.id} className="repost-guide-list-item">
-                            <div>
-                                <div style={{ fontWeight: 700 }}>{a.platform}</div>
-                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{a.claimed_followers_count.toLocaleString('fr-FR')} abonnés déclarés</div>
-                                {a.status === 'rejected' && a.admin_notes && (
-                                    <div style={{ fontSize: '0.8rem', color: '#991b1b', marginTop: '0.3rem' }}>Raison : {a.admin_notes}</div>
-                                )}
+                    {accounts.map(a => {
+                        const displayStatus = a.blocked_at ? 'blocked' : a.status;
+                        return (
+                            <div key={a.id} className="repost-guide-list-item">
+                                <div>
+                                    <div style={{ fontWeight: 700 }}>{a.platform}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{a.claimed_followers_count.toLocaleString('fr-FR')} abonnés déclarés</div>
+                                    {a.status === 'rejected' && a.admin_notes && (
+                                        <div style={{ fontSize: '0.8rem', color: '#991b1b', marginTop: '0.3rem' }}>Raison : {a.admin_notes}</div>
+                                    )}
+                                    {a.blocked_at && (
+                                        <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '0.3rem' }}>Ce compte est temporairement bloqué. Contactez l'administrateur.</div>
+                                    )}
+                                </div>
+                                <span className="repost-badge" style={{ background: statusConfig[displayStatus].bg, color: statusConfig[displayStatus].color }}>
+                                    {statusConfig[displayStatus].icon} {statusConfig[displayStatus].label}
+                                </span>
                             </div>
-                            <span className="repost-badge" style={{ background: statusConfig[a.status].bg, color: statusConfig[a.status].color }}>
-                                {statusConfig[a.status].icon} {statusConfig[a.status].label}
-                            </span>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 

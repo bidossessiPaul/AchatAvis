@@ -132,6 +132,18 @@ export const adminAccountsApi = {
     ): Promise<void> => {
         await api.patch(`/repost/admin/accounts/${id}`, { status, tier_id, admin_notes });
     },
+    // Change le palier d'un compte déjà approuvé
+    updateTier: async (id: string, tier_id: string): Promise<void> => {
+        await api.patch(`/repost/admin/accounts/${id}/tier`, { tier_id });
+    },
+    // Bloque / débloque un compte approuvé (coupe / rétablit l'accès vidéothèque)
+    setBlocked: async (id: string, blocked: boolean): Promise<void> => {
+        await api.patch(`/repost/admin/accounts/${id}/block`, { blocked });
+    },
+    // Soft-delete
+    remove: async (id: string): Promise<void> => {
+        await api.delete(`/repost/admin/accounts/${id}`);
+    },
 };
 
 // ========== ADMIN — SOUMISSIONS DE REPOST ==========

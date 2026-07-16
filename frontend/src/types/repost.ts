@@ -40,6 +40,7 @@ export interface RepostAccount {
     admin_notes: string | null;
     reviewed_by: string | null;
     reviewed_at: string | null;
+    blocked_at?: string | null; // non-NULL = compte approuvé mais bloqué
     created_at: string;
     guide_full_name?: string;
     guide_email?: string;
