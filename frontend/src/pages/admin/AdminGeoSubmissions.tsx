@@ -103,8 +103,8 @@ export const AdminGeoSubmissions: React.FC = () => {
             await api.put(`/geo/admin/submissions/${id}`, { status: 'validated' });
             showSuccess('Soumission validée');
             fetchSubmissions(true);
-        } catch {
-            showError('Erreur', 'Impossible de valider cette soumission');
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Impossible de valider cette soumission');
         } finally {
             setIsActionLoading(false);
         }
@@ -120,14 +120,15 @@ export const AdminGeoSubmissions: React.FC = () => {
         if (!selectedId || !rejectionReason.trim()) return;
         setIsActionLoading(true);
         try {
-            await api.put(`/geo/admin/submissions/${selectedId}`, { status: 'rejected', rejection_reason: rejectionReason.trim() });
+            // Le backend attend rejectionReason (camelCase) — snake_case renvoyait un 400
+            await api.put(`/geo/admin/submissions/${selectedId}`, { status: 'rejected', rejectionReason: rejectionReason.trim() });
             showSuccess('Soumission rejetée');
             setShowRejectModal(false);
             setRejectionReason('');
             setSelectedId(null);
             fetchSubmissions(true);
-        } catch {
-            showError('Erreur', 'Impossible de rejeter cette soumission');
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Impossible de rejeter cette soumission');
         } finally {
             setIsActionLoading(false);
         }
