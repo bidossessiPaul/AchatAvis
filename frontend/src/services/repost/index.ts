@@ -112,6 +112,11 @@ export const adminVideosApi = {
     remove: async (id: string): Promise<void> => {
         await api.delete(`/repost/admin/videos/${id}`);
     },
+    // Campagne email : max 100 guides actifs par appel, relance = 100 suivants
+    notifyGuides: async (id: string): Promise<{ sent: number; remaining: number; already_notified: number }> => {
+        const r = await api.post(`/repost/admin/videos/${id}/notify`);
+        return r.data;
+    },
 };
 
 // ========== ADMIN — COMPTES RÉSEAUX SOCIAUX ==========
@@ -265,5 +270,14 @@ export const guideRepostApi = {
     myStats: async (): Promise<RepostGuideStats> => {
         const r = await api.get('/repost/guide/me/stats');
         return r.data;
+    },
+
+    // Modal auto dashboard : dernière vidéo active non repostée par ce guide
+    newVideoAlert: async (): Promise<{
+        video: { id: string; title: string; description: string | null; platforms: string | null; thumbnail_url: string | null };
+        earnings: { min_base_cents: number; max_base_cents: number; max_view_bonus_cents: number };
+    } | null> => {
+        const r = await api.get('/repost/guide/videos/new-alert');
+        return r.data.alert;
     },
 };

@@ -11,6 +11,7 @@ import { EarningsChart, DistributionChart } from '../../components/Dashboard/Das
 import { GuideLeaderboard } from './GuideLeaderboard';
 import { GmailVerificationBanner } from '../../components/guide/GmailVerificationBanner';
 import { GmailVerificationReminderModal } from '../../components/guide/GmailVerificationReminderModal';
+import { NewRepostVideoModal } from '../../components/guide/NewRepostVideoModal';
 import { motion } from 'framer-motion';
 import Swal from 'sweetalert2';
 import './GuideDashboard.css';
@@ -426,6 +427,7 @@ export const GuideDashboard: React.FC = () => {
                 </div>
             )}
             <GmailVerificationReminderModal gmailAccounts={unverifiedGmails} />
+            <NewRepostVideoModal />
         </DashboardLayout>
     );
 };

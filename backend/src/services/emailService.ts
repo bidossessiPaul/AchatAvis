@@ -1346,6 +1346,132 @@ export const sendNewFicheToGuidesEmail = async (
 };
 
 /**
+ * Notifie un lot de guides actifs qu'une nouvelle vidéo repost est disponible.
+ * Envoi en BCC (un seul sendMail), avec le barème complet des gains :
+ * montant de base par palier d'abonnés + bonus maximum selon les vues.
+ */
+export const sendNewRepostVideoEmail = async (
+    guideEmails: string[],
+    video: { id: string; title: string; description?: string | null; platforms?: string | null },
+    tiers: { label: string; amount_cents: number; max_view_bonus_cents: number | null }[],
+    baseUrl?: string
+) => {
+    if (guideEmails.length === 0) return;
+
+    const brandOrange = '#FF991F';
+    const brandBlack = '#0a0a0a';
+    const frontendUrl = baseUrl || emailConfig.frontendUrl;
+    const euros = (cents: number) => (cents / 100).toFixed(2).replace('.', ',') + '€';
+
+    const tiersRowsHtml = tiers.map(t => `
+        <tr>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: ${brandBlack}; font-weight: 600;">
+                ${t.label}
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; text-align: center;">
+                <span style="font-weight: 800; color: #059669; font-size: 15px;">${euros(t.amount_cents)}</span>
+            </td>
+            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; text-align: center; font-size: 14px; color: #374151;">
+                ${t.max_view_bonus_cents ? `jusqu'à <strong style="color: ${brandOrange};">${euros(t.max_view_bonus_cents)}</strong>` : '—'}
+            </td>
+        </tr>
+    `).join('');
+
+    const mailOptions = {
+        from: emailConfig.from,
+        to: emailConfig.from,
+        bcc: guideEmails.join(', '),
+        subject: `🎬 Nouvelle vidéo à reposter : gagnez de l'argent avec vos réseaux sociaux !`,
+        html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
+                    .card { background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 2px solid ${brandBlack}; }
+                    .header { background-color: ${brandBlack}; color: white; padding: 32px; text-align: center; }
+                    .title { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .content { padding: 32px; }
+                    .text { font-size: 16px; color: #374151; line-height: 1.6; }
+                    .video-box { background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%); border: 2px solid ${brandOrange}; border-radius: 16px; padding: 28px; margin: 24px 0; position: relative; }
+                    .badge-new { position: absolute; top: -12px; left: 20px; background-color: ${brandOrange}; color: white; font-size: 12px; font-weight: 800; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .video-name { font-size: 20px; font-weight: 800; color: ${brandBlack}; margin-top: 8px; }
+                    .video-meta { font-size: 14px; color: #6b7280; margin-top: 8px; line-height: 1.5; }
+                    .btn-primary { display: inline-block; background-color: ${brandOrange}; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 800; font-size: 16px; text-transform: uppercase; margin-top: 16px; }
+                    .section-title { font-size: 16px; font-weight: 800; color: ${brandBlack}; text-transform: uppercase; margin: 32px 0 12px 0; letter-spacing: 0.05em; }
+                    .step-box { background: #f8fafc; border-radius: 12px; padding: 16px 20px; margin: 10px 0; font-size: 14px; color: #374151; line-height: 1.5; }
+                    .footer { margin-top: 32px; text-align: center; font-size: 13px; color: #9ca3af; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="card">
+                        <div class="header">
+                            <img src="https://manager.achatavis.com/logo.png" alt="AchatAvis" style="height: 40px; margin-bottom: 12px;">
+                            <h2 class="title">Nouvelle mission vidéo !</h2>
+                        </div>
+                        <div class="content">
+                            <p class="text">
+                                Une nouvelle vidéo vient d'être ajoutée à la vidéothèque. Repostez-la sur vos réseaux sociaux et soyez payé <strong>deux fois</strong> : une première fois dès que votre repost est validé, puis des bonus au fur et à mesure que votre vidéo fait des vues.
+                            </p>
+
+                            <div class="video-box">
+                                <div class="badge-new">🎬 Nouvelle vidéo</div>
+                                <div class="video-name">${video.title}</div>
+                                <div class="video-meta">
+                                    ${video.platforms ? `Plateformes : <strong>${video.platforms}</strong><br>` : ''}
+                                    ${video.description ? video.description : ''}
+                                </div>
+                                <div style="text-align: center;">
+                                    <a href="${frontendUrl}/guide/repost" class="btn-primary">
+                                        Je poste la vidéo →
+                                    </a>
+                                </div>
+                            </div>
+
+                            ${tiers.length > 0 ? `
+                                <div class="section-title">💰 Combien pouvez-vous gagner ?</div>
+                                <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #f3f4f6; border-radius: 12px;">
+                                    <tr>
+                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: left;">Votre compte</th>
+                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: center;">Gain dès le post</th>
+                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: center;">Bonus selon les vues</th>
+                                    </tr>
+                                    ${tiersRowsHtml}
+                                </table>
+                            ` : ''}
+
+                            <div class="section-title">🚀 Comment ça marche ?</div>
+                            <div class="step-box"><strong>1.</strong> Ajoutez votre compte TikTok / Instagram (si ce n'est pas déjà fait) — il sera validé selon votre nombre d'abonnés.</div>
+                            <div class="step-box"><strong>2.</strong> Téléchargez la vidéo, publiez-la sur votre compte et envoyez la preuve (lien + capture).</div>
+                            <div class="step-box"><strong>3.</strong> Votre gain de base est crédité dès validation. Ensuite, déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>
+
+                            <div style="text-align: center; margin-top: 32px;">
+                                <a href="${frontendUrl}/guide/repost" class="btn-primary" style="background-color: ${brandBlack};">
+                                    Accéder à la mission
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer">
+                        &copy; ${new Date().getFullYear()} AchatAvis — Vos réseaux sociaux valent de l'argent.
+                    </div>
+                </div>
+            </body>
+            </html>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`New repost video notification sent to ${guideEmails.length} guides`);
+    } catch (error) {
+        console.error('Error sending new repost video notification:', error);
+        throw error;
+    }
+};
+
+/**
  * Send admin notification when a new user registers
  */
 export const sendNewUserRegistrationAdminEmail = async (

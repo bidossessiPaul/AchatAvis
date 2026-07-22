@@ -20,6 +20,8 @@ router.post(
 
 // Vidéothèque (?account_id=...)
 router.get('/videos', guideController.listAvailableVideos);
+// Modal auto dashboard : dernière vidéo active non repostée par ce guide
+router.get('/videos/new-alert', guideController.newVideoAlert);
 
 // Soumission de preuve de repost
 router.post(

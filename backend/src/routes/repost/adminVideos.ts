@@ -14,5 +14,7 @@ router.get('/', PERM, adminController.listVideos);
 router.post('/', PERM, adminController.createVideo);
 router.put('/:id', PERM, adminController.updateVideo);
 router.delete('/:id', PERM, adminController.removeVideo);
+// Campagne email : max 100 guides actifs par appel, jamais deux fois le même guide
+router.post('/:id/notify', PERM, adminController.notifyGuidesForVideo);
 
 export default router;

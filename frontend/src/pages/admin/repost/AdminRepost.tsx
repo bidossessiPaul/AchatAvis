@@ -986,6 +986,34 @@ const VideosTab: React.FC = () => {
         }
     };
 
+    const [notifyingId, setNotifyingId] = useState<string | null>(null);
+
+    const notifyGuides = async (v: RepostVideo) => {
+        const r = await showConfirm(
+            'Lancer la campagne email ?',
+            `Jusqu'à 100 guides actifs (connectés < 3 mois, ayant déjà soumis des avis) recevront un email pour "${v.title}". Un guide déjà notifié pour cette vidéo ne recevra jamais de doublon — relancer enverra aux 100 suivants.`
+        );
+        if (!r.isConfirmed) return;
+        setNotifyingId(v.id);
+        try {
+            const result = await adminVideosApi.notifyGuides(v.id);
+            if (result.sent === 0) {
+                showSuccess('Aucun envoi', `Tous les guides actifs éligibles ont déjà été notifiés (${result.already_notified} au total).`);
+            } else {
+                showSuccess(
+                    `${result.sent} email${result.sent > 1 ? 's' : ''} envoyé${result.sent > 1 ? 's' : ''}`,
+                    result.remaining > 0
+                        ? `${result.remaining} guides actifs restants — relancez pour notifier les 100 suivants.`
+                        : 'Tous les guides actifs éligibles sont maintenant notifiés.'
+                );
+            }
+        } catch (e: any) {
+            showError('Erreur', e.response?.data?.error || 'Impossible d\'envoyer la campagne');
+        } finally {
+            setNotifyingId(null);
+        }
+    };
+
     if (loading) return <div style={{ padding: '3rem 0' }}><LoadingSpinner text="Chargement de la vidéothèque..." /></div>;
 
     return (
@@ -1024,6 +1052,17 @@ const VideosTab: React.FC = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                            {v.is_active && (
+                                                <button
+                                                    className="repost-icon-btn"
+                                                    title="Notifier les guides actifs (max 100 par envoi)"
+                                                    onClick={() => notifyGuides(v)}
+                                                    disabled={notifyingId === v.id}
+                                                    style={{ color: '#059669', opacity: notifyingId === v.id ? 0.5 : 1 }}
+                                                >
+                                                    <Send size={14} />
+                                                </button>
+                                            )}
                                             <button className="repost-icon-btn" onClick={() => openEdit(v)}><Pencil size={14} /></button>
                                             <button className="repost-icon-btn danger" onClick={() => remove(v)}><Trash2 size={14} /></button>
                                         </div>

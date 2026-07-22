@@ -9,6 +9,7 @@ import * as accountService from '../../services/repost/accountService';
 import * as submissionService from '../../services/repost/submissionService';
 import * as viewUpdateService from '../../services/repost/viewUpdateService';
 import * as payoutService from '../../services/repost/payoutService';
+import * as repostNotificationService from '../../services/repost/notificationService';
 
 // ========== Paliers d'abonnés ==========
 
@@ -210,6 +211,26 @@ export const removeVideo = async (req: Request, res: Response): Promise<void> =>
     try {
         await videoService.softDeleteVideo(req.params.id);
         res.json({ ok: true });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+/** Lance la campagne email : notifie jusqu'à 100 guides actifs pas encore contactés. */
+export const notifyGuidesForVideo = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const video = await videoService.getVideoById(req.params.id);
+        if (!video) {
+            res.status(404).json({ error: 'Vidéo introuvable' });
+            return;
+        }
+        if (!video.is_active) {
+            res.status(400).json({ error: 'Activez la vidéo avant de notifier les guides' });
+            return;
+        }
+        const baseUrl = req.headers.origin as string | undefined;
+        const result = await repostNotificationService.notifyGuidesForVideo(video, baseUrl);
+        res.json(result);
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }

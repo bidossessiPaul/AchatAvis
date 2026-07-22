@@ -7,6 +7,7 @@ import * as videoService from '../../services/repost/videoService';
 import * as submissionService from '../../services/repost/submissionService';
 import * as viewUpdateService from '../../services/repost/viewUpdateService';
 import * as payoutService from '../../services/repost/payoutService';
+import * as repostNotificationService from '../../services/repost/notificationService';
 
 // ========== Mes comptes ==========
 
@@ -87,6 +88,21 @@ export const listAvailableVideos = async (req: Request, res: Response): Promise<
         }
         const videos = await videoService.listVideosForAccount(accountId);
         res.json({ videos });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+/** Modal auto du dashboard : dernière vidéo active non encore repostée par ce guide. */
+export const newVideoAlert = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const guideId = req.user?.userId;
+        if (!guideId) {
+            res.status(401).json({ error: 'Non authentifié' });
+            return;
+        }
+        const alert = await repostNotificationService.getNewVideoAlertForGuide(guideId);
+        res.json({ alert });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }
