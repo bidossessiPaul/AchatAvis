@@ -204,36 +204,22 @@ export const AdminDashboard: React.FC = () => {
     const currentMonthLabel = new Intl.DateTimeFormat('fr-FR', { month: 'long' })
         .format(new Date(stats.guideActivity?.checked_at || Date.now()));
     const guideActivityData = [
-        { label: 'En ligne', value: guidesOnlineNow, color: '#059669', caption: '5 min' },
-        { label: 'Aujourd\'hui', value: guidesLoggedToday, color: '#2383e2', caption: 'UTC' },
-        { label: 'Ce mois', value: guidesLoggedThisMonth, color: '#ea580c', caption: currentMonthLabel },
+        { label: 'En ligne maintenant', value: guidesOnlineNow, color: '#059669', caption: '5 dernières minutes', dotClass: 'online' },
+        { label: 'Connectés aujourd\'hui', value: guidesLoggedToday, color: '#2383e2', caption: 'depuis minuit (UTC)', dotClass: 'today' },
+        { label: 'Actifs ce mois', value: guidesLoggedThisMonth, color: '#ea580c', caption: currentMonthLabel, dotClass: 'month' },
     ];
-    const getGuideRate = (value: number) => totalGuides > 0 ? Math.round((value / totalGuides) * 100) : 0;
-
-    const GuideActivityTooltip = ({ active, payload }: any) => {
-        if (!active || !payload || payload.length === 0) return null;
-
-        const point = payload[0].payload;
-        const value = Number(point.value || 0);
-        const rate = getGuideRate(value);
-
-        return (
-            <div style={{
-                background: 'rgba(255, 255, 255, 0.96)',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
-                padding: '12px 14px'
-            }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.35rem' }}>{point.label}</div>
-                <div style={{ fontSize: '0.86rem', color: '#475569' }}>
-                    <strong style={{ color: point.color }}>{value}</strong> guides
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
-                    {rate}% du total ({totalGuides})
-                </div>
-            </div>
-        );
+    // Les 3 valeurs vont de 3 à ~800 sur une base de ~3800 : un axe commun rend
+    // les petites barres invisibles. On affiche donc chaque métrique en % de la base.
+    const formatGuideRate = (value: number) => {
+        if (totalGuides <= 0) return '0%';
+        const rate = (value / totalGuides) * 100;
+        if (value > 0 && rate < 1) return '< 1%';
+        return `${Math.round(rate)}%`;
+    };
+    const getGuideBarWidth = (value: number) => {
+        if (totalGuides <= 0 || value <= 0) return 0;
+        // Largeur minimale 1.5% pour que la barre reste visible même à 0,1%
+        return Math.max((value / totalGuides) * 100, 1.5);
     };
 
     return (
@@ -494,66 +480,36 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="guide-activity-kpis">
-                            <div className="guide-kpi-item">
-                                <span className="guide-kpi-dot online"></span>
-                                <div>
-                                    <strong>{guidesOnlineNow}</strong>
-                                    <span>en ligne maintenant</span>
-                                </div>
-                            </div>
-                            <div className="guide-kpi-item">
-                                <span className="guide-kpi-dot today"></span>
-                                <div>
-                                    <strong>{guidesLoggedToday}</strong>
-                                    <span>connectés aujourd'hui</span>
-                                </div>
-                            </div>
-                            <div className="guide-kpi-item">
-                                <span className="guide-kpi-dot month"></span>
-                                <div>
-                                    <strong>{guidesLoggedThisMonth}</strong>
-                                    <span>dernière connexion ce mois</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ height: '260px', width: '100%', marginTop: '1rem' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={guideActivityData} barCategoryGap={26}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis
-                                        dataKey="label"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 11, fontWeight: 700, fill: '#475569' }}
-                                    />
-                                    <YAxis
-                                        axisLine={false}
-                                        tickLine={false}
-                                        allowDecimals={false}
-                                        width={42}
-                                        domain={[0, totalGuides > 0 ? totalGuides : 10]}
-                                        tick={{ fontSize: 11, fill: '#94a3b8' }}
-                                    />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} content={<GuideActivityTooltip />} />
-                                    <Bar dataKey="value" radius={[10, 10, 0, 0]} barSize={42}>
-                                        {guideActivityData.map((entry) => (
-                                            <Cell key={entry.label} fill={entry.color} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="guide-activity-footer">
+                        <div className="guide-activity-rows">
                             {guideActivityData.map((entry) => (
-                                <div key={entry.label} className="guide-activity-foot-item">
-                                    <span className="guide-activity-foot-label">{entry.label}</span>
-                                    <strong style={{ color: entry.color }}>{getGuideRate(entry.value)}%</strong>
-                                    <span className="guide-activity-foot-caption">{entry.caption}</span>
+                                <div key={entry.label} className="guide-activity-row">
+                                    <div className="guide-activity-row-top">
+                                        <span className={`guide-kpi-dot ${entry.dotClass}`}></span>
+                                        <div className="guide-activity-row-titles">
+                                            <span className="guide-activity-row-label">{entry.label}</span>
+                                            <span className="guide-activity-row-caption">{entry.caption}</span>
+                                        </div>
+                                        <div className="guide-activity-row-values">
+                                            <strong>{entry.value.toLocaleString('fr-FR')}</strong>
+                                            <span className="guide-activity-row-rate" style={{ color: entry.color }}>
+                                                {formatGuideRate(entry.value)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="guide-activity-track">
+                                        {entry.value > 0 && (
+                                            <div
+                                                className="guide-activity-fill"
+                                                style={{ width: `${getGuideBarWidth(entry.value)}%`, background: entry.color }}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             ))}
+                        </div>
+
+                        <div className="guide-activity-scale-note">
+                            Barres exprimées en % de la base totale ({totalGuides.toLocaleString('fr-FR')} guides)
                         </div>
                     </div>
 
