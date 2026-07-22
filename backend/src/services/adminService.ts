@@ -402,6 +402,33 @@ export const getGlobalStats = async () => {
             (SELECT COUNT(*) FROM payout_requests WHERE status = 'pending') as pending_payouts
     `);
 
+    // Activité guides pour le dashboard admin.
+    // Note importante : "ce mois" est basé sur la DERNIERE connexion connue
+    // (last_login) et non sur un historique complet des logins.
+    const guideActivity: any = await query(`
+        SELECT
+            UTC_TIMESTAMP() as checked_at,
+            (SELECT COUNT(*) FROM users WHERE role = 'guide' AND deleted_at IS NULL) as total_guides,
+            (SELECT COUNT(*)
+             FROM users
+             WHERE role = 'guide'
+               AND deleted_at IS NULL
+               AND last_seen IS NOT NULL
+               AND last_seen >= (UTC_TIMESTAMP() - INTERVAL 5 MINUTE)) as online_now,
+            (SELECT COUNT(*)
+             FROM users
+             WHERE role = 'guide'
+               AND deleted_at IS NULL
+               AND last_login IS NOT NULL
+               AND DATE(last_login) = UTC_DATE()) as logged_today,
+            (SELECT COUNT(*)
+             FROM users
+             WHERE role = 'guide'
+               AND deleted_at IS NULL
+               AND last_login IS NOT NULL
+               AND last_login >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')) as logged_this_month
+    `);
+
     // Recent Activities (exclut les users supprimés)
     const recentActivities: any = await query(`
         SELECT * FROM (
@@ -441,6 +468,7 @@ export const getGlobalStats = async () => {
         growth: userGrowth,
         pending: pendingActions[0],
         totals: totalCounts[0],
+        guideActivity: guideActivity[0],
         activities: recentActivities
     };
 };
@@ -2745,4 +2773,3 @@ export const impersonateUser = async (adminId: string, targetUserId: string) => 
         user: safeUser,
     };
 };
-
