@@ -295,6 +295,7 @@
 }
 
 .guide-activity-card {
+    margin-top: var(--space-8);
     background:
         radial-gradient(circle at top right, rgba(5, 150, 105, 0.08), transparent 35%),
         linear-gradient(180deg, #ffffff 0%, #fcfffd 100%);
@@ -330,89 +331,53 @@
     color: #0f172a;
 }
 
-.guide-activity-rows {
+/* Points clés sous le graphe de tendance */
+.guide-activity-bottom {
     display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-    margin-top: 1.5rem;
+    align-items: center;
+    gap: var(--space-6);
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
 }
 
-.guide-activity-row {
+.guide-activity-point {
     display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.9rem 1rem;
-    background: rgba(248, 250, 252, 0.7);
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 200px;
+    padding: 0.75rem 1rem;
+    background: rgba(248, 250, 252, 0.8);
     border: 1px solid #e2e8f0;
     border-radius: 0.9rem;
 }
 
-.guide-activity-row-top {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.guide-activity-row-titles {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.guide-activity-row-label {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #0f172a;
-    line-height: 1.2;
-}
-
-.guide-activity-row-caption {
-    font-size: 0.72rem;
-    color: #94a3b8;
-    text-transform: lowercase;
-}
-
-.guide-activity-row-values {
-    margin-left: auto;
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    flex-shrink: 0;
-}
-
-.guide-activity-row-values strong {
-    font-size: 1.5rem;
+.guide-activity-point strong {
+    font-size: 1.6rem;
     font-weight: 800;
     color: #0f172a;
     line-height: 1;
     font-variant-numeric: tabular-nums;
 }
 
-.guide-activity-row-rate {
-    font-size: 0.8rem;
+.guide-activity-point-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.guide-activity-point-label {
+    font-size: 0.82rem;
     font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    color: #0f172a;
+    line-height: 1.2;
 }
 
-/* Piste commune : toutes les barres partagent la même échelle (% de la base totale) */
-.guide-activity-track {
-    height: 8px;
-    border-radius: 999px;
-    background: #eef2f7;
-    overflow: hidden;
-}
-
-.guide-activity-fill {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.6s ease;
-}
-
-.guide-activity-scale-note {
-    margin-top: 1rem;
+.guide-activity-point-caption {
     font-size: 0.72rem;
     color: #94a3b8;
-    text-align: right;
 }
 
 .guide-kpi-dot {
@@ -490,6 +455,15 @@
 
     .guide-activity-header {
         flex-direction: column;
+    }
+
+    .guide-activity-bottom {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .guide-activity-point {
+        min-width: 0;
     }
 
     .guide-activity-total {

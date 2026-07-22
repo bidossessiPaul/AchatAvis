@@ -60,6 +60,7 @@ interface DashboardStats {
         logged_today: number;
         logged_this_month: number;
     };
+    guideLoginTrend?: { day: string; count: number }[];
     activities: any[];
 }
 
@@ -208,18 +209,44 @@ export const AdminDashboard: React.FC = () => {
         { label: 'Connectés aujourd\'hui', value: guidesLoggedToday, color: '#2383e2', caption: 'depuis minuit (UTC)', dotClass: 'today' },
         { label: 'Actifs ce mois', value: guidesLoggedThisMonth, color: '#ea580c', caption: currentMonthLabel, dotClass: 'month' },
     ];
-    // Les 3 valeurs vont de 3 à ~800 sur une base de ~3800 : un axe commun rend
-    // les petites barres invisibles. On affiche donc chaque métrique en % de la base.
     const formatGuideRate = (value: number) => {
         if (totalGuides <= 0) return '0%';
         const rate = (value / totalGuides) * 100;
         if (value > 0 && rate < 1) return '< 1%';
         return `${Math.round(rate)}%`;
     };
-    const getGuideBarWidth = (value: number) => {
-        if (totalGuides <= 0 || value <= 0) return 0;
-        // Largeur minimale 1.5% pour que la barre reste visible même à 0,1%
-        return Math.max((value / totalGuides) * 100, 1.5);
+
+    // Tendance connexions : 30 jours remplis à 0 puis fusion avec le backend
+    // (répartition des dernières connexions par jour, cf. adminService backend)
+    const loginTrendByDay = new Map((stats.guideLoginTrend || []).map(t => [t.day, Number(t.count)]));
+    const loginTrendData = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (29 - i));
+        const key = d.toISOString().slice(0, 10);
+        return {
+            day: key,
+            label: new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' }).format(d),
+            count: loginTrendByDay.get(key) || 0,
+        };
+    });
+
+    const GuideTrendTooltip = ({ active, payload }: any) => {
+        if (!active || !payload || payload.length === 0) return null;
+        const point = payload[0].payload;
+        return (
+            <div style={{
+                background: 'rgba(255, 255, 255, 0.96)',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
+                padding: '10px 14px'
+            }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '0.25rem' }}>{point.label}</div>
+                <div style={{ fontSize: '0.9rem', color: '#0f172a' }}>
+                    <strong style={{ color: '#059669' }}>{point.count}</strong> connexion{point.count > 1 ? 's' : ''}
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -466,53 +493,77 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Secondary Charts Tier */}
-                <div className="secondary-charts-grid">
-                    <div className="secondary-chart-card guide-activity-card">
-                        <div className="guide-activity-header">
-                            <div>
-                                <h3>Activité guides</h3>
-                                <span className="chart-subtitle">Lecture directe des connexions côté guides</span>
-                            </div>
-                            <div className="guide-activity-total">
-                                <span className="guide-activity-total-label">Base totale</span>
-                                <strong>{totalGuides} guides</strong>
-                            </div>
+                {/* Activité guides — pleine largeur : tendance temporelle + points clés */}
+                <div className="chart-card guide-activity-card">
+                    <div className="guide-activity-header">
+                        <div>
+                            <h3>Activité guides</h3>
+                            <span className="chart-subtitle">Dernières connexions par jour — 30 derniers jours</span>
                         </div>
-
-                        <div className="guide-activity-rows">
-                            {guideActivityData.map((entry) => (
-                                <div key={entry.label} className="guide-activity-row">
-                                    <div className="guide-activity-row-top">
-                                        <span className={`guide-kpi-dot ${entry.dotClass}`}></span>
-                                        <div className="guide-activity-row-titles">
-                                            <span className="guide-activity-row-label">{entry.label}</span>
-                                            <span className="guide-activity-row-caption">{entry.caption}</span>
-                                        </div>
-                                        <div className="guide-activity-row-values">
-                                            <strong>{entry.value.toLocaleString('fr-FR')}</strong>
-                                            <span className="guide-activity-row-rate" style={{ color: entry.color }}>
-                                                {formatGuideRate(entry.value)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="guide-activity-track">
-                                        {entry.value > 0 && (
-                                            <div
-                                                className="guide-activity-fill"
-                                                style={{ width: `${getGuideBarWidth(entry.value)}%`, background: entry.color }}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="guide-activity-scale-note">
-                            Barres exprimées en % de la base totale ({totalGuides.toLocaleString('fr-FR')} guides)
+                        <div className="guide-activity-total">
+                            <span className="guide-activity-total-label">Base totale</span>
+                            <strong>{totalGuides.toLocaleString('fr-FR')} guides</strong>
                         </div>
                     </div>
 
+                    <div style={{ height: '240px', width: '100%', marginTop: '1.25rem' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={loginTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorGuideLogin" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#059669" stopOpacity={0.25} />
+                                        <stop offset="95%" stopColor="#059669" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis
+                                    dataKey="label"
+                                    axisLine={false}
+                                    tickLine={false}
+                                    interval="preserveStartEnd"
+                                    minTickGap={28}
+                                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    allowDecimals={false}
+                                    width={40}
+                                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                                />
+                                <Tooltip content={<GuideTrendTooltip />} cursor={{ stroke: '#cbd5e1', strokeDasharray: '4 4' }} />
+                                <Area
+                                    name="Connexions"
+                                    type="monotone"
+                                    dataKey="count"
+                                    stroke="#059669"
+                                    strokeWidth={2.5}
+                                    fill="url(#colorGuideLogin)"
+                                    dot={false}
+                                    activeDot={{ r: 5, fill: '#059669', stroke: '#fff', strokeWidth: 2 }}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="guide-activity-bottom">
+                        {guideActivityData.map((entry) => (
+                            <div key={entry.label} className="guide-activity-point">
+                                <span className={`guide-kpi-dot ${entry.dotClass}`}></span>
+                                <strong>{entry.value.toLocaleString('fr-FR')}</strong>
+                                <div className="guide-activity-point-text">
+                                    <span className="guide-activity-point-label">{entry.label}</span>
+                                    <span className="guide-activity-point-caption">
+                                        {entry.caption} · {formatGuideRate(entry.value)} de la base
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Secondary Charts Tier */}
+                <div className="secondary-charts-grid">
                     {/* Submission Status */}
                     <div className="secondary-chart-card">
                         <h3>Qualité Reviews</h3>

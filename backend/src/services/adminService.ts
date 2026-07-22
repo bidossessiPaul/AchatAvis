@@ -429,6 +429,22 @@ export const getGlobalStats = async () => {
                AND last_login >= DATE_FORMAT(UTC_DATE(), '%Y-%m-01')) as logged_this_month
     `);
 
+    // Tendance des connexions guides sur 30 jours.
+    // Basée sur la répartition des DERNIERES connexions (last_login) par jour,
+    // car il n'existe pas d'historique complet des logins en base.
+    // Le point du jour = "connectés aujourd'hui" exact ; les jours passés
+    // comptent les guides jamais revenus depuis.
+    const guideLoginTrend: any = await query(`
+        SELECT DATE_FORMAT(last_login, '%Y-%m-%d') as day, COUNT(*) as count
+        FROM users
+        WHERE role = 'guide'
+          AND deleted_at IS NULL
+          AND last_login IS NOT NULL
+          AND last_login >= (UTC_DATE() - INTERVAL 29 DAY)
+        GROUP BY DATE_FORMAT(last_login, '%Y-%m-%d')
+        ORDER BY day ASC
+    `);
+
     // Recent Activities (exclut les users supprimés)
     const recentActivities: any = await query(`
         SELECT * FROM (
@@ -469,6 +485,7 @@ export const getGlobalStats = async () => {
         pending: pendingActions[0],
         totals: totalCounts[0],
         guideActivity: guideActivity[0],
+        guideLoginTrend,
         activities: recentActivities
     };
 };
