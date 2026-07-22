@@ -64,6 +64,108 @@
     padding: var(--space-6);
 }
 
+.guides-recap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.guides-recap-card {
+    padding: 1.1rem 1.15rem;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    background:
+        radial-gradient(circle at top right, rgba(35, 131, 226, 0.08), transparent 32%),
+        linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.guides-recap-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.guides-recap-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.guides-recap-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.24rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.guides-recap-badge.online {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+
+.guides-recap-badge.today {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.guides-recap-badge.month {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fdba74;
+}
+
+.guides-recap-value {
+    display: block;
+    margin-top: 0.75rem;
+    font-size: 2rem;
+    line-height: 1;
+    color: #0f172a;
+}
+
+.guides-recap-sub {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.82rem;
+    color: #64748b;
+}
+
+.guides-recap-bar {
+    margin-top: 0.85rem;
+    height: 0.5rem;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.guides-recap-fill {
+    height: 100%;
+    border-radius: inherit;
+}
+
+.guides-recap-fill.online {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.guides-recap-fill.today {
+    background: linear-gradient(90deg, #60a5fa, #2383e2);
+}
+
+.guides-recap-fill.month {
+    background: linear-gradient(90deg, #fb923c, #ea580c);
+}
+
 /* Modern Table Styles */
 .admin-table-container {
     overflow-x: auto;
@@ -332,6 +434,10 @@
 }
 
 @media (max-width: 768px) {
+    .guides-recap-grid {
+        grid-template-columns: 1fr;
+    }
+
     .admin-card-header {
         flex-direction: column;
         align-items: flex-start;

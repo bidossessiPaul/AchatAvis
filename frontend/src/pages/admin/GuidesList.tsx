@@ -29,6 +29,7 @@ interface Guide {
     avatar_url: string | null;
     status: string;
     created_at: string;
+    last_login: string | null;
     last_seen: string | null;
     google_email: string;
     city: string;
@@ -183,6 +184,31 @@ export const GuidesList: React.FC = () => {
         return diffInMinutes < 5; // Connected if active in last 5 minutes
     };
 
+    const isTodayUtc = (value: string | null) => {
+        if (!value) return false;
+        const date = new Date(value);
+        const now = new Date();
+
+        return date.getUTCFullYear() === now.getUTCFullYear()
+            && date.getUTCMonth() === now.getUTCMonth()
+            && date.getUTCDate() === now.getUTCDate();
+    };
+
+    const isThisMonthUtc = (value: string | null) => {
+        if (!value) return false;
+        const date = new Date(value);
+        const now = new Date();
+
+        return date.getUTCFullYear() === now.getUTCFullYear()
+            && date.getUTCMonth() === now.getUTCMonth();
+    };
+
+    const totalGuides = guides.length;
+    const guidesOnlineNow = guides.filter(guide => isOnline(guide.last_seen)).length;
+    const guidesLoggedToday = guides.filter(guide => isTodayUtc(guide.last_login)).length;
+    const guidesLoggedThisMonth = guides.filter(guide => isThisMonthUtc(guide.last_login)).length;
+    const toPercent = (value: number) => totalGuides > 0 ? Math.round((value / totalGuides) * 100) : 0;
+
     return (
         <DashboardLayout title="Gestion des Guides">
             <div className="admin-dashboard revamped">
@@ -205,6 +231,56 @@ export const GuidesList: React.FC = () => {
                                     placeholder="Rechercher par email ou téléphone..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="guides-recap-grid">
+                        <div className="guides-recap-card">
+                            <div className="guides-recap-top">
+                                <span className="guides-recap-label">Guides en ligne</span>
+                                <span className="guides-recap-badge online">
+                                    <LogIn size={14} />
+                                    5 min
+                                </span>
+                            </div>
+                            <strong className="guides-recap-value">{guidesOnlineNow}</strong>
+                            <span className="guides-recap-sub">{toPercent(guidesOnlineNow)}% des {totalGuides} guides</span>
+                            <div className="guides-recap-bar">
+                                <div
+                                    className="guides-recap-fill online"
+                                    style={{ width: `${toPercent(guidesOnlineNow)}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="guides-recap-card">
+                            <div className="guides-recap-top">
+                                <span className="guides-recap-label">Connectés aujourd'hui</span>
+                                <span className="guides-recap-badge today">UTC</span>
+                            </div>
+                            <strong className="guides-recap-value">{guidesLoggedToday}</strong>
+                            <span className="guides-recap-sub">{toPercent(guidesLoggedToday)}% des {totalGuides} guides</span>
+                            <div className="guides-recap-bar">
+                                <div
+                                    className="guides-recap-fill today"
+                                    style={{ width: `${toPercent(guidesLoggedToday)}%` }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="guides-recap-card">
+                            <div className="guides-recap-top">
+                                <span className="guides-recap-label">Connectés ce mois</span>
+                                <span className="guides-recap-badge month">Dernier login</span>
+                            </div>
+                            <strong className="guides-recap-value">{guidesLoggedThisMonth}</strong>
+                            <span className="guides-recap-sub">{toPercent(guidesLoggedThisMonth)}% des {totalGuides} guides</span>
+                            <div className="guides-recap-bar">
+                                <div
+                                    className="guides-recap-fill month"
+                                    style={{ width: `${toPercent(guidesLoggedThisMonth)}%` }}
                                 />
                             </div>
                         </div>
