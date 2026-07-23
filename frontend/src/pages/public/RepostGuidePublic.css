@@ -1,0 +1,246 @@
+/* Page publique du guide Repost Vidéo — mobile-first (ouverte depuis les emails) */
+
+.rgp-page {
+    min-height: 100vh;
+    background: #f8fafc;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #0f172a;
+}
+
+.rgp-hero {
+    background: #e2e8f0;
+    text-align: center;
+    padding: 2.5rem 1.25rem 2.75rem;
+}
+
+.rgp-logo {
+    height: 44px;
+    margin-bottom: 1rem;
+}
+
+.rgp-hero h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 0.6rem;
+}
+
+.rgp-hero p {
+    max-width: 560px;
+    margin: 0 auto 1.25rem;
+    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.rgp-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #FF991F, #f97316);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    padding: 0.85rem 1.75rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+}
+
+.rgp-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.7rem 1.4rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+}
+
+.rgp-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rgp-section {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.rgp-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 1rem;
+    color: #0a0a0a;
+}
+
+.rgp-section h2 svg {
+    color: #FF991F;
+    flex-shrink: 0;
+}
+
+.rgp-pay-highlight {
+    background: #ecfdf5;
+    border: 1px solid #6ee7b7;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.rgp-pay-highlight strong {
+    color: #059669;
+    font-size: 1.3rem;
+}
+
+.rgp-table-wrap {
+    overflow-x: auto;
+}
+
+.rgp-table-wrap table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.rgp-table-wrap th {
+    background: #f8fafc;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    text-align: left;
+    padding: 0.7rem 1rem;
+}
+
+.rgp-table-wrap td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+}
+
+.rgp-table-wrap td strong {
+    color: #059669;
+}
+
+.rgp-pay-views {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-top: 1rem;
+}
+
+.rgp-pay-views svg {
+    color: #FF991F;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.rgp-rules {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.rgp-rules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.rgp-rules li svg {
+    color: #059669;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.rgp-rules-bad li svg {
+    color: #dc2626;
+}
+
+.rgp-rules code {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.rgp-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.rgp-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.rgp-step svg {
+    color: #FF991F;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.rgp-ordered {
+    margin: 0 0 1.25rem;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.rgp-footer {
+    text-align: center;
+    padding: 1.5rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+    .rgp-hero h1 {
+        font-size: 1.2rem;
+    }
+
+    .rgp-section {
+        padding: 1.1rem;
+    }
+}

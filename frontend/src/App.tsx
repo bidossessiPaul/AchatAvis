@@ -19,6 +19,7 @@ const Login = lazyNamed(() => import('./pages/auth/Login'), 'Login');
 const IdentityVerification = lazyNamed(() => import('./pages/auth/IdentityVerification'), 'IdentityVerification');
 const GuideTraining = lazyNamed(() => import('./pages/guide/GuideTraining'), 'GuideTraining');
 const ImpersonateLanding = lazyNamed(() => import('./pages/auth/ImpersonateLanding'), 'ImpersonateLanding');
+const RepostGuidePublic = lazyNamed(() => import('./pages/public/RepostGuidePublic'), 'RepostGuidePublic');
 const RegisterArtisan = lazyNamed(() => import('./pages/auth/RegisterArtisan'), 'RegisterArtisan');
 const RegisterGuide = lazyNamed(() => import('./pages/auth/RegisterGuide'), 'RegisterGuide');
 const ForgotPassword = lazyNamed(() => import('./pages/auth/ForgotPassword'), 'ForgotPassword');
@@ -134,6 +135,8 @@ function App() {
                             }
                         />
                         <Route path="/auth/impersonate" element={<ImpersonateLanding />} />
+                        {/* Guide public de la mission repost vidéo — accessible sans login */}
+                        <Route path="/mission-video" element={<RepostGuidePublic />} />
                         <Route
                             path="/identity-verification"
                             element={

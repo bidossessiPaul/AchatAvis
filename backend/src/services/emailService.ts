@@ -1430,7 +1430,14 @@ export const sendNewRepostVideoEmail = async (
                             <div class="step-box"><strong>3.</strong> Publiez la vidéo et envoyez la preuve (lien + capture). Votre gain de base est crédité dès validation.</div>
                             <div class="step-box"><strong>4.</strong> Après publication, <strong>répondez aux questions dans les commentaires</strong> de votre vidéo, et déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>
 
-                            <div style="text-align: center; margin-top: 32px;">
+                            <div style="text-align: center; margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 12px;">
+                                <span style="font-size: 14px; color: #374151;">📋 Avant de poster, lisez le guide complet des exigences :</span><br>
+                                <a href="${frontendUrl}/mission-video" style="color: ${brandOrange}; font-weight: 800; font-size: 15px; text-decoration: none;">
+                                    Voir toutes les règles de la mission →
+                                </a>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 24px;">
                                 <a href="${frontendUrl}/guide/repost" class="btn-primary" style="background-color: ${brandBlack};">
                                     Accéder à la mission
                                 </a>
