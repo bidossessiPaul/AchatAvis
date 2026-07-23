@@ -108,23 +108,18 @@ export const NewRepostVideoModal: React.FC = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', color: '#334155' }}>
                                 <TrendingUp size={16} color="#059669" style={{ flexShrink: 0 }} />
                                 <span>
-                                    Gagnez <strong style={{ color: '#059669' }}>
-                                        {earnings.min_base_cents === earnings.max_base_cents
-                                            ? euros(earnings.max_base_cents)
-                                            : `${euros(earnings.min_base_cents)} à ${euros(earnings.max_base_cents)}`}
-                                    </strong> dès que votre repost est validé, selon vos abonnés
+                                    Gagnez <strong style={{ color: '#059669' }}>{euros(earnings.min_base_cents)}</strong> dès
+                                    que votre repost est validé
                                 </span>
                             </div>
                         )}
-                        {earnings.max_view_bonus_cents > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', color: '#334155' }}>
-                                <Eye size={16} color="#FF991F" style={{ flexShrink: 0 }} />
-                                <span>
-                                    Puis jusqu'à <strong style={{ color: '#FF991F' }}>{euros(earnings.max_view_bonus_cents)}</strong> de
-                                    bonus selon les vues de votre vidéo
-                                </span>
-                            </div>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.88rem', color: '#334155' }}>
+                            <Eye size={16} color="#FF991F" style={{ flexShrink: 0 }} />
+                            <span>
+                                Puis des <strong style={{ color: '#FF991F' }}>bonus selon le nombre de vues</strong> de
+                                votre vidéo
+                            </span>
+                        </div>
                     </div>
 
                     <button

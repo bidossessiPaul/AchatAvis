@@ -188,6 +188,17 @@ export const createVideo = async (req: Request, res: Response): Promise<void> =>
             platforms,
             min_tier_id: min_tier_id ?? null,
         });
+
+        // Campagne email automatique à chaque nouvelle mission vidéo :
+        // guides repost approuvés + 50 plus actifs. En arrière-plan pour ne
+        // pas bloquer la réponse ; le bouton admin sert de relance si échec.
+        if (video.is_active) {
+            const baseUrl = req.headers.origin as string | undefined;
+            repostNotificationService.notifyGuidesForVideo(video, baseUrl)
+                .then(r => console.log(`Campagne auto vidéo "${video.title}" : ${r.sent} emails envoyés`))
+                .catch(e => console.error('Erreur campagne auto vidéo repost:', e.message));
+        }
+
         res.status(201).json({ video });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });

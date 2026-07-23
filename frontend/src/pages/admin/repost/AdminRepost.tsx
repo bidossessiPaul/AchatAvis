@@ -954,7 +954,7 @@ const VideosTab: React.FC = () => {
                 showSuccess('Vidéo mise à jour');
             } else {
                 await adminVideosApi.create(input);
-                showSuccess('Vidéo ajoutée');
+                showSuccess('Vidéo ajoutée', 'Campagne email lancée automatiquement : guides approuvés + 50 plus actifs.');
             }
             setShowModal(false);
             load();
@@ -990,21 +990,21 @@ const VideosTab: React.FC = () => {
 
     const notifyGuides = async (v: RepostVideo) => {
         const r = await showConfirm(
-            'Lancer la campagne email ?',
-            `Jusqu'à 100 guides actifs (connectés < 3 mois, ayant déjà soumis des avis) recevront un email pour "${v.title}". Un guide déjà notifié pour cette vidéo ne recevra jamais de doublon — relancer enverra aux 100 suivants.`
+            'Relancer la campagne email ?',
+            `Les guides repost approuvés pas encore notifiés + les 50 guides actifs suivants recevront un email pour "${v.title}". Un guide déjà notifié pour cette vidéo ne recevra jamais de doublon.`
         );
         if (!r.isConfirmed) return;
         setNotifyingId(v.id);
         try {
             const result = await adminVideosApi.notifyGuides(v.id);
             if (result.sent === 0) {
-                showSuccess('Aucun envoi', `Tous les guides actifs éligibles ont déjà été notifiés (${result.already_notified} au total).`);
+                showSuccess('Aucun envoi', `Tous les guides éligibles ont déjà été notifiés (${result.already_notified} au total).`);
             } else {
                 showSuccess(
                     `${result.sent} email${result.sent > 1 ? 's' : ''} envoyé${result.sent > 1 ? 's' : ''}`,
                     result.remaining > 0
-                        ? `${result.remaining} guides actifs restants — relancez pour notifier les 100 suivants.`
-                        : 'Tous les guides actifs éligibles sont maintenant notifiés.'
+                        ? `${result.remaining} guides actifs restants — relancez pour notifier les 50 suivants.`
+                        : 'Tous les guides éligibles sont maintenant notifiés.'
                 );
             }
         } catch (e: any) {

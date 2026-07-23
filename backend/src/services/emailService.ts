@@ -1347,13 +1347,14 @@ export const sendNewFicheToGuidesEmail = async (
 
 /**
  * Notifie un lot de guides actifs qu'une nouvelle vidéo repost est disponible.
- * Envoi en BCC (un seul sendMail), avec le barème complet des gains :
- * montant de base par palier d'abonnés + bonus maximum selon les vues.
+ * Envoi en BCC (un seul sendMail). La rémunération ne dépend PAS du nombre
+ * d'abonnés : montant de base identique pour tous dès validation du repost,
+ * puis bonus selon le nombre de vues de la vidéo.
  */
 export const sendNewRepostVideoEmail = async (
     guideEmails: string[],
     video: { id: string; title: string; description?: string | null; platforms?: string | null },
-    tiers: { label: string; amount_cents: number; max_view_bonus_cents: number | null }[],
+    baseAmountCents: number,
     baseUrl?: string
 ) => {
     if (guideEmails.length === 0) return;
@@ -1362,20 +1363,6 @@ export const sendNewRepostVideoEmail = async (
     const brandBlack = '#0a0a0a';
     const frontendUrl = baseUrl || emailConfig.frontendUrl;
     const euros = (cents: number) => (cents / 100).toFixed(2).replace('.', ',') + '€';
-
-    const tiersRowsHtml = tiers.map(t => `
-        <tr>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: ${brandBlack}; font-weight: 600;">
-                ${t.label}
-            </td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; text-align: center;">
-                <span style="font-weight: 800; color: #059669; font-size: 15px;">${euros(t.amount_cents)}</span>
-            </td>
-            <td style="padding: 12px 16px; border-bottom: 1px solid #f3f4f6; text-align: center; font-size: 14px; color: #374151;">
-                ${t.max_view_bonus_cents ? `jusqu'à <strong style="color: ${brandOrange};">${euros(t.max_view_bonus_cents)}</strong>` : '—'}
-            </td>
-        </tr>
-    `).join('');
 
     const mailOptions = {
         from: emailConfig.from,
@@ -1429,20 +1416,16 @@ export const sendNewRepostVideoEmail = async (
                                 </div>
                             </div>
 
-                            ${tiers.length > 0 ? `
-                                <div class="section-title">💰 Combien pouvez-vous gagner ?</div>
-                                <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #f3f4f6; border-radius: 12px;">
-                                    <tr>
-                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: left;">Votre compte</th>
-                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: center;">Gain dès le post</th>
-                                        <th style="padding: 12px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: center;">Bonus selon les vues</th>
-                                    </tr>
-                                    ${tiersRowsHtml}
-                                </table>
-                            ` : ''}
+                            <div class="section-title">💰 Combien pouvez-vous gagner ?</div>
+                            <div class="step-box" style="background: #ecfdf5; border: 1px solid #6ee7b7;">
+                                <strong style="color: #059669; font-size: 16px;">${euros(baseAmountCents)}</strong> crédités dès que votre repost est validé — pareil pour tout le monde, peu importe votre compte.
+                            </div>
+                            <div class="step-box" style="background: #fff7ed; border: 1px solid #fdba74;">
+                                Ensuite, <strong>c'est le nombre de vues qui paie</strong> : déclarez régulièrement les vues de votre vidéo, plus elle en fait, plus vous gagnez de bonus.
+                            </div>
 
                             <div class="section-title">🚀 Comment ça marche ?</div>
-                            <div class="step-box"><strong>1.</strong> Ajoutez votre compte TikTok / Instagram (si ce n'est pas déjà fait) — il sera validé selon votre nombre d'abonnés.</div>
+                            <div class="step-box"><strong>1.</strong> Ajoutez votre compte TikTok / Instagram (si ce n'est pas déjà fait).</div>
                             <div class="step-box"><strong>2.</strong> Téléchargez la vidéo, puis <strong>avant de publier</strong> : ajoutez des <strong>sous-titres</strong>, des <strong>stickers</strong>, et le <strong>lien du site sur la vidéo</strong> ainsi qu'en <strong>premier commentaire</strong>.</div>
                             <div class="step-box"><strong>3.</strong> Publiez la vidéo et envoyez la preuve (lien + capture). Votre gain de base est crédité dès validation.</div>
                             <div class="step-box"><strong>4.</strong> Après publication, <strong>répondez aux questions dans les commentaires</strong> de votre vidéo, et déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>

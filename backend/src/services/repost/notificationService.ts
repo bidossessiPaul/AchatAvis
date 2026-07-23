@@ -1,9 +1,10 @@
 // Notification email des guides lors du lancement d'une campagne vidéo.
-// Règles métier :
-//   - Cible uniquement les guides "actifs" : dernière connexion < 3 mois
-//     ET au moins un avis déjà soumis (habitude de contribuer).
-//   - Maximum 100 emails par lancement (base > 3000 guides). Chaque relance
-//     envoie aux 100 guides actifs suivants jamais notifiés pour cette vidéo
+// Règles métier (validées par Maxime, juillet 2026) :
+//   - Cible = TOUS les guides avec un compte repost approuvé
+//     + les 50 guides les plus actifs (dernière connexion < 3 mois,
+//     au moins un avis déjà soumis, hors approuvés déjà comptés).
+//   - Envoi AUTOMATIQUE à la création d'une vidéo active ; le bouton admin
+//     sert de relance et envoie aux 50 actifs suivants jamais notifiés
 //     (déduplication via repost_video_notifications).
 //   - Les plus récemment actifs sont servis en premier.
 
@@ -12,31 +13,34 @@ import { query } from '../../config/database';
 import { sendNewRepostVideoEmail } from '../emailService';
 import { RepostVideo } from '../../types/repost';
 
-const BATCH_LIMIT = 100;
+const ACTIVE_BATCH_LIMIT = 50;
 
-/** Barème affiché dans l'email : gain de base + bonus vues max par palier actif. */
-const getEarningsTable = async () => {
+/**
+ * Montant de base affiché dans l'email. La rémunération ne dépend pas du
+ * nombre d'abonnés : même montant pour tous (0,10€ actuellement), le reste
+ * se joue sur les vues. On prend le minimum des paliers actifs par prudence.
+ */
+const getBaseAmountCents = async (): Promise<number> => {
     const rows: any = await query(`
-        SELECT t.label, t.amount_cents,
-               (SELECT MAX(v.amount_cents)
-                FROM repost_view_tiers v
-                WHERE v.subscriber_tier_id = t.id
-                  AND v.deleted_at IS NULL AND v.is_active = 1) as max_view_bonus_cents
-        FROM repost_tiers t
-        WHERE t.deleted_at IS NULL AND t.is_active = 1
-        ORDER BY t.sort_order, t.min_followers
+        SELECT MIN(amount_cents) as base
+        FROM repost_tiers
+        WHERE deleted_at IS NULL AND is_active = 1
     `);
-    return rows as { label: string; amount_cents: number; max_view_bonus_cents: number | null }[];
+    return Number(rows[0]?.base || 10);
 };
 
-/** Condition SQL commune : guides actifs éligibles pas encore notifiés pour la vidéo. */
-const ELIGIBLE_WHERE = `
+/** Guides actifs éligibles (hors approuvés repost) pas encore notifiés pour la vidéo. */
+const ACTIVE_WHERE = `
     u.role = 'guide'
     AND u.status = 'active'
     AND u.deleted_at IS NULL
     AND u.last_login IS NOT NULL
     AND u.last_login >= (UTC_TIMESTAMP() - INTERVAL 3 MONTH)
     AND EXISTS (SELECT 1 FROM reviews_submissions s WHERE s.guide_id = u.id)
+    AND NOT EXISTS (
+        SELECT 1 FROM repost_accounts a
+        WHERE a.guide_id = u.id AND a.status = 'approved' AND a.deleted_at IS NULL
+    )
     AND NOT EXISTS (
         SELECT 1 FROM repost_video_notifications n
         WHERE n.video_id = ? AND n.guide_id = u.id
@@ -47,11 +51,35 @@ export const notifyGuidesForVideo = async (
     video: RepostVideo,
     baseUrl?: string
 ): Promise<{ sent: number; remaining: number; already_notified: number }> => {
-    const eligibleCountRows: any = await query(
-        `SELECT COUNT(*) as total FROM users u WHERE ${ELIGIBLE_WHERE}`,
+    // 1. Tous les guides avec un compte repost approuvé, pas encore notifiés
+    const approved: any = await query(
+        `SELECT DISTINCT u.id, u.email
+         FROM repost_accounts a
+         JOIN users u ON u.id = a.guide_id
+         WHERE a.status = 'approved' AND a.deleted_at IS NULL
+           AND u.deleted_at IS NULL AND u.status = 'active'
+           AND NOT EXISTS (
+               SELECT 1 FROM repost_video_notifications n
+               WHERE n.video_id = ? AND n.guide_id = u.id
+           )`,
         [video.id]
     );
-    const eligibleTotal = Number(eligibleCountRows[0]?.total || 0);
+
+    // 2. Les 50 guides les plus actifs (hors approuvés), pas encore notifiés
+    // Gotcha mysql2 : LIMIT non paramétrable avec query() → entier inliné
+    const actives: any = await query(
+        `SELECT u.id, u.email FROM users u
+         WHERE ${ACTIVE_WHERE}
+         ORDER BY u.last_login DESC
+         LIMIT ${ACTIVE_BATCH_LIMIT}`,
+        [video.id]
+    );
+
+    const activesTotalRows: any = await query(
+        `SELECT COUNT(*) as total FROM users u WHERE ${ACTIVE_WHERE}`,
+        [video.id]
+    );
+    const activesTotal = Number(activesTotalRows[0]?.total || 0);
 
     const alreadyRows: any = await query(
         `SELECT COUNT(*) as total FROM repost_video_notifications WHERE video_id = ?`,
@@ -59,24 +87,16 @@ export const notifyGuidesForVideo = async (
     );
     const alreadyNotified = Number(alreadyRows[0]?.total || 0);
 
-    if (eligibleTotal === 0) {
+    const guides = [...approved, ...actives];
+    if (guides.length === 0) {
         return { sent: 0, remaining: 0, already_notified: alreadyNotified };
     }
 
-    // Gotcha mysql2 : LIMIT non paramétrable avec query() → entier inliné
-    const guides: any = await query(
-        `SELECT u.id, u.email FROM users u
-         WHERE ${ELIGIBLE_WHERE}
-         ORDER BY u.last_login DESC
-         LIMIT ${BATCH_LIMIT}`,
-        [video.id]
-    );
-
-    const tiers = await getEarningsTable();
+    const baseAmountCents = await getBaseAmountCents();
     await sendNewRepostVideoEmail(
         guides.map((g: any) => g.email),
         video,
-        tiers,
+        baseAmountCents,
         baseUrl
     );
 
@@ -91,7 +111,7 @@ export const notifyGuidesForVideo = async (
 
     return {
         sent: guides.length,
-        remaining: Math.max(0, eligibleTotal - guides.length),
+        remaining: Math.max(0, activesTotal - actives.length),
         already_notified: alreadyNotified,
     };
 };
