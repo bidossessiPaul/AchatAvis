@@ -1389,7 +1389,7 @@ export const sendNewRepostVideoEmail = async (
                 <style>
                     .container { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 40px 20px; }
                     .card { background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 2px solid ${brandBlack}; }
-                    .header { background-color: ${brandBlack}; color: white; padding: 32px; text-align: center; }
+                    .header { background-color: #e2e8f0; color: ${brandBlack}; padding: 32px; text-align: center; }
                     .title { font-size: 22px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em; }
                     .content { padding: 32px; }
                     .text { font-size: 16px; color: #374151; line-height: 1.6; }
@@ -1443,8 +1443,9 @@ export const sendNewRepostVideoEmail = async (
 
                             <div class="section-title">🚀 Comment ça marche ?</div>
                             <div class="step-box"><strong>1.</strong> Ajoutez votre compte TikTok / Instagram (si ce n'est pas déjà fait) — il sera validé selon votre nombre d'abonnés.</div>
-                            <div class="step-box"><strong>2.</strong> Téléchargez la vidéo, publiez-la sur votre compte et envoyez la preuve (lien + capture).</div>
-                            <div class="step-box"><strong>3.</strong> Votre gain de base est crédité dès validation. Ensuite, déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>
+                            <div class="step-box"><strong>2.</strong> Téléchargez la vidéo, puis <strong>avant de publier</strong> : ajoutez des <strong>sous-titres</strong>, des <strong>stickers</strong>, et le <strong>lien du site sur la vidéo</strong> ainsi qu'en <strong>premier commentaire</strong>.</div>
+                            <div class="step-box"><strong>3.</strong> Publiez la vidéo et envoyez la preuve (lien + capture). Votre gain de base est crédité dès validation.</div>
+                            <div class="step-box"><strong>4.</strong> Après publication, <strong>répondez aux questions dans les commentaires</strong> de votre vidéo, et déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>
 
                             <div style="text-align: center; margin-top: 32px;">
                                 <a href="${frontendUrl}/guide/repost" class="btn-primary" style="background-color: ${brandBlack};">
