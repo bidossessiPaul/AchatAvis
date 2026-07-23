@@ -1418,16 +1418,34 @@ export const sendNewRepostVideoEmail = async (
 
                             <div class="section-title">💰 Combien pouvez-vous gagner ?</div>
                             <div class="step-box" style="background: #ecfdf5; border: 1px solid #6ee7b7;">
-                                <strong style="color: #059669; font-size: 16px;">${euros(baseAmountCents)}</strong> crédités dès que votre repost est validé — pareil pour tout le monde, peu importe votre compte.
+                                <strong style="color: #059669; font-size: 16px;">${euros(baseAmountCents)}</strong> par partage validé — et vous pouvez publier <strong>la même vidéo jusqu'à 30 fois par compte</strong>.
                             </div>
+                            <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #f3f4f6; border-radius: 12px; margin: 12px 0;">
+                                <tr>
+                                    <th style="padding: 10px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: left;">Partages</th>
+                                    <th style="padding: 10px 16px; background: #f8fafc; font-size: 12px; text-transform: uppercase; color: #64748b; text-align: right;">Gain</th>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px;">10 partages</td>
+                                    <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6; text-align: right;"><strong style="color: #059669;">${euros(baseAmountCents * 10)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6; font-size: 14px;">30 partages (max par compte)</td>
+                                    <td style="padding: 10px 16px; border-bottom: 1px solid #f3f4f6; text-align: right;"><strong style="color: #059669;">${euros(baseAmountCents * 30)}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 10px 16px; font-size: 14px;">~100 partages sur 3 comptes</td>
+                                    <td style="padding: 10px 16px; text-align: right;"><strong style="color: #059669;">~${euros(baseAmountCents * 100)}</strong></td>
+                                </tr>
+                            </table>
                             <div class="step-box" style="background: #fff7ed; border: 1px solid #fdba74;">
-                                Ensuite, <strong>c'est le nombre de vues qui paie</strong> : déclarez régulièrement les vues de votre vidéo, plus elle en fait, plus vous gagnez de bonus.
+                                Ensuite, <strong>c'est le nombre de vues qui paie</strong> : déclarez régulièrement les vues de vos vidéos, plus elles en font, plus vous gagnez de bonus.
                             </div>
 
                             <div class="section-title">🚀 Comment ça marche ?</div>
-                            <div class="step-box"><strong>1.</strong> Ajoutez votre compte TikTok / Instagram (si ce n'est pas déjà fait).</div>
+                            <div class="step-box"><strong>1.</strong> <strong>Créez un compte fan dédié</strong> TikTok / Instagram (pas votre compte perso) dont le nom inclut <strong>achatavis</strong> — ex : <strong>@achatavis_fan</strong>, <strong>@achatavis_club</strong>, <strong>@achatavis_top</strong> — puis ajoutez-le sur la plateforme.</div>
                             <div class="step-box"><strong>2.</strong> Téléchargez la vidéo, puis <strong>avant de publier</strong> : ajoutez des <strong>sous-titres</strong>, des <strong>stickers</strong>, et le <strong>lien du site sur la vidéo</strong> ainsi qu'en <strong>premier commentaire</strong>.</div>
-                            <div class="step-box"><strong>3.</strong> Publiez la vidéo et envoyez la preuve (lien + capture). Votre gain de base est crédité dès validation.</div>
+                            <div class="step-box"><strong>3.</strong> Publiez la vidéo et envoyez la preuve (lien + capture). Chaque partage validé est payé — <strong>jusqu'à 30 fois la même vidéo par compte</strong>, et vous pouvez avoir plusieurs comptes.</div>
                             <div class="step-box"><strong>4.</strong> Après publication, <strong>répondez aux questions dans les commentaires</strong> de votre vidéo, et déclarez vos vues régulièrement : plus votre vidéo fait de vues, plus vous gagnez.</div>
 
                             <div style="text-align: center; margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 12px;">
