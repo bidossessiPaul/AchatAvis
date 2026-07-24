@@ -585,8 +585,8 @@ export const adminApi = {
         return response.data;
     },
 
-    approveIdentityVerification: async (id: string): Promise<{ message: string }> => {
-        const response = await api.post(`/admin/identity-verifications/${id}/approve`);
+    approveIdentityVerification: async (id: string, guideType: 'africa' | 'europe' = 'africa'): Promise<{ message: string }> => {
+        const response = await api.post(`/admin/identity-verifications/${id}/approve`, { guideType });
         return response.data;
     },
 

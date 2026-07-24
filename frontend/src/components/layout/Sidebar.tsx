@@ -74,6 +74,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
                 ];
             case 'guide':
+                // Guide Europe (Repost uniquement) : menu réduit, pas de fiches ni d'avis.
+                if (user.guide_type === 'europe') {
+                    return [
+                        { label: 'Repost Social', path: '/guide/repost', icon: <Repeat2 size={20} /> },
+                        { label: 'Communiqués', path: '/guide/communiques', icon: <Megaphone size={20} /> },
+                        { label: 'Mon profil', path: '/profile', icon: <User size={20} /> },
+                    ];
+                }
                 return [
                     { label: 'Tableau de bord', path: '/guide', icon: <LayoutDashboard size={20} /> },
                     { label: 'Toutes les fiches', path: '/guide/fiches', icon: <MapPin size={20} /> },

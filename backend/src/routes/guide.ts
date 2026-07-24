@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { guideController } from '../controllers/guideController';
 import { trainingController } from '../controllers/trainingController';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate, authorize, blockRepostOnlyGuide } from '../middleware/auth';
 import { uploadScreenshot } from '../middleware/upload';
 
 const router = Router();
@@ -17,6 +17,10 @@ router.get('/training', trainingController.getContent);
 router.get('/training/status', trainingController.getStatus);
 router.post('/training/submit', trainingController.submit);
 router.post('/training/submit-video', trainingController.submitVideo);
+
+// À partir d'ici : fonctionnalités avis (fiches, soumissions, gains...) réservées
+// aux guides Afrique. Les guides Europe (Repost uniquement) reçoivent un 403.
+router.use(blockRepostOnlyGuide);
 
 router.get('/fiches/available', guideController.getAvailablefiches);
 router.get('/fiches/:id/warmup', guideController.getWarmup);

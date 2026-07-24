@@ -17,6 +17,10 @@ interface ProtectedRouteProps {
 const AUTH_REVALIDATE_INTERVAL_MS = 60 * 1000;
 let lastAuthCheckAt = 0;
 
+// Pages autorisées pour un guide Europe (Repost uniquement). Toute autre route
+// guide le renvoie vers /guide/repost. Profil et communiqués restent accessibles.
+const EUROPE_GUIDE_ALLOWED_PATHS = ['/guide/repost', '/profile', '/guide/communiques'];
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
     const { isAuthenticated, user, isLoading, checkAuth } = useAuthStore();
     const location = useLocation();
@@ -54,11 +58,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, ch
         }
     }
 
+    // Guide Europe (Repost uniquement) : restreint à un sous-ensemble de pages.
+    // Toute autre route guide est renvoyée vers le Repost. S'applique uniquement
+    // aux guides actifs classés 'europe' (les autres gardent l'accès complet).
+    if (user?.role === 'guide' && user?.guide_type === 'europe') {
+        const allowed = EUROPE_GUIDE_ALLOWED_PATHS.some(
+            p => location.pathname === p || location.pathname.startsWith(p + '/')
+        );
+        if (!allowed) {
+            return <Navigate to="/guide/repost" replace />;
+        }
+    }
+
     if (allowedRoles && user && !allowedRoles.includes(user.role)) {
         // Role based access control
         // Redirect to appropriate dashboard based on actual role
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;
-        if (user.role === 'guide') return <Navigate to="/guide" replace />;
+        if (user.role === 'guide') return <Navigate to={user.guide_type === 'europe' ? '/guide/repost' : '/guide'} replace />;
         if (user.role === 'admin') return <Navigate to={pickAdminLandingRoute(user)} replace />;
         return <Navigate to="/" replace />;
     }
@@ -83,7 +99,7 @@ export const PublicRoute: React.FC<{ children?: React.ReactNode }> = ({ children
             return <Navigate to="/identity-verification" replace />;
         }
         if (user.role === 'artisan') return <Navigate to="/artisan" replace />;
-        if (user.role === 'guide') return <Navigate to="/guide" replace />;
+        if (user.role === 'guide') return <Navigate to={user.guide_type === 'europe' ? '/guide/repost' : '/guide'} replace />;
         if (user.role === 'admin') return <Navigate to={pickAdminLandingRoute(user)} replace />;
         return <Navigate to="/" replace />;
     }

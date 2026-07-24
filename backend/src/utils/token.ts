@@ -7,6 +7,10 @@ export interface TokenPayload {
     role: 'artisan' | 'guide' | 'admin';
     status: 'pending' | 'active' | 'suspended' | 'rejected';
     permissions?: any;
+    // Groupe du guide local : 'africa' (accès complet) | 'europe' (Repost uniquement).
+    // Non signé dans le JWT : rattaché à chaud par le middleware authenticate
+    // depuis la DB (frais à 30s près, invalidé immédiatement au déplacement).
+    guideType?: 'africa' | 'europe' | null;
 }
 
 /**

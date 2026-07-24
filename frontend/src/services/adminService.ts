@@ -71,6 +71,14 @@ export const adminService = {
     },
 
     /**
+     * Déplace un guide entre les groupes Afrique / Europe (Repost uniquement)
+     */
+    setGuideType: async (userId: string, guideType: 'africa' | 'europe') => {
+        const response = await api.patch(`/admin/guides/${userId}/guide-type`, { guideType });
+        return response.data;
+    },
+
+    /**
      * Update user status (block/unblock)
      */
     updateUserStatus: async (userId: string, status: string, reason?: string) => {

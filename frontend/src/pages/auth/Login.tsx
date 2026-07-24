@@ -103,7 +103,8 @@ export const Login: React.FC = () => {
             return;
         }
         if (user.role === 'guide') {
-            navigate('/guide');
+            // Guide Europe (Repost uniquement) : atterrit directement sur le Repost
+            navigate(user.guide_type === 'europe' ? '/guide/repost' : '/guide');
             return;
         }
         if (user.role === 'admin') {

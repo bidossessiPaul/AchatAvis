@@ -33,6 +33,7 @@ interface StatusCacheEntry {
     status: string;
     suspension_reason: string | null;
     permissions: any;
+    guide_type: string | null;
     expiresAt: number;
 }
 
@@ -124,17 +125,19 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         let userStatus: string;
         let suspensionReason: string | null;
         let freshPermissions: any = null;
+        let guideType: string | null = null;
 
         if (cached && cached.expiresAt > now) {
             // Cache hit: skip the SELECT entirely
             userStatus = cached.status;
             suspensionReason = cached.suspension_reason;
             freshPermissions = cached.permissions;
+            guideType = cached.guide_type;
         } else {
             // Cache miss or expired: fetch from DB
             const { query } = await import('../config/database');
             const rows: any = await query(
-                'SELECT status, suspension_reason, detected_ip, permissions FROM users WHERE id = ? AND deleted_at IS NULL',
+                'SELECT status, suspension_reason, detected_ip, permissions, guide_type FROM users WHERE id = ? AND deleted_at IS NULL',
                 [payload.userId]
             );
 
@@ -145,6 +148,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
             userStatus = rows[0].status;
             suspensionReason = rows[0].suspension_reason || null;
+            guideType = rows[0].guide_type || null;
             // Parse permissions JSON column for live permission checks
             try {
                 freshPermissions = typeof rows[0].permissions === 'string'
@@ -161,6 +165,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
                 status: userStatus,
                 suspension_reason: suspensionReason,
                 permissions: freshPermissions,
+                guide_type: guideType,
                 expiresAt: now + STATUS_TTL_MS,
             });
             pruneIfNeeded(statusCache);
@@ -171,6 +176,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         // Owner is left untouched (full access via email check downstream).
         if (req.user && payload.role === 'admin' && payload.email !== 'dossoumaxime888@gmail.com') {
             req.user.permissions = freshPermissions || {};
+        }
+
+        // Rattache le groupe du guide (frais DB) pour l'enforcement de blockRepostOnlyGuide.
+        if (req.user) {
+            req.user.guideType = (guideType === 'europe' ? 'europe' : guideType === 'africa' ? 'africa' : null);
         }
 
         // Enforce suspension in real-time (still respected thanks to short TTL).
@@ -266,6 +276,24 @@ export const authorize = (...allowedRoles: ('artisan' | 'guide' | 'admin')[]) =>
 
         return next();
     };
+};
+
+/**
+ * Bloque les guides du groupe 'europe' (Repost uniquement) sur les fonctionnalités
+ * réservées aux guides 'africa' (fiches, avis, signalement...). À monter APRÈS
+ * authenticate (qui rattache req.user.guideType frais depuis la DB).
+ *
+ * Défense en profondeur : le frontend cache déjà ces pages, mais le backend doit
+ * refuser la requête. Un guide 'africa' ou non classé (NULL) passe normalement.
+ */
+export const blockRepostOnlyGuide = (req: Request, res: Response, next: NextFunction) => {
+    if (req.user?.role === 'guide' && req.user?.guideType === 'europe') {
+        return res.status(403).json({
+            error: 'Votre compte est limité au Repost vidéo. Cette fonctionnalité est réservée aux guides Afrique.',
+            code: 'REPOST_ONLY_GUIDE',
+        });
+    }
+    return next();
 };
 
 /**

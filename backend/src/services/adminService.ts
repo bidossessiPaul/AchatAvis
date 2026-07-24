@@ -218,8 +218,8 @@ export const getArtisanDetail = async (userId: string) => {
  */
 export const getGuideDetail = async (userId: string) => {
     const profile: any = await query(`
-        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.created_at, u.last_login, u.last_seen,
-               gp.google_email, gp.local_guide_level, gp.total_reviews_count, 
+        SELECT u.id, u.email, u.full_name, u.avatar_url, u.status, u.guide_type, u.created_at, u.last_login, u.last_seen,
+               gp.google_email, gp.local_guide_level, gp.total_reviews_count,
                gp.phone, gp.whatsapp_number, gp.city,
                gp.preferred_payout_method, gp.payout_details
         FROM users u
@@ -283,6 +283,22 @@ export const getGuideDetail = async (userId: string) => {
         stats: stats[0],
         compliance_data: complianceData
     };
+};
+
+/**
+ * Déplace un guide d'un groupe à l'autre ('africa' <-> 'europe') depuis la fiche
+ * détail admin. Sert à corriger un mauvais classement fait à la validation KYC.
+ * Invalide les caches d'auth pour que la restriction prenne effet immédiatement.
+ */
+export const setGuideType = async (userId: string, guideType: 'africa' | 'europe') => {
+    const normalized = guideType === 'europe' ? 'europe' : 'africa';
+    await query(
+        `UPDATE users SET guide_type = ? WHERE id = ? AND role = 'guide'`,
+        [normalized, userId]
+    );
+    const { invalidateAuthCache } = await import('../middleware/auth');
+    invalidateAuthCache(userId);
+    return { user_id: userId, guide_type: normalized };
 };
 
 /**

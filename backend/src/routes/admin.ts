@@ -64,6 +64,7 @@ router.get('/guides', USERS, adminController.getGuides);
 router.post('/guides/create', USERS, adminController.createGuide);
 router.get('/guides/:userId', USERS, adminController.getGuideDetail);
 router.patch('/guides/:userId', USERS, adminController.updateGuide);
+router.patch('/guides/:userId/guide-type', USERS, adminController.setGuideType);
 router.post('/guides/:userId/unblock-bad-links', USERS, adminController.unblockBadLinkGuide);
 
 // Users management

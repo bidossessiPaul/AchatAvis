@@ -19,7 +19,10 @@ import {
     MessageCircle,
     LogIn,
     ShieldOff,
-    AlertTriangle
+    AlertTriangle,
+    Globe,
+    Repeat2,
+    ArrowLeftRight
 } from 'lucide-react';
 import { ComplianceWidget } from '../../components/AntiDetection/ComplianceWidget';
 import { getFileUrl } from '../../utils/url';
@@ -58,6 +61,7 @@ interface GuideProfile {
     city: string;
     preferred_payout_method?: string;
     payout_details?: any;
+    guide_type?: 'africa' | 'europe' | null;
 }
 
 interface GmailAccount {
@@ -218,6 +222,29 @@ export const GuideDetail: React.FC = () => {
             loadData();
         } catch (error) {
             showError('Mise à jour impossible', 'Erreur lors de la mise à jour');
+        }
+    };
+
+    // Déplace le guide entre les groupes Afrique (accès complet) et Europe (Repost only).
+    // Sert à corriger un mauvais classement fait lors de la validation KYC.
+    const handleMoveGuideType = async (target: 'africa' | 'europe') => {
+        const label = target === 'europe'
+            ? 'Europe / France (Repost vidéo uniquement)'
+            : 'Afrique (accès complet)';
+        const detail = target === 'europe'
+            ? 'Il perdra l\'accès aux fiches, aux avis et au tableau de bord standard. Seul le Repost vidéo restera disponible.'
+            : 'Il retrouvera l\'accès complet à toutes les fonctionnalités guide.';
+        const confirmResult = await showConfirm(
+            'Déplacer ce guide ?',
+            `${profile?.full_name} sera déplacé vers le groupe ${label}. ${detail} Le changement prend effet à sa prochaine reconnexion / actualisation.`
+        );
+        if (!confirmResult.isConfirmed) return;
+        try {
+            await adminService.setGuideType(id!, target);
+            showSuccess('Guide déplacé', `Nouveau groupe : ${label}`);
+            loadData();
+        } catch (error) {
+            showError('Déplacement impossible', 'Erreur lors du déplacement du guide');
         }
     };
 
@@ -825,6 +852,32 @@ export const GuideDetail: React.FC = () => {
                                         </div>
                                     </>
                                 )}
+
+                                {/* Groupe du guide : Afrique (complet) ou Europe (Repost only) */}
+                                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '0.85rem', marginTop: '0.15rem' }}>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: '0.55rem', letterSpacing: '0.02em' }}>
+                                        Groupe du guide
+                                    </div>
+                                    <div style={{ marginBottom: '0.6rem' }}>
+                                        {profile.guide_type === 'europe' ? (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '0.3rem 0.65rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, background: '#e0f2fe', color: '#0369a1' }}>
+                                                <Repeat2 size={13} /> Europe / France — Repost uniquement
+                                            </span>
+                                        ) : (
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '0.3rem 0.65rem', borderRadius: '1rem', fontSize: '0.72rem', fontWeight: 700, background: '#dcfce7', color: '#166534' }}>
+                                                <Globe size={13} /> Afrique — accès complet
+                                            </span>
+                                        )}
+                                    </div>
+                                    <button
+                                        onClick={() => handleMoveGuideType(profile.guide_type === 'europe' ? 'africa' : 'europe')}
+                                        className="premium-action-btn"
+                                        style={{ background: '#eef2ff', color: '#4338ca', border: '1px solid #e0e7ff', fontWeight: 700, width: '100%' }}
+                                    >
+                                        <ArrowLeftRight size={16} />
+                                        Déplacer vers {profile.guide_type === 'europe' ? 'Afrique (accès complet)' : 'Europe (Repost uniquement)'}
+                                    </button>
+                                </div>
 
                                 <button onClick={() => showError('Attention', 'La suppression définitive est irréversible.')} className="premium-action-btn delete" >
                                     <Trash2 size={18} />

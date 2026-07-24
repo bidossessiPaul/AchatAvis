@@ -7,6 +7,9 @@ export interface User {
     role: 'artisan' | 'guide' | 'admin';
     status: 'pending' | 'active' | 'suspended' | 'rejected';
     suspension_reason?: string | null;
+    // Groupe du guide local (défini à la validation KYC) :
+    // 'africa' ou null = accès complet ; 'europe' = Repost vidéo uniquement.
+    guide_type?: 'africa' | 'europe' | null;
     email_verified: boolean;
     created_at: string;
     updated_at: string;

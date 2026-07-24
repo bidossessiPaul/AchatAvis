@@ -56,7 +56,8 @@ export const adminList = async (req: Request, res: Response) => {
 export const adminApprove = async (req: Request, res: Response) => {
     try {
         if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
-        const result = await service.approveVerification(req.params.id, req.user.userId);
+        const guideType = req.body?.guideType === 'europe' ? 'europe' : 'africa';
+        const result = await service.approveVerification(req.params.id, req.user.userId, guideType);
         return res.json({ message: 'Compte réactivé', ...result });
     } catch (err: any) {
         return res.status(400).json({ error: err.message || 'Erreur serveur' });

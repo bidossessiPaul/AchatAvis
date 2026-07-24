@@ -1,13 +1,15 @@
 // Routes guide : éligibilité, file dispo, réservation slot, soumission preuve.
 
 import express from 'express';
-import { authenticate, authorize } from '../../middleware/auth';
+import { authenticate, authorize, blockRepostOnlyGuide } from '../../middleware/auth';
 import { uploadScreenshot } from '../../middleware/upload';
 import * as guideController from '../../controllers/signalement/guideController';
 
 const router = express.Router();
 
-router.use(authenticate, authorize('guide'));
+// Signalement = fonctionnalité avis, réservée aux guides Afrique.
+// Les guides Europe (Repost uniquement) sont bloqués (403).
+router.use(authenticate, authorize('guide'), blockRepostOnlyGuide);
 
 router.get('/eligibility', guideController.eligibility);
 router.get('/avis-disponibles', guideController.listAvailable);

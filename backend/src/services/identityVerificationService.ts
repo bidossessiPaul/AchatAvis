@@ -116,8 +116,15 @@ export const listVerifications = async (status?: string) => {
 
 /**
  * Admin: approve a verification — reactivates the user's account.
+ *
+ * `guideType` classe le guide lors de la validation :
+ *   'africa' = accès complet (défaut) | 'europe' = Repost vidéo uniquement.
  */
-export const approveVerification = async (verificationId: string, adminId: string) => {
+export const approveVerification = async (
+    verificationId: string,
+    adminId: string,
+    guideType?: 'africa' | 'europe'
+) => {
     const rows: any = await query(
         `SELECT * FROM identity_verifications WHERE id = ?`,
         [verificationId]
@@ -126,6 +133,9 @@ export const approveVerification = async (verificationId: string, adminId: strin
     if (!verif) throw new Error('Verification not found');
     if (verif.status !== 'pending') throw new Error('Verification already processed');
 
+    // Par défaut 'africa' (accès complet) si l'admin n'a pas précisé le groupe.
+    const normalizedType = guideType === 'europe' ? 'europe' : 'africa';
+
     await query(
         `UPDATE identity_verifications
          SET status = 'approved', reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP
@@ -133,7 +143,7 @@ export const approveVerification = async (verificationId: string, adminId: strin
         [adminId, verificationId]
     );
 
-    // Reactivate user account.
+    // Reactivate user account + classe le guide dans son groupe.
     // IMPORTANT : on reset aussi fiches_viewed à 0. Sans ça, le check
     // anti-scraping (5 vues + 0 submission = suspendre) re-déclenche dès que
     // le guide consulte une nouvelle fiche, même après approbation KYC —
@@ -142,14 +152,15 @@ export const approveVerification = async (verificationId: string, adminId: strin
         `UPDATE users
          SET status = 'active',
              suspension_reason = NULL,
-             fiches_viewed = 0
+             fiches_viewed = 0,
+             guide_type = ?
          WHERE id = ?`,
-        [verif.user_id]
+        [normalizedType, verif.user_id]
     );
 
     invalidateAuthCache(verif.user_id);
 
-    return { user_id: verif.user_id };
+    return { user_id: verif.user_id, guide_type: normalizedType };
 };
 
 /**

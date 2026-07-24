@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw } from 'lucide-react';
-import { showConfirm, showSuccess, showError } from '../../utils/Swal';
+import { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../context/authStore';
 import './AdminLists.css';
@@ -62,14 +62,62 @@ export const IdentityVerifications: React.FC = () => {
     useEffect(() => { load(); }, [filter]);
 
     const handleApprove = async (v: Verification) => {
-        const r = await showConfirm(
-            'Valider ce compte ?',
-            `Le compte de ${v.full_name || v.email} sera réactivé immédiatement.`
-        );
-        if (!r.isConfirmed) return;
+        const who = v.full_name || v.email;
+        const Swal = (await import('sweetalert2')).default;
+
+        // Étape 1 : classer le guide dans son groupe (Afrique = complet / Europe = Repost only)
+        const choice = await Swal.fire({
+            title: 'Valider et classer ce guide',
+            html: `<div style="text-align:left;font-size:0.9rem">
+                    <p>Le compte de <strong>${who}</strong> sera validé et réactivé.</p>
+                    <p style="margin-top:0.75rem">Dans quel groupe le classer ?</p>
+                    <ul style="margin:0.5rem 0 0;padding-left:1.1rem;color:#475569;font-size:0.82rem;line-height:1.55">
+                        <li><strong>Afrique</strong> : accès complet (fiches, avis, gains, Repost...)</li>
+                        <li><strong>Europe / France</strong> : <strong>Repost vidéo uniquement</strong>, aucun accès aux fiches ni aux avis</li>
+                    </ul>
+                </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonText: 'Afrique — accès complet',
+            denyButtonText: 'Europe / France — Repost',
+            cancelButtonText: 'Annuler',
+            confirmButtonColor: '#059669',
+            denyButtonColor: '#0369a1',
+        });
+
+        let guideType: 'africa' | 'europe';
+        if (choice.isConfirmed) {
+            guideType = 'africa';
+        } else if (choice.isDenied) {
+            // Étape 2 : double confirmation pour le classement Europe (accès très restreint)
+            const confirmEurope = await Swal.fire({
+                title: 'Confirmer : guide Europe / France ?',
+                html: `<div style="text-align:left;font-size:0.9rem">
+                        <p><strong>${who}</strong> n'aura accès qu'à la fonctionnalité <strong>Repost vidéo</strong>.</p>
+                        <p>Il ne verra ni les fiches, ni les avis, ni le tableau de bord standard des guides.</p>
+                        <p style="margin-top:0.75rem;color:#b45309;font-weight:600">Es-tu sûr que c'est bien un guide français / Europe ?</p>
+                    </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Oui, c\'est un guide Europe',
+                cancelButtonText: 'Non, revenir en arrière',
+                confirmButtonColor: '#0369a1',
+            });
+            if (!confirmEurope.isConfirmed) return;
+            guideType = 'europe';
+        } else {
+            return; // annulé
+        }
+
         try {
-            await adminApi.approveIdentityVerification(v.id);
-            showSuccess('Validé', 'Le compte a été réactivé');
+            await adminApi.approveIdentityVerification(v.id, guideType);
+            showSuccess(
+                'Validé',
+                guideType === 'europe'
+                    ? 'Guide classé Europe (Repost uniquement) et activé'
+                    : 'Guide classé Afrique (accès complet) et activé'
+            );
             load();
         } catch (e: any) {
             showError('Validation impossible', e?.response?.data?.error || 'Validation impossible');

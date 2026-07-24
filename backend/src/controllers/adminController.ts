@@ -711,6 +711,25 @@ export const updateGuide = async (req: Request, res: Response) => {
 };
 
 /**
+ * Déplace un guide entre les groupes Afrique / Europe.
+ * PATCH /api/admin/guides/:userId/guide-type  body: { guideType: 'africa' | 'europe' }
+ */
+export const setGuideType = async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { guideType } = req.body;
+    if (guideType !== 'africa' && guideType !== 'europe') {
+        return res.status(400).json({ error: 'Type de guide invalide (africa ou europe attendu)' });
+    }
+    try {
+        const result = await adminService.setGuideType(userId, guideType);
+        return res.json(result);
+    } catch (error: any) {
+        console.error('Set guide type error:', error);
+        return res.status(500).json({ error: error.message || 'Internal server error' });
+    }
+};
+
+/**
  * Get all sectors
  * GET /api/admin/sectors
  */
