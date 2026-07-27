@@ -425,6 +425,7 @@ const AccountsTab: React.FC = () => {
                             <th>Plateforme</th>
                             <th>Abonnés déclarés</th>
                             <th>Palier</th>
+                            <th>Déclaré le</th>
                             <th>Preuve</th>
                             <th>Statut</th>
                             <th>Actions</th>
@@ -442,6 +443,9 @@ const AccountsTab: React.FC = () => {
                                     <td>{acc.platform}</td>
                                     <td style={{ fontWeight: 700 }}>{acc.claimed_followers_count.toLocaleString('fr-FR')}</td>
                                     <td>{acc.status === 'approved' ? tierLabel(acc.tier_id) : <span style={{ color: '#94a3b8' }}>—</span>}</td>
+                                    <td style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#64748b' }}>
+                                        {formatDateTime(acc.created_at)}
+                                    </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                                             <button className="repost-icon-btn" onClick={() => setPreviewUrl(acc.screenshot_url)}><ImageIcon size={14} /></button>
@@ -458,7 +462,7 @@ const AccountsTab: React.FC = () => {
                             );
                         })}
                         {accounts.length === 0 && (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucun compte</td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucun compte</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -542,6 +546,7 @@ const SubmissionsTab: React.FC = () => {
                             <th>Guide</th>
                             <th>Vidéo</th>
                             <th>Plateforme</th>
+                            <th>Soumis le</th>
                             <th>Preuve</th>
                             <th>Base</th>
                             <th>Vues déclarées</th>
@@ -558,6 +563,9 @@ const SubmissionsTab: React.FC = () => {
                                 </td>
                                 <td>{s.video_title}</td>
                                 <td>{s.platform}</td>
+                                <td style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#64748b' }}>
+                                    {formatDateTime(s.created_at)}
+                                </td>
                                 <td>
                                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                                         <button className="repost-icon-btn" onClick={() => setPreviewUrl(s.screenshot_url)}><ImageIcon size={14} /></button>
@@ -582,7 +590,7 @@ const SubmissionsTab: React.FC = () => {
                             </tr>
                         ))}
                         {submissions.length === 0 && (
-                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucune soumission</td></tr>
+                            <tr><td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucune soumission</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -676,6 +684,7 @@ const ViewUpdatesTab: React.FC = () => {
                             <th>Guide</th>
                             <th>Vidéo / post</th>
                             <th>Vues déclarées</th>
+                            <th>Déclaré le</th>
                             <th>Preuve</th>
                             <th>Bonus crédité</th>
                             <th>Statut</th>
@@ -694,6 +703,9 @@ const ViewUpdatesTab: React.FC = () => {
                                     <CopyLinkButton url={u.post_link || ''} label="Post" size="sm" />
                                 </td>
                                 <td style={{ fontWeight: 700 }}>{u.declared_views.toLocaleString('fr-FR')}</td>
+                                <td style={{ whiteSpace: 'nowrap', fontSize: '0.8rem', color: '#64748b' }}>
+                                    {formatDateTime(u.created_at)}
+                                </td>
                                 <td>
                                     <button className="repost-icon-btn" onClick={() => setPreviewUrl(u.screenshot_url)}><ImageIcon size={14} /></button>
                                 </td>
@@ -714,7 +726,7 @@ const ViewUpdatesTab: React.FC = () => {
                             </tr>
                         ))}
                         {updates.length === 0 && (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucune déclaration</td></tr>
+                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Aucune déclaration</td></tr>
                         )}
                     </tbody>
                 </table>
