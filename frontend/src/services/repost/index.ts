@@ -125,7 +125,7 @@ export const adminAccountsApi = {
         status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending',
         page = 1,
         limit = 50
-    ): Promise<{ accounts: RepostAccount[]; page: number; limit: number }> => {
+    ): Promise<{ accounts: RepostAccount[]; page: number; limit: number; total: number }> => {
         const r = await api.get(`/repost/admin/accounts?status=${status}&page=${page}&limit=${limit}`);
         return r.data;
     },
@@ -157,7 +157,7 @@ export const adminSubmissionsApi = {
         status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending',
         page = 1,
         limit = 50
-    ): Promise<{ submissions: RepostSubmission[]; page: number; limit: number }> => {
+    ): Promise<{ submissions: RepostSubmission[]; page: number; limit: number; total: number }> => {
         const r = await api.get(`/repost/admin/submissions?status=${status}&page=${page}&limit=${limit}`);
         return r.data;
     },
@@ -175,7 +175,7 @@ export const adminViewUpdatesApi = {
         status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending',
         page = 1,
         limit = 50
-    ): Promise<{ updates: RepostViewUpdate[]; page: number; limit: number }> => {
+    ): Promise<{ updates: RepostViewUpdate[]; page: number; limit: number; total: number }> => {
         const r = await api.get(`/repost/admin/view-updates?status=${status}&page=${page}&limit=${limit}`);
         return r.data;
     },
@@ -189,6 +189,15 @@ export const adminViewUpdatesApi = {
         pending_accounts_count: number;
         pending_submissions_count: number;
         pending_view_updates_count: number;
+        total_accounts_count: number;
+        active_accounts_count: number;
+        blocked_accounts_count: number;
+        guides_count: number;
+        total_submissions_count: number;
+        approved_submissions_count: number;
+        rejected_submissions_count: number;
+        total_views_declared: number;
+        total_paid_cents: number;
     }> => {
         const r = await api.get('/repost/admin/submissions/stats');
         return r.data;

@@ -36,6 +36,8 @@ import {
     Settings2,
     Ban,
     ShieldCheck,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '../../../utils/Swal';
 import '../AdminLists.css';
@@ -59,17 +61,92 @@ const formatDateTime = (iso: string | null | undefined): string => {
 
 const centsToEuros = (cents: number): string => (cents / 100).toFixed(2).replace('.', ',') + ' €';
 
+// Carte KPI de la barre de stats en tête de page.
+// Fond neutre : seule l'icône porte la couleur, pour ne pas saturer la page.
+const StatCard: React.FC<{
+    label: string;
+    value: number | string;
+    hint?: string;
+    color: string;
+    icon: React.ReactNode;
+}> = ({ label, value, hint, color, icon }) => (
+    <div className="repost-stat-card">
+        <div className="repost-stat-icon" style={{ color }}>{icon}</div>
+        <div className="repost-stat-body">
+            <div className="repost-stat-value">{value}</div>
+            <div className="repost-stat-label">{label}</div>
+            {hint && <div className="repost-stat-hint">{hint}</div>}
+        </div>
+    </div>
+);
+
+const PAGE_SIZE = 25;
+
+// Pagination partagée par les onglets Comptes / Soumissions / Déclarations
+const Pagination: React.FC<{
+    page: number;
+    total: number;
+    count: number;
+    onChange: (page: number) => void;
+}> = ({ page, total, count, onChange }) => {
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    const to = (page - 1) * PAGE_SIZE + count;
+
+    return (
+        <div className="repost-pagination">
+            <span className="repost-pagination-info">
+                {total === 0 ? 'Aucun résultat' : `${from}-${to} sur ${total}`}
+            </span>
+            <div className="repost-pagination-actions">
+                <button
+                    className="repost-pagination-btn"
+                    onClick={() => onChange(page - 1)}
+                    disabled={page <= 1}
+                >
+                    <ChevronLeft size={14} /> Précédent
+                </button>
+                <span className="repost-pagination-page">Page {page} / {totalPages}</span>
+                <button
+                    className="repost-pagination-btn"
+                    onClick={() => onChange(page + 1)}
+                    disabled={page >= totalPages}
+                >
+                    Suivant <ChevronRight size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
 export const AdminRepost: React.FC = () => {
     const { hasPermission } = usePermissions();
     const canManage = hasPermission('can_manage_repost');
     const canValidate = hasPermission('can_validate_reposts');
 
     const [tab, setTab] = useState<Tab>(canValidate ? 'accounts' : 'tiers');
-    const [stats, setStats] = useState<{ pending_accounts_count: number; pending_submissions_count: number; pending_view_updates_count: number } | null>(null);
+    const [stats, setStats] = useState<Awaited<ReturnType<typeof adminViewUpdatesApi.stats>> | null>(null);
 
     useEffect(() => {
         if (canValidate) {
-            adminViewUpdatesApi.stats().then(setStats).catch(() => {});
+            // Normalisation : un backend plus ancien ne renvoie que les compteurs
+            // "pending". Sans valeur par défaut, le rendu des KPI planterait.
+            adminViewUpdatesApi.stats()
+                .then(s => setStats({
+                    pending_accounts_count: s.pending_accounts_count ?? 0,
+                    pending_submissions_count: s.pending_submissions_count ?? 0,
+                    pending_view_updates_count: s.pending_view_updates_count ?? 0,
+                    total_accounts_count: s.total_accounts_count ?? 0,
+                    active_accounts_count: s.active_accounts_count ?? 0,
+                    blocked_accounts_count: s.blocked_accounts_count ?? 0,
+                    guides_count: s.guides_count ?? 0,
+                    total_submissions_count: s.total_submissions_count ?? 0,
+                    approved_submissions_count: s.approved_submissions_count ?? 0,
+                    rejected_submissions_count: s.rejected_submissions_count ?? 0,
+                    total_views_declared: s.total_views_declared ?? 0,
+                    total_paid_cents: s.total_paid_cents ?? 0,
+                }))
+                .catch(() => {});
         }
     }, [canValidate]);
 
@@ -83,6 +160,53 @@ export const AdminRepost: React.FC = () => {
 
     return (
         <DashboardLayout title="Repost Social">
+            {canValidate && stats && (
+                <div className="repost-stats-bar">
+                    <StatCard
+                        label="Comptes"
+                        value={stats.total_accounts_count}
+                        hint={`${stats.guides_count} guides`}
+                        color="#059669"
+                        icon={<UserCheck size={15} />}
+                    />
+                    <StatCard
+                        label="Actifs"
+                        value={stats.active_accounts_count}
+                        hint={stats.blocked_accounts_count > 0 ? `${stats.blocked_accounts_count} bloqués` : 'aucun bloqué'}
+                        color="#0891b2"
+                        icon={<ShieldCheck size={15} />}
+                    />
+                    <StatCard
+                        label="Reposts validés"
+                        value={stats.approved_submissions_count}
+                        hint={`sur ${stats.total_submissions_count}`}
+                        color="#7c3aed"
+                        icon={<Send size={15} />}
+                    />
+                    <StatCard
+                        label="À traiter"
+                        value={stats.pending_submissions_count + stats.pending_view_updates_count}
+                        hint={`${stats.pending_submissions_count} reposts · ${stats.pending_view_updates_count} vues`}
+                        color="#d97706"
+                        icon={<Clock size={15} />}
+                    />
+                    <StatCard
+                        label="Vues déclarées"
+                        value={stats.total_views_declared.toLocaleString('fr-FR')}
+                        hint="cumul validé"
+                        color="#2383e2"
+                        icon={<Eye size={15} />}
+                    />
+                    <StatCard
+                        label="Total versé"
+                        value={centsToEuros(stats.total_paid_cents)}
+                        hint="base + bonus"
+                        color="#0f172a"
+                        icon={<Layers size={15} />}
+                    />
+                </div>
+            )}
+
             <div className="repost-tabs">
                 {tabs.map(t => (
                     <button
@@ -117,9 +241,8 @@ const AccountsTab: React.FC = () => {
     const [accounts, setAccounts] = useState<RepostAccount[]>([]);
     const [tiers, setTiers] = useState<RepostTier[]>([]);
     const [loading, setLoading] = useState(true);
-    // Les comptes sont auto-approuvés à la déclaration : filtrer sur 'pending'
-    // par défaut afficherait une liste vide.
-    const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('all');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [edit, setEdit] = useState<AccountEdit | null>(null);
 
@@ -128,11 +251,17 @@ const AccountsTab: React.FC = () => {
     // que les paliers actifs.
     const activeTiers = tiers.filter(t => t.is_active);
 
-    const load = useCallback(async (status: typeof statusFilter) => {
+    // Plus de filtre par statut : l'adhésion est automatique, tous les comptes
+    // sont approuvés. On charge la liste complète, paginée.
+    const load = useCallback(async (targetPage: number) => {
         setLoading(true);
         try {
-            const [r, t] = await Promise.all([adminAccountsApi.list(status), adminTiersApi.list(true)]);
+            const [r, t] = await Promise.all([
+                adminAccountsApi.list('all', targetPage, PAGE_SIZE),
+                adminTiersApi.list(true),
+            ]);
             setAccounts(r.accounts);
+            setTotal(r.total);
             setTiers(t);
         } catch {
             showError('Erreur', 'Impossible de charger les comptes');
@@ -141,7 +270,7 @@ const AccountsTab: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => { load(statusFilter); }, [statusFilter, load]);
+    useEffect(() => { load(page); }, [page, load]);
 
     const tierLabel = (id: string | null): string => {
         if (!id) return '—';
@@ -160,7 +289,7 @@ const AccountsTab: React.FC = () => {
             await adminAccountsApi.review(acc.id, 'approved', edit.tierId);
             showSuccess('Compte approuvé', 'Le guide voit désormais la vidéothèque pour ce compte.');
             setEdit(null);
-            load(statusFilter);
+            load(page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible d\'approuver');
         }
@@ -172,7 +301,7 @@ const AccountsTab: React.FC = () => {
         try {
             await adminAccountsApi.review(acc.id, 'rejected', null);
             showSuccess('Compte rejeté');
-            load(statusFilter);
+            load(page);
         } catch {
             showError('Erreur', 'Impossible de rejeter');
         }
@@ -187,7 +316,7 @@ const AccountsTab: React.FC = () => {
             await adminAccountsApi.updateTier(acc.id, edit.tierId);
             showSuccess('Palier mis à jour');
             setEdit(null);
-            load(statusFilter);
+            load(page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible de changer le palier');
         }
@@ -205,7 +334,7 @@ const AccountsTab: React.FC = () => {
         try {
             await adminAccountsApi.setBlocked(acc.id, blocking);
             showSuccess(blocking ? 'Compte bloqué' : 'Compte débloqué');
-            load(statusFilter);
+            load(page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Action impossible');
         }
@@ -217,7 +346,10 @@ const AccountsTab: React.FC = () => {
         try {
             await adminAccountsApi.remove(acc.id);
             showSuccess('Compte supprimé');
-            load(statusFilter);
+            // Après suppression, la page courante peut devenir vide : on recule d'une page.
+            const isLastItemOnPage = accounts.length === 1 && page > 1;
+            if (isLastItemOnPage) setPage(page - 1);
+            else load(page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible de supprimer');
         }
@@ -282,12 +414,6 @@ const AccountsTab: React.FC = () => {
 
     return (
         <div>
-            <div className="repost-filter-buttons">
-                {[{ v: 'pending', l: 'En attente' }, { v: 'all', l: 'Tout' }, { v: 'approved', l: 'Approuvés' }, { v: 'rejected', l: 'Rejetés' }].map(f => (
-                    <button key={f.v} className={`repost-filter-btn ${statusFilter === f.v ? 'active' : ''}`} onClick={() => setStatusFilter(f.v as any)}>{f.l}</button>
-                ))}
-            </div>
-
             <div className="repost-table-wrap">
                 <table className="admin-modern-table">
                     <thead>
@@ -335,6 +461,8 @@ const AccountsTab: React.FC = () => {
                 </table>
             </div>
 
+            <Pagination page={page} total={total} count={accounts.length} onChange={setPage} />
+
             {previewUrl && <ScreenshotPreview url={previewUrl} onClose={() => setPreviewUrl(null)} />}
         </div>
     );
@@ -347,15 +475,18 @@ const SubmissionsTab: React.FC = () => {
     const [submissions, setSubmissions] = useState<RepostSubmission[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('pending');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [rejectingId, setRejectingId] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
-    const load = useCallback(async (status: typeof statusFilter) => {
+    const load = useCallback(async (status: typeof statusFilter, targetPage: number) => {
         setLoading(true);
         try {
-            const r = await adminSubmissionsApi.list(status);
+            const r = await adminSubmissionsApi.list(status, targetPage, PAGE_SIZE);
             setSubmissions(r.submissions);
+            setTotal(r.total);
         } catch {
             showError('Erreur', 'Impossible de charger les soumissions');
         } finally {
@@ -363,13 +494,16 @@ const SubmissionsTab: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => { load(statusFilter); }, [statusFilter, load]);
+    useEffect(() => { load(statusFilter, page); }, [statusFilter, page, load]);
+
+    // Changer de filtre repart de la première page
+    useEffect(() => { setPage(1); }, [statusFilter]);
 
     const approve = async (s: RepostSubmission) => {
         try {
             await adminSubmissionsApi.approve(s.id);
             showSuccess('Repost validé', `${centsToEuros(s.base_earnings_cents)} de base crédités au guide.`);
-            load(statusFilter);
+            load(statusFilter, page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible de valider');
         }
@@ -382,7 +516,7 @@ const SubmissionsTab: React.FC = () => {
             showSuccess('Soumission rejetée');
             setRejectingId(null);
             setRejectReason('');
-            load(statusFilter);
+            load(statusFilter, page);
         } catch {
             showError('Erreur', 'Impossible de rejeter');
         }
@@ -451,6 +585,8 @@ const SubmissionsTab: React.FC = () => {
                 </table>
             </div>
 
+            <Pagination page={page} total={total} count={submissions.length} onChange={setPage} />
+
             {previewUrl && <ScreenshotPreview url={previewUrl} onClose={() => setPreviewUrl(null)} />}
 
             <Modal isOpen={!!rejectingId} onClose={() => setRejectingId(null)} title="Rejeter la soumission" maxWidth="420px">
@@ -473,15 +609,18 @@ const ViewUpdatesTab: React.FC = () => {
     const [updates, setUpdates] = useState<RepostViewUpdate[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('pending');
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [rejectingId, setRejectingId] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
-    const load = useCallback(async (status: typeof statusFilter) => {
+    const load = useCallback(async (status: typeof statusFilter, targetPage: number) => {
         setLoading(true);
         try {
-            const r = await adminViewUpdatesApi.list(status);
+            const r = await adminViewUpdatesApi.list(status, targetPage, PAGE_SIZE);
             setUpdates(r.updates);
+            setTotal(r.total);
         } catch {
             showError('Erreur', 'Impossible de charger les déclarations');
         } finally {
@@ -489,13 +628,16 @@ const ViewUpdatesTab: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => { load(statusFilter); }, [statusFilter, load]);
+    useEffect(() => { load(statusFilter, page); }, [statusFilter, page, load]);
+
+    // Changer de filtre repart de la première page
+    useEffect(() => { setPage(1); }, [statusFilter]);
 
     const approve = async (u: RepostViewUpdate) => {
         try {
             await adminViewUpdatesApi.approve(u.id);
             showSuccess('Déclaration validée', 'Le bonus de vues éventuel a été crédité.');
-            load(statusFilter);
+            load(statusFilter, page);
         } catch (e: any) {
             showError('Erreur', e.response?.data?.error || 'Impossible de valider');
         }
@@ -508,7 +650,7 @@ const ViewUpdatesTab: React.FC = () => {
             showSuccess('Déclaration rejetée');
             setRejectingId(null);
             setRejectReason('');
-            load(statusFilter);
+            load(statusFilter, page);
         } catch {
             showError('Erreur', 'Impossible de rejeter');
         }
@@ -574,6 +716,8 @@ const ViewUpdatesTab: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination page={page} total={total} count={updates.length} onChange={setPage} />
 
             {previewUrl && <ScreenshotPreview url={previewUrl} onClose={() => setPreviewUrl(null)} />}
 

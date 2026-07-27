@@ -66,22 +66,73 @@ export const getGlobalRepostStats = async (): Promise<{
     pending_accounts_count: number;
     pending_submissions_count: number;
     pending_view_updates_count: number;
+    total_accounts_count: number;
+    active_accounts_count: number;
+    blocked_accounts_count: number;
+    guides_count: number;
+    total_submissions_count: number;
+    approved_submissions_count: number;
+    rejected_submissions_count: number;
+    total_views_declared: number;
+    total_paid_cents: number;
 }> => {
+    // Une seule requête par table : les compteurs par statut sont agrégés en
+    // SUM(CASE ...) plutôt qu'en N requêtes séparées.
     const accountRows: any = await query(
-        `SELECT COUNT(*) AS n FROM repost_accounts
-         WHERE status = 'pending' AND deleted_at IS NULL`
+        `SELECT
+            COUNT(*) AS total,
+            SUM(status = 'pending') AS pending,
+            SUM(status = 'approved' AND blocked_at IS NULL) AS active,
+            SUM(blocked_at IS NOT NULL) AS blocked,
+            COUNT(DISTINCT guide_id) AS guides
+         FROM repost_accounts
+         WHERE deleted_at IS NULL`
     );
     const submissionRows: any = await query(
-        `SELECT COUNT(*) AS n FROM repost_submissions
-         WHERE status = 'pending' AND deleted_at IS NULL`
+        `SELECT
+            COUNT(*) AS total,
+            SUM(status = 'pending') AS pending,
+            SUM(status = 'approved') AS approved,
+            SUM(status = 'rejected') AS rejected,
+            COALESCE(SUM(CASE WHEN status = 'approved' THEN base_earnings_cents ELSE 0 END), 0) AS base_paid
+         FROM repost_submissions
+         WHERE deleted_at IS NULL`
     );
     const viewRows: any = await query(
-        `SELECT COUNT(*) AS n FROM repost_view_updates
-         WHERE status = 'pending' AND deleted_at IS NULL`
+        `SELECT
+            SUM(status = 'pending') AS pending,
+            COALESCE(SUM(CASE WHEN status = 'approved' THEN credited_amount_cents ELSE 0 END), 0) AS view_paid
+         FROM repost_view_updates
+         WHERE deleted_at IS NULL`
     );
+    // Vues déclarées : on ne somme que la dernière déclaration validée par
+    // soumission, sinon les déclarations successives se cumuleraient.
+    const declaredRows: any = await query(
+        `SELECT COALESCE(SUM(latest.views), 0) AS total_views
+         FROM (
+            SELECT MAX(vu.declared_views) AS views
+            FROM repost_view_updates vu
+            WHERE vu.status = 'approved' AND vu.deleted_at IS NULL
+            GROUP BY vu.submission_id
+         ) AS latest`
+    );
+
+    const a = accountRows[0] ?? {};
+    const s = submissionRows[0] ?? {};
+    const v = viewRows[0] ?? {};
+
     return {
-        pending_accounts_count: Number(accountRows[0]?.n ?? 0),
-        pending_submissions_count: Number(submissionRows[0]?.n ?? 0),
-        pending_view_updates_count: Number(viewRows[0]?.n ?? 0),
+        pending_accounts_count: Number(a.pending ?? 0),
+        pending_submissions_count: Number(s.pending ?? 0),
+        pending_view_updates_count: Number(v.pending ?? 0),
+        total_accounts_count: Number(a.total ?? 0),
+        active_accounts_count: Number(a.active ?? 0),
+        blocked_accounts_count: Number(a.blocked ?? 0),
+        guides_count: Number(a.guides ?? 0),
+        total_submissions_count: Number(s.total ?? 0),
+        approved_submissions_count: Number(s.approved ?? 0),
+        rejected_submissions_count: Number(s.rejected ?? 0),
+        total_views_declared: Number(declaredRows[0]?.total_views ?? 0),
+        total_paid_cents: Number(s.base_paid ?? 0) + Number(v.view_paid ?? 0),
     };
 };

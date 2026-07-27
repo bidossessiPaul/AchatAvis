@@ -1,3 +1,131 @@
+/* Barre de KPI en tête de page : les 6 indicateurs tiennent sur une ligne.
+   Fond neutre, seule l'icône est colorée — la page reste lisible. */
+.repost-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+}
+
+.repost-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.65rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+}
+
+.repost-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.repost-stat-body {
+    min-width: 0;
+}
+
+.repost-stat-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #0f172a;
+    white-space: nowrap;
+}
+
+.repost-stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.repost-stat-hint {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Sous 1100px, 6 colonnes deviennent illisibles : on passe à 3 puis 2 */
+@media (max-width: 1100px) {
+    .repost-stats-bar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .repost-stats-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Pagination des tableaux */
+.repost-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 0.25rem 0.25rem;
+}
+
+.repost-pagination-info {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.repost-pagination-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.repost-pagination-page {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+    padding: 0 0.35rem;
+}
+
+.repost-pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.repost-pagination-btn:hover:not(:disabled) {
+    border-color: #2383e2;
+    color: #2383e2;
+}
+
+.repost-pagination-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .repost-pagination {
+        justify-content: center;
+    }
+}
+
 .repost-tabs {
     display: flex;
     gap: 0.5rem;

@@ -74,6 +74,25 @@ export const listSubmissionsForGuide = async (
     }));
 };
 
+/** Nombre total de soumissions pour un statut donné — alimente la pagination admin. */
+export const countSubmissionsForAdmin = async (
+    status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending'
+): Promise<number> => {
+    const where = status === 'all'
+        ? 's.deleted_at IS NULL'
+        : `s.status = '${status}' AND s.deleted_at IS NULL`;
+
+    const rows: any = await query(
+        `SELECT COUNT(*) AS total
+         FROM repost_submissions s
+         JOIN repost_accounts a ON a.id = s.account_id
+         JOIN users u ON u.id = a.guide_id
+         JOIN repost_videos v ON v.id = s.video_id
+         WHERE ${where}`
+    );
+    return Number(rows[0]?.total ?? 0);
+};
+
 export const listSubmissionsForAdmin = async (
     status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending',
     limit = 50,

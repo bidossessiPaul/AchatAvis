@@ -258,8 +258,11 @@ export const listAccounts = async (req: Request, res: Response): Promise<void> =
         const status: 'pending' | 'approved' | 'rejected' | 'all' =
             ['pending', 'approved', 'rejected', 'all'].includes(statusRaw) ? (statusRaw as any) : 'pending';
 
-        const accounts = await accountService.listAccountsForAdmin(status, limit, offset);
-        res.json({ accounts, page, limit, status });
+        const [accounts, total] = await Promise.all([
+            accountService.listAccountsForAdmin(status, limit, offset),
+            accountService.countAccountsForAdmin(status),
+        ]);
+        res.json({ accounts, page, limit, total, status });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }
@@ -332,8 +335,11 @@ export const listSubmissions = async (req: Request, res: Response): Promise<void
         const status: 'pending' | 'approved' | 'rejected' | 'all' =
             ['pending', 'approved', 'rejected', 'all'].includes(statusRaw) ? (statusRaw as any) : 'pending';
 
-        const submissions = await submissionService.listSubmissionsForAdmin(status, limit, offset);
-        res.json({ submissions, page, limit, status });
+        const [submissions, total] = await Promise.all([
+            submissionService.listSubmissionsForAdmin(status, limit, offset),
+            submissionService.countSubmissionsForAdmin(status),
+        ]);
+        res.json({ submissions, page, limit, total, status });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }
@@ -383,8 +389,11 @@ export const listViewUpdates = async (req: Request, res: Response): Promise<void
         const status: 'pending' | 'approved' | 'rejected' | 'all' =
             ['pending', 'approved', 'rejected', 'all'].includes(statusRaw) ? (statusRaw as any) : 'pending';
 
-        const updates = await viewUpdateService.listViewUpdatesForAdmin(status, limit, offset);
-        res.json({ updates, page, limit, status });
+        const [updates, total] = await Promise.all([
+            viewUpdateService.listViewUpdatesForAdmin(status, limit, offset),
+            viewUpdateService.countViewUpdatesForAdmin(status),
+        ]);
+        res.json({ updates, page, limit, total, status });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }
