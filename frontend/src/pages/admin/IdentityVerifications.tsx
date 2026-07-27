@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
-import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw, MapPin } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw, Globe } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../context/authStore';
@@ -39,9 +39,9 @@ export const IdentityVerifications: React.FC = () => {
     const [items, setItems] = useState<Verification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<VerifStatus>('pending');
-    // 'all' = toutes les villes, '__none__' = ville non renseignée,
-    // sinon la ville déclarée normalisée en minuscules.
-    const [cityFilter, setCityFilter] = useState<string>('all');
+    // 'all' = tous les pays, '__none__' = pays non détecté,
+    // sinon le code pays ISO en majuscules (FR, BE...).
+    const [countryFilter, setCountryFilter] = useState<string>('all');
     const [preview, setPreview] = useState<string | null>(null);
 
     const currentUser = useAuthStore((s) => s.user);
@@ -64,36 +64,51 @@ export const IdentityVerifications: React.FC = () => {
 
     useEffect(() => { load(); }, [filter]);
 
-    // Les villes disponibles dépendent du statut affiché : on repart de "toutes"
-    // à chaque changement, sinon le filtre pointe sur une ville absente.
-    useEffect(() => { setCityFilter('all'); }, [filter]);
+    // Les pays disponibles dépendent du statut affiché : on repart de "tous"
+    // à chaque changement, sinon le filtre pointe sur un pays absent.
+    useEffect(() => { setCountryFilter('all'); }, [filter]);
 
-    // Villes déclarées présentes dans la liste, avec le nombre de dossiers.
-    // Regroupées sans tenir compte de la casse, affichées telles que saisies.
-    const cities = useMemo(() => {
-        const byKey = new Map<string, { label: string; count: number }>();
+    // Clé de regroupement d'un dossier : le code pays ISO détecté par la géoloc.
+    // À défaut de code, on retombe sur le nom du pays pour ne pas tout agréger
+    // dans "non détecté".
+    const countryKeyOf = (v: Verification): string | null => {
+        const code = v.detected_country_code?.trim().toUpperCase();
+        if (code) return code;
+        const name = v.detected_country?.trim();
+        return name ? name.toUpperCase() : null;
+    };
+
+    // Pays détectés présents dans la liste, avec le nombre de dossiers.
+    const countries = useMemo(() => {
+        const byKey = new Map<string, { label: string; code: string | null; count: number }>();
         for (const v of items) {
-            const city = v.declared_city?.trim();
-            if (!city) continue;
-            const key = city.toLowerCase();
+            const key = countryKeyOf(v);
+            if (!key) continue;
             const found = byKey.get(key);
-            if (found) found.count += 1;
-            else byKey.set(key, { label: city, count: 1 });
+            if (found) {
+                found.count += 1;
+                continue;
+            }
+            byKey.set(key, {
+                label: v.detected_country?.trim() || key,
+                code: v.detected_country_code?.trim().toUpperCase() || null,
+                count: 1,
+            });
         }
         return Array.from(byKey, ([key, value]) => ({ key, ...value }))
-            .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+            .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'fr'));
     }, [items]);
 
-    const missingCityCount = useMemo(
-        () => items.filter(v => !v.declared_city?.trim()).length,
+    const missingCountryCount = useMemo(
+        () => items.filter(v => !countryKeyOf(v)).length,
         [items]
     );
 
     const visibleItems = useMemo(() => {
-        if (cityFilter === 'all') return items;
-        if (cityFilter === '__none__') return items.filter(v => !v.declared_city?.trim());
-        return items.filter(v => v.declared_city?.trim().toLowerCase() === cityFilter);
-    }, [items, cityFilter]);
+        if (countryFilter === 'all') return items;
+        if (countryFilter === '__none__') return items.filter(v => !countryKeyOf(v));
+        return items.filter(v => countryKeyOf(v) === countryFilter);
+    }, [items, countryFilter]);
 
     const handleApprove = async (v: Verification) => {
         const who = v.full_name || v.email;
@@ -245,6 +260,105 @@ export const IdentityVerifications: React.FC = () => {
     return (
         <DashboardLayout title="Vérifications d'identité">
             <div className="admin-dashboard revamped">
+                {/* Filtre par pays détecté (géolocalisation IP), en tête de page.
+                    Masqué si la géoloc n'est pas visible pour cet admin. */}
+                {canViewGeolocation && !isLoading && (countries.length > 0 || missingCountryCount > 0) && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        flexWrap: 'wrap',
+                        marginBottom: '1rem',
+                        padding: '0.9rem 1.25rem',
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '1rem',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}>
+                        <label
+                            htmlFor="country-filter"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: '#475569' }}
+                        >
+                            <Globe size={16} style={{ color: '#0369a1' }} /> Pays détecté
+                        </label>
+                        <select
+                            id="country-filter"
+                            value={countryFilter}
+                            onChange={(e) => setCountryFilter(e.target.value)}
+                            style={{
+                                padding: '0.5rem 0.85rem',
+                                borderRadius: '8px',
+                                border: `2px solid ${countryFilter === 'all' ? '#e2e8f0' : '#059669'}`,
+                                background: 'white',
+                                color: '#0f172a',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                minWidth: '240px'
+                            }}
+                        >
+                            <option value="all">Tous les pays ({items.length})</option>
+                            {countries.map(c => (
+                                <option key={c.key} value={c.key}>
+                                    {countryCodeToFlag(c.code)} {c.label} ({c.count})
+                                </option>
+                            ))}
+                            {missingCountryCount > 0 && (
+                                <option value="__none__">Pays non détecté ({missingCountryCount})</option>
+                            )}
+                        </select>
+
+                        {/* Raccourcis vers les pays les plus représentés */}
+                        {countries.slice(0, 4).map(c => (
+                            <button
+                                key={c.key}
+                                onClick={() => setCountryFilter(countryFilter === c.key ? 'all' : c.key)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '0.45rem 0.8rem',
+                                    borderRadius: '1rem',
+                                    border: '1px solid',
+                                    borderColor: countryFilter === c.key ? '#059669' : '#e2e8f0',
+                                    background: countryFilter === c.key ? '#dcfce7' : 'white',
+                                    color: countryFilter === c.key ? '#166534' : '#475569',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {countryCodeToFlag(c.code)} {c.label} <span style={{ opacity: 0.7 }}>{c.count}</span>
+                            </button>
+                        ))}
+
+                        {countryFilter !== 'all' && (
+                            <button
+                                onClick={() => setCountryFilter('all')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '0.45rem 0.8rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid #e2e8f0',
+                                    background: 'white',
+                                    color: '#475569',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <XCircle size={14} /> Réinitialiser
+                            </button>
+                        )}
+
+                        <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                            {visibleItems.length} dossier{visibleItems.length > 1 ? 's' : ''} affiché{visibleItems.length > 1 ? 's' : ''}
+                        </span>
+                    </div>
+                )}
+
                 <div className="admin-main-card">
                     <div className="admin-card-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -275,70 +389,6 @@ export const IdentityVerifications: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Filtre par ville déclarée — masqué tant qu'aucune ville n'est exploitable */}
-                    {!isLoading && (cities.length > 0 || missingCityCount > 0) && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.75rem',
-                            flexWrap: 'wrap',
-                            padding: '0.85rem 0 0.25rem'
-                        }}>
-                            <label
-                                htmlFor="city-filter"
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}
-                            >
-                                <MapPin size={16} style={{ color: '#0369a1' }} /> Ville déclarée
-                            </label>
-                            <select
-                                id="city-filter"
-                                value={cityFilter}
-                                onChange={(e) => setCityFilter(e.target.value)}
-                                style={{
-                                    padding: '0.5rem 0.85rem',
-                                    borderRadius: '8px',
-                                    border: `2px solid ${cityFilter === 'all' ? '#e2e8f0' : '#059669'}`,
-                                    background: 'white',
-                                    color: '#0f172a',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    minWidth: '220px'
-                                }}
-                            >
-                                <option value="all">Toutes les villes ({items.length})</option>
-                                {cities.map(c => (
-                                    <option key={c.key} value={c.key}>{c.label} ({c.count})</option>
-                                ))}
-                                {missingCityCount > 0 && (
-                                    <option value="__none__">Ville non renseignée ({missingCityCount})</option>
-                                )}
-                            </select>
-                            {cityFilter !== 'all' && (
-                                <button
-                                    onClick={() => setCityFilter('all')}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        padding: '0.5rem 0.85rem',
-                                        borderRadius: '8px',
-                                        border: '1px solid #e2e8f0',
-                                        background: 'white',
-                                        color: '#475569',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <XCircle size={14} /> Réinitialiser
-                                </button>
-                            )}
-                            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                                {visibleItems.length} dossier{visibleItems.length > 1 ? 's' : ''} affiché{visibleItems.length > 1 ? 's' : ''}
-                            </span>
-                        </div>
-                    )}
 
                     <div className="admin-table-container">
                         {isLoading ? (
@@ -348,7 +398,7 @@ export const IdentityVerifications: React.FC = () => {
                         ) : visibleItems.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                                 {items.length > 0
-                                    ? 'Aucune vérification pour cette ville'
+                                    ? 'Aucune vérification pour ce pays'
                                     : `Aucune vérification ${filter === 'pending' ? 'en attente' : filter === 'approved' ? 'validée' : 'refusée'}`}
                             </div>
                         ) : (

@@ -108,6 +108,18 @@ export const listAccountsForAdmin = async (
     return results;
 };
 
+/** Nombre total de comptes pour un statut donné — alimente la pagination admin. */
+export const countAccountsForAdmin = async (
+    status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending'
+): Promise<number> => {
+    const where = status === 'all'
+        ? 'deleted_at IS NULL'
+        : `status = '${status}' AND deleted_at IS NULL`;
+
+    const rows: any = await query(`SELECT COUNT(*) AS total FROM repost_accounts WHERE ${where}`);
+    return Number(rows[0]?.total ?? 0);
+};
+
 /**
  * Un guide a accès à la vidéothèque dès qu'il a au moins un compte approuvé
  * ET non bloqué. Un compte bloqué (blocked_at renseigné) ne donne plus accès.

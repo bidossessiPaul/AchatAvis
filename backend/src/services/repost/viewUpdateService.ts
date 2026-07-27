@@ -64,6 +64,26 @@ export const listViewUpdatesForSubmission = async (submissionId: string): Promis
     return rows.map(rowToViewUpdate);
 };
 
+/** Nombre total de déclarations pour un statut donné — alimente la pagination admin. */
+export const countViewUpdatesForAdmin = async (
+    status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending'
+): Promise<number> => {
+    const where = status === 'all'
+        ? 'vu.deleted_at IS NULL'
+        : `vu.status = '${status}' AND vu.deleted_at IS NULL`;
+
+    const rows: any = await query(
+        `SELECT COUNT(*) AS total
+         FROM repost_view_updates vu
+         JOIN repost_submissions s ON s.id = vu.submission_id
+         JOIN repost_accounts a ON a.id = s.account_id
+         JOIN users u ON u.id = a.guide_id
+         JOIN repost_videos v ON v.id = s.video_id
+         WHERE ${where}`
+    );
+    return Number(rows[0]?.total ?? 0);
+};
+
 export const listViewUpdatesForAdmin = async (
     status: 'pending' | 'approved' | 'rejected' | 'all' = 'pending',
     limit = 50,

@@ -8,6 +8,18 @@ import { recycleRejectedSubmissions } from './adminService';
 const INTERVAL_MS = 60 * 60 * 1000; // toutes les heures
 
 export const startCronJobs = () => {
+    // Garde-fou : en dev on pointe souvent sur la base de production pour
+    // reproduire un bug. Sans ce test, un simple `npm run dev` déclenche le
+    // recyclage sur les données réelles dès le démarrage.
+    // Mettre DISABLE_CRON=false pour les lancer quand même en local.
+    const disabled = process.env.DISABLE_CRON === 'true'
+        || (process.env.NODE_ENV !== 'production' && process.env.DISABLE_CRON !== 'false');
+
+    if (disabled) {
+        console.log('[CRON] Désactivé (NODE_ENV != production). DISABLE_CRON=false pour forcer.');
+        return;
+    }
+
     // Premier passage au démarrage, puis toutes les heures
     autoRecycleRejectedReviews();
     setInterval(autoRecycleRejectedReviews, INTERVAL_MS);
