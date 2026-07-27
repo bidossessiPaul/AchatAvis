@@ -117,7 +117,9 @@ const AccountsTab: React.FC = () => {
     const [accounts, setAccounts] = useState<RepostAccount[]>([]);
     const [tiers, setTiers] = useState<RepostTier[]>([]);
     const [loading, setLoading] = useState(true);
-    const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('pending');
+    // Les comptes sont auto-approuvés à la déclaration : filtrer sur 'pending'
+    // par défaut afficherait une liste vide.
+    const [statusFilter, setStatusFilter] = useState<'pending' | 'all' | 'approved' | 'rejected'>('all');
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [edit, setEdit] = useState<AccountEdit | null>(null);
 

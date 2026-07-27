@@ -65,6 +65,25 @@ CREATE TABLE IF NOT EXISTS admins_profiles (
     CONSTRAINT fk_admin_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Table: payments
+-- Doit être créée avant reviews_orders, qui référence payments(id) en FK.
+CREATE TABLE IF NOT EXISTS payments (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36),
+    type VARCHAR(20) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    stripe_payment_id VARCHAR(255),
+    description TEXT,
+    fiches_quota INT DEFAULT 0,
+    fiches_used INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    processed_at DATETIME,
+    CONSTRAINT fk_payment_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT chk_payment_type CHECK (type IN ('charge', 'payout', 'subscription')),
+    CONSTRAINT chk_payment_status CHECK (status IN ('pending', 'completed', 'failed', 'refunded'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Table: reviews_orders (artisan orders for reviews)
 CREATE TABLE IF NOT EXISTS reviews_orders (
     id VARCHAR(36) PRIMARY KEY,
@@ -74,7 +93,6 @@ CREATE TABLE IF NOT EXISTS reviews_orders (
     status VARCHAR(20) DEFAULT 'pending',
     reviews_received INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    completed_at DATETIME,
     completed_at DATETIME,
     payment_id VARCHAR(36),
     CONSTRAINT fk_order_artisan FOREIGN KEY (artisan_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -100,25 +118,6 @@ CREATE TABLE IF NOT EXISTS reviews_submissions (
     CONSTRAINT fk_submission_order FOREIGN KEY (order_id) REFERENCES reviews_orders(id) ON DELETE SET NULL,
     CONSTRAINT fk_submission_validator FOREIGN KEY (validated_by) REFERENCES users(id) ON DELETE SET NULL,
     CONSTRAINT chk_submission_status CHECK (status IN ('pending', 'validated', 'rejected'))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Table: payments
-CREATE TABLE IF NOT EXISTS payments (
-    id VARCHAR(36) PRIMARY KEY,
-    user_id VARCHAR(36),
-    type VARCHAR(20) NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    stripe_payment_id VARCHAR(255),
-    description TEXT,
-    description TEXT,
-    fiches_quota INT DEFAULT 0,
-    fiches_used INT DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    processed_at DATETIME,
-    CONSTRAINT fk_payment_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT chk_payment_type CHECK (type IN ('charge', 'payout', 'subscription')),
-    CONSTRAINT chk_payment_status CHECK (status IN ('pending', 'completed', 'failed', 'refunded'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Table: audit_logs

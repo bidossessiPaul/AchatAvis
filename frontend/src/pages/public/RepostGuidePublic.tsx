@@ -111,7 +111,7 @@ export const RepostGuidePublic: React.FC = () => {
                             <Users size={16} />
                             <span>
                                 Vous pouvez avoir <strong>plusieurs comptes fan</strong> (par exemple 3)
-                                — chaque compte doit être ajouté et approuvé sur la plateforme.
+                                — il suffit d'ajouter chaque compte sur la plateforme.
                             </span>
                         </li>
                     </ul>
@@ -195,7 +195,7 @@ export const RepostGuidePublic: React.FC = () => {
                     <h2><Wallet size={22} /> Comment être payé</h2>
                     <ol className="rgp-ordered">
                         <li>Connectez-vous à votre espace guide sur <strong>manager.achatavis.com</strong>.</li>
-                        <li>Ajoutez votre (vos) compte(s) fan dans la section <strong>Repost Social</strong> — validation sous 24-48h.</li>
+                        <li>Ajoutez votre (vos) compte(s) fan dans la section <strong>Repost Social</strong> — actif immédiatement.</li>
                         <li>Téléchargez la vidéo de la mission, publiez-la en respectant les règles ci-dessus.</li>
                         <li>Envoyez la preuve (lien du post + capture). Une fois validée, <strong>0,10€ sont crédités sur votre solde</strong>.</li>
                         <li>Déclarez vos vues au fil du temps pour débloquer les bonus.</li>

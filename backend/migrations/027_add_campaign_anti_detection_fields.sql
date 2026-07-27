@@ -2,7 +2,9 @@
 -- Description: Adds columns for sector configuration, review rhythm, and client localization.
 
 -- Add sector_slug to allow improved difficulty logic
-ALTER TABLE reviews_orders ADD COLUMN sector_slug VARCHAR(100) NULL AFTER sector_id;
+-- Pas de AFTER : la colonne sector_id n'a jamais existé sur reviews_orders,
+-- et la position d'une colonne n'a aucun impact fonctionnel.
+ALTER TABLE reviews_orders ADD COLUMN sector_slug VARCHAR(100) NULL;
 
 -- Add rhythm control fields
 ALTER TABLE reviews_orders ADD COLUMN reviews_per_day INT DEFAULT 3;

@@ -1,6 +1,10 @@
 // Comptes réseaux sociaux d'un guide (un guide peut en déclarer plusieurs,
 // comme les comptes Gmail). Chacun est soumis avec une preuve (lien + capture
-// + abonnés déclarés), validé par l'admin qui lui assigne un palier.
+// + abonnés déclarés).
+//
+// L'adhésion est automatique : le compte est approuvé dès la soumission et le
+// palier est déduit des abonnés déclarés. L'admin n'a plus à valider, il garde
+// la main a posteriori (corriger le palier, bloquer, supprimer).
 
 import { v4 as uuidv4 } from 'uuid';
 import { query } from '../../config/database';
@@ -9,15 +13,16 @@ import { RepostAccount, SubmitAccountInput } from '../../types/repost';
 import { findTierForFollowerCount, getTierById } from './tierService';
 
 export const submitAccount = async (data: SubmitAccountInput): Promise<RepostAccount> => {
-    // Pas deux demandes pending pour le même couple plateforme/lien.
-    const pending: any = await query(
+    // Le même compte ne peut pas être déclaré deux fois (l'adhésion étant
+    // automatique, un doublon serait immédiatement actif en double).
+    const existing: any = await query(
         `SELECT id FROM repost_accounts
          WHERE guide_id = ? AND platform = ? AND profile_link = ?
-           AND status = 'pending' AND deleted_at IS NULL`,
+           AND status != 'rejected' AND deleted_at IS NULL`,
         [data.guideId, data.platform, data.profileLink]
     );
-    if (pending[0]) {
-        throw new Error('Une demande pour ce compte est déjà en attente de validation');
+    if (existing[0]) {
+        throw new Error('Ce compte est déjà déclaré');
     }
 
     const uploaded = await uploadToCloudinary(
@@ -26,11 +31,17 @@ export const submitAccount = async (data: SubmitAccountInput): Promise<RepostAcc
         { resourceType: 'image' }
     );
 
+    // Palier déduit des abonnés déclarés. Aucun palier correspondant (barème mal
+    // configuré) laisse tier_id à NULL : le compte est actif mais l'admin devra
+    // lui assigner un palier pour que les paiements soient calculés.
+    const tier = await findTierForFollowerCount(data.claimedFollowersCount);
+
     const id = uuidv4();
     await query(
         `INSERT INTO repost_accounts
-         (id, guide_id, platform, profile_link, screenshot_url, claimed_followers_count)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+         (id, guide_id, platform, profile_link, screenshot_url, claimed_followers_count,
+          tier_id, status, reviewed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', NOW())`,
         [
             id,
             data.guideId,
@@ -38,6 +49,7 @@ export const submitAccount = async (data: SubmitAccountInput): Promise<RepostAcc
             data.profileLink,
             uploaded.secure_url,
             data.claimedFollowersCount,
+            tier?.id ?? null,
         ]
     );
 

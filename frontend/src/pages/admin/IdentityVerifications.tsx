@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
-import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw } from 'lucide-react';
+import { CheckCircle, XCircle, ShieldCheck, User, Clock, Eye, AlertTriangle, RotateCw, MapPin } from 'lucide-react';
 import { showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useAuthStore } from '../../context/authStore';
@@ -39,6 +39,9 @@ export const IdentityVerifications: React.FC = () => {
     const [items, setItems] = useState<Verification[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<VerifStatus>('pending');
+    // 'all' = toutes les villes, '__none__' = ville non renseignée,
+    // sinon la ville déclarée normalisée en minuscules.
+    const [cityFilter, setCityFilter] = useState<string>('all');
     const [preview, setPreview] = useState<string | null>(null);
 
     const currentUser = useAuthStore((s) => s.user);
@@ -60,6 +63,37 @@ export const IdentityVerifications: React.FC = () => {
     };
 
     useEffect(() => { load(); }, [filter]);
+
+    // Les villes disponibles dépendent du statut affiché : on repart de "toutes"
+    // à chaque changement, sinon le filtre pointe sur une ville absente.
+    useEffect(() => { setCityFilter('all'); }, [filter]);
+
+    // Villes déclarées présentes dans la liste, avec le nombre de dossiers.
+    // Regroupées sans tenir compte de la casse, affichées telles que saisies.
+    const cities = useMemo(() => {
+        const byKey = new Map<string, { label: string; count: number }>();
+        for (const v of items) {
+            const city = v.declared_city?.trim();
+            if (!city) continue;
+            const key = city.toLowerCase();
+            const found = byKey.get(key);
+            if (found) found.count += 1;
+            else byKey.set(key, { label: city, count: 1 });
+        }
+        return Array.from(byKey, ([key, value]) => ({ key, ...value }))
+            .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+    }, [items]);
+
+    const missingCityCount = useMemo(
+        () => items.filter(v => !v.declared_city?.trim()).length,
+        [items]
+    );
+
+    const visibleItems = useMemo(() => {
+        if (cityFilter === 'all') return items;
+        if (cityFilter === '__none__') return items.filter(v => !v.declared_city?.trim());
+        return items.filter(v => v.declared_city?.trim().toLowerCase() === cityFilter);
+    }, [items, cityFilter]);
 
     const handleApprove = async (v: Verification) => {
         const who = v.full_name || v.email;
@@ -241,18 +275,85 @@ export const IdentityVerifications: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Filtre par ville déclarée — masqué tant qu'aucune ville n'est exploitable */}
+                    {!isLoading && (cities.length > 0 || missingCityCount > 0) && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.75rem',
+                            flexWrap: 'wrap',
+                            padding: '0.85rem 0 0.25rem'
+                        }}>
+                            <label
+                                htmlFor="city-filter"
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}
+                            >
+                                <MapPin size={16} style={{ color: '#0369a1' }} /> Ville déclarée
+                            </label>
+                            <select
+                                id="city-filter"
+                                value={cityFilter}
+                                onChange={(e) => setCityFilter(e.target.value)}
+                                style={{
+                                    padding: '0.5rem 0.85rem',
+                                    borderRadius: '8px',
+                                    border: `2px solid ${cityFilter === 'all' ? '#e2e8f0' : '#059669'}`,
+                                    background: 'white',
+                                    color: '#0f172a',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    minWidth: '220px'
+                                }}
+                            >
+                                <option value="all">Toutes les villes ({items.length})</option>
+                                {cities.map(c => (
+                                    <option key={c.key} value={c.key}>{c.label} ({c.count})</option>
+                                ))}
+                                {missingCityCount > 0 && (
+                                    <option value="__none__">Ville non renseignée ({missingCityCount})</option>
+                                )}
+                            </select>
+                            {cityFilter !== 'all' && (
+                                <button
+                                    onClick={() => setCityFilter('all')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '0.5rem 0.85rem',
+                                        borderRadius: '8px',
+                                        border: '1px solid #e2e8f0',
+                                        background: 'white',
+                                        color: '#475569',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <XCircle size={14} /> Réinitialiser
+                                </button>
+                            )}
+                            <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                {visibleItems.length} dossier{visibleItems.length > 1 ? 's' : ''} affiché{visibleItems.length > 1 ? 's' : ''}
+                            </span>
+                        </div>
+                    )}
+
                     <div className="admin-table-container">
                         {isLoading ? (
                             <div className="admin-loading">
                                 <LoadingSpinner size="lg" text="Chargement..." />
                             </div>
-                        ) : items.length === 0 ? (
+                        ) : visibleItems.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-                                Aucune vérification {filter === 'pending' ? 'en attente' : filter === 'approved' ? 'validée' : 'refusée'}
+                                {items.length > 0
+                                    ? 'Aucune vérification pour cette ville'
+                                    : `Aucune vérification ${filter === 'pending' ? 'en attente' : filter === 'approved' ? 'validée' : 'refusée'}`}
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gap: '1rem', padding: '1rem 0' }}>
-                                {items.map(v => (
+                                {visibleItems.map(v => (
                                     <div key={v.id} style={{
                                         border: '1px solid #e2e8f0',
                                         borderRadius: '12px',
