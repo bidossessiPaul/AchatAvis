@@ -89,14 +89,17 @@ const Pagination: React.FC<{
     count: number;
     onChange: (page: number) => void;
 }> = ({ page, total, count, onChange }) => {
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-    const from = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+    // Front et back se déploient séparément : un backend pas encore à jour ne
+    // renvoie pas `total`, ce qui donnerait NaN dans le calcul des pages.
+    const safeTotal = Number.isFinite(total) ? total : 0;
+    const totalPages = Math.max(1, Math.ceil(safeTotal / PAGE_SIZE));
+    const from = safeTotal === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
     const to = (page - 1) * PAGE_SIZE + count;
 
     return (
         <div className="repost-pagination">
             <span className="repost-pagination-info">
-                {total === 0 ? 'Aucun résultat' : `${from}-${to} sur ${total}`}
+                {safeTotal === 0 ? 'Aucun résultat' : `${from}-${to} sur ${safeTotal}`}
             </span>
             <div className="repost-pagination-actions">
                 <button
@@ -261,7 +264,7 @@ const AccountsTab: React.FC = () => {
                 adminTiersApi.list(true),
             ]);
             setAccounts(r.accounts);
-            setTotal(r.total);
+            setTotal(r.total ?? 0);
             setTiers(t);
         } catch {
             showError('Erreur', 'Impossible de charger les comptes');
@@ -486,7 +489,7 @@ const SubmissionsTab: React.FC = () => {
         try {
             const r = await adminSubmissionsApi.list(status, targetPage, PAGE_SIZE);
             setSubmissions(r.submissions);
-            setTotal(r.total);
+            setTotal(r.total ?? 0);
         } catch {
             showError('Erreur', 'Impossible de charger les soumissions');
         } finally {
@@ -620,7 +623,7 @@ const ViewUpdatesTab: React.FC = () => {
         try {
             const r = await adminViewUpdatesApi.list(status, targetPage, PAGE_SIZE);
             setUpdates(r.updates);
-            setTotal(r.total);
+            setTotal(r.total ?? 0);
         } catch {
             showError('Erreur', 'Impossible de charger les déclarations');
         } finally {
