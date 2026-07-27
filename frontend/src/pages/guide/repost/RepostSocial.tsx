@@ -94,7 +94,7 @@ const AccountsTab: React.FC<{ accounts: RepostAccount[]; onChanged: () => void }
         setSaving(true);
         try {
             await guideRepostApi.submitAccount(platform, profileLink.trim(), parseInt(followers, 10), screenshot);
-            showSuccess('Compte envoyé', 'Un admin va vérifier votre profil.');
+            showSuccess('Compte ajouté', 'Votre compte est actif immédiatement, vous pouvez accéder aux vidéos.');
             setShowForm(false);
             setProfileLink('');
             setFollowers('');
@@ -111,7 +111,7 @@ const AccountsTab: React.FC<{ accounts: RepostAccount[]; onChanged: () => void }
         <div>
             <div className="repost-guide-card">
                 <h3>Déclarer un compte réseau social</h3>
-                <p>Vous pouvez déclarer plusieurs comptes (un par plateforme, ou plusieurs comptes sur la même). Chaque compte validé par l'admin obtient son propre palier et débloque la vidéothèque.</p>
+                <p>Vous pouvez déclarer plusieurs comptes (un par plateforme, ou plusieurs comptes sur la même). Chaque compte est actif immédiatement, obtient son palier selon vos abonnés déclarés et débloque la vidéothèque.</p>
                 <button className="repost-guide-btn-primary" onClick={() => setShowForm(true)}><Upload size={16} /> Ajouter un compte</button>
             </div>
 
