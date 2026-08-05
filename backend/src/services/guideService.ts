@@ -4,6 +4,7 @@ import { antiDetectionService } from './antiDetectionService';
 import { notificationService } from './notificationService';
 import { sendAdminEventNotification, sendMonthlyBonusAvailableEmail } from './emailService';
 import { parseImages } from './artisanService';
+import * as balanceService from './balanceService';
 
 // Durée pendant laquelle un slot est réservé activement à un guide (le temps de poster sur Google).
 const RESERVATION_MINUTES = 25;
@@ -844,89 +845,10 @@ export const guideService = {
         };
     },
 
+    // Le calcul vit dans balanceService : c'est la seule source de vérité,
+    // partagée avec la vue admin (Soldes des guides). Ne pas recalculer ici.
     async getEarningsStats(guideId: string) {
-        const stats: any = await query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status = 'validated' THEN earnings ELSE 0 END), 0) as total_earned
-            FROM reviews_submissions
-            WHERE guide_id = ?
-        `, [guideId]);
-
-        const bonuses: any = await query(`
-            SELECT
-                COALESCE(SUM(amount), 0) as total_bonuses,
-                COALESCE(SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END), 0) as total_negative
-            FROM guide_bonuses
-            WHERE guide_id = ?
-        `, [guideId]);
-
-        // Les extras positifs (guide_bonuses > 0) ne rentrent plus dans le solde principal.
-        // Les entrées négatives (reversements, avances admin) réduisent toujours le solde.
-
-        const payouts: any = await query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
-                COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending
-            FROM payout_requests
-            WHERE guide_id = ?
-        `, [guideId]);
-
-        // Gains signalement : validés = s'ajoutent au solde, en attente = affichés séparément
-        const sigStats: any = await query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN status = 'validated' THEN earnings_cents ELSE 0 END), 0) AS sig_earned_cents,
-                COALESCE(SUM(CASE WHEN status = 'pending' THEN earnings_cents ELSE 0 END), 0) AS sig_pending_cents
-            FROM signalement_proofs
-            WHERE guide_id = ? AND deleted_at IS NULL
-        `, [guideId]);
-
-        const sigEarned = Number(sigStats[0].sig_earned_cents) / 100;
-        const sigPending = Number(sigStats[0].sig_pending_cents) / 100;
-
-        // Gains repost social : montant de base (post validé) + bonus vues (déclarations validées)
-        const repostBaseStats: any = await query(`
-            SELECT
-                COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.base_earnings_cents ELSE 0 END), 0) AS repost_base_earned_cents,
-                COALESCE(SUM(CASE WHEN s.status = 'pending' THEN s.base_earnings_cents ELSE 0 END), 0) AS repost_base_pending_cents
-            FROM repost_submissions s
-            JOIN repost_accounts a ON a.id = s.account_id
-            WHERE a.guide_id = ? AND s.deleted_at IS NULL
-        `, [guideId]);
-        const repostViewStats: any = await query(`
-            SELECT COALESCE(SUM(vu.credited_amount_cents), 0) AS repost_view_earned_cents
-            FROM repost_view_updates vu
-            JOIN repost_submissions s ON s.id = vu.submission_id
-            JOIN repost_accounts a ON a.id = s.account_id
-            WHERE a.guide_id = ? AND vu.status = 'approved' AND vu.deleted_at IS NULL
-        `, [guideId]);
-        const repostEarned = (Number(repostBaseStats[0].repost_base_earned_cents) + Number(repostViewStats[0].repost_view_earned_cents)) / 100;
-        const repostPending = Number(repostBaseStats[0].repost_base_pending_cents) / 100;
-
-        // Bonus mensuels réclamés — s'ajoutent directement au solde
-        const monthlyBonusRows: any = await query(`
-            SELECT COALESCE(SUM(amount), 0) AS total_claimed
-            FROM monthly_bonus_claims
-            WHERE guide_id = ? AND claimed_at IS NOT NULL
-        `, [guideId]);
-        const monthlyBonusClaimed = Number(monthlyBonusRows[0].total_claimed);
-
-        // Solde principal = avis validés + signalements + repost + entrées négatives (reversements/avances) + bonus mensuels réclamés
-        const totalEarned = Number(stats[0].total_earned) + sigEarned + repostEarned + Number(bonuses[0].total_negative) + monthlyBonusClaimed;
-        const totalBonuses = Number(bonuses[0].total_bonuses);
-        const totalPaid = Number(payouts[0].total_paid);
-        const totalPending = Number(payouts[0].total_pending);
-        // Le solde guide ne peut pas être négatif côté guide — on cap à 0.
-        const balance = Math.max(0, totalEarned - totalPaid - totalPending);
-
-        return {
-            totalEarned,
-            totalBonuses,
-            totalPaid,
-            totalPending,
-            sigPending,   // montant en attente de validation (signalements soumis)
-            repostPending, // montant en attente de validation (reposts soumis)
-            balance,
-        };
+        return await balanceService.getBalance(guideId);
     },
 
     async getPayoutHistory(guideId: string) {

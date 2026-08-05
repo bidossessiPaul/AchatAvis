@@ -30,7 +30,8 @@ import {
     Globe,
     Link2,
     FileSearch,
-    Repeat2
+    Repeat2,
+    History
 } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
 import { getFileUrl } from '../../utils/url';
@@ -116,6 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Gestion des Packs', path: '/admin/packs', icon: <Package size={20} />, permissions: ['can_manage_packs'] },
                     { label: 'Paiements', path: '/admin/payments', icon: <DollarSign size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Soldes Guides', path: '/admin/guides-balances', icon: <Wallet size={20} />, permissions: ['can_view_payments'] },
+                    { label: 'Historique paiements', path: '/admin/sessions-paiement', icon: <History size={20} />, permissions: ['can_view_payments'] },
                     { label: 'Comptes Gmail', path: '/admin/gmail-accounts', icon: <Mail size={20} />, permissions: ['can_manage_users', 'can_validate_profiles'] },
                     { label: 'Trust Scores', path: '/admin/trust-scores', icon: <ShieldCheck size={20} />, permissions: ['can_manage_trust_scores'] },
                     { label: 'Avis à signaler', path: '/admin/signalement/avis', icon: <Flag size={20} />, permissions: ['can_manage_signalements'] },

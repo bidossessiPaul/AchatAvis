@@ -6,6 +6,7 @@ import { TokenPayload } from '../utils/token';
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '../config/jwt';
 import { parseImages } from './artisanService';
+import * as balanceService from './balanceService';
 
 /**
  * Get all artisans with their profiles
@@ -2546,73 +2547,60 @@ export const reviewLevelVerification = async (
 /**
  * Get all guides who have at least 1 validated review, with their calculated balance
  */
+/**
+ * Soldes de tous les guides ayant au moins un avis validé.
+ *
+ * Le solde n'est PAS recalculé ici : les composants viennent de balanceService,
+ * qui alimente aussi la page « Mes gains » du guide. C'est ce qui garantit que
+ * l'admin et le guide voient exactement le même chiffre.
+ */
 export const getGuidesWithBalance = async () => {
-    return await query(`
-        SELECT
-            u.id, u.full_name, u.email, u.avatar_url, u.status,
-            gp.google_email, gp.phone, gp.preferred_payout_method, gp.payout_details,
-            sub.validated_reviews_count,
-            sub.earned_from_reviews,
-            COALESCE(bon.total_bonuses, 0) as total_bonuses,
-            COALESCE(sig.sig_earned, 0) as sig_earned,
-            (COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0)) as repost_earned,
-            (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0) + COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0)) as total_earned,
-            COALESCE(pay.total_paid, 0) as total_paid,
-            COALESCE(pay.total_pending, 0) as total_pending,
-            -- Le solde ne peut pas être négatif — on cap à 0 (les sur-paiements restent dans l'historique).
-            GREATEST(0,
-                (sub.earned_from_reviews + COALESCE(bon.total_bonuses, 0) + COALESCE(sig.sig_earned, 0) + COALESCE(rep_base.repost_base_earned, 0) + COALESCE(rep_view.repost_view_earned, 0))
-                - COALESCE(pay.total_paid, 0)
-                - COALESCE(pay.total_pending, 0)
-            ) as balance
-        FROM users u
-        JOIN guides_profiles gp ON u.id = gp.user_id
-        INNER JOIN (
-            SELECT guide_id,
-                   COUNT(*) as validated_reviews_count,
-                   COALESCE(SUM(earnings), 0) as earned_from_reviews
-            FROM reviews_submissions
-            WHERE status = 'validated'
-            GROUP BY guide_id
-        ) sub ON u.id = sub.guide_id
-        LEFT JOIN (
-            SELECT guide_id, COALESCE(SUM(amount), 0) as total_bonuses
-            FROM guide_bonuses
-            GROUP BY guide_id
-        ) bon ON u.id = bon.guide_id
-        LEFT JOIN (
-            SELECT guide_id,
-                   COALESCE(SUM(earnings_cents) / 100, 0) as sig_earned
-            FROM signalement_proofs
-            WHERE status = 'validated' AND deleted_at IS NULL
-            GROUP BY guide_id
-        ) sig ON u.id = sig.guide_id
-        LEFT JOIN (
-            SELECT a.guide_id,
-                   COALESCE(SUM(CASE WHEN s.status = 'approved' THEN s.base_earnings_cents ELSE 0 END), 0) / 100 as repost_base_earned
-            FROM repost_accounts a
-            JOIN repost_submissions s ON s.account_id = a.id AND s.deleted_at IS NULL
-            GROUP BY a.guide_id
-        ) rep_base ON u.id = rep_base.guide_id
-        LEFT JOIN (
-            SELECT a.guide_id,
-                   COALESCE(SUM(vu.credited_amount_cents), 0) / 100 as repost_view_earned
-            FROM repost_accounts a
-            JOIN repost_submissions s ON s.account_id = a.id AND s.deleted_at IS NULL
-            JOIN repost_view_updates vu ON vu.submission_id = s.id AND vu.status = 'approved' AND vu.deleted_at IS NULL
-            GROUP BY a.guide_id
-        ) rep_view ON u.id = rep_view.guide_id
-        LEFT JOIN (
-            SELECT guide_id,
-                   COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
-                   COALESCE(SUM(CASE WHEN status IN ('pending', 'in_revision') THEN amount ELSE 0 END), 0) as total_pending,
-                   MIN(CASE WHEN status IN ('pending', 'in_revision') THEN requested_at END) as oldest_pending_at
-            FROM payout_requests
-            GROUP BY guide_id
-        ) pay ON u.id = pay.guide_id
-        WHERE u.role = 'guide'
-        ORDER BY balance DESC
-    `);
+    const [profiles, components] = await Promise.all([
+        query(`
+            SELECT
+                u.id, u.full_name, u.email, u.avatar_url, u.status,
+                gp.google_email, gp.phone, gp.preferred_payout_method, gp.payout_details,
+                sub.validated_reviews_count,
+                sub.earned_from_reviews
+            FROM users u
+            JOIN guides_profiles gp ON u.id = gp.user_id
+            INNER JOIN (
+                SELECT guide_id,
+                       COUNT(*) as validated_reviews_count,
+                       COALESCE(SUM(earnings), 0) as earned_from_reviews
+                FROM reviews_submissions
+                WHERE status = 'validated'
+                GROUP BY guide_id
+            ) sub ON u.id = sub.guide_id
+            WHERE u.role = 'guide'
+        `),
+        balanceService.listBalanceComponents(),
+    ]);
+
+    const byGuide = new Map<string, any>(
+        (components as any[]).map(c => [c.guide_id, c])
+    );
+
+    return (profiles as any[])
+        .map(p => {
+            const c = byGuide.get(p.id);
+            // Un guide présent ici a forcément des avis validés, donc une ligne
+            // de composants ; la garde couvre une course avec une suppression.
+            if (!c) return { ...p, total_bonuses: 0, sig_earned: 0, repost_earned: 0, total_earned: 0, total_paid: 0, total_pending: 0, balance: 0 };
+            const b = balanceService.computeBalance(c);
+            return {
+                ...p,
+                total_bonuses: b.totalBonuses,
+                sig_earned: c.sig_earned,
+                repost_earned: c.repost_earned,
+                monthly_claimed: c.monthly_claimed,
+                total_earned: b.totalEarned,
+                total_paid: b.totalPaid,
+                total_pending: b.totalPending,
+                balance: b.balance,
+            };
+        })
+        .sort((a, b) => b.balance - a.balance);
 };
 
 /**

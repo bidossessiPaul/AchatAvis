@@ -15,6 +15,34 @@ export const listPublished = async (_req: Request, res: Response) => {
 };
 
 /**
+ * Guide — communiqué non lu le plus récent (alimente le modal du dashboard)
+ * GET /api/communiques/unread
+ */
+export const unread = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) { res.status(401).json({ error: 'Non authentifié' }); return; }
+        const data = await service.getUnreadForUser(req.user.userId);
+        res.json(data);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+/**
+ * Guide — marque tous les communiqués publiés comme lus
+ * POST /api/communiques/seen
+ */
+export const markSeen = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) { res.status(401).json({ error: 'Non authentifié' }); return; }
+        await service.markAllSeen(req.user.userId);
+        res.json({ message: 'Communiqués marqués comme lus' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message || 'Erreur serveur' });
+    }
+};
+
+/**
  * Admin — list all communiques (published or not)
  * GET /api/admin/communiques
  */
@@ -73,16 +101,16 @@ export const adminDelete = async (req: Request, res: Response) => {
 };
 
 /**
- * Admin — resend the notification email to all guides
+ * Admin — réaffiche le communiqué à tous les guides : on efface les traces de
+ * lecture, le modal réapparaîtra à leur prochaine connexion.
  * POST /api/admin/communiques/:id/notify
  */
 export const adminResendNotification = async (req: Request, res: Response): Promise<void> => {
     try {
         const comm = await service.getById(req.params.id);
         if (!comm) { res.status(404).json({ error: 'Communiqué introuvable' }); return; }
-        // Fire-and-forget
-        service.notifyAllGuides(comm).catch(err => console.error(err));
-        res.json({ message: 'Envoi en cours à tous les guides' });
+        await service.resetReads(req.params.id);
+        res.json({ message: 'Le communiqué sera de nouveau affiché à tous les guides' });
     } catch (err: any) {
         res.status(500).json({ error: err.message || 'Erreur serveur' });
     }

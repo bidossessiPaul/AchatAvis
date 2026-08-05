@@ -12,6 +12,7 @@ import { GuideLeaderboard } from './GuideLeaderboard';
 import { GmailVerificationBanner } from '../../components/guide/GmailVerificationBanner';
 import { GmailVerificationReminderModal } from '../../components/guide/GmailVerificationReminderModal';
 import { NewRepostVideoModal } from '../../components/guide/NewRepostVideoModal';
+import { NewCommuniqueModal } from '../../components/guide/NewCommuniqueModal';
 import { motion } from 'framer-motion';
 import Swal from 'sweetalert2';
 import './GuideDashboard.css';
@@ -129,10 +130,11 @@ export const GuideDashboard: React.FC = () => {
                     className="recap-card"
                 >
                     <span className="recap-label">Solde Actuel</span>
-                    <span className="recap-value">{Math.max(0, Number(stats?.balance || 0)).toFixed(2)}€</span>
+                    {/* Solde réel, y compris négatif — cohérent avec Mes gains et la vue admin */}
+                    <span className="recap-value">{Number(stats?.balance || 0).toFixed(2)}€</span>
                     <div className="recap-subvalue">
                         <Wallet size={14} />
-                        <span>Prêt pour retrait</span>
+                        <span>{Number(stats?.balance || 0) < 0 ? 'Avance à combler' : 'Prêt pour retrait'}</span>
                     </div>
                 </motion.div>
                 <motion.div
@@ -427,6 +429,7 @@ export const GuideDashboard: React.FC = () => {
                 </div>
             )}
             <GmailVerificationReminderModal gmailAccounts={unverifiedGmails} />
+            <NewCommuniqueModal />
             <NewRepostVideoModal />
         </DashboardLayout>
     );

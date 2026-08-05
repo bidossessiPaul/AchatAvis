@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { adminApi } from '../../services/api';
 import {
-    Megaphone, Plus, Edit2, Trash2, Send, Eye, EyeOff, X, Save, ShieldCheck,
-    FileText, AlertTriangle, BookOpen, Info, Award, Bell
+    Megaphone, Plus, Edit2, Trash2, BellRing, Eye, EyeOff, X, Save, ShieldCheck,
+    FileText, AlertTriangle, BookOpen, Info, Award, Bell, Wallet
 } from 'lucide-react';
 import { showConfirm, showSuccess, showError } from '../../utils/Swal';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -32,6 +32,7 @@ const ICON_OPTIONS = [
     { key: 'Info', label: 'ℹ️ Info', icon: <Info size={18} /> },
     { key: 'Award', label: '🏆 Récompense', icon: <Award size={18} /> },
     { key: 'Bell', label: '🔔 Notification', icon: <Bell size={18} /> },
+    { key: 'Wallet', label: '💰 Paiement', icon: <Wallet size={18} /> },
 ];
 
 const COLOR_OPTIONS = [
@@ -43,7 +44,7 @@ const COLOR_OPTIONS = [
     { key: '#0f172a', label: 'Noir' },
 ];
 
-const emptyForm = (): Partial<Communique> & { notify_guides?: boolean } => ({
+const emptyForm = (): Partial<Communique> => ({
     title: '',
     subtitle: '',
     date_label: new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
@@ -52,7 +53,6 @@ const emptyForm = (): Partial<Communique> & { notify_guides?: boolean } => ({
     content: '',
     is_published: 1,
     sort_order: 0,
-    notify_guides: true,
 });
 
 export const CommuniquesAdmin: React.FC = () => {
@@ -93,7 +93,6 @@ export const CommuniquesAdmin: React.FC = () => {
             content: item.content,
             is_published: item.is_published,
             sort_order: item.sort_order,
-            notify_guides: false, // Don't re-notify on edit by default
         });
         setShowForm(true);
     };
@@ -112,9 +111,9 @@ export const CommuniquesAdmin: React.FC = () => {
                 await adminApi.createCommunique(form);
                 showSuccess(
                     'Publié',
-                    form.notify_guides
-                        ? 'Communiqué créé — email envoyé à tous les guides en arrière-plan'
-                        : 'Communiqué créé'
+                    form.is_published
+                        ? 'Communiqué créé — les guides verront une alerte à leur prochaine connexion'
+                        : 'Communiqué créé en brouillon'
                 );
             }
             setShowForm(false);
@@ -148,17 +147,19 @@ export const CommuniquesAdmin: React.FC = () => {
         }
     };
 
+    // Réaffiche le communiqué à tous : on efface les lectures, le modal
+    // réapparaît à la prochaine connexion de chaque guide. Aucun email.
     const handleResendNotification = async (item: Communique) => {
         const r = await showConfirm(
-            'Renvoyer l\'email ?',
-            `Un email sera envoyé à tous les guides à propos de « ${item.title} ».`
+            'Réafficher à tous les guides ?',
+            `« ${item.title} » sera de nouveau affiché en pop-up à chaque guide, même à ceux qui l'ont déjà lu.`
         );
         if (!r.isConfirmed) return;
         try {
             await adminApi.notifyCommunique(item.id);
-            showSuccess('Envoi lancé', 'Les emails partent en arrière-plan');
+            showSuccess('C\'est fait', 'Le communiqué sera réaffiché à la prochaine connexion des guides');
         } catch (e: any) {
-            showError('Envoi impossible', e?.response?.data?.error || 'Action impossible');
+            showError('Action impossible', e?.response?.data?.error || 'Action impossible');
         }
     };
 
@@ -239,10 +240,10 @@ export const CommuniquesAdmin: React.FC = () => {
                                             </button>
                                             <button
                                                 onClick={() => handleResendNotification(item)}
-                                                title="Renvoyer l'email"
+                                                title="Réafficher le pop-up à tous les guides"
                                                 style={iconBtnStyle('#0369a1')}
                                             >
-                                                <Send size={16} />
+                                                <BellRing size={16} />
                                             </button>
                                             <button
                                                 onClick={() => handleEdit(item)}
@@ -382,16 +383,17 @@ export const CommuniquesAdmin: React.FC = () => {
                                     />
                                     <span>Publier immédiatement</span>
                                 </label>
-                                {!editing && (
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={!!form.notify_guides}
-                                            onChange={(e) => setForm({ ...form, notify_guides: e.target.checked })}
-                                        />
-                                        <span>📧 Envoyer email à tous les guides</span>
-                                    </label>
-                                )}
+                            </div>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px',
+                                padding: '0.75rem 1rem', fontSize: '0.85rem', color: '#1e3a8a'
+                            }}>
+                                <Info size={16} style={{ flexShrink: 0 }} />
+                                <span>
+                                    Aucun email n'est envoyé. Une fois publié, chaque guide verra un
+                                    pop-up à sa prochaine connexion — une seule fois.
+                                </span>
                             </div>
                         </div>
 

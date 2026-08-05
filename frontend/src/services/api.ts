@@ -342,6 +342,24 @@ export const authApi = {
 
 // Payout API
 export const payoutApi = {
+    // Guide: récap des vagues de paiement fermées le concernant — payé ou non,
+    // et la raison en cas d'échec.
+    getPaymentSessions: async (): Promise<{
+        id: string;
+        session_id: string;
+        label: string | null;
+        amount_due: number;
+        amount_paid: number;
+        status: 'pending' | 'paid' | 'partial' | 'failed';
+        failure_reason: string | null;
+        failure_reason_label: string | null;
+        failure_note: string | null;
+        closed_at: string;
+    }[]> => {
+        const response = await api.get('/payouts/guide/payment-sessions');
+        return response.data;
+    },
+
     // Guide: Détail avis + extras + reversements
     getBonusDetails: async (): Promise<{
         totalFromReviews: number;
@@ -631,6 +649,18 @@ export const adminApi = {
 export const communiquesApi = {
     listPublished: async (): Promise<any[]> => {
         const response = await api.get('/communiques');
+        return response.data;
+    },
+
+    // Communiqué non lu le plus récent : alimente le modal du dashboard guide
+    unread: async (): Promise<{ communique: any | null; unread_count: number }> => {
+        const response = await api.get('/communiques/unread');
+        return response.data;
+    },
+
+    // Marque tous les communiqués publiés comme lus (le modal ne revient plus)
+    markSeen: async (): Promise<{ message: string }> => {
+        const response = await api.post('/communiques/seen');
         return response.data;
     },
 };

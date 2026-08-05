@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import {
     Megaphone, ShieldCheck, FileText, ChevronDown, ChevronUp,
-    AlertTriangle, BookOpen, Info, Award, Bell
+    AlertTriangle, BookOpen, Info, Award, Bell, Wallet
 } from 'lucide-react';
 import { communiquesApi } from '../../services/api';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -29,6 +29,7 @@ const iconFor = (key: string, size = 24) => {
         Info: <Info size={size} />,
         Award: <Award size={size} />,
         Bell: <Bell size={size} />,
+        Wallet: <Wallet size={size} />,
     };
     return map[key] || <Megaphone size={size} />;
 };
@@ -45,6 +46,9 @@ export const CommuniquesPage: React.FC = () => {
                 setItems(data);
                 // Auto-expand the first (most recent / first sort_order)
                 if (data && data.length > 0) setExpanded(data[0].id);
+                // Ouvrir la page vaut lecture : le modal du dashboard ne
+                // reviendra pas pour ces communiqués
+                communiquesApi.markSeen().catch(() => { /* non bloquant */ });
             } catch (err) {
                 console.error('Failed to load communiques:', err);
             } finally {

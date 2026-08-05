@@ -2076,10 +2076,10 @@ export const sendPaymentMethodReminderEmail = async (email: string, fullName: st
 
       <!-- Action -->
       <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
-        Pour recevoir votre paiement, rendez-vous dans <strong>Mes gains</strong> et vérifiez que votre mode de règlement est bien renseigné (IBAN, PayPal, Mobile Money ou Wave).
+        Pour recevoir votre paiement, rendez-vous dans <strong>Mes gains</strong> et vérifiez que votre mode de règlement est bien renseigné : Mobile Money (MTN, Moov ou Celtiis au Bénin — en précisant le réseau et le numéro), PayPal pour l'international, ou IBAN.
       </p>
       <p style="margin:0 0 32px;font-size:15px;color:#374151;line-height:1.6;">
-        Si c'est déjà fait, vous n'avez rien d'autre à faire — le virement sera traité lors du prochain cycle.
+        Si c'est déjà fait, vous n'avez rien d'autre à faire — le virement sera traité lors du prochain paiement mensuel.
       </p>
 
       <div style="text-align:center;margin-bottom:32px;">

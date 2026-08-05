@@ -225,6 +225,66 @@ export const adminService = {
         return response.data;
     },
 
+    // --- Sessions de paiement (vagues de virements aux guides) ---
+
+    /** Référentiel des raisons d'échec, pour construire le select du modal */
+    getPaiementRaisons: async () => {
+        const response = await api.get('/admin/payment-sessions/raisons');
+        return response.data;
+    },
+
+    /** Session actuellement ouverte avec ses lignes, ou null */
+    getCurrentPaymentSession: async () => {
+        const response = await api.get('/admin/payment-sessions/current');
+        return response.data;
+    },
+
+    listPaymentSessions: async () => {
+        const response = await api.get('/admin/payment-sessions');
+        return response.data;
+    },
+
+    getPaymentSession: async (sessionId: string) => {
+        const response = await api.get(`/admin/payment-sessions/${sessionId}`);
+        return response.data;
+    },
+
+    /** Ouvre une session : fige la liste des guides ayant un net à payer > 0 */
+    openPaymentSession: async (label?: string) => {
+        const response = await api.post('/admin/payment-sessions', { label });
+        return response.data;
+    },
+
+    /** Enregistre le résultat du virement pour un guide de la session */
+    recordPaymentLine: async (
+        sessionId: string,
+        lineId: string,
+        payload: {
+            status: 'paid' | 'partial' | 'failed';
+            amountPaid?: number;
+            failureReason?: string;
+            failureNote?: string;
+        }
+    ) => {
+        const response = await api.patch(
+            `/admin/payment-sessions/${sessionId}/lines/${lineId}`,
+            payload
+        );
+        return response.data;
+    },
+
+    /** Ferme la session et fige ses statistiques */
+    closePaymentSession: async (sessionId: string, adminNote?: string) => {
+        const response = await api.post(`/admin/payment-sessions/${sessionId}/close`, { adminNote });
+        return response.data;
+    },
+
+    /** Annule une session sur laquelle aucun virement n'a encore été enregistré */
+    cancelPaymentSession: async (sessionId: string) => {
+        const response = await api.delete(`/admin/payment-sessions/${sessionId}`);
+        return response.data;
+    },
+
     getGmailAccounts: async () => {
         const response = await api.get('/admin/gmail-accounts');
         return response.data;

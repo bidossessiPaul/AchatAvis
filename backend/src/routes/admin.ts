@@ -3,6 +3,7 @@ import * as adminController from '../controllers/adminController';
 import * as identityVerif from '../controllers/identityVerificationController';
 import * as communique from '../controllers/communiqueController';
 import * as adminGmailVerif from '../controllers/gmailVerificationController';
+import * as paymentSessionController from '../controllers/paymentSessionController';
 import { authenticate, authorize, checkPermission } from '../middleware/auth';
 import { query as dbQuery } from '../config/database';
 
@@ -120,6 +121,18 @@ router.delete('/payments/:paymentId/status', PAYMENTS, adminController.deletePay
 router.get('/guides-balances', PAYMENTS, adminController.getGuidesWithBalance);
 router.post('/force-pay-guide', PAYMENTS, adminController.forcePayGuide);
 router.post('/guides-balances/send-payment-reminders', PAYMENTS, adminController.sendPaymentMethodReminders);
+
+// Sessions de paiement (vagues de virements aux guides).
+// L'ordre compte : /raisons et /current avant /:sessionId, sinon Express les
+// interpréterait comme un identifiant de session.
+router.get('/payment-sessions/raisons', PAYMENTS, paymentSessionController.getRaisons);
+router.get('/payment-sessions/current', PAYMENTS, paymentSessionController.getCurrentSession);
+router.get('/payment-sessions', PAYMENTS, paymentSessionController.listSessions);
+router.post('/payment-sessions', PAYMENTS, paymentSessionController.openSession);
+router.get('/payment-sessions/:sessionId', PAYMENTS, paymentSessionController.getSession);
+router.patch('/payment-sessions/:sessionId/lines/:lineId', PAYMENTS, paymentSessionController.recordLine);
+router.post('/payment-sessions/:sessionId/close', PAYMENTS, paymentSessionController.closeSession);
+router.delete('/payment-sessions/:sessionId', PAYMENTS, paymentSessionController.cancelSession);
 
 // Packs
 // Lecture libre pour tous les admins (nécessaire pour créer/modifier un artisan

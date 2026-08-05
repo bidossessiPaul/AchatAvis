@@ -69,6 +69,7 @@ const AdminLevelVerifications = lazyNamed(() => import('./pages/admin/AdminLevel
 const AdminRepost = lazyNamed(() => import('./pages/admin/repost/AdminRepost'), 'AdminRepost');
 const IdentityVerifications = lazyNamed(() => import('./pages/admin/IdentityVerifications'), 'IdentityVerifications');
 const GuidesBalances = lazyNamed(() => import('./pages/admin/GuidesBalances'), 'GuidesBalances');
+const PaymentSessions = lazyNamed(() => import('./pages/admin/PaymentSessions'), 'PaymentSessions');
 const GmailAccountsList = lazyNamed(() => import('./pages/admin/GmailAccountsList'), 'GmailAccountsList');
 const AdminGmailVerifications = lazyNamed(() => import('./pages/admin/AdminGmailVerifications'), 'AdminGmailVerifications');
 const AdminLogs = lazyNamed(() => import('./pages/admin/AdminLogs'), 'AdminLogs');
@@ -655,6 +656,16 @@ function App() {
                                 <ProtectedRoute allowedRoles={['admin']}>
                                     <PermissionGuard requiredPermission="can_view_payments">
                                         <GuidesBalances />
+                                    </PermissionGuard>
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/sessions-paiement"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <PermissionGuard requiredPermission="can_view_payments">
+                                        <PaymentSessions />
                                     </PermissionGuard>
                                 </ProtectedRoute>
                             }

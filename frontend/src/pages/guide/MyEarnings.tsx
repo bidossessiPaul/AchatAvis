@@ -36,6 +36,8 @@ export const MyEarnings: React.FC = () => {
     const [bonusDetails, setBonusDetails] = useState<{ totalFromReviews: number; totalExtrasAdded: number; totalReversed: number; reversals: { amount: number; reason: string; created_at: string }[] } | null>(null);
 
     const [history, setHistory] = useState<PayoutRequest[]>([]);
+    // Vagues de paiement fermées concernant ce guide : payé, partiel ou non payé + raison
+    const [paymentSessions, setPaymentSessions] = useState<Awaited<ReturnType<typeof payoutApi.getPaymentSessions>>>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionLoading, setIsActionLoading] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<{ method: string, details: any } | null>(null);
@@ -50,15 +52,19 @@ export const MyEarnings: React.FC = () => {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [statsData, historyData, paymentData, bonusData] = await Promise.all([
+            const [statsData, historyData, paymentData, bonusData, sessionsData] = await Promise.all([
                 payoutApi.getEarnings(),
                 payoutApi.getPayoutHistory(),
                 payoutApi.getPaymentMethod(),
-                payoutApi.getBonusDetails()
+                payoutApi.getBonusDetails(),
+                // Les vagues de paiement ne sont pas critiques pour l'écran : un
+                // échec de cet appel ne doit pas vider les gains affichés.
+                payoutApi.getPaymentSessions().catch(() => [])
             ]);
             setStats(statsData);
             setHistory(historyData);
             setBonusDetails(bonusData);
+            setPaymentSessions(sessionsData);
             setPaymentMethod(paymentData);
             if (paymentData) {
                 setSelectedMethod(paymentData.method);
@@ -99,6 +105,31 @@ export const MyEarnings: React.FC = () => {
     const handleSavePaymentMethod = async () => {
         if (!selectedMethod) {
             showError('Moyen de paiement requis', 'Veuillez choisir un moyen de paiement');
+            return;
+        }
+
+        // Validation stricte : un moyen de paiement incomplet est la première
+        // cause de paiement non reçu. On bloque à la saisie plutôt qu'au virement.
+        if (selectedMethod === 'mobile_money' || selectedMethod === 'wave') {
+            if (!methodDetails.network?.trim()) {
+                showError('Réseau manquant', 'Précisez le réseau : MTN, Moov, Celtiis, Orange, Wave...');
+                return;
+            }
+            if (!methodDetails.phone?.trim()) {
+                showError('Numéro manquant', 'Indiquez le numéro qui doit recevoir l\'argent, avec l\'indicatif du pays (ex : +229 ...)');
+                return;
+            }
+            if (!methodDetails.fullName?.trim()) {
+                showError('Bénéficiaire manquant', 'Indiquez le nom exact du titulaire du compte mobile money');
+                return;
+            }
+        }
+        if (selectedMethod === 'paypal' && !methodDetails.email?.trim()) {
+            showError('Email manquant', 'Indiquez l\'adresse email de votre compte PayPal');
+            return;
+        }
+        if (selectedMethod === 'bank_transfer' && !methodDetails.iban?.trim()) {
+            showError('IBAN manquant', 'Indiquez l\'IBAN du compte à créditer');
             return;
         }
 
@@ -153,7 +184,8 @@ export const MyEarnings: React.FC = () => {
                 <div className="payout-info-banner">
                     <Calendar size={20} />
                     <div>
-                        <p><strong>Information importante :</strong> Les paiements sont effectués chaque <strong>15</strong> et <strong>30</strong> du mois.</p>
+                        <p><strong>Information importante :</strong> Les paiements sont désormais effectués <strong>une seule fois par mois</strong>.</p>
+                        <p style={{ marginTop: '4px', opacity: 0.9 }}>Vérifiez que votre moyen de paiement est complet (réseau + numéro, ou email PayPal) : un moyen de paiement incomplet est la première cause de paiement non reçu.</p>
                         {stats && Number(stats.balance) > 0 && Number(stats.balance) < 10 && (
                             <p style={{ marginTop: '4px', opacity: 0.8 }}>Si vous lancez un retrait inférieur à 10€ avant d'avoir atteint le seuil, il restera en attente jusqu'au prochain cycle.</p>
                         )}
@@ -168,7 +200,16 @@ export const MyEarnings: React.FC = () => {
                         </div>
                         <div className="stat-info">
                             <p className="stat-label">Solde disponible</p>
-                            <h3 className="stat-value">{Math.max(0, Number(stats?.balance || 0)).toFixed(2)}€</h3>
+                            {/* Le solde n'est plus masqué à zéro : un solde négatif signifie
+                                que des versements ont dépassé les gains cumulés, et le guide
+                                doit pouvoir le constater plutôt que de voir un 0 inexpliqué. */}
+                            <h3 className="stat-value">{Number(stats?.balance || 0).toFixed(2)}€</h3>
+                            {Number(stats?.balance || 0) < 0 && (
+                                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
+                                    Vous avez déjà perçu une avance sur vos gains. Vos prochains
+                                    avis validés viendront combler ce montant avant tout nouveau paiement.
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -307,6 +348,18 @@ export const MyEarnings: React.FC = () => {
                                 <button className="close-btn" onClick={() => setShowPaymentModal(false)}><X size={20} /></button>
                             </div>
                             <div className="modal-body">
+                                {/* Rappel des moyens acceptés : sans réseau ni numéro exact,
+                                    le virement mensuel ne peut pas aboutir. */}
+                                <div style={{
+                                    background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px',
+                                    padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.85rem',
+                                    color: '#1e3a8a', lineHeight: 1.6
+                                }}>
+                                    <strong>Au Bénin :</strong> MTN MoMo, Moov Money ou Celtiis Cash — précisez toujours
+                                    le réseau et le numéro qui reçoit l'argent.<br />
+                                    <strong>Hors Bénin / international :</strong> PayPal (email de votre compte) ou
+                                    virement bancaire.
+                                </div>
                                 <div className="method-selector">
                                     <label>Type de paiement</label>
                                     <div className="method-options">
@@ -336,7 +389,7 @@ export const MyEarnings: React.FC = () => {
                                             <input type="text" value={methodDetails.accountName || ''} onChange={e => setMethodDetails({ ...methodDetails, accountName: e.target.value })} placeholder="Nom Complet" />
                                         </div>
                                         <div className="form-group">
-                                            <label>IBAN</label>
+                                            <label>IBAN *</label>
                                             <input type="text" value={methodDetails.iban || ''} onChange={e => setMethodDetails({ ...methodDetails, iban: e.target.value })} placeholder="FR76 ..." />
                                         </div>
                                         <div className="form-group">
@@ -349,8 +402,12 @@ export const MyEarnings: React.FC = () => {
                                 {selectedMethod === 'paypal' && (
                                     <div className="method-details-form">
                                         <div className="form-group">
-                                            <label>Email PayPal</label>
+                                            <label>Email PayPal *</label>
                                             <input type="email" value={methodDetails.email || ''} onChange={e => setMethodDetails({ ...methodDetails, email: e.target.value })} placeholder="votre@email.com" />
+                                            <small style={{ color: '#64748b' }}>
+                                                L'email exact de votre compte PayPal — c'est la solution la plus simple
+                                                pour recevoir un paiement depuis l'étranger.
+                                            </small>
                                         </div>
                                     </div>
                                 )}
@@ -358,16 +415,25 @@ export const MyEarnings: React.FC = () => {
                                 {(selectedMethod === 'mobile_money' || selectedMethod === 'wave') && (
                                     <div className="method-details-form">
                                         <div className="form-group">
-                                            <label>Réseau / Opérateur</label>
-                                            <input type="text" value={methodDetails.network || ''} onChange={e => setMethodDetails({ ...methodDetails, network: e.target.value })} placeholder="Ex : MTN, Orange, Moov, Togocel, Wave..." />
+                                            <label>Réseau / Opérateur *</label>
+                                            <input type="text" value={methodDetails.network || ''} onChange={e => setMethodDetails({ ...methodDetails, network: e.target.value })} placeholder="Ex : MTN, Moov, Celtiis, Orange, Wave..." />
+                                            <small style={{ color: '#64748b' }}>
+                                                Obligatoire. Sans le réseau, nous ne pouvons pas envoyer l'argent.
+                                            </small>
                                         </div>
                                         <div className="form-group">
-                                            <label>Numéro de téléphone</label>
-                                            <input type="tel" value={methodDetails.phone || ''} onChange={e => setMethodDetails({ ...methodDetails, phone: e.target.value })} placeholder="+225 ..." />
+                                            <label>Numéro de téléphone *</label>
+                                            <input type="tel" value={methodDetails.phone || ''} onChange={e => setMethodDetails({ ...methodDetails, phone: e.target.value })} placeholder="+229 01 XX XX XX XX" />
+                                            <small style={{ color: '#64748b' }}>
+                                                Le numéro doit être celui rattaché au compte mobile money, avec l'indicatif du pays.
+                                            </small>
                                         </div>
                                         <div className="form-group">
-                                            <label>Nom du bénéficiaire</label>
+                                            <label>Nom du bénéficiaire *</label>
                                             <input type="text" value={methodDetails.fullName || ''} onChange={e => setMethodDetails({ ...methodDetails, fullName: e.target.value })} placeholder="Nom Complet" />
+                                            <small style={{ color: '#64748b' }}>
+                                                Exactement le nom enregistré sur le compte mobile money.
+                                            </small>
                                         </div>
                                     </div>
                                 )}
@@ -387,6 +453,88 @@ export const MyEarnings: React.FC = () => {
                                     {isActionLoading ? 'Enregistrement...' : 'Enregistrer'}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Vagues de paiement : ce que l'admin a effectivement versé, et la
+                    raison quand un virement n'a pas pu aboutir. Masqué tant qu'aucune
+                    session fermée ne concerne ce guide. */}
+                {paymentSessions.length > 0 && (
+                    <div className="submissions-main-card" style={{ marginBottom: '1.5rem' }}>
+                        <div className="card-header">
+                            <div>
+                                <h3 className="card-title">
+                                    <Wallet size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+                                    Mes paiements
+                                </h3>
+                                <p className="card-subtitle">
+                                    Le détail de chaque vague de paiement vous concernant. En cas d'échec, la raison est indiquée.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="table-responsive">
+                            <table className="modern-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Montant dû</th>
+                                        <th>Montant reçu</th>
+                                        <th>Statut</th>
+                                        <th>Détail</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paymentSessions.map(s => {
+                                        const styles: Record<string, { bg: string; color: string; texte: string }> = {
+                                            pending: { bg: '#fef3c7', color: '#92400e', texte: 'Non traité' },
+                                            paid: { bg: '#dcfce7', color: '#166534', texte: 'Payé' },
+                                            partial: { bg: '#ede9fe', color: '#6d28d9', texte: 'Partiel' },
+                                            failed: { bg: '#fee2e2', color: '#991b1b', texte: 'Non payé' },
+                                        };
+                                        const st = styles[s.status];
+                                        return (
+                                            <tr key={s.id}>
+                                                <td>
+                                                    <div style={{ fontWeight: 600 }}>
+                                                        {new Date(s.closed_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                    </div>
+                                                    {s.label && (
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>{s.label}</div>
+                                                    )}
+                                                </td>
+                                                <td style={{ fontWeight: 600 }}>{Number(s.amount_due).toFixed(2)}€</td>
+                                                <td style={{ fontWeight: 800, color: Number(s.amount_paid) > 0 ? '#059669' : 'var(--gray-400)' }}>
+                                                    {Number(s.amount_paid).toFixed(2)}€
+                                                </td>
+                                                <td>
+                                                    <span style={{
+                                                        padding: '0.2rem 0.6rem', borderRadius: '1rem',
+                                                        fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
+                                                        backgroundColor: st.bg, color: st.color, whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {st.texte}
+                                                    </span>
+                                                </td>
+                                                <td style={{ fontSize: '0.85rem', color: 'var(--gray-600)', maxWidth: '300px' }}>
+                                                    {s.failure_reason_label ? (
+                                                        <>
+                                                            <div style={{ fontWeight: 600, color: '#991b1b' }}>{s.failure_reason_label}</div>
+                                                            {s.failure_note && (
+                                                                <div style={{ fontSize: '0.78rem', marginTop: '2px' }}>{s.failure_note}</div>
+                                                            )}
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '4px' }}>
+                                                                Le montant reste dû et sera versé au prochain cycle.
+                                                            </div>
+                                                        </>
+                                                    ) : '—'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 )}

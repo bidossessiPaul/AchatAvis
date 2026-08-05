@@ -14,7 +14,13 @@ import {
     X,
     DollarSign,
     Download,
-    Mail
+    Mail,
+    PlayCircle,
+    Lock,
+    XCircle,
+    Clock,
+    History,
+    AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getFileUrl } from '../../utils/url';
@@ -42,6 +48,31 @@ interface GuideBalance {
     balance: number;
 }
 
+// Une ligne de session = un guide figé dans la vague de paiement en cours.
+interface SessionLine {
+    id: string;
+    guide_id: string;
+    amount_due: number;
+    amount_paid: number;
+    status: 'pending' | 'paid' | 'partial' | 'failed';
+    failure_reason: string | null;
+    failure_reason_label: string | null;
+    failure_note: string | null;
+    guide_name: string | null;
+    google_email: string | null;
+}
+
+interface PaymentSession {
+    id: string;
+    label: string | null;
+    status: 'open' | 'closed';
+    opened_at: string;
+    lines: SessionLine[];
+}
+
+// Résultat que l'admin enregistre pour un guide donné.
+type ResultatPaiement = 'paid' | 'partial' | 'failed';
+
 export const GuidesBalances: React.FC = () => {
     const [guides, setGuides] = useState<GuideBalance[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,11 +86,127 @@ export const GuidesBalances: React.FC = () => {
     const [amountToPay, setAmountToPay] = useState<string>('');
     const [isPaying, setIsPaying] = useState(false);
     const [isSendingReminders, setIsSendingReminders] = useState(false);
+
+    // --- Session de paiement en cours ---
+    const [session, setSession] = useState<PaymentSession | null>(null);
+    const [raisonsGroupes, setRaisonsGroupes] = useState<{ titre: string; cles: string[] }[]>([]);
+    const [raisonsLabels, setRaisonsLabels] = useState<Record<string, string>>({});
+    const [isSessionBusy, setIsSessionBusy] = useState(false);
+    // Choix fait dans le modal : payé intégralement, partiel, ou non payé
+    const [resultat, setResultat] = useState<ResultatPaiement>('paid');
+    const [raisonEchec, setRaisonEchec] = useState('');
+
     const navigate = useNavigate();
 
     useEffect(() => {
         loadGuides();
+        loadSession();
+        loadRaisons();
     }, []);
+
+    const loadSession = async () => {
+        try {
+            setSession(await adminService.getCurrentPaymentSession());
+        } catch {
+            // Une session absente n'est pas une erreur bloquante : l'écran reste
+            // utilisable en paiement direct.
+            setSession(null);
+        }
+    };
+
+    const loadRaisons = async () => {
+        try {
+            const data = await adminService.getPaiementRaisons();
+            setRaisonsGroupes(data.groupes || []);
+            setRaisonsLabels(data.raisons || {});
+        } catch {
+            setRaisonsGroupes([]);
+        }
+    };
+
+    // Ligne de session correspondant à un guide (undefined si pas de session ouverte)
+    const ligneDuGuide = (guideId: string): SessionLine | undefined =>
+        session?.lines.find(l => l.guide_id === guideId);
+
+    const handleOpenSession = async () => {
+        const aPayer = guides.filter(g => Number(g.total_pending) + Number(g.balance) > 0);
+        const total = aPayer.reduce((s, g) => s + Number(g.total_pending) + Number(g.balance), 0);
+
+        const result = await showConfirm(
+            'Ouvrir une session de paiement',
+            `${aPayer.length} guide${aPayer.length > 1 ? 's' : ''} pour un total de ${total.toFixed(2)}€ seront figés dans cette session.\n\nLes avis validés pendant que tu fais les virements iront dans la session suivante.`
+        );
+        if (!result.isConfirmed) return;
+
+        setIsSessionBusy(true);
+        try {
+            const nouvelle = await adminService.openPaymentSession(
+                `Paiements du ${new Date().toLocaleDateString('fr-FR')}`
+            );
+            setSession(nouvelle);
+            showSuccess('Session ouverte', `${nouvelle.lines.length} guide(s) à traiter. Renseigne chaque ligne puis ferme la session.`);
+        } catch (error: any) {
+            showError('Ouverture impossible', error.response?.data?.error || 'Erreur lors de l\'ouverture.');
+        } finally {
+            setIsSessionBusy(false);
+        }
+    };
+
+    /**
+     * Abandonne la session en cours. Possible tant qu'aucun virement n'a été
+     * enregistré ; sinon le backend refuse et invite à fermer pour garder la trace.
+     */
+    const handleCancelSession = async () => {
+        if (!session) return;
+        const traites = session.lines.filter(l => l.status !== 'pending').length;
+
+        const result = await showConfirm(
+            'Annuler la session',
+            traites > 0
+                ? `${traites} ligne(s) ont déjà été renseignées. Elles seront perdues et la session disparaîtra de l'historique.\n\nContinuer ?`
+                : 'La session sera supprimée et les guides repartiront dans une prochaine vague.\n\nContinuer ?'
+        );
+        if (!result.isConfirmed) return;
+
+        setIsSessionBusy(true);
+        try {
+            await adminService.cancelPaymentSession(session.id);
+            setSession(null);
+            showSuccess('Session annulée', 'Tu peux ouvrir une nouvelle session quand tu veux.');
+            loadGuides(true);
+        } catch (error: any) {
+            showError('Annulation impossible', error.response?.data?.error || 'Erreur lors de l\'annulation.');
+        } finally {
+            setIsSessionBusy(false);
+        }
+    };
+
+    const handleCloseSession = async () => {
+        if (!session) return;
+        const restants = session.lines.filter(l => l.status === 'pending').length;
+
+        const message = restants > 0
+            ? `${restants} guide${restants > 1 ? 's n\'ont' : ' n\'a'} pas encore été traité${restants > 1 ? 's' : ''}. Ils seront comptés comme "non traités" dans le récap.\n\nUne session fermée ne peut plus être modifiée.`
+            : 'Le récapitulatif sera figé et deviendra visible par les guides concernés.\n\nUne session fermée ne peut plus être modifiée.';
+
+        const result = await showConfirm('Fermer la liste de paiement', message);
+        if (!result.isConfirmed) return;
+
+        setIsSessionBusy(true);
+        try {
+            const fermee = await adminService.closePaymentSession(session.id);
+            setSession(null);
+            showSuccess(
+                'Session fermée',
+                `${fermee.stats_paid_count} payé(s), ${fermee.stats_failed_count} en échec — ${Number(fermee.stats_amount_paid).toFixed(2)}€ versés. Le récap est visible par les guides.`
+            );
+            loadGuides(true);
+        } catch (error: any) {
+            showError('Fermeture impossible', error.response?.data?.error || 'Erreur lors de la fermeture.');
+        } finally {
+            setIsSessionBusy(false);
+        }
+    };
 
     const loadGuides = async (silent = false) => {
         if (!silent) setIsLoading(true);
@@ -76,11 +223,99 @@ export const GuidesBalances: React.FC = () => {
     const openPayModal = (guide: GuideBalance) => {
         setSelectedGuide(guide);
         setAdminNote('');
+        setResultat('paid');
+        setRaisonEchec('');
         // Pré-remplir avec le solde actuel ; l'admin peut modifier si le paiement
         // réel diffère (ex: entre l'export CSV et le virement, de nouveaux avis
-        // ont pu être validés).
-        setAmountToPay((Number(guide.total_pending) + Number(guide.balance)).toFixed(2));
+        // ont pu être validés). En session, on reprend le montant figé à
+        // l'ouverture pour rester cohérent avec la liste exportée.
+        const ligne = ligneDuGuide(guide.id);
+        setAmountToPay(
+            ligne
+                ? Number(ligne.amount_due).toFixed(2)
+                : (Number(guide.total_pending) + Number(guide.balance)).toFixed(2)
+        );
         setShowPayModal(true);
+    };
+
+    /**
+     * Enregistre le résultat dans la session ouverte : payé, partiel ou échec.
+     * Hors session, le modal conserve son comportement de paiement direct.
+     */
+    const handleRecordInSession = async () => {
+        if (!selectedGuide || !session) return;
+        const ligne = ligneDuGuide(selectedGuide.id);
+        if (!ligne) {
+            showError('Guide absent de la session', 'Ce guide n\'était pas dans la liste figée à l\'ouverture. Il sera traité au prochain cycle.');
+            return;
+        }
+
+        const amount = Number(amountToPay);
+
+        if (resultat !== 'failed' && (!Number.isFinite(amount) || amount <= 0)) {
+            showError('Montant invalide', 'Veuillez saisir un montant supérieur à 0.');
+            return;
+        }
+        if (resultat !== 'paid' && !raisonEchec) {
+            showError('Raison obligatoire', 'Sélectionne pourquoi le guide n\'a pas été payé intégralement.');
+            return;
+        }
+        if (raisonEchec === 'AUTRE' && !adminNote.trim()) {
+            showError('Précision requise', 'Décris la raison dans le champ de note.');
+            return;
+        }
+        if (resultat === 'partial' && amount >= Number(ligne.amount_due)) {
+            showError('Montant incohérent', `Un paiement partiel doit être inférieur à ${Number(ligne.amount_due).toFixed(2)}€. Utilise "Payé intégralement" sinon.`);
+            return;
+        }
+        // Un versement inférieur au dû marqué "payé intégralement" faisait
+        // disparaître le reliquat : il doit passer en paiement partiel.
+        if (resultat === 'paid' && amount < Number(ligne.amount_due) - 0.01) {
+            showError(
+                'Montant inférieur au dû',
+                `Il manque ${(Number(ligne.amount_due) - amount).toFixed(2)}€ sur les ${Number(ligne.amount_due).toFixed(2)}€ dus. ` +
+                'Choisis "Paiement partiel" et indique la raison — le reliquat restera dû au guide.'
+            );
+            return;
+        }
+
+        const recap = resultat === 'failed'
+            ? `Marquer ${selectedGuide.full_name || selectedGuide.google_email} comme NON PAYÉ ?\n\nRaison : ${raisonsLabels[raisonEchec] || raisonEchec}\n\nLe guide verra cette raison dans son espace une fois la session fermée.`
+            : resultat === 'partial'
+                ? `Enregistrer un paiement partiel de ${amount.toFixed(2)}€ sur ${Number(ligne.amount_due).toFixed(2)}€ dus ?\n\nRaison du reliquat : ${raisonsLabels[raisonEchec] || raisonEchec}`
+                : `Enregistrer un paiement de ${amount.toFixed(2)}€ à ${selectedGuide.full_name || selectedGuide.google_email} ?`;
+
+        // Ferme le modal avant Swal — le backdrop-filter crée un plan de
+        // composition GPU qui masque SweetAlert2 même avec un z-index plus élevé.
+        setShowPayModal(false);
+        const confirm = await showConfirm('Confirmer', recap);
+        if (!confirm.isConfirmed) {
+            setShowPayModal(true);
+            return;
+        }
+
+        setIsPaying(true);
+        try {
+            const maj = await adminService.recordPaymentLine(session.id, ligne.id, {
+                status: resultat,
+                amountPaid: resultat === 'failed' ? 0 : amount,
+                failureReason: resultat === 'paid' ? undefined : raisonEchec,
+                failureNote: adminNote.trim() || undefined,
+            });
+            setSession(maj);
+            showSuccess(
+                resultat === 'failed' ? 'Échec enregistré' : 'Paiement enregistré',
+                resultat === 'failed'
+                    ? 'Le guide a été notifié. La raison apparaîtra dans son historique à la fermeture de la session.'
+                    : `${amount.toFixed(2)}€ enregistrés.`
+            );
+            setSelectedGuide(null);
+            loadGuides(true);
+        } catch (error: any) {
+            showError('Enregistrement impossible', error.response?.data?.error || 'Erreur lors de l\'enregistrement.');
+        } finally {
+            setIsPaying(false);
+        }
     };
 
     const handleForcePay = async () => {
@@ -262,6 +497,121 @@ export const GuidesBalances: React.FC = () => {
     return (
         <DashboardLayout title="Soldes des Guides">
             <div className="admin-dashboard revamped">
+                {/* Bandeau de session de paiement : ouvrir une vague, suivre son
+                    avancement, la fermer. Hors session, le bouton Payer reste en
+                    paiement direct comme avant. */}
+                {(() => {
+                    const lignes = session?.lines || [];
+                    const payes = lignes.filter(l => l.status === 'paid' || l.status === 'partial').length;
+                    const echecs = lignes.filter(l => l.status === 'failed').length;
+                    const restants = lignes.filter(l => l.status === 'pending').length;
+                    const verse = lignes.reduce((s, l) => s + Number(l.amount_paid), 0);
+                    const du = lignes.reduce((s, l) => s + Number(l.amount_due), 0);
+
+                    return (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '1rem',
+                            flexWrap: 'wrap',
+                            padding: '1rem 1.25rem',
+                            marginBottom: '1.5rem',
+                            borderRadius: '1rem',
+                            border: session ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                            background: session ? '#ecfdf5' : 'white',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '0.75rem', flexShrink: 0,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
+                                    background: session
+                                        ? 'linear-gradient(135deg, #059669, #047857)'
+                                        : 'linear-gradient(135deg, #64748b, #475569)'
+                                }}>
+                                    {session ? <Clock size={20} /> : <PlayCircle size={20} />}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--gray-900)' }}>
+                                        {session ? (session.label || 'Session de paiement en cours') : 'Aucune session de paiement ouverte'}
+                                    </div>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--gray-600)', marginTop: '2px' }}>
+                                        {session
+                                            ? `${payes} payé${payes > 1 ? 's' : ''} · ${echecs} en échec · ${restants} à traiter — ${verse.toFixed(2)}€ / ${du.toFixed(2)}€`
+                                            : 'Ouvre une session pour figer la liste des guides à payer et tracer chaque virement.'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <button
+                                    onClick={() => navigate('/admin/sessions-paiement')}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        padding: '0.5rem 1rem', borderRadius: '8px',
+                                        border: '1px solid var(--gray-300)', background: 'white',
+                                        fontWeight: 700, fontSize: '0.85rem', color: 'var(--gray-700)', cursor: 'pointer'
+                                    }}
+                                >
+                                    <History size={16} />
+                                    Historique
+                                </button>
+                                {session ? (
+                                    <>
+                                        <button
+                                            onClick={handleCancelSession}
+                                            disabled={isSessionBusy}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                padding: '0.5rem 1rem', borderRadius: '8px',
+                                                border: '1px solid #fecaca', background: '#fef2f2',
+                                                color: '#991b1b', fontWeight: 700, fontSize: '0.85rem',
+                                                cursor: isSessionBusy ? 'not-allowed' : 'pointer',
+                                                opacity: isSessionBusy ? 0.5 : 1
+                                            }}
+                                        >
+                                            <XCircle size={16} />
+                                            Annuler
+                                        </button>
+                                        <button
+                                            onClick={handleCloseSession}
+                                            disabled={isSessionBusy}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '6px',
+                                                padding: '0.5rem 1rem', borderRadius: '8px', border: 'none',
+                                                background: 'linear-gradient(135deg, #d97706, #b45309)',
+                                                color: 'white', fontWeight: 700, fontSize: '0.85rem',
+                                                cursor: isSessionBusy ? 'not-allowed' : 'pointer',
+                                                opacity: isSessionBusy ? 0.5 : 1
+                                            }}
+                                        >
+                                            <Lock size={16} />
+                                            {isSessionBusy ? 'Fermeture...' : 'Fermer la liste'}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={handleOpenSession}
+                                        disabled={isSessionBusy || isLoading || sortedGuides.length === 0}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            padding: '0.5rem 1rem', borderRadius: '8px', border: 'none',
+                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                            color: 'white', fontWeight: 700, fontSize: '0.85rem',
+                                            cursor: isSessionBusy || sortedGuides.length === 0 ? 'not-allowed' : 'pointer',
+                                            opacity: isSessionBusy || sortedGuides.length === 0 ? 0.5 : 1
+                                        }}
+                                    >
+                                        <PlayCircle size={16} />
+                                        {isSessionBusy ? 'Ouverture...' : 'Ouvrir un paiement'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })()}
+
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                     <div style={{
                         background: 'linear-gradient(135deg, #059669, #047857)',
@@ -431,6 +781,7 @@ export const GuidesBalances: React.FC = () => {
                                             </div>
                                         </th>
                                         <th>Net à payer</th>
+                                        {session && <th>Statut session</th>}
                                         <th className="text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -530,8 +881,63 @@ export const GuidesBalances: React.FC = () => {
                                                     );
                                                 })()}
                                             </td>
+                                            {/* Statut du guide dans la session en cours */}
+                                            {session && (
+                                                <td>
+                                                    {(() => {
+                                                        const ligne = ligneDuGuide(guide.id);
+                                                        if (!ligne) {
+                                                            return (
+                                                                <span style={{ fontSize: '0.72rem', color: 'var(--gray-400)', fontWeight: 600 }}>
+                                                                    Hors session
+                                                                </span>
+                                                            );
+                                                        }
+                                                        const styles: Record<string, { bg: string; color: string; texte: string }> = {
+                                                            pending: { bg: '#fef3c7', color: '#92400e', texte: 'À traiter' },
+                                                            paid: { bg: '#dcfce7', color: '#166534', texte: 'Payé' },
+                                                            partial: { bg: '#ede9fe', color: '#6d28d9', texte: 'Partiel' },
+                                                            failed: { bg: '#fee2e2', color: '#991b1b', texte: 'Non payé' },
+                                                        };
+                                                        const s = styles[ligne.status];
+                                                        return (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-start' }}>
+                                                                <span style={{
+                                                                    padding: '0.2rem 0.6rem', borderRadius: '1rem',
+                                                                    fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase',
+                                                                    backgroundColor: s.bg, color: s.color
+                                                                }}>
+                                                                    {s.texte}
+                                                                </span>
+                                                                {ligne.failure_reason_label && (
+                                                                    <span style={{ fontSize: '0.68rem', color: 'var(--gray-500)', maxWidth: '160px', lineHeight: 1.3 }}>
+                                                                        {ligne.failure_reason_label}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </td>
+                                            )}
                                             <td className="actions-cell">
-                                                {(Number(guide.total_pending) + Number(guide.balance)) > 0 ? (
+                                                {(() => {
+                                                    // En session, une ligne déjà payée n'est plus rejouable :
+                                                    // l'argent a bougé, un second enregistrement doublerait le versement.
+                                                    const ligne = session ? ligneDuGuide(guide.id) : undefined;
+                                                    if (ligne && (ligne.status === 'paid' || ligne.status === 'partial')) {
+                                                        return (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#166534', fontSize: '0.8rem', fontWeight: 700 }}>
+                                                                <CheckCircle size={14} />
+                                                                {Number(ligne.amount_paid).toFixed(2)}€ versés
+                                                            </span>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
+                                                {(() => {
+                                                    const ligne = session ? ligneDuGuide(guide.id) : undefined;
+                                                    if (ligne && (ligne.status === 'paid' || ligne.status === 'partial')) return null;
+                                                    return (Number(guide.total_pending) + Number(guide.balance)) > 0 ? (
                                                     <button
                                                         onClick={() => openPayModal(guide)}
                                                         style={{
@@ -539,7 +945,9 @@ export const GuidesBalances: React.FC = () => {
                                                             alignItems: 'center',
                                                             gap: '6px',
                                                             padding: '0.5rem 1rem',
-                                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                                            background: ligne?.status === 'failed'
+                                                                ? 'linear-gradient(135deg, #d97706, #b45309)'
+                                                                : 'linear-gradient(135deg, #059669, #047857)',
                                                             color: 'white',
                                                             border: 'none',
                                                             borderRadius: '8px',
@@ -550,7 +958,7 @@ export const GuidesBalances: React.FC = () => {
                                                         }}
                                                     >
                                                         <DollarSign size={14} />
-                                                        Payer
+                                                        {ligne?.status === 'failed' ? 'Corriger' : 'Payer'}
                                                     </button>
                                                 ) : (
                                                     <span style={{
@@ -564,7 +972,8 @@ export const GuidesBalances: React.FC = () => {
                                                         <CheckCircle size={14} />
                                                         Soldé
                                                     </span>
-                                                )}
+                                                    );
+                                                })()}
                                             </td>
                                         </tr>
                                     ))}
@@ -685,8 +1094,89 @@ export const GuidesBalances: React.FC = () => {
                                     })()}
                                 </div>
 
+                                {/* Résultat du virement — visible uniquement pendant une session.
+                                    Hors session, le modal reste un paiement direct simple. */}
+                                {session && ligneDuGuide(selectedGuide.id) && (
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.4rem' }}>
+                                            Résultat du virement *
+                                        </label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
+                                            {([
+                                                { cle: 'paid' as const, texte: 'Payé', couleur: '#059669', bg: '#ecfdf5', bordure: '#a7f3d0', Icone: CheckCircle },
+                                                { cle: 'partial' as const, texte: 'Partiel', couleur: '#6d28d9', bg: '#ede9fe', bordure: '#ddd6fe', Icone: AlertTriangle },
+                                                { cle: 'failed' as const, texte: 'Non payé', couleur: '#b91c1c', bg: '#fef2f2', bordure: '#fecaca', Icone: XCircle },
+                                            ]).map(({ cle, texte, couleur, bg, bordure, Icone }) => {
+                                                const actif = resultat === cle;
+                                                return (
+                                                    <button
+                                                        key={cle}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setResultat(cle);
+                                                            // Un paiement intégral n'a pas de raison à renseigner
+                                                            if (cle === 'paid') setRaisonEchec('');
+                                                            // Pré-remplit la raison la plus courante du cas partiel
+                                                            if (cle === 'partial' && !raisonEchec) setRaisonEchec('PAIEMENT_PARTIEL');
+                                                        }}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                                            padding: '0.6rem 0.4rem', borderRadius: '8px',
+                                                            border: actif ? `2px solid ${couleur}` : '1px solid var(--gray-300)',
+                                                            background: actif ? bg : 'white',
+                                                            color: actif ? couleur : 'var(--gray-600)',
+                                                            fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer',
+                                                            boxShadow: actif ? `0 0 0 1px ${bordure}` : 'none'
+                                                        }}
+                                                    >
+                                                        <Icone size={15} />
+                                                        {texte}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Raison de l'échec ou du reliquat — obligatoire hors paiement intégral */}
+                                {session && ligneDuGuide(selectedGuide.id) && resultat !== 'paid' && (
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--gray-700)', marginBottom: '0.4rem' }}>
+                                            {resultat === 'failed' ? 'Pourquoi le guide n\'a pas été payé *' : 'Pourquoi le montant est incomplet *'}
+                                        </label>
+                                        <select
+                                            value={raisonEchec}
+                                            onChange={(e) => setRaisonEchec(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.65rem 0.85rem',
+                                                borderRadius: '8px',
+                                                border: raisonEchec ? '2px solid #059669' : '2px solid #dc2626',
+                                                fontSize: '0.9rem',
+                                                fontWeight: 600,
+                                                fontFamily: 'inherit',
+                                                backgroundColor: 'white',
+                                                boxSizing: 'border-box',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <option value="">— Sélectionne une raison —</option>
+                                            {raisonsGroupes.map(groupe => (
+                                                <optgroup key={groupe.titre} label={groupe.titre}>
+                                                    {groupe.cles.map(cle => (
+                                                        <option key={cle} value={cle}>{raisonsLabels[cle] || cle}</option>
+                                                    ))}
+                                                </optgroup>
+                                            ))}
+                                        </select>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--gray-500)', marginTop: '0.4rem', lineHeight: 1.35 }}>
+                                            Cette raison sera visible par le guide dans son espace une fois la session fermée.
+                                        </p>
+                                    </div>
+                                )}
+
                                 {/* Montant payé (éditable) */}
-                                <div>
+                                <div style={{ display: session && ligneDuGuide(selectedGuide.id) && resultat === 'failed' ? 'none' : 'block' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.4rem', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--gray-700)' }}>
                                             Montant réellement payé *
@@ -794,14 +1284,28 @@ export const GuidesBalances: React.FC = () => {
                                 Annuler
                             </button>
                             {(() => {
+                                const enSession = !!(session && ligneDuGuide(selectedGuide.id));
                                 const amt = Number(amountToPay);
-                                const isInvalid = !amountToPay || !Number.isFinite(amt) || amt <= 0;
+                                const montantInvalide = !amountToPay || !Number.isFinite(amt) || amt <= 0;
+                                // En échec le montant est ignoré ; en revanche la raison devient obligatoire.
+                                const isInvalid = enSession
+                                    ? (resultat === 'failed' ? !raisonEchec : montantInvalide || (resultat === 'partial' && !raisonEchec))
+                                    : montantInvalide;
+
+                                const libelle = !enSession
+                                    ? `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`
+                                    : resultat === 'failed'
+                                        ? 'Enregistrer le non-paiement'
+                                        : `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`;
+
                                 return (
                                     <button
-                                        onClick={handleForcePay}
+                                        onClick={enSession ? handleRecordInSession : handleForcePay}
                                         className="admin-btn-primary"
                                         style={{
-                                            background: 'linear-gradient(135deg, #059669, #047857)',
+                                            background: enSession && resultat === 'failed'
+                                                ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                                                : 'linear-gradient(135deg, #059669, #047857)',
                                             padding: '0.6rem 1.25rem',
                                             fontSize: '0.875rem',
                                             justifyContent: 'center',
@@ -810,9 +1314,7 @@ export const GuidesBalances: React.FC = () => {
                                         }}
                                         disabled={isPaying || isInvalid}
                                     >
-                                        {isPaying
-                                            ? 'Paiement...'
-                                            : `Confirmer ${(Number(amountToPay) || 0).toFixed(2)}€`}
+                                        {isPaying ? 'Enregistrement...' : libelle}
                                     </button>
                                 );
                             })()}

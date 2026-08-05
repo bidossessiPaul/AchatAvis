@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as payoutController from '../controllers/payoutController';
+import * as paymentSessionController from '../controllers/paymentSessionController';
 import { authenticate, authorize } from '../middleware/auth';
 
 const router = Router();
@@ -24,6 +25,15 @@ router.get(
     authenticate,
     authorize('guide'),
     payoutController.getPayoutHistory
+);
+
+// Récap des vagues de paiement fermées concernant ce guide : payé ou non, et
+// la raison en cas d'échec.
+router.get(
+    '/guide/payment-sessions',
+    authenticate,
+    authorize('guide'),
+    paymentSessionController.getGuidePaymentSessions
 );
 
 router.post(
