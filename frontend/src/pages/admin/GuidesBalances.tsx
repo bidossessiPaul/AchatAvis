@@ -485,10 +485,19 @@ export const GuidesBalances: React.FC = () => {
     };
 
     // Stats
-    // Ce que la plateforme doit réellement : uniquement les soldes créditeurs.
-    // Y soustraire les soldes négatifs (guides sur-payés) donnerait un total qui
-    // ne correspond à aucune somme à verser.
-    const totalBalance = guides.reduce((sum, g) => sum + Math.max(0, Number(g.balance)), 0);
+    // Ce que la plateforme doit réellement verser : la somme de la colonne
+    // "Net à payer" du tableau, c'est-à-dire demandes de retrait en attente +
+    // solde disponible, guide par guide.
+    //
+    // Deux pièges évités ici :
+    //   - sommer les soldes bruts ferait entrer les guides sur-payés en négatif,
+    //     donnant un total qui ne correspond à aucune somme à verser (et pouvant
+    //     devenir négatif, ce qui n'a pas de sens pour une dette) ;
+    //   - ignorer total_pending sous-estimerait la dette des demandes en cours.
+    const totalBalance = guides.reduce(
+        (sum, g) => sum + Math.max(0, Number(g.total_pending) + Number(g.balance)),
+        0
+    );
     // Sur-paiements cumulés, suivis à part car ils ne s'effacent pas d'eux-mêmes :
     // ils se résorbent au fil des prochains avis validés de ces guides.
     const totalOverpaid = guides.reduce((sum, g) => sum + Math.min(0, Number(g.balance)), 0);
@@ -673,7 +682,7 @@ export const GuidesBalances: React.FC = () => {
                         minWidth: '160px'
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBalance.toFixed(2)}€</div>
-                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Solde disponible total</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Total à payer (net)</div>
                         {guidesOverpaid > 0 && (
                             <div style={{ fontSize: '0.72rem', opacity: 0.85, marginTop: '4px' }}>
                                 Hors {totalOverpaid.toFixed(2)}€ d'avances sur {guidesOverpaid} guide{guidesOverpaid > 1 ? 's' : ''}

@@ -186,8 +186,34 @@
     width: 100%;
     max-width: 500px;
     border-radius: 20px;
-    overflow: hidden;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    /* Header et footer fixes, corps scrollable : sans cette hauteur maximale le
+       formulaire depassait l'ecran sur mobile et le bouton Enregistrer devenait
+       inatteignable (overflow: hidden empechait tout defilement). */
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 2rem);
+}
+
+.payment-config-modal .modal-header,
+.payment-config-modal .modal-footer {
+    flex-shrink: 0;
+}
+
+.payment-config-modal .modal-body {
+    overflow-y: auto;
+    /* min-height: 0 est indispensable pour qu'un enfant flex puisse retrecir
+       et donc defiler */
+    min-height: 0;
+}
+
+/* Les champs debordaient de leur conteneur faute de box-sizing */
+.payment-config-modal .form-group input,
+.payment-config-modal .form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.9rem;
 }
 
 .modal-header {

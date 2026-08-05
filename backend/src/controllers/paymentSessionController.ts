@@ -136,6 +136,22 @@ export const cancelSession = async (req: Request, res: Response) => {
 };
 
 /**
+ * Tableau de paiement collectif, visible par tout guide connecté.
+ * GET /api/payouts/guide/payment-board?sessionId=...
+ */
+export const getPaymentBoard = async (req: Request, res: Response) => {
+    try {
+        const board = await paymentSessionService.getPaymentBoard(
+            req.user!.userId,
+            req.query.sessionId as string | undefined
+        );
+        return res.json(board);
+    } catch (error) {
+        return erreurMetier(res, error, 'Get payment board error');
+    }
+};
+
+/**
  * Historique des paiements vu par le guide connecté.
  * GET /api/payouts/guide/payment-sessions
  */

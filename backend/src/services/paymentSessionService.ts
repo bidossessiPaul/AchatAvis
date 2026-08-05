@@ -333,6 +333,86 @@ export const closeSession = async (sessionId: string, adminId: string, adminNote
 };
 
 /**
+ * Tableau de paiement public, consultable par n'importe quel guide connecté.
+ *
+ * Objectif : transparence collective. Chaque guide voit qui a été payé et qui ne
+ * l'a pas été lors d'une vague donnée, ce qui coupe court aux contestations du
+ * type "untel a reçu son argent et pas moi".
+ *
+ * Ne sont JAMAIS exposés : email, téléphone, coordonnées bancaires ou mobile.
+ * La raison d'un non-paiement n'est renvoyée qu'au guide concerné — c'est une
+ * information personnelle (compte suspendu, KYC, nom qui ne correspond pas).
+ */
+export const getPaymentBoard = async (guideId: string, sessionId?: string) => {
+    // Les 12 dernières vagues suffisent : au-delà l'information n'est plus
+    // consultée et la requête grossit inutilement.
+    const sessions = await query(`
+        SELECT id, label, closed_at,
+               stats_guides_total, stats_paid_count, stats_failed_count,
+               stats_pending_count, stats_amount_paid
+        FROM payment_sessions
+        WHERE status = 'closed' AND deleted_at IS NULL
+        ORDER BY closed_at DESC
+        LIMIT 12
+    `);
+
+    if (sessions.length === 0) return { sessions: [], selected: null, lines: [] };
+
+    // Session demandée, ou la plus récente par défaut
+    const selected = sessionId
+        ? sessions.find((s: any) => s.id === sessionId) || sessions[0]
+        : sessions[0];
+
+    const lines = await query(`
+        SELECT l.id, l.guide_id, l.amount_due, l.amount_paid, l.status,
+               l.failure_reason,
+               COALESCE(u.full_name, l.guide_name_snapshot) AS guide_name
+        FROM payment_session_lines l
+        LEFT JOIN users u ON u.id = l.guide_id
+        WHERE l.session_id = ?
+        ORDER BY l.status = 'paid' DESC, l.amount_paid DESC, guide_name ASC
+    `, [selected.id]);
+
+    return {
+        sessions: sessions.map((s: any) => ({
+            id: s.id,
+            label: s.label,
+            closed_at: s.closed_at,
+            stats_guides_total: s.stats_guides_total,
+            stats_paid_count: s.stats_paid_count,
+            stats_failed_count: s.stats_failed_count,
+            stats_pending_count: s.stats_pending_count,
+            stats_amount_paid: s.stats_amount_paid,
+        })),
+        selected: {
+            id: selected.id,
+            label: selected.label,
+            closed_at: selected.closed_at,
+            stats_guides_total: selected.stats_guides_total,
+            stats_paid_count: selected.stats_paid_count,
+            stats_failed_count: selected.stats_failed_count,
+            stats_pending_count: selected.stats_pending_count,
+            stats_amount_paid: selected.stats_amount_paid,
+        },
+        lines: lines.map((l: any) => {
+            const estMoi = l.guide_id === guideId;
+            return {
+                id: l.id,
+                guide_name: l.guide_name || 'Guide',
+                amount_due: l.amount_due,
+                amount_paid: l.amount_paid,
+                status: l.status,
+                is_me: estMoi,
+                // La raison reste privée : seul le guide concerné la voit
+                failure_reason_label: estMoi && l.failure_reason
+                    ? (PAIEMENT_RAISONS_ECHEC as any)[l.failure_reason] || l.failure_reason
+                    : null,
+            };
+        }),
+    };
+};
+
+/**
  * Annule une session ouverte : elle disparaît de l'historique et les guides
  * redeviennent disponibles pour une nouvelle vague.
  *

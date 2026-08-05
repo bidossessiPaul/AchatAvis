@@ -36,6 +36,14 @@ router.get(
     paymentSessionController.getGuidePaymentSessions
 );
 
+// Tableau collectif : tous les guides d'une vague, sans donnée de contact.
+router.get(
+    '/guide/payment-board',
+    authenticate,
+    authorize('guide'),
+    paymentSessionController.getPaymentBoard
+);
+
 router.post(
     '/guide/request',
     authenticate,

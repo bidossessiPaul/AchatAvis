@@ -157,6 +157,44 @@ export const MyEarnings: React.FC = () => {
         }
     };
 
+    /**
+     * Détails du moyen de paiement, à afficher au guide sur sa propre page.
+     * Les clés ont changé au fil du temps (fullName / full_name, phone /
+     * phone_number...) : on accepte les deux, sinon d'anciens profils
+     * s'afficheraient vides alors que la donnée existe.
+     */
+    const getMethodDetails = (method: string, details: any): { label: string; valeur: string }[] => {
+        const d = (() => {
+            if (!details) return {};
+            if (typeof details === 'string') {
+                try { return JSON.parse(details); } catch { return {}; }
+            }
+            return details;
+        })();
+
+        if (method === 'mobile_money' || method === 'wave') {
+            return [
+                { label: 'Réseau', valeur: d.network || '' },
+                { label: 'Numéro', valeur: d.phone || d.phone_number || '' },
+                { label: 'Titulaire du compte', valeur: d.fullName || d.full_name || '' },
+            ];
+        }
+        if (method === 'paypal') {
+            return [
+                { label: 'Email PayPal', valeur: d.email || d.paypal_email || '' },
+                { label: 'Titulaire', valeur: d.name || d.fullName || '' },
+            ];
+        }
+        if (method === 'bank_transfer') {
+            return [
+                { label: 'IBAN', valeur: d.iban || '' },
+                { label: 'BIC', valeur: d.bic || '' },
+                { label: 'Titulaire du compte', valeur: d.accountName || d.account_name || '' },
+            ];
+        }
+        return [{ label: 'Informations', valeur: d.info || d.details || '' }];
+    };
+
     const getStatusInfo = (status: string) => {
         switch (status) {
             case 'paid': return { label: 'Payé', icon: <CheckCircle2 size={14} />, class: 'paid' };
@@ -328,9 +366,52 @@ export const MyEarnings: React.FC = () => {
                     <div className="payment-method-card">
                         <div className="method-info">
                             <CreditCard size={20} />
-                            <div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
                                 <p className="method-label">Moyen de paiement</p>
                                 <p className="method-value">{paymentMethod ? getMethodLabel(paymentMethod.method) : 'Non configuré'}</p>
+
+                                {/* Detail des coordonnees : sans cela le guide ne peut pas
+                                    verifier ce qui a ete enregistre, alors qu'un numero
+                                    errone est la premiere cause de paiement non recu. */}
+                                {paymentMethod && (() => {
+                                    const lignes = getMethodDetails(paymentMethod.method, paymentMethod.details);
+                                    const manquants = lignes.filter(l => !l.valeur.trim());
+                                    return (
+                                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            {lignes.map(l => (
+                                                <div key={l.label} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, minWidth: '120px' }}>
+                                                        {l.label}
+                                                    </span>
+                                                    <span style={{
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: 700,
+                                                        color: l.valeur.trim() ? '#0f172a' : '#b91c1c',
+                                                        wordBreak: 'break-word'
+                                                    }}>
+                                                        {l.valeur.trim() || 'Non renseigné'}
+                                                    </span>
+                                                </div>
+                                            ))}
+
+                                            {manquants.length > 0 && (
+                                                <p style={{
+                                                    margin: '0.35rem 0 0',
+                                                    fontSize: '0.78rem',
+                                                    lineHeight: 1.4,
+                                                    color: '#991b1b',
+                                                    background: '#fef2f2',
+                                                    border: '1px solid #fecaca',
+                                                    borderRadius: '8px',
+                                                    padding: '0.5rem 0.625rem'
+                                                }}>
+                                                    <AlertTriangle size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                                                    Informations incomplètes : votre paiement risque d'échouer. Cliquez sur Modifier pour les compléter.
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                         <button className="setup-btn" onClick={() => setShowPaymentModal(true)}>

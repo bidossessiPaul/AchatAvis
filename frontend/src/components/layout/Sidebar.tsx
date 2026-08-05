@@ -91,6 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     { label: 'Mes Gmails', path: '/guide/my-gmails', icon: <Mail size={20} /> },
                     { label: 'Citations GEO', path: '/guide/citations', icon: <Globe size={20} /> },
                     { label: 'Mes gains', path: '/guide/earnings', icon: <DollarSign size={20} /> },
+                    { label: 'Tableau des paiements', path: '/guide/payment-board', icon: <History size={20} /> },
                     { label: 'Signalement', path: '/guide/signalement', icon: <Flag size={20} /> },
                     { label: 'Repost Social', path: '/guide/repost', icon: <Repeat2 size={20} /> },
                     { label: 'Anti-Détection', path: '/guide/anti-detection', icon: <ShieldCheck size={20} /> },

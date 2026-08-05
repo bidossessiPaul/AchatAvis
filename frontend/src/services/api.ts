@@ -360,6 +360,34 @@ export const payoutApi = {
         return response.data;
     },
 
+    // Guide: tableau collectif d'une vague de paiement — tous les guides, sans
+    // aucune donnée de contact. La raison d'echec n'est renvoyee que pour soi.
+    getPaymentBoard: async (sessionId?: string): Promise<{
+        sessions: {
+            id: string; label: string | null; closed_at: string;
+            stats_guides_total: number; stats_paid_count: number;
+            stats_failed_count: number; stats_pending_count: number;
+            stats_amount_paid: number;
+        }[];
+        selected: {
+            id: string; label: string | null; closed_at: string;
+            stats_guides_total: number; stats_paid_count: number;
+            stats_failed_count: number; stats_pending_count: number;
+            stats_amount_paid: number;
+        } | null;
+        lines: {
+            id: string; guide_name: string;
+            amount_due: number; amount_paid: number;
+            status: 'pending' | 'paid' | 'partial' | 'failed';
+            is_me: boolean; failure_reason_label: string | null;
+        }[];
+    }> => {
+        const response = await api.get('/payouts/guide/payment-board', {
+            params: sessionId ? { sessionId } : undefined,
+        });
+        return response.data;
+    },
+
     // Guide: Détail avis + extras + reversements
     getBonusDetails: async (): Promise<{
         totalFromReviews: number;

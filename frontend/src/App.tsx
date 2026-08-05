@@ -39,6 +39,7 @@ const AllFiches = lazyNamed(() => import('./pages/guide/AllFiches'), 'AllFiches'
 const FicheDetail = lazyNamed(() => import('./pages/guide/FicheDetail'), 'FicheDetail');
 const Submissions = lazyNamed(() => import('./pages/guide/Submissions'), 'Submissions');
 const MyEarnings = lazyNamed(() => import('./pages/guide/MyEarnings'), 'MyEarnings');
+const PaymentBoard = lazyNamed(() => import('./pages/guide/PaymentBoard'), 'PaymentBoard');
 const AntiDetectionRulesPage = lazyNamed(() => import('./pages/guide/AntiDetectionRulesPage'), 'AntiDetectionRulesPage');
 const QuizCertificationPage = lazyNamed(() => import('./pages/guide/QuizCertificationPage'), 'QuizCertificationPage');
 const Corrections = lazyNamed(() => import('./pages/guide/Corrections'), 'Corrections');
@@ -353,6 +354,14 @@ function App() {
                             element={
                                 <ProtectedRoute allowedRoles={['guide']}>
                                     <Corrections />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/guide/payment-board"
+                            element={
+                                <ProtectedRoute allowedRoles={['guide']}>
+                                    <PaymentBoard />
                                 </ProtectedRoute>
                             }
                         />
