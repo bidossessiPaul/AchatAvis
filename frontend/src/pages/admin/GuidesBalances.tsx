@@ -485,7 +485,14 @@ export const GuidesBalances: React.FC = () => {
     };
 
     // Stats
-    const totalBalance = guides.reduce((sum, g) => sum + Number(g.balance), 0);
+    // Ce que la plateforme doit réellement : uniquement les soldes créditeurs.
+    // Y soustraire les soldes négatifs (guides sur-payés) donnerait un total qui
+    // ne correspond à aucune somme à verser.
+    const totalBalance = guides.reduce((sum, g) => sum + Math.max(0, Number(g.balance)), 0);
+    // Sur-paiements cumulés, suivis à part car ils ne s'effacent pas d'eux-mêmes :
+    // ils se résorbent au fil des prochains avis validés de ces guides.
+    const totalOverpaid = guides.reduce((sum, g) => sum + Math.min(0, Number(g.balance)), 0);
+    const guidesOverpaid = guides.filter(g => Number(g.balance) < 0).length;
     const totalEarned = guides.reduce((sum, g) => sum + Number(g.total_earned), 0);
     const totalPaid = guides.reduce((sum, g) => sum + Number(g.total_paid), 0);
     const totalBonuses = guides.reduce((sum, g) => sum + Number(g.total_bonuses), 0);
@@ -667,6 +674,11 @@ export const GuidesBalances: React.FC = () => {
                     }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800 }}>{totalBalance.toFixed(2)}€</div>
                         <div style={{ fontSize: '0.85rem', opacity: 0.9, fontWeight: 600 }}>Solde disponible total</div>
+                        {guidesOverpaid > 0 && (
+                            <div style={{ fontSize: '0.72rem', opacity: 0.85, marginTop: '4px' }}>
+                                Hors {totalOverpaid.toFixed(2)}€ d'avances sur {guidesOverpaid} guide{guidesOverpaid > 1 ? 's' : ''}
+                            </div>
+                        )}
                     </div>
                     <div style={{
                         background: 'linear-gradient(135deg, #d97706, #b45309)',
